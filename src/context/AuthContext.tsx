@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setProfile(data as Profile);
+      setProfile({ ...data, nome: data.name ?? data.email ?? '' } as unknown as Profile);
     } catch (err) {
       console.error('Erro ao buscar perfil:', err);
       setProfile(null);

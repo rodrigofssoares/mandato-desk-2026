@@ -1354,3 +1354,13 @@ INSERT INTO permissoes_perfil (role, secao, pode_ver, pode_criar, pode_editar, p
 ('estagiario', 'personalizacao',  FALSE, FALSE, FALSE, FALSE, FALSE),
 ('estagiario', 'permissoes',      FALSE, FALSE, FALSE, FALSE, FALSE),
 ('estagiario', 'relatorios',      FALSE, FALSE, FALSE, FALSE, FALSE);
+
+-- ================================================================
+-- GRANTS — allow anon/authenticated roles to access public tables
+-- ================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO anon, authenticated;
