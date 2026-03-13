@@ -3,10 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
+export type TagCategory = 'geral' | 'professionals' | 'relationships' | 'demands';
+
 export interface Tag {
   id: string;
   nome: string;
-  categoria: 'professionals' | 'relationships' | 'demands';
+  categoria: TagCategory;
   cor: string;
   created_by: string | null;
   created_at: string;
@@ -16,7 +18,7 @@ export interface Tag {
 
 export interface TagInsert {
   nome: string;
-  categoria: 'professionals' | 'relationships' | 'demands';
+  categoria: TagCategory;
   cor?: string;
 }
 

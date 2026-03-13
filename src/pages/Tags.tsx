@@ -10,13 +10,14 @@ import { TagDialog } from '@/components/tags/TagDialog';
 import type { Tag } from '@/hooks/useTags';
 
 const categoryMap: Record<string, { label: string; value: string }> = {
+  geral: { label: 'Geral', value: 'geral' },
   professionals: { label: 'Profissionais', value: 'professionals' },
   relationships: { label: 'Relacionamentos', value: 'relationships' },
   demands: { label: 'Demandas', value: 'demands' },
 };
 
 export default function Tags() {
-  const [activeTab, setActiveTab] = useState('professionals');
+  const [activeTab, setActiveTab] = useState('geral');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const { can } = usePermissions();

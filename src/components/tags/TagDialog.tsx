@@ -29,9 +29,9 @@ const PRESET_COLORS = [
 ];
 
 const tagSchema = z.object({
-  name: z.string().min(1, 'Nome e obrigatorio'),
-  category: z.enum(['professionals', 'relationships', 'demands']),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Cor invalida'),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  category: z.enum(['geral', 'professionals', 'relationships', 'demands']),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Cor inválida'),
 });
 
 type TagFormData = z.infer<typeof tagSchema>;
@@ -59,7 +59,7 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
     resolver: zodResolver(tagSchema),
     defaultValues: {
       name: '',
-      category: (defaultCategory as any) ?? 'professionals',
+      category: (defaultCategory as any) ?? 'geral',
       color: '#6B7280',
     },
   });
@@ -74,7 +74,7 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
     } else {
       reset({
         name: '',
-        category: (defaultCategory as any) ?? 'professionals',
+        category: (defaultCategory as any) ?? 'geral',
         color: '#6B7280',
       });
     }
@@ -113,12 +113,12 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
             <Select
               value={watchCategory}
               onValueChange={(v) => setValue('category', v as any)}
-              disabled={isEdit}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="geral">Geral</SelectItem>
                 <SelectItem value="professionals">Profissionais</SelectItem>
                 <SelectItem value="relationships">Relacionamentos</SelectItem>
                 <SelectItem value="demands">Demandas</SelectItem>
