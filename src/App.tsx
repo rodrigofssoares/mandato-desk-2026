@@ -17,6 +17,8 @@ import Demands from '@/pages/Demands';
 import Tags from '@/pages/Tags';
 import Leaders from '@/pages/Leaders';
 import Contacts from '@/pages/Contacts';
+import Users from '@/pages/Users';
+import Permissoes from '@/pages/Permissoes';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -150,7 +152,7 @@ function AppRoutes() {
           path="/users"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Usuários" />
+              <Users />
             </ProtectedRoute>
           }
         />
@@ -158,7 +160,7 @@ function AppRoutes() {
           path="/permissoes"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Permissões" />
+              <Permissoes />
             </ProtectedRoute>
           }
         />
