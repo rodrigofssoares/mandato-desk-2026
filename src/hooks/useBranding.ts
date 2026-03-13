@@ -6,6 +6,8 @@ export interface BrandingSettings {
   id: string;
   mandate_name: string;
   primary_color: string;
+  politician_name: string;
+  politician_photo_url: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -13,6 +15,8 @@ export interface BrandingSettings {
 const DEFAULT_BRANDING: Omit<BrandingSettings, 'id'> = {
   mandate_name: 'Meu Mandato',
   primary_color: '#0B63D1',
+  politician_name: '',
+  politician_photo_url: null,
 };
 
 export function useBranding() {
@@ -40,8 +44,12 @@ export function useUpdateBranding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { mandate_name: string; primary_color: string }) => {
-      // Check if a row exists
+    mutationFn: async (input: {
+      mandate_name?: string;
+      primary_color?: string;
+      politician_name?: string;
+      politician_photo_url?: string | null;
+    }) => {
       const { data: existing } = await supabase
         .from('branding_settings')
         .select('id')
@@ -61,7 +69,12 @@ export function useUpdateBranding() {
       } else {
         const { data, error } = await supabase
           .from('branding_settings')
-          .insert(input)
+          .insert({
+            mandate_name: input.mandate_name ?? DEFAULT_BRANDING.mandate_name,
+            primary_color: input.primary_color ?? DEFAULT_BRANDING.primary_color,
+            politician_name: input.politician_name ?? '',
+            politician_photo_url: input.politician_photo_url ?? null,
+          })
           .select()
           .single();
 
@@ -75,6 +88,33 @@ export function useUpdateBranding() {
     },
     onError: (error: Error) => {
       toast.error(`Erro ao salvar personalização: ${error.message}`);
+    },
+  });
+}
+
+export function useUploadPoliticianPhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `politician-photo-${Date.now()}.${fileExt}`;
+      const filePath = `branding/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('branding')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('branding')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao enviar foto: ${error.message}`);
     },
   });
 }

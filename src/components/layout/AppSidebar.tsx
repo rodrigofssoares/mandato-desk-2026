@@ -14,6 +14,7 @@ import {
   Webhook,
   Palette,
   LogOut,
+  User,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -30,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useBranding } from '@/hooks/useBranding';
 import { ROLE_LABELS, type Role } from '@/types/permissions';
 import type { Secao } from '@/types/permissions';
 import type { LucideIcon } from 'lucide-react';
@@ -79,6 +81,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
   const { can } = usePermissions();
+  const { data: branding } = useBranding();
 
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.alwaysVisible) return true;
@@ -90,14 +93,39 @@ export function AppSidebar() {
     ? ROLE_LABELS[profile.role as Role] ?? profile.role
     : '';
 
+  const hasPoliticianPhoto = branding?.politician_photo_url;
+  const politicianName = branding?.politician_name;
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-1">
-          <Shield className="h-5 w-5 text-primary" />
-          <span className="text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">
-            Mandato Desk
-          </span>
+        <div className="flex flex-col items-center gap-1.5 px-2 py-3 group-data-[collapsible=icon]:py-2">
+          {/* Avatar do político ou ícone padrão */}
+          {hasPoliticianPhoto ? (
+            <div className="w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden flex-shrink-0 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
+              <img
+                src={branding.politician_photo_url!}
+                alt={politicianName || 'Político'}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center flex-shrink-0 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
+              <User className="h-5 w-5 text-primary group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:w-4" />
+            </div>
+          )}
+
+          {/* Nome do político + "Mandato Desk" */}
+          <div className="text-center group-data-[collapsible=icon]:hidden">
+            {politicianName && (
+              <p className="text-sm font-semibold leading-tight truncate max-w-[160px]">
+                {politicianName}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground font-medium">
+              Mandato Desk
+            </p>
+          </div>
         </div>
       </SidebarHeader>
 

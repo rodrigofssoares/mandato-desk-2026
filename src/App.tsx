@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -203,16 +204,18 @@ function AppRoutes() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <ImpersonationProvider>
-            <TooltipProvider>
-              <Toaster richColors position="top-right" />
-              <AppRoutes />
-            </TooltipProvider>
-          </ImpersonationProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <BrowserRouter>
+          <AuthProvider>
+            <ImpersonationProvider>
+              <TooltipProvider>
+                <Toaster richColors position="top-right" />
+                <AppRoutes />
+              </TooltipProvider>
+            </ImpersonationProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
