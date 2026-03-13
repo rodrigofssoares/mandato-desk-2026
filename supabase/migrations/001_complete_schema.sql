@@ -43,7 +43,7 @@ BEGIN
 END;
 $$;
 
--- Check if a user is active (status_aprovacao = 'APROVADO')
+-- Check if a user is active (status_aprovacao = 'ATIVO')
 CREATE OR REPLACE FUNCTION is_user_active(user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -54,12 +54,12 @@ BEGIN
   RETURN EXISTS (
     SELECT 1 FROM profiles
     WHERE id = user_id
-      AND status_aprovacao = 'APROVADO'
+      AND status_aprovacao = 'ATIVO'
   );
 END;
 $$;
 
--- Check if user has a specific app_role
+-- Check if user has a specific role (checks profiles table)
 CREATE OR REPLACE FUNCTION has_role(_user_id UUID, _role app_role)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -67,11 +67,17 @@ SECURITY DEFINER
 STABLE
 AS $$
 BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM user_roles
-    WHERE user_id = _user_id
-      AND role = _role
-  );
+  IF _role::text = 'admin' THEN
+    RETURN EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = _user_id AND role = 'admin' AND status_aprovacao = 'ATIVO'
+    );
+  ELSE
+    RETURN EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = _user_id AND status_aprovacao = 'ATIVO'
+    );
+  END IF;
 END;
 $$;
 
