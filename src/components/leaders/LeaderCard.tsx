@@ -31,7 +31,7 @@ export function LeaderCard({ leader, onEdit, onDelete, canEdit, canDelete }: Lea
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="font-semibold text-base truncate">{leader.name}</h3>
+            <h3 className="font-semibold text-base truncate">{leader.nome}</h3>
             <Badge variant="secondary" className="mt-1 text-xs">
               {typeLabels[leader.leadership_type] ?? leader.leadership_type}
             </Badge>

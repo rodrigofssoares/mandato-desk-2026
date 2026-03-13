@@ -55,13 +55,13 @@ export function DemandCard({ demand, onClick }: DemandCardProps) {
           {demand.contact && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <User className="h-3 w-3" />
-              <span className="truncate">{demand.contact.name}</span>
+              <span className="truncate">{demand.contact.nome}</span>
             </div>
           )}
 
           {demand.responsible && (
             <div className="text-xs text-muted-foreground">
-              Responsavel: {demand.responsible.name}
+              Responsavel: {demand.responsible.nome}
             </div>
           )}
 
@@ -73,11 +73,11 @@ export function DemandCard({ demand, onClick }: DemandCardProps) {
                   variant="outline"
                   className="text-[10px] px-1.5 py-0"
                   style={{
-                    borderColor: dt.tags?.color ?? '#6B7280',
-                    color: dt.tags?.color ?? '#6B7280',
+                    borderColor: dt.tags?.cor ?? '#6B7280',
+                    color: dt.tags?.cor ?? '#6B7280',
                   }}
                 >
-                  {dt.tags?.name}
+                  {dt.tags?.nome}
                 </Badge>
               ))}
             </div>

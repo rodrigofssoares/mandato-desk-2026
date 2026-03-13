@@ -63,9 +63,9 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name')
+        .select('id, nome')
         .is('merged_into', null)
-        .order('name')
+        .order('nome')
         .limit(500);
       if (error) throw error;
       return data ?? [];
@@ -79,9 +79,9 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, nome')
         .eq('status_aprovacao', 'ATIVO')
-        .order('name');
+        .order('nome');
       if (error) throw error;
       return data ?? [];
     },
@@ -175,7 +175,7 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
     onOpenChange(false);
   };
 
-  const demandsTags = tags.filter((t) => t.category === 'demands');
+  const demandsTags = tags.filter((t) => t.categoria === 'demands');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,7 +252,7 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
                 <SelectItem value="_none">Nenhum</SelectItem>
                 {contacts.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.name}
+                    {c.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -272,7 +272,7 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
                 <SelectItem value="_none">Nenhum</SelectItem>
                 {profiles.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name}
+                    {p.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -305,11 +305,11 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
                         className="cursor-pointer transition-colors"
                         style={
                           isSelected
-                            ? { backgroundColor: tag.color, borderColor: tag.color }
-                            : { borderColor: tag.color, color: tag.color }
+                            ? { backgroundColor: tag.cor, borderColor: tag.cor }
+                            : { borderColor: tag.cor, color: tag.cor }
                         }
                       >
-                        {tag.name}
+                        {tag.nome}
                       </Badge>
                     </button>
                   );

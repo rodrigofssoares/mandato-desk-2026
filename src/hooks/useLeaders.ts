@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 export interface Leader {
   id: string;
-  name: string;
+  nome: string;
   leadership_type: 'assessor_parlamentar' | 'lider_regional' | 'coordenador_area' | 'mobilizador' | 'outro';
   region: string | null;
   city: string | null;
@@ -31,7 +31,7 @@ export interface LeaderFilters {
 }
 
 export interface LeaderInsert {
-  name: string;
+  nome: string;
   leadership_type?: 'assessor_parlamentar' | 'lider_regional' | 'coordenador_area' | 'mobilizador' | 'outro';
   region?: string;
   city?: string;
@@ -56,10 +56,10 @@ export function useLeaders(filters?: LeaderFilters) {
       let query = supabase
         .from('leaders')
         .select('*')
-        .order('name');
+        .order('nome');
 
       if (filters?.search) {
-        query = query.ilike('name', `%${filters.search}%`);
+        query = query.ilike('nome', `%${filters.search}%`);
       }
       if (filters?.leadership_type) {
         query = query.eq('leadership_type', filters.leadership_type);

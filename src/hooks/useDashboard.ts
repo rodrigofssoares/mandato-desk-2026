@@ -41,7 +41,7 @@ export function useContactStats() {
         .from('contacts')
         .select('*', { count: 'exact', head: true })
         .is('merged_into', null)
-        .not('address', 'is', null);
+        .not('logradouro', 'is', null);
       if (e4) throw e4;
 
       return {
@@ -143,7 +143,7 @@ export function useTagDistribution() {
 
       const { data: tags, error: e2 } = await supabase
         .from('tags')
-        .select('id, name, color');
+        .select('id, nome, cor');
       if (e2) throw e2;
 
       // Count contacts per tag
@@ -157,7 +157,7 @@ export function useTagDistribution() {
       const result = Object.entries(tagCountMap)
         .map(([tagId, count]) => {
           const tag = tagMap.get(tagId);
-          return tag ? { name: tag.name, color: tag.color, count } : null;
+          return tag ? { name: tag.nome, color: tag.cor, count } : null;
         })
         .filter(Boolean)
         .sort((a, b) => b!.count - a!.count)
@@ -200,9 +200,9 @@ export function useBirthdays() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name, birth_date')
+        .select('id, nome, data_nascimento')
         .is('merged_into', null)
-        .not('birth_date', 'is', null);
+        .not('data_nascimento', 'is', null);
 
       if (error) throw error;
 
@@ -222,8 +222,8 @@ export function useBirthdays() {
       const next7: BirthdayContact[] = [];
 
       (data ?? []).forEach((c) => {
-        if (!c.birth_date) return;
-        const bd = new Date(c.birth_date + 'T00:00:00');
+        if (!c.data_nascimento) return;
+        const bd = new Date(c.data_nascimento + 'T00:00:00');
         const bMonth = getMonth(bd);
         const bDay = getDate(bd);
         const bYear = bd.getFullYear();
@@ -233,7 +233,7 @@ export function useBirthdays() {
 
         // Check if birthday is today
         if (bMonth === todayMonth && bDay === todayDay) {
-          today.push({ id: c.id, name: c.name, birthDate: c.birth_date, displayDate, age });
+          today.push({ id: c.id, name: c.nome, birthDate: c.data_nascimento, displayDate, age });
           return;
         }
 
@@ -241,7 +241,7 @@ export function useBirthdays() {
         for (let i = 1; i <= 7; i++) {
           const futureDate = addDays(now, i);
           if (bMonth === getMonth(futureDate) && bDay === getDate(futureDate)) {
-            next7.push({ id: c.id, name: c.name, birthDate: c.birth_date, displayDate, age });
+            next7.push({ id: c.id, name: c.nome, birthDate: c.data_nascimento, displayDate, age });
             return;
           }
         }
@@ -263,7 +263,7 @@ export function useRecentActivities(
       const pageSize = 10;
       let query = supabase
         .from('activities')
-        .select('*, profiles:responsible_id(name)')
+        .select('*, profiles:responsible_id(nome)')
         .order('created_at', { ascending: false })
         .range(0, (page + 1) * pageSize - 1);
 
@@ -283,7 +283,7 @@ export function useRecentActivities(
         entityType: a.entity_type as string,
         entityName: a.entity_name as string | null,
         description: a.description as string | null,
-        responsibleName: a.profiles?.name ?? 'Sistema',
+        responsibleName: a.profiles?.nome ?? 'Sistema',
         createdAt: a.created_at as string,
       }));
     },
@@ -297,8 +297,8 @@ export function useProfilesList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name')
-        .order('name');
+        .select('id, nome')
+        .order('nome');
       if (error) throw error;
       return data ?? [];
     },

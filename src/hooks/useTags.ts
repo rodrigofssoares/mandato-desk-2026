@@ -5,9 +5,9 @@ import { toast } from 'sonner';
 
 export interface Tag {
   id: string;
-  name: string;
-  category: 'professionals' | 'relationships' | 'demands';
-  color: string;
+  nome: string;
+  categoria: 'professionals' | 'relationships' | 'demands';
+  cor: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -15,9 +15,9 @@ export interface Tag {
 }
 
 export interface TagInsert {
-  name: string;
-  category: 'professionals' | 'relationships' | 'demands';
-  color?: string;
+  nome: string;
+  categoria: 'professionals' | 'relationships' | 'demands';
+  cor?: string;
 }
 
 export interface TagUpdate extends Partial<TagInsert> {
@@ -34,10 +34,10 @@ export function useTags(category?: string) {
           *,
           contact_tags(count)
         `)
-        .order('name');
+        .order('nome');
 
       if (category) {
-        query = query.eq('category', category);
+        query = query.eq('categoria', category);
       }
 
       const { data, error } = await query;

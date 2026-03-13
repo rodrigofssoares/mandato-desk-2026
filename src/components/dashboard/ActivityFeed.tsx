@@ -83,7 +83,7 @@ export function ActivityFeed() {
               <SelectItem value="all">Todos</SelectItem>
               {(profiles ?? []).map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name || p.id.slice(0, 8)}
+                  {p.nome || p.id.slice(0, 8)}
                 </SelectItem>
               ))}
             </SelectContent>

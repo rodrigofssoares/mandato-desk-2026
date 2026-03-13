@@ -86,7 +86,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
   useEffect(() => {
     if (leader) {
       reset({
-        name: leader.name,
+        name: leader.nome,
         leadership_type: leader.leadership_type,
         whatsapp: leader.whatsapp ?? '',
         email: leader.email ?? '',
@@ -127,7 +127,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
       : [];
 
     const payload: any = {
-      name: data.name,
+      nome: data.name,
       leadership_type: data.leadership_type,
       whatsapp: data.whatsapp,
       region: data.region,

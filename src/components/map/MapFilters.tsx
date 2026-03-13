@@ -74,11 +74,11 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
                   onClick={() => toggleTag(tag.id)}
                   style={
                     filters.tags?.includes(tag.id)
-                      ? { backgroundColor: tag.color, borderColor: tag.color }
+                      ? { backgroundColor: tag.cor, borderColor: tag.cor }
                       : {}
                   }
                 >
-                  {tag.name}
+                  {tag.nome}
                 </Badge>
               ))}
             </div>

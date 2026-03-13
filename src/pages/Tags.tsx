@@ -23,7 +23,7 @@ export default function Tags() {
   const { data: tags = [], isLoading } = useTags();
   const deleteTag = useDeleteTag();
 
-  const filteredTags = tags.filter((t) => t.category === activeTab);
+  const filteredTags = tags.filter((t) => t.categoria === activeTab);
 
   const handleNewTag = () => {
     setEditingTag(null);
@@ -36,7 +36,7 @@ export default function Tags() {
   };
 
   const handleDeleteTag = async (tag: Tag) => {
-    if (!confirm(`Tem certeza que deseja excluir a etiqueta "${tag.name}"?`)) return;
+    if (!confirm(`Tem certeza que deseja excluir a etiqueta "${tag.nome}"?`)) return;
     await deleteTag.mutateAsync(tag.id);
   };
 
@@ -60,7 +60,7 @@ export default function Tags() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             {Object.entries(categoryMap).map(([key, { label }]) => {
-              const count = tags.filter((t) => t.category === key).length;
+              const count = tags.filter((t) => t.categoria === key).length;
               return (
                 <TabsTrigger key={key} value={key}>
                   {label} ({count})
@@ -84,10 +84,10 @@ export default function Tags() {
                       <CardContent className="p-4 flex items-center gap-3">
                         <div
                           className="w-4 h-4 rounded-full shrink-0"
-                          style={{ backgroundColor: tag.color }}
+                          style={{ backgroundColor: tag.cor }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{tag.name}</p>
+                          <p className="font-medium truncate">{tag.nome}</p>
                         </div>
                         <Badge variant="secondary" className="shrink-0 text-xs">
                           {tag.contact_count}

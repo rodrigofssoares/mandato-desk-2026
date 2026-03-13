@@ -41,7 +41,7 @@ export default function Leaders() {
   };
 
   const handleDeleteLeader = async (leader: Leader) => {
-    if (!confirm(`Tem certeza que deseja excluir a lideranca "${leader.name}"?`)) return;
+    if (!confirm(`Tem certeza que deseja excluir a lideranca "${leader.nome}"?`)) return;
     await deleteLeader.mutateAsync(leader.id);
   };
 

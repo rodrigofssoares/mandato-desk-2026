@@ -179,13 +179,13 @@ export default function BulkImport() {
           let { data: tag } = await supabase
             .from('tags')
             .select('id')
-            .eq('name', tagName)
+            .eq('nome', tagName)
             .maybeSingle();
 
           if (!tag) {
             const { data: newTag, error: tagErr } = await supabase
               .from('tags')
-              .insert({ name: tagName, category: 'relationships' })
+              .insert({ nome: tagName, categoria: 'relationships' })
               .select('id')
               .single();
             if (tagErr) throw tagErr;

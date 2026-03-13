@@ -67,9 +67,9 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
   useEffect(() => {
     if (tag) {
       reset({
-        name: tag.name,
-        category: tag.category,
-        color: tag.color,
+        name: tag.nome,
+        category: tag.categoria,
+        color: tag.cor,
       });
     } else {
       reset({
@@ -85,9 +85,9 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
 
   const onSubmit = async (data: TagFormData) => {
     if (isEdit) {
-      await updateTag.mutateAsync({ id: tag.id, name: data.name, category: data.category, color: data.color });
+      await updateTag.mutateAsync({ id: tag.id, nome: data.name, categoria: data.category, cor: data.color });
     } else {
-      await createTag.mutateAsync({ name: data.name, category: data.category, color: data.color });
+      await createTag.mutateAsync({ nome: data.name, categoria: data.category, cor: data.color });
     }
     onOpenChange(false);
   };

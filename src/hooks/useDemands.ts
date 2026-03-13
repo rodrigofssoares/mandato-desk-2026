@@ -7,9 +7,9 @@ export interface DemandTag {
   tag_id: string;
   tags: {
     id: string;
-    name: string;
-    color: string;
-    category: string;
+    nome: string;
+    cor: string;
+    categoria: string;
   };
 }
 
@@ -25,8 +25,8 @@ export interface Demand {
   neighborhood: string | null;
   created_at: string;
   updated_at: string;
-  contact: { name: string } | null;
-  responsible: { name: string } | null;
+  contact: { nome: string } | null;
+  responsible: { nome: string } | null;
   demand_tags: DemandTag[];
 }
 
@@ -59,9 +59,9 @@ export function useDemands(filters?: DemandFilters) {
         .from('demands')
         .select(`
           *,
-          contact:contacts!contact_id(name),
-          responsible:profiles!responsible_id(name),
-          demand_tags(tag_id, tags(id, name, color, category))
+          contact:contacts!contact_id(nome),
+          responsible:profiles!responsible_id(nome),
+          demand_tags(tag_id, tags(id, nome, cor, categoria))
         `)
         .order('created_at', { ascending: false });
 
