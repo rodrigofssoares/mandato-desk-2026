@@ -12,6 +12,11 @@ import { Loader2 } from 'lucide-react';
 import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/NotFound';
+import Dashboard from '@/pages/Dashboard';
+import Demands from '@/pages/Demands';
+import Tags from '@/pages/Tags';
+import Leaders from '@/pages/Leaders';
+import Contacts from '@/pages/Contacts';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,7 +94,7 @@ function AppRoutes() {
           path="/"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Dashboard" />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
@@ -97,7 +102,7 @@ function AppRoutes() {
           path="/contacts"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Contatos" />
+              <Contacts />
             </ProtectedRoute>
           }
         />
@@ -105,7 +110,7 @@ function AppRoutes() {
           path="/leaders"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Lideranças" />
+              <Leaders />
             </ProtectedRoute>
           }
         />
@@ -113,7 +118,7 @@ function AppRoutes() {
           path="/demands"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Demandas" />
+              <Demands />
             </ProtectedRoute>
           }
         />
@@ -121,7 +126,7 @@ function AppRoutes() {
           path="/tags"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Tags" />
+              <Tags />
             </ProtectedRoute>
           }
         />
