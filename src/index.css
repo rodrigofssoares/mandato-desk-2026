@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* shadcn HSL tokens — Light Mode */
+    --background: 210 20% 97%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 199 89% 48%;
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* OKLCH Design System tokens */
+    --color-bg: oklch(97% 0.005 90);
+    --color-surface: oklch(99% 0.002 90);
+    --color-muted: oklch(95% 0.008 90);
+    --color-border: oklch(90% 0.01 90);
+    --color-border-subtle: oklch(93% 0.008 90);
+    --color-text-primary: oklch(25% 0.015 260);
+    --color-text-secondary: oklch(45% 0.02 260);
+    --color-text-muted: oklch(55% 0.025 260);
+    --color-text-subtle: oklch(62% 0.025 260);
+
+    /* Layout */
+    --app-sidebar-width: 0px;
+    --app-safe-area-bottom: 0px;
+    --app-safe-area-top: 0px;
+    --app-bottom-nav-height: 0px;
+  }
+
+  .dark {
+    /* shadcn HSL tokens — Dark Mode */
+    --background: 222 47% 3%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 199 89% 48%;
+
+    /* Sidebar Dark */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* OKLCH Design System tokens — Dark */
+    --color-bg: oklch(11% 0.025 260);
+    --color-surface: oklch(15% 0.02 260);
+    --color-muted: oklch(22% 0.015 260);
+    --color-border: oklch(26% 0.012 260);
+    --color-border-subtle: oklch(22% 0.01 260 / 0.6);
+    --color-text-primary: oklch(98% 0.002 260);
+    --color-text-secondary: oklch(83% 0.015 260);
+    --color-text-muted: oklch(72% 0.02 260);
+    --color-text-subtle: oklch(62% 0.025 260);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Font Display */
+  .font-display {
+    font-family: var(--font-display, "Space Grotesk", sans-serif);
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: oklch(99% 0.002 90 / 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid oklch(90% 0.01 90 / 0.5);
+  }
+  .dark .glass {
+    background: oklch(15% 0.02 260 / 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid oklch(100% 0 0 / 0.05);
+  }
+
+  /* Background dots pattern */
+  .bg-dots {
+    background-image: radial-gradient(circle, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: rgb(148, 163, 184, 0.3);
+    border-radius: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: rgb(148, 163, 184, 0.5);
+  }
+
+  /* Focus ring */
+  .focus-visible-ring:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+  .dark .focus-visible-ring:focus-visible {
+    outline-color: #60a5fa;
+  }
+
+  .focus-visible-high:focus-visible {
+    outline: 3px solid #1d4ed8;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3);
+  }
+
+  /* Content visibility (performance) */
+  .cv-auto {
+    content-visibility: auto;
+  }
+  .cv-row-sm {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 40px;
+  }
+  .cv-row-md {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 60px;
+  }
+  .cv-row-lg {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 80px;
+  }
+  .cv-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 120px;
+  }
+  .cv-card-lg {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Leaflet z-index fix */
+.leaflet-pane {
+  z-index: 1 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 2 !important;
+}
