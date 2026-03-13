@@ -19,6 +19,12 @@ import Leaders from '@/pages/Leaders';
 import Contacts from '@/pages/Contacts';
 import Users from '@/pages/Users';
 import Permissoes from '@/pages/Permissoes';
+import LeadsMap from '@/pages/LeadsMap';
+import BulkImport from '@/pages/BulkImport';
+import GoogleIntegration from '@/pages/GoogleIntegration';
+import Api from '@/pages/Api';
+import Webhooks from '@/pages/Webhooks';
+import Branding from '@/pages/Branding';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,16 +36,6 @@ const queryClient = new QueryClient({
 });
 
 import { AppLayout } from '@/components/layout/AppLayout';
-
-// Placeholder genérico para páginas em construção
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <p className="text-muted-foreground mt-2">Em construção</p>
-    </div>
-  );
-}
 
 // Rota protegida — verifica autenticação e status de aprovação
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -136,7 +132,7 @@ function AppRoutes() {
           path="/leads-map"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Mapa de Leads" />
+              <LeadsMap />
             </ProtectedRoute>
           }
         />
@@ -144,7 +140,7 @@ function AppRoutes() {
           path="/bulk-import"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Importação em Massa" />
+              <BulkImport />
             </ProtectedRoute>
           }
         />
@@ -168,7 +164,7 @@ function AppRoutes() {
           path="/google-integration"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Integração Google" />
+              <GoogleIntegration />
             </ProtectedRoute>
           }
         />
@@ -176,7 +172,7 @@ function AppRoutes() {
           path="/api"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="API" />
+              <Api />
             </ProtectedRoute>
           }
         />
@@ -184,7 +180,7 @@ function AppRoutes() {
           path="/webhooks"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Webhooks" />
+              <Webhooks />
             </ProtectedRoute>
           }
         />
@@ -192,7 +188,7 @@ function AppRoutes() {
           path="/branding"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Branding" />
+              <Branding />
             </ProtectedRoute>
           }
         />
