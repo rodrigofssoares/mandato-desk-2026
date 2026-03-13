@@ -17,7 +17,16 @@
       "Bash(cd \"/c/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc -b --noEmit 2>&1 | head -50)",
       "Bash(cd \"/c/Users/Sporte/Antigravity/Mandato Desk 2026\" && curl -s -X POST \"https://api.supabase.com/v1/projects/nevgnvrwqaoztefnyqdj/database/query\" \\\\\n  -H \"Authorization: Bearer sbp_c464a97d69df1c84134b0e6ad228a28d55b1162d\" \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d \"{\\\\\"query\\\\\": \\\\\"SELECT 1 as test\\\\\"}\" 2>&1 | head -5)",
       "Bash(cd \"/c/Users/Sporte/Antigravity/Mandato Desk 2026\"\n\npython3 -c \"\nimport json, urllib.request, ssl\n\nwith open\\('supabase/migrations/001_complete_schema.sql', 'r', encoding='utf-8'\\) as f:\n    sql = f.read\\(\\)\n\npayload = json.dumps\\({'query': sql}\\).encode\\('utf-8'\\)\n\nreq = urllib.request.Request\\(\n    'https://api.supabase.com/v1/projects/nevgnvrwqaoztefnyqdj/database/query',\n    data=payload,\n    headers={\n        'Authorization': 'Bearer sbp_c464a97d69df1c84134b0e6ad228a28d55b1162d',\n        'Content-Type': 'application/json'\n    },\n    method='POST'\n\\)\n\nctx = ssl.create_default_context\\(\\)\ntry:\n    with urllib.request.urlopen\\(req, timeout=120, context=ctx\\) as resp:\n        result = resp.read\\(\\).decode\\('utf-8'\\)\n        print\\(result[:2000]\\)\nexcept urllib.error.HTTPError as e:\n    print\\(f'HTTP Error {e.code}:', e.read\\(\\).decode\\('utf-8'\\)[:2000]\\)\nexcept Exception as e:\n    print\\(f'Error: {e}'\\)\n\" 2>&1)",
-      "Bash(curl -s -X POST \"https://api.supabase.com/v1/projects/nevgnvrwqaoztefnyqdj/database/query\" \\\\\n  -H \"Authorization: Bearer sbp_c464a97d69df1c84134b0e6ad228a28d55b1162d\" \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d \"{\\\\\"query\\\\\": \\\\\"UPDATE profiles SET role = 'admin', status_aprovacao = 'ATIVO' WHERE id = '45f82960-51a4-49ec-9795-66639e656747'\\\\\"}\" 2>&1)"
+      "Bash(curl -s -X POST \"https://api.supabase.com/v1/projects/nevgnvrwqaoztefnyqdj/database/query\" \\\\\n  -H \"Authorization: Bearer sbp_c464a97d69df1c84134b0e6ad228a28d55b1162d\" \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d \"{\\\\\"query\\\\\": \\\\\"UPDATE profiles SET role = 'admin', status_aprovacao = 'ATIVO' WHERE id = '45f82960-51a4-49ec-9795-66639e656747'\\\\\"}\" 2>&1)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | head -50)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | head -80)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | head -60)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npm run build 2>&1 | tail -20)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npm run build 2>&1 | tail -15)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx shadcn@latest add collapsible alert-dialog --yes 2>&1)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | grep -E \"^src/\\(hooks/use\\(Demands|Tags|Leaders\\)|components/\\(demands|tags|leaders\\)|pages/\\(Demands|Tags|Leaders\\)\\)\")",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | head -20)",
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | grep -E \"useContacts|ContactFilters|ContactCard|ContactList|ContactDialog|ContactsPagination|ExportMenu|Contacts\\\\.tsx|contactValidation\")"
     ]
   }
 }
