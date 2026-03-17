@@ -23,8 +23,7 @@ export function useBranding() {
   return useQuery<BrandingSettings>({
     queryKey: ['branding'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('branding_settings')
+      const { data, error } = await (supabase.from('branding_settings') as any)
         .select('*')
         .limit(1)
         .maybeSingle();
@@ -50,15 +49,16 @@ export function useUpdateBranding() {
       politician_name?: string;
       politician_photo_url?: string | null;
     }) => {
-      const { data: existing } = await supabase
-        .from('branding_settings')
+      const { data: existing } = await (supabase.from('branding_settings') as any)
         .select('id')
         .limit(1)
         .maybeSingle();
 
+      // Cast to any to bypass Supabase schema cache that may not have the new columns yet
+      const table = supabase.from('branding_settings') as any;
+
       if (existing) {
-        const { data, error } = await supabase
-          .from('branding_settings')
+        const { data, error } = await table
           .update({ ...input, updated_at: new Date().toISOString() })
           .eq('id', existing.id)
           .select()
@@ -67,8 +67,7 @@ export function useUpdateBranding() {
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await supabase
-          .from('branding_settings')
+        const { data, error } = await table
           .insert({
             mandate_name: input.mandate_name ?? DEFAULT_BRANDING.mandate_name,
             primary_color: input.primary_color ?? DEFAULT_BRANDING.primary_color,
