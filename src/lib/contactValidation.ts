@@ -4,6 +4,7 @@ export const contactSchema = z.object({
   // Dados Pessoais
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(200),
   whatsapp: z.string().max(20).optional().or(z.literal('')),
+  em_canal_whatsapp: z.boolean().optional().default(false),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   telefone: z.string().max(20).optional().or(z.literal('')),
   genero: z.enum(['masculino', 'feminino', 'outro', 'prefiro_nao_informar']).optional().nullable(),

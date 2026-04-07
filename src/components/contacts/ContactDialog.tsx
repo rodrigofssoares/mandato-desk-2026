@@ -49,6 +49,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
     defaultValues: {
       nome: '',
       whatsapp: '',
+      em_canal_whatsapp: false,
       email: '',
       telefone: '',
       genero: null,
@@ -80,6 +81,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
       form.reset({
         nome: contact.nome ?? '',
         whatsapp: contact.whatsapp ?? '',
+        em_canal_whatsapp: contact.em_canal_whatsapp ?? false,
         email: contact.email ?? '',
         telefone: contact.telefone ?? '',
         genero: (contact.genero as ContactFormData['genero']) ?? null,
@@ -166,6 +168,14 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     <Label htmlFor="telefone">Telefone</Label>
                     <Input id="telefone" {...form.register('telefone')} placeholder="(00) 0000-0000" />
                   </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="em_canal_whatsapp"
+                    checked={form.watch('em_canal_whatsapp')}
+                    onCheckedChange={(checked) => form.setValue('em_canal_whatsapp', !!checked, { shouldDirty: true })}
+                  />
+                  <Label htmlFor="em_canal_whatsapp" className="cursor-pointer">Já está no canal do WhatsApp</Label>
                 </div>
                 <div>
                   <Label htmlFor="email">E-mail</Label>
