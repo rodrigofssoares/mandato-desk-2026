@@ -1,10 +1,11 @@
 import {
-  PieChart,
-  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,26 +33,18 @@ export function TagDistributionChart() {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="count"
-                nameKey="name"
-                cx="50%"
-                cy="45%"
-                outerRadius={90}
-                label={({ name, percent }) =>
-                  `${name} (${(percent * 100).toFixed(0)}%)`
-                }
-                labelLine={false}
-              >
-                {data.map((entry, idx) => (
-                  <Cell
-                    key={entry.name}
-                    fill={entry.color || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]}
-                  />
-                ))}
-              </Pie>
+            <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
+              <XAxis
+                dataKey="name"
+                angle={-35}
+                textAnchor="end"
+                interval={0}
+                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
@@ -61,8 +54,15 @@ export function TagDistributionChart() {
                 }}
                 formatter={(value: number) => [value, 'Contatos']}
               />
-              <Legend />
-            </PieChart>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                {data.map((entry, idx) => (
+                  <Cell
+                    key={entry.name}
+                    fill={entry.color || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         )}
       </CardContent>
