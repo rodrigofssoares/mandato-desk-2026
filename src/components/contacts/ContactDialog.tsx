@@ -325,14 +325,14 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                 <div>
                   <Label htmlFor="leader_id">Liderança vinculada</Label>
                   <Select
-                    value={form.watch('leader_id') ?? ''}
-                    onValueChange={(v) => form.setValue('leader_id', v || '', { shouldDirty: true })}
+                    value={form.watch('leader_id') || '__none__'}
+                    onValueChange={(v) => form.setValue('leader_id', v === '__none__' ? '' : v, { shouldDirty: true })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma liderança" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma</SelectItem>
+                      <SelectItem value="__none__">Nenhuma</SelectItem>
                       {leaders.map((l) => (
                         <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
                       ))}
