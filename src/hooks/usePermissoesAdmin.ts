@@ -7,11 +7,11 @@ export interface PermissaoPerfil {
   id: string;
   role: string;
   secao: string;
-  pode_visualizar: boolean;
+  pode_ver: boolean;
   pode_criar: boolean;
   pode_editar: boolean;
-  pode_excluir: boolean;
-  apenas_proprio: boolean;
+  pode_deletar: boolean;
+  so_proprio: boolean;
 }
 
 export function usePermissoesAll() {
@@ -44,7 +44,7 @@ export function useUpdatePermissao() {
       value,
     }: {
       id: string;
-      field: 'pode_visualizar' | 'pode_criar' | 'pode_editar' | 'pode_excluir' | 'apenas_proprio';
+      field: 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'so_proprio';
       value: boolean;
     }) => {
       const { error } = await supabase
@@ -55,7 +55,6 @@ export function useUpdatePermissao() {
       if (error) throw error;
     },
     onMutate: async ({ id, field, value }) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ['permissoes_perfil_all'] });
 
       const previous = queryClient.getQueryData<PermissaoPerfil[]>(['permissoes_perfil_all']);
@@ -80,8 +79,16 @@ export function useUpdatePermissao() {
 }
 
 // Seed padrão com as 70 linhas (5 roles x 14 seções)
-function generateDefaultPermissions(): Omit<PermissaoPerfil, 'id'>[] {
-  const defaults: Omit<PermissaoPerfil, 'id'>[] = [];
+function generateDefaultPermissions() {
+  const defaults: Array<{
+    role: string;
+    secao: string;
+    pode_ver: boolean;
+    pode_criar: boolean;
+    pode_editar: boolean;
+    pode_deletar: boolean;
+    so_proprio: boolean;
+  }> = [];
 
   const roleDefaults: Record<Role, {
     fullAccess: Secao[];
@@ -127,46 +134,43 @@ function generateDefaultPermissions(): Omit<PermissaoPerfil, 'id'>[] {
   for (const role of ROLES) {
     for (const secao of SECOES) {
       const config = roleDefaults[role];
-      let perm: Omit<PermissaoPerfil, 'id'>;
 
       if (config.fullAccess.includes(secao)) {
-        perm = {
+        defaults.push({
           role, secao,
-          pode_visualizar: true, pode_criar: true,
-          pode_editar: true, pode_excluir: true,
-          apenas_proprio: false,
-        };
+          pode_ver: true, pode_criar: true,
+          pode_editar: true, pode_deletar: true,
+          so_proprio: false,
+        });
       } else if (config.viewCreateEdit.includes(secao)) {
-        perm = {
+        defaults.push({
           role, secao,
-          pode_visualizar: true, pode_criar: true,
-          pode_editar: true, pode_excluir: false,
-          apenas_proprio: role === 'assessor' ? false : true,
-        };
+          pode_ver: true, pode_criar: true,
+          pode_editar: true, pode_deletar: false,
+          so_proprio: role === 'assessor' ? false : true,
+        });
       } else if (config.viewCreate.includes(secao)) {
-        perm = {
+        defaults.push({
           role, secao,
-          pode_visualizar: true, pode_criar: true,
-          pode_editar: false, pode_excluir: false,
-          apenas_proprio: true,
-        };
+          pode_ver: true, pode_criar: true,
+          pode_editar: false, pode_deletar: false,
+          so_proprio: true,
+        });
       } else if (config.viewOnly.includes(secao)) {
-        perm = {
+        defaults.push({
           role, secao,
-          pode_visualizar: true, pode_criar: false,
-          pode_editar: false, pode_excluir: false,
-          apenas_proprio: false,
-        };
+          pode_ver: true, pode_criar: false,
+          pode_editar: false, pode_deletar: false,
+          so_proprio: false,
+        });
       } else {
-        perm = {
+        defaults.push({
           role, secao,
-          pode_visualizar: false, pode_criar: false,
-          pode_editar: false, pode_excluir: false,
-          apenas_proprio: false,
-        };
+          pode_ver: false, pode_criar: false,
+          pode_editar: false, pode_deletar: false,
+          so_proprio: false,
+        });
       }
-
-      defaults.push(perm);
     }
   }
 
@@ -178,16 +182,18 @@ export function useSeedPermissoes() {
 
   return useMutation({
     mutationFn: async () => {
+      // Primeiro gera os defaults para garantir que temos dados antes de deletar
+      const defaults = generateDefaultPermissions();
+
       // Remove todas as permissões existentes
       const { error: deleteError } = await supabase
         .from('permissoes_perfil')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // deleta tudo
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (deleteError) throw deleteError;
 
-      // Insere os defaults
-      const defaults = generateDefaultPermissions();
+      // Insere os defaults com nomes corretos das colunas
       const { error: insertError } = await supabase
         .from('permissoes_perfil')
         .insert(defaults);

@@ -27,17 +27,17 @@ import { usePermissoesAll, useUpdatePermissao, useSeedPermissoes, type Permissao
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { ROLES, ROLE_LABELS, SECOES, SECAO_LABELS, type Role, type Secao } from '@/types/permissions';
 
-type PermField = 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'so_proprio';
+type PermField = 'pode_visualizar' | 'pode_criar' | 'pode_editar' | 'pode_excluir' | 'apenas_proprio';
 
 const FIELD_LABELS: Record<PermField, string> = {
-  pode_ver: 'Ver',
+  pode_visualizar: 'Ver',
   pode_criar: 'Criar',
   pode_editar: 'Editar',
-  pode_deletar: 'Deletar',
-  so_proprio: 'Só próprio',
+  pode_excluir: 'Deletar',
+  apenas_proprio: 'Só próprio',
 };
 
-const PERM_FIELDS: PermField[] = ['pode_ver', 'pode_criar', 'pode_editar', 'pode_deletar', 'so_proprio'];
+const PERM_FIELDS: PermField[] = ['pode_visualizar', 'pode_criar', 'pode_editar', 'pode_excluir', 'apenas_proprio'];
 
 export default function Permissoes() {
   const [roleFilter, setRoleFilter] = useState<'todos' | Role>('todos');
@@ -62,7 +62,7 @@ export default function Permissoes() {
   const getPermissao = (role: Role, secao: Secao) => permMap.get(`${role}:${secao}`);
 
   const handleToggle = (perm: PermissaoPerfil, field: PermField) => {
-    if (perm.role === 'admin') return; // Admin sempre tem tudo
+    if (perm.role === 'admin') return;
     updatePermissao.mutate({
       id: perm.id,
       field,
@@ -82,7 +82,6 @@ export default function Permissoes() {
             </p>
           </div>
         </div>
-
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" size="sm">
@@ -177,7 +176,6 @@ export default function Permissoes() {
                   {visibleRoles.map((role) => {
                     const perm = getPermissao(role, secao);
                     const isAdmin = role === 'admin';
-
                     return (
                       <TableCell key={`${role}:${secao}`} className="text-center">
                         {perm ? (
@@ -195,8 +193,8 @@ export default function Permissoes() {
                                     isAdmin
                                       ? 'opacity-50'
                                       : perm[field]
-                                      ? 'border-green-500 data-[state=checked]:bg-green-500'
-                                      : ''
+                                        ? 'border-green-500 data-[state=checked]:bg-green-500'
+                                        : ''
                                   }
                                 />
                                 <span className={perm[field] || isAdmin ? 'text-foreground' : 'text-muted-foreground'}>

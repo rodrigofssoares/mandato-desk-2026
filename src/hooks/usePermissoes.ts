@@ -7,11 +7,11 @@ interface PermissaoPerfil {
   id: string;
   role: string;
   secao: string;
-  pode_visualizar: boolean;
+  pode_ver: boolean;
   pode_criar: boolean;
   pode_editar: boolean;
-  pode_excluir: boolean;
-  apenas_proprio: boolean;
+  pode_deletar: boolean;
+  so_proprio: boolean;
 }
 
 export function usePermissoes(roleOverride?: Role) {
@@ -36,7 +36,7 @@ export function usePermissoes(roleOverride?: Role) {
       return data as PermissaoPerfil[];
     },
     enabled: !!activeRole,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
 
   const isAdminEffective = roleOverride ? roleOverride === 'admin' : isAdmin;
@@ -46,7 +46,7 @@ export function usePermissoes(roleOverride?: Role) {
 
   const canView = (secao: Secao): boolean => {
     if (isAdminEffective) return true;
-    return findPermissao(secao)?.pode_visualizar ?? false;
+    return findPermissao(secao)?.pode_ver ?? false;
   };
 
   const canCreate = (secao: Secao): boolean => {
@@ -61,12 +61,12 @@ export function usePermissoes(roleOverride?: Role) {
 
   const canDelete = (secao: Secao): boolean => {
     if (isAdminEffective) return true;
-    return findPermissao(secao)?.pode_excluir ?? false;
+    return findPermissao(secao)?.pode_deletar ?? false;
   };
 
   const isOwnOnly = (secao: Secao): boolean => {
     if (isAdminEffective) return false;
-    return findPermissao(secao)?.apenas_proprio ?? false;
+    return findPermissao(secao)?.so_proprio ?? false;
   };
 
   return {

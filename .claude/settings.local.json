@@ -26,7 +26,10 @@
       "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx shadcn@latest add collapsible alert-dialog --yes 2>&1)",
       "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | grep -E \"^src/\\(hooks/use\\(Demands|Tags|Leaders\\)|components/\\(demands|tags|leaders\\)|pages/\\(Demands|Tags|Leaders\\)\\)\")",
       "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | head -20)",
-      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | grep -E \"useContacts|ContactFilters|ContactCard|ContactList|ContactDialog|ContactsPagination|ExportMenu|Contacts\\\\.tsx|contactValidation\")"
+      "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | grep -E \"useContacts|ContactFilters|ContactCard|ContactList|ContactDialog|ContactsPagination|ExportMenu|Contacts\\\\.tsx|contactValidation\")",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__execute_sql"
     ]
   }
 }
