@@ -37,7 +37,7 @@ const eventGroups: { label: string; prefix: string }[] = [
   { label: 'Contatos', prefix: 'contact.' },
   { label: 'Demandas', prefix: 'demand.' },
   { label: 'Etiquetas', prefix: 'tag.' },
-  { label: 'Liderancas', prefix: 'leader.' },
+  { label: 'Articuladores', prefix: 'leader.' },
   { label: 'Outros', prefix: 'branding.' },
 ];
 

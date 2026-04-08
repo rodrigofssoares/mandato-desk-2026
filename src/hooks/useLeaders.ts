@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 export interface Leader {
   id: string;
   nome: string;
-  leadership_type: 'assessor_parlamentar' | 'lider_regional' | 'coordenador_area' | 'mobilizador' | 'outro';
+  leadership_type: 'assessor_parlamentar' | 'lider_regional' | 'coordenador_area' | 'mobilizador' | 'multiplicador' | 'outro';
   region: string | null;
   city: string | null;
   neighborhoods: string[] | null;
@@ -124,10 +124,10 @@ export function useCreateLeader() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
-      toast.success('Lideranca criada com sucesso');
+      toast.success('Articulador criado com sucesso');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao criar lideranca: ${error.message}`);
+      toast.error(`Erro ao criar articulador: ${error.message}`);
     },
   });
 }
@@ -151,10 +151,10 @@ export function useUpdateLeader() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
-      toast.success('Lideranca atualizada com sucesso');
+      toast.success('Articulador atualizado com sucesso');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao atualizar lideranca: ${error.message}`);
+      toast.error(`Erro ao atualizar articulador: ${error.message}`);
     },
   });
 }
@@ -169,10 +169,10 @@ export function useDeleteLeader() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
-      toast.success('Lideranca excluida com sucesso');
+      toast.success('Articulador excluido com sucesso');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao excluir lideranca: ${error.message}`);
+      toast.error(`Erro ao excluir articulador: ${error.message}`);
     },
   });
 }

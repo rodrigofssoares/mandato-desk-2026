@@ -47,7 +47,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/', secao: 'dashboard', alwaysVisible: true },
   { label: 'Contatos', icon: Users, href: '/contacts', secao: 'contatos' },
-  { label: 'Liderancas', icon: Crown, href: '/leaders', secao: 'liderancas' },
+  { label: 'Articuladores', icon: Crown, href: '/leaders', secao: 'liderancas' },
   { label: 'Demandas', icon: ClipboardList, href: '/demands', secao: 'demandas' },
   { label: 'Etiquetas', icon: Tags, href: '/tags', secao: 'etiquetas' },
   { label: 'Mapa', icon: MapPin, href: '/leads-map', secao: 'mapa' },

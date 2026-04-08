@@ -32,7 +32,7 @@ export const MERGEABLE_FIELDS: { key: MergeableFieldKey; label: string }[] = [
   { key: 'youtube', label: 'YouTube' },
   { key: 'declarou_voto', label: 'Declarou Voto' },
   { key: 'ranking', label: 'Ranking' },
-  { key: 'leader_id', label: 'Lideranca' },
+  { key: 'leader_id', label: 'Articulador' },
   { key: 'origem', label: 'Origem' },
   { key: 'observacoes', label: 'Observacoes' },
   { key: 'notas_assessor', label: 'Notas do Assessor' },

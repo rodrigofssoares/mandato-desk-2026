@@ -31,6 +31,7 @@ const leaderSchema = z.object({
     'lider_regional',
     'coordenador_area',
     'mobilizador',
+    'multiplicador',
     'outro',
   ]),
   whatsapp: z.string().min(1, 'WhatsApp e obrigatorio'),
@@ -154,7 +155,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? 'Editar Lideranca' : 'Nova Lideranca'}
+            {isEdit ? 'Editar Articulador' : 'Novo Articulador'}
           </DialogTitle>
         </DialogHeader>
 
@@ -181,6 +182,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
                 <SelectItem value="lider_regional">Lider Regional</SelectItem>
                 <SelectItem value="coordenador_area">Coordenador de Area</SelectItem>
                 <SelectItem value="mobilizador">Mobilizador</SelectItem>
+                <SelectItem value="multiplicador">Multiplicador</SelectItem>
                 <SelectItem value="outro">Outro</SelectItem>
               </SelectContent>
             </Select>

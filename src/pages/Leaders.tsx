@@ -41,18 +41,18 @@ export default function Leaders() {
   };
 
   const handleDeleteLeader = async (leader: Leader) => {
-    if (!confirm(`Tem certeza que deseja excluir a lideranca "${leader.nome}"?`)) return;
+    if (!confirm(`Tem certeza que deseja excluir o articulador "${leader.nome}"?`)) return;
     await deleteLeader.mutateAsync(leader.id);
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Liderancas</h1>
+        <h1 className="text-2xl font-bold">Articuladores</h1>
         {can.createLeader() && (
           <Button onClick={handleNewLeader}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Lideranca
+            Novo Articulador
           </Button>
         )}
       </div>
@@ -61,7 +61,7 @@ export default function Leaders() {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar liderancas..."
+            placeholder="Buscar articuladores..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -77,6 +77,7 @@ export default function Leaders() {
             <SelectItem value="lider_regional">Lider Regional</SelectItem>
             <SelectItem value="coordenador_area">Coordenador de Area</SelectItem>
             <SelectItem value="mobilizador">Mobilizador</SelectItem>
+            <SelectItem value="multiplicador">Multiplicador</SelectItem>
             <SelectItem value="outro">Outro</SelectItem>
           </SelectContent>
         </Select>
@@ -98,10 +99,10 @@ export default function Leaders() {
         </div>
       ) : leaders.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-muted-foreground text-lg">Nenhuma lideranca encontrada</p>
+          <p className="text-muted-foreground text-lg">Nenhum articulador encontrado</p>
           {!search && typeFilter === 'all' && statusFilter === 'all' && (
             <p className="text-muted-foreground text-sm mt-1">
-              Clique em "Nova Lideranca" para comecar
+              Clique em "Novo Articulador" para comecar
             </p>
           )}
         </div>

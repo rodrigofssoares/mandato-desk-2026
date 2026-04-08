@@ -10,7 +10,7 @@ import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
   '/contacts': 'Contatos',
-  '/leaders': 'Liderancas',
+  '/leaders': 'Articuladores',
   '/demands': 'Demandas',
   '/tags': 'Etiquetas',
   '/leads-map': 'Mapa de Leads',

@@ -27,7 +27,7 @@ export type Secao = typeof SECOES[number];
 export const SECAO_LABELS: Record<Secao, string> = {
   dashboard: 'Dashboard',
   contatos: 'Contatos',
-  liderancas: 'Liderancas',
+  liderancas: 'Articuladores',
   demandas: 'Demandas',
   etiquetas: 'Etiquetas',
   mapa: 'Mapa de Leads',

@@ -17,6 +17,7 @@ const typeLabels: Record<string, string> = {
   lider_regional: 'Lider Regional',
   coordenador_area: 'Coordenador de Area',
   mobilizador: 'Mobilizador',
+  multiplicador: 'Multiplicador',
   outro: 'Outro',
 };
 
