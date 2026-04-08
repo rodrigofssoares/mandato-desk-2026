@@ -53,6 +53,7 @@ const HEADER_MAP: Record<string, string> = {
   whatsapp: 'whatsapp',
   whatsapp_habilitado: 'whatsapp_habilitado',
   nome_whatsapp: 'nome_whatsapp',
+  aceita_whatsapp: 'aceita_whatsapp',
   email: 'email',
   telefone: 'telefone',
   genero: 'genero',
@@ -75,6 +76,23 @@ const HEADER_MAP: Record<string, string> = {
   declarou_voto: 'declarou_voto',
   etiquetas: 'etiquetas',
   tags: 'etiquetas',
+  data_nascimento: 'data_nascimento',
+  data_de_nascimento: 'data_nascimento',
+  nascimento: 'data_nascimento',
+  instagram: 'instagram',
+  twitter: 'twitter',
+  tiktok: 'tiktok',
+  youtube: 'youtube',
+  ranking: 'ranking',
+  leader_id: 'leader_id',
+  lideranca_id: 'leader_id',
+  liderança_id: 'leader_id',
+  favorito: 'is_favorite',
+  is_favorite: 'is_favorite',
+  e_multiplicador: 'e_multiplicador',
+  multiplicador: 'e_multiplicador',
+  ultimo_contato: 'ultimo_contato',
+  último_contato: 'ultimo_contato',
 };
 
 const PHASE_LABELS: Record<Phase, string> = {
@@ -124,10 +142,12 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     const wb = XLSX.utils.book_new();
 
     const headers = [
-      'nome_completo', 'whatsapp', 'email', 'telefone', 'genero',
+      'nome_completo', 'nome_whatsapp', 'whatsapp', 'whatsapp_habilitado', 'aceita_whatsapp',
+      'e_multiplicador', 'email', 'telefone', 'genero', 'data_nascimento',
       'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
-      'origem', 'observacoes', 'notas_assessor', 'declarou_voto', 'etiquetas',
-      'whatsapp_habilitado', 'nome_whatsapp',
+      'instagram', 'twitter', 'tiktok', 'youtube',
+      'declarou_voto', 'ranking', 'leader_id', 'favorito',
+      'origem', 'observacoes', 'notas_assessor', 'ultimo_contato', 'etiquetas',
     ];
     const wsContatos = XLSX.utils.aoa_to_sheet([headers]);
     wsContatos['!cols'] = headers.map(() => ({ wch: 20 }));
@@ -136,10 +156,15 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     const instructions = [
       ['Campo', 'Obrigatório', 'Formato'],
       ['nome_completo', 'SIM', 'Texto, máx 255 caracteres'],
+      ['nome_whatsapp', 'Não', 'Nome de exibição no WhatsApp'],
       ['whatsapp', 'SIM', 'Apenas dígitos, ex: 5511999887766'],
+      ['whatsapp_habilitado', 'Não', 'sim ou nao'],
+      ['aceita_whatsapp', 'Não', 'Aceita receber mensagens: sim/não'],
+      ['e_multiplicador', 'Não', 'É multiplicador: sim/não'],
       ['email', 'Não', 'email@exemplo.com'],
       ['telefone', 'Não', 'Apenas dígitos'],
       ['genero', 'Não', 'masculino, feminino ou outro'],
+      ['data_nascimento', 'Não', 'YYYY-MM-DD (ex: 1990-05-15)'],
       ['endereco', 'Não', 'Logradouro/Rua, máx 500 chars'],
       ['numero', 'Não', 'Número do endereço'],
       ['complemento', 'Não', 'Apto, bloco, etc'],
@@ -147,13 +172,19 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       ['cidade', 'Não', 'Máx 255 caracteres'],
       ['uf', 'Não', 'Sigla do estado, 2 caracteres (ex: SP)'],
       ['cep', 'Não', 'Com ou sem hífen (ex: 12345-678)'],
+      ['instagram', 'Não', 'Usuário ou URL do Instagram'],
+      ['twitter', 'Não', 'Usuário ou URL do Twitter/X'],
+      ['tiktok', 'Não', 'Usuário ou URL do TikTok'],
+      ['youtube', 'Não', 'Usuário ou URL do YouTube'],
+      ['declarou_voto', 'Não', 'sim ou nao'],
+      ['ranking', 'Não', 'Número de 0 a 10'],
+      ['leader_id', 'Não', 'UUID da liderança vinculada'],
+      ['favorito', 'Não', 'sim ou nao'],
       ['origem', 'Não', 'Fonte do contato'],
       ['observacoes', 'Não', 'Máx 2000 caracteres'],
       ['notas_assessor', 'Não', 'Notas internas, máx 2000 chars'],
-      ['declarou_voto', 'Não', 'sim ou nao'],
+      ['ultimo_contato', 'Não', 'YYYY-MM-DD (data do último contato)'],
       ['etiquetas', 'Não', 'Nomes separados por vírgula'],
-      ['whatsapp_habilitado', 'Não', 'sim ou nao'],
-      ['nome_whatsapp', 'Não', 'Nome de exibição no WhatsApp'],
     ];
     const wsInstrucoes = XLSX.utils.aoa_to_sheet(instructions);
     wsInstrucoes['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 45 }];
@@ -214,9 +245,16 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         if (raw.genero) normalized.genero = raw.genero.toLowerCase();
         if (raw.declarou_voto) normalized.declarou_voto = parseBoolean(raw.declarou_voto);
         if (raw.whatsapp_habilitado) normalized.whatsapp_habilitado = parseBoolean(raw.whatsapp_habilitado);
+        if (raw.aceita_whatsapp) normalized.aceita_whatsapp = parseBoolean(raw.aceita_whatsapp);
+        if (raw.e_multiplicador) normalized.e_multiplicador = parseBoolean(raw.e_multiplicador);
+        if (raw.is_favorite) normalized.is_favorite = parseBoolean(raw.is_favorite);
+        if (raw.ranking) {
+          const r = parseInt(raw.ranking, 10);
+          if (!isNaN(r) && r >= 0 && r <= 10) normalized.ranking = r;
+        }
 
         // Pass through text fields
-        ['nome_whatsapp', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'origem', 'observacoes', 'notas_assessor', 'etiquetas'].forEach((f) => {
+        ['nome_whatsapp', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'origem', 'observacoes', 'notas_assessor', 'etiquetas', 'data_nascimento', 'instagram', 'twitter', 'tiktok', 'youtube', 'leader_id', 'ultimo_contato'].forEach((f) => {
           if (raw[f]) normalized[f] = raw[f];
         });
 
@@ -318,6 +356,17 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         if (n.declarou_voto !== undefined) obj.declarou_voto = n.declarou_voto;
         if (n.whatsapp_habilitado !== undefined) obj.em_canal_whatsapp = n.whatsapp_habilitado;
         if (n.nome_whatsapp) obj.nome_whatsapp = n.nome_whatsapp;
+        if (n.aceita_whatsapp !== undefined) obj.aceita_whatsapp = n.aceita_whatsapp;
+        if (n.e_multiplicador !== undefined) obj.e_multiplicador = n.e_multiplicador;
+        if (n.data_nascimento) obj.data_nascimento = n.data_nascimento;
+        if (n.instagram) obj.instagram = n.instagram;
+        if (n.twitter) obj.twitter = n.twitter;
+        if (n.tiktok) obj.tiktok = n.tiktok;
+        if (n.youtube) obj.youtube = n.youtube;
+        if (n.ranking !== undefined) obj.ranking = n.ranking;
+        if (n.leader_id) obj.leader_id = n.leader_id;
+        if (n.is_favorite !== undefined) obj.is_favorite = n.is_favorite;
+        if (n.ultimo_contato) obj.ultimo_contato = n.ultimo_contato;
         return obj;
       });
 
@@ -367,6 +416,17 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       if (n.declarou_voto !== undefined) updates.declarou_voto = n.declarou_voto;
       if (n.whatsapp_habilitado !== undefined) updates.em_canal_whatsapp = n.whatsapp_habilitado;
       if (n.nome_whatsapp) updates.nome_whatsapp = n.nome_whatsapp;
+      if (n.aceita_whatsapp !== undefined) updates.aceita_whatsapp = n.aceita_whatsapp;
+      if (n.e_multiplicador !== undefined) updates.e_multiplicador = n.e_multiplicador;
+      if (n.data_nascimento) updates.data_nascimento = n.data_nascimento;
+      if (n.instagram) updates.instagram = n.instagram;
+      if (n.twitter) updates.twitter = n.twitter;
+      if (n.tiktok) updates.tiktok = n.tiktok;
+      if (n.youtube) updates.youtube = n.youtube;
+      if (n.ranking !== undefined) updates.ranking = n.ranking;
+      if (n.leader_id) updates.leader_id = n.leader_id;
+      if (n.is_favorite !== undefined) updates.is_favorite = n.is_favorite;
+      if (n.ultimo_contato) updates.ultimo_contato = n.ultimo_contato;
 
       if (Object.keys(updates).length === 0) {
         importStats.skipped++;

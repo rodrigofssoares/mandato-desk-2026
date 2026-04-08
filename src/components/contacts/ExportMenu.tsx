@@ -21,8 +21,11 @@ interface ExportMenuProps {
 const COL_WIDTHS = [
   { wch: 36 }, // id
   { wch: 25 }, // Nome
+  { wch: 20 }, // Nome WhatsApp
   { wch: 15 }, // WhatsApp
   { wch: 18 }, // WhatsApp Habilitado
+  { wch: 18 }, // Aceita WhatsApp
+  { wch: 15 }, // Multiplicador
   { wch: 25 }, // Email
   { wch: 15 }, // Telefone
   { wch: 12 }, // Gênero
@@ -41,11 +44,14 @@ const COL_WIDTHS = [
   { wch: 15 }, // Declarou Voto
   { wch: 8 },  // Ranking
   { wch: 10 }, // Favorito
+  { wch: 36 }, // Liderança ID
   { wch: 15 }, // Origem
   { wch: 30 }, // Observações
   { wch: 30 }, // Notas Assessor
+  { wch: 20 }, // Último Contato
   { wch: 25 }, // Etiquetas
   { wch: 14 }, // Criado em
+  { wch: 14 }, // Atualizado em
 ];
 
 async function fetchAllContactsPaginated(filters: ContactFilters, ignoreFilters = false) {
@@ -88,8 +94,11 @@ function contactsToRows(contacts: any[]) {
   return contacts.map((c: Record<string, unknown>) => ({
     id: c.id ?? '',
     Nome: c.nome ?? '',
+    'Nome WhatsApp': c.nome_whatsapp ?? '',
     WhatsApp: c.whatsapp ?? '',
     'WhatsApp Habilitado': c.em_canal_whatsapp ? 'Sim' : 'Não',
+    'Aceita WhatsApp': c.aceita_whatsapp ? 'Sim' : 'Não',
+    Multiplicador: c.e_multiplicador ? 'Sim' : 'Não',
     Email: c.email ?? '',
     Telefone: c.telefone ?? '',
     'Gênero': c.genero ?? '',
@@ -108,13 +117,16 @@ function contactsToRows(contacts: any[]) {
     'Declarou Voto': c.declarou_voto ? 'Sim' : 'Não',
     Ranking: c.ranking ?? 0,
     Favorito: c.is_favorite ? 'Sim' : 'Não',
+    'Liderança ID': c.leader_id ?? '',
     Origem: c.origem ?? '',
     'Observações': c.observacoes ?? '',
     'Notas Assessor': c.notas_assessor ?? '',
+    'Último Contato': c.ultimo_contato ?? '',
     Etiquetas: Array.isArray(c.contact_tags)
       ? (c.contact_tags as Array<{ tags: { nome: string } }>).map((ct) => ct.tags?.nome).filter(Boolean).join(', ')
       : '',
     'Criado em': c.created_at ?? '',
+    'Atualizado em': c.updated_at ?? '',
   }));
 }
 
