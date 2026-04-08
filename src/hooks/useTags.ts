@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 
 export type TagCategory = 'geral' | 'professionals' | 'relationships' | 'demands';
 
@@ -71,9 +72,10 @@ export function useCreateTag() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Etiqueta criada com sucesso');
+      logActivity({ type: 'create', entity_type: 'tag', entity_name: data.nome, entity_id: data.id, description: `Criou a etiqueta "${data.nome}"` });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar etiqueta: ${error.message}`);
@@ -101,6 +103,7 @@ export function useUpdateTag() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Etiqueta atualizada com sucesso');
+      logActivity({ type: 'update', entity_type: 'tag', description: 'Atualizou uma etiqueta' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar etiqueta: ${error.message}`);
@@ -119,6 +122,7 @@ export function useDeleteTag() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Etiqueta excluída com sucesso');
+      logActivity({ type: 'delete', entity_type: 'tag', description: 'Excluiu uma etiqueta' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir etiqueta: ${error.message}`);

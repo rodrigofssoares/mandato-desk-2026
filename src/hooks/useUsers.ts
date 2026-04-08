@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Role } from '@/types/permissions';
+import { logActivity } from '@/lib/activityLog';
 
 export interface UserProfile {
   id: string;
@@ -49,6 +50,7 @@ export function useUpdateUserRole() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Cargo atualizado com sucesso');
+      logActivity({ type: 'update', entity_type: 'user', description: 'Alterou role de um usuario' });
     },
     onError: (error) => {
       console.error('Erro ao atualizar cargo:', error);
@@ -78,6 +80,7 @@ export function useUpdateUserStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Status atualizado com sucesso');
+      logActivity({ type: 'status_change', entity_type: 'user', description: 'Alterou status de um usuario' });
     },
     onError: (error) => {
       console.error('Erro ao atualizar status:', error);
@@ -103,6 +106,7 @@ export function useDeleteUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuário desativado com sucesso');
+      logActivity({ type: 'status_change', entity_type: 'user', description: 'Desativou um usuario' });
     },
     onError: (error) => {
       console.error('Erro ao desativar usuário:', error);
@@ -161,6 +165,7 @@ export function useCreateUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuário criado com sucesso');
+      logActivity({ type: 'create', entity_type: 'user', description: 'Criou um usuario' });
     },
     onError: (error) => {
       console.error('Erro ao criar usuário:', error);

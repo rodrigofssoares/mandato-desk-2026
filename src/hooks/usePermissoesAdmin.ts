@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ROLES, SECOES, type Role, type Secao } from '@/types/permissions';
+import { logActivity } from '@/lib/activityLog';
 
 export interface PermissaoPerfil {
   id: string;
@@ -64,6 +65,9 @@ export function useUpdatePermissao() {
       );
 
       return { previous };
+    },
+    onSuccess: () => {
+      logActivity({ type: 'update', entity_type: 'permission', description: 'Atualizou permissoes de um perfil' });
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
@@ -204,6 +208,7 @@ export function useSeedPermissoes() {
       queryClient.invalidateQueries({ queryKey: ['permissoes_perfil_all'] });
       queryClient.invalidateQueries({ queryKey: ['permissoes_perfil'] });
       toast.success('Permissões restauradas para o padrão');
+      logActivity({ type: 'create', entity_type: 'permission', description: 'Semeou permissoes iniciais' });
     },
     onError: (error) => {
       console.error('Erro ao restaurar permissões:', error);

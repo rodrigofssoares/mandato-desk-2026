@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 
 export interface Leader {
   id: string;
@@ -122,9 +123,10 @@ export function useCreateLeader() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
       toast.success('Articulador criado com sucesso');
+      logActivity({ type: 'create', entity_type: 'leader', entity_name: data.nome, entity_id: data.id, description: `Criou o articulador "${data.nome}"` });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar articulador: ${error.message}`);
@@ -152,6 +154,7 @@ export function useUpdateLeader() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
       toast.success('Articulador atualizado com sucesso');
+      logActivity({ type: 'update', entity_type: 'leader', description: 'Atualizou um articulador' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar articulador: ${error.message}`);
@@ -170,6 +173,7 @@ export function useDeleteLeader() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
       toast.success('Articulador excluido com sucesso');
+      logActivity({ type: 'delete', entity_type: 'leader', description: 'Excluiu um articulador' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir articulador: ${error.message}`);

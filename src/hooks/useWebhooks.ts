@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 
 // ---------- Types ----------
 
@@ -106,6 +107,7 @@ export function useCreateWebhook() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       toast.success('Webhook criado com sucesso');
+      logActivity({ type: 'create', entity_type: 'permission', description: 'Criou um webhook' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar webhook: ${error.message}`);
@@ -135,6 +137,7 @@ export function useUpdateWebhook() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       toast.success('Webhook atualizado com sucesso');
+      logActivity({ type: 'update', entity_type: 'permission', description: 'Atualizou um webhook' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar webhook: ${error.message}`);
@@ -155,6 +158,7 @@ export function useDeleteWebhook() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       toast.success('Webhook excluído com sucesso');
+      logActivity({ type: 'delete', entity_type: 'permission', description: 'Excluiu um webhook' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir webhook: ${error.message}`);

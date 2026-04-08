@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 
 export interface DemandTag {
   tag_id: string;
@@ -110,9 +111,10 @@ export function useCreateDemand() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
       toast.success('Demanda criada com sucesso');
+      logActivity({ type: 'create', entity_type: 'demand', entity_name: data.title, entity_id: data.id, description: `Criou a demanda "${data.title}"` });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar demanda: ${error.message}`);
@@ -154,6 +156,7 @@ export function useUpdateDemand() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
       toast.success('Demanda atualizada com sucesso');
+      logActivity({ type: 'update', entity_type: 'demand', description: 'Atualizou uma demanda' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar demanda: ${error.message}`);
@@ -172,6 +175,7 @@ export function useDeleteDemand() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
       toast.success('Demanda excluída com sucesso');
+      logActivity({ type: 'delete', entity_type: 'demand', description: 'Excluiu uma demanda' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir demanda: ${error.message}`);

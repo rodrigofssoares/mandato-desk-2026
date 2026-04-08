@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 
 // ---------- Types ----------
 
@@ -290,6 +291,7 @@ export function useMergeContacts() {
       queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contatos mesclados com sucesso');
+      logActivity({ type: 'merge', entity_type: 'contact', description: 'Mesclou contatos duplicados' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao mesclar contatos: ${error.message}`);
@@ -312,6 +314,7 @@ export function useDeleteSingleDuplicate() {
       queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato excluido com sucesso');
+      logActivity({ type: 'delete', entity_type: 'contact', description: 'Excluiu um contato duplicado' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir contato: ${error.message}`);
@@ -367,6 +370,7 @@ export function useBulkDeleteDuplicates() {
       toast.success(
         `${deletedCount} contato${deletedCount !== 1 ? 's' : ''} duplicado${deletedCount !== 1 ? 's' : ''} removido${deletedCount !== 1 ? 's' : ''} com sucesso`
       );
+      logActivity({ type: 'bulk_delete', entity_type: 'contact', description: `Excluiu ${deletedCount} contatos duplicados` });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao remover duplicatas: ${error.message}`);

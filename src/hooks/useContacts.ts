@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ContactFormData } from '@/lib/contactValidation';
+import { logActivity } from '@/lib/activityLog';
 
 // ---------- Types ----------
 
@@ -291,9 +292,10 @@ export function useCreateContact() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast.success('Contato criado com sucesso');
+      logActivity({ type: 'create', entity_type: 'contact', entity_name: data.nome, entity_id: data.id, description: `Criou o contato "${data.nome}"` });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar contato: ${error.message}`);
@@ -341,6 +343,7 @@ export function useUpdateContact() {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['contact', variables.id] });
       toast.success('Contato atualizado com sucesso');
+      logActivity({ type: 'update', entity_type: 'contact', entity_id: variables.id, description: `Atualizou o contato` });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar contato: ${error.message}`);
@@ -362,6 +365,7 @@ export function useDeleteContact() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast.success('Contato excluído com sucesso');
+      logActivity({ type: 'delete', entity_type: 'contact', description: 'Excluiu um contato' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir contato: ${error.message}`);
