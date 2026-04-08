@@ -49,10 +49,11 @@ export interface DuplicateGroup {
 
 // ---------- Helpers ----------
 
-function normalizeWhatsapp(whatsapp: string | null | undefined): string {
-  if (!whatsapp) return '';
-  const digits = whatsapp.replace(/\D/g, '');
-  if (digits.length > 10 && digits.startsWith('55')) {
+function normalizePhone(phone: string | null | undefined): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  // Remove country code 55 (Brazil)
+  if (digits.length >= 12 && digits.startsWith('55')) {
     return digits.slice(2);
   }
   return digits;
@@ -65,15 +66,17 @@ function buildGroupsClientSide(contacts: DuplicateContact[]): DuplicateGroup[] {
   // Group by normalized whatsapp
   const byWhatsapp = new Map<string, DuplicateContact[]>();
   for (const c of contacts) {
-    const normalized = normalizeWhatsapp(c.whatsapp);
+    const normalized = normalizePhone(c.whatsapp);
     if (!normalized) continue;
     const bucket = byWhatsapp.get(normalized) ?? [];
     bucket.push(c);
     byWhatsapp.set(normalized, bucket);
   }
-  for (const [value, members] of byWhatsapp.entries()) {
+  for (const [, members] of byWhatsapp.entries()) {
     if (members.length > 1) {
-      groups.push({ match_field: 'whatsapp', match_value: value, contacts: members });
+      // Use the first contact's original whatsapp as display value
+      const displayValue = members[0].whatsapp ?? '';
+      groups.push({ match_field: 'whatsapp', match_value: displayValue, contacts: [...members] });
       members.forEach((m) => seenIds.add(m.id));
     }
   }
@@ -88,9 +91,10 @@ function buildGroupsClientSide(contacts: DuplicateContact[]): DuplicateGroup[] {
     bucket.push(c);
     byEmail.set(key, bucket);
   }
-  for (const [value, members] of byEmail.entries()) {
+  for (const [, members] of byEmail.entries()) {
     if (members.length > 1) {
-      groups.push({ match_field: 'email', match_value: value, contacts: members });
+      const displayValue = members[0].email ?? '';
+      groups.push({ match_field: 'email', match_value: displayValue, contacts: [...members] });
       members.forEach((m) => seenIds.add(m.id));
     }
   }
@@ -105,9 +109,10 @@ function buildGroupsClientSide(contacts: DuplicateContact[]): DuplicateGroup[] {
     bucket.push(c);
     byNome.set(key, bucket);
   }
-  for (const [value, members] of byNome.entries()) {
+  for (const [, members] of byNome.entries()) {
     if (members.length > 1) {
-      groups.push({ match_field: 'nome', match_value: value, contacts: members });
+      const displayValue = members[0].nome;
+      groups.push({ match_field: 'nome', match_value: displayValue, contacts: [...members] });
     }
   }
 
@@ -139,7 +144,7 @@ export function useDuplicateCount() {
       // By whatsapp
       const byWhatsapp = new Map<string, string[]>();
       for (const c of contacts) {
-        const normalized = normalizeWhatsapp(c.whatsapp);
+        const normalized = normalizePhone(c.whatsapp);
         if (!normalized) continue;
         const bucket = byWhatsapp.get(normalized) ?? [];
         bucket.push(c.id);
@@ -197,45 +202,7 @@ export function useDuplicateGroups(enabled: boolean) {
     queryKey: ['duplicate-groups'],
     enabled,
     queryFn: async (): Promise<DuplicateGroup[]> => {
-      // Try RPC first
-      try {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_duplicate_contacts');
-
-        if (!rpcError && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
-          // RPC returned data — trust it and reshape into DuplicateGroup[]
-          // The RPC may return rows with { match_field, match_value, contact_id, ... }
-          // Group them by match_value + match_field
-          const groupMap = new Map<string, DuplicateGroup>();
-          for (const row of rpcData as Record<string, unknown>[]) {
-            const field = (row.match_field ?? row.campo) as DuplicateGroup['match_field'];
-            const value = String(row.match_value ?? row.valor ?? '');
-            const key = `${field}::${value}`;
-
-            if (!groupMap.has(key)) {
-              groupMap.set(key, { match_field: field, match_value: value, contacts: [] });
-            }
-
-            // Build a DuplicateContact from whatever the RPC returns
-            const contact: DuplicateContact = {
-              id: String(row.id ?? row.contact_id ?? ''),
-              nome: String(row.nome ?? ''),
-              whatsapp: (row.whatsapp as string | null) ?? null,
-              email: (row.email as string | null) ?? null,
-              telefone: (row.telefone as string | null) ?? null,
-              created_at: String(row.created_at ?? ''),
-            };
-
-            groupMap.get(key)!.contacts.push(contact);
-          }
-
-          const groups = Array.from(groupMap.values()).filter((g) => g.contacts.length > 1);
-          if (groups.length > 0) return groups;
-        }
-      } catch {
-        // RPC failed — fall through to client-side detection
-      }
-
-      // Fallback: client-side detection with full contact data
+      // Client-side detection with full contact data
       const { data, error } = await supabase
         .from('contacts')
         .select('*, contact_tags(tag_id, tags(id, nome, cor, categoria))')
