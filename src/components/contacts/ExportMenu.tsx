@@ -23,7 +23,7 @@ const COL_WIDTHS = [
   { wch: 25 }, // Nome
   { wch: 20 }, // Nome WhatsApp
   { wch: 15 }, // WhatsApp
-  { wch: 18 }, // WhatsApp Habilitado
+  { wch: 18 }, // Canal do WhatsApp
   { wch: 18 }, // Aceita WhatsApp
   { wch: 15 }, // Multiplicador
   { wch: 25 }, // Email
@@ -96,7 +96,7 @@ function contactsToRows(contacts: any[]) {
     Nome: c.nome ?? '',
     'Nome WhatsApp': c.nome_whatsapp ?? '',
     WhatsApp: c.whatsapp ?? '',
-    'WhatsApp Habilitado': c.em_canal_whatsapp ? 'Sim' : 'Não',
+    'Canal do WhatsApp': c.em_canal_whatsapp ? 'Sim' : 'Não',
     'Aceita WhatsApp': c.aceita_whatsapp ? 'Sim' : 'Não',
     Multiplicador: c.e_multiplicador ? 'Sim' : 'Não',
     Email: c.email ?? '',

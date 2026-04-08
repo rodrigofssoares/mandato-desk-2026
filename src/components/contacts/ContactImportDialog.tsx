@@ -52,6 +52,9 @@ const HEADER_MAP: Record<string, string> = {
   nome: 'nome_completo',
   whatsapp: 'whatsapp',
   whatsapp_habilitado: 'whatsapp_habilitado',
+  em_canal_whatsapp: 'whatsapp_habilitado',
+  canal_whatsapp: 'whatsapp_habilitado',
+  canal_do_whatsapp: 'whatsapp_habilitado',
   nome_whatsapp: 'nome_whatsapp',
   aceita_whatsapp: 'aceita_whatsapp',
   email: 'email',
@@ -142,7 +145,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     const wb = XLSX.utils.book_new();
 
     const headers = [
-      'nome_completo', 'nome_whatsapp', 'whatsapp', 'whatsapp_habilitado', 'aceita_whatsapp',
+      'nome_completo', 'nome_whatsapp', 'whatsapp', 'em_canal_whatsapp', 'aceita_whatsapp',
       'e_multiplicador', 'email', 'telefone', 'genero', 'data_nascimento',
       'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
       'instagram', 'twitter', 'tiktok', 'youtube',
@@ -158,7 +161,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       ['nome_completo', 'SIM', 'Texto, máx 255 caracteres'],
       ['nome_whatsapp', 'Não', 'Nome de exibição no WhatsApp'],
       ['whatsapp', 'SIM', 'Apenas dígitos, ex: 5511999887766'],
-      ['whatsapp_habilitado', 'Não', 'sim ou nao'],
+      ['em_canal_whatsapp', 'Não', 'Está no canal do WhatsApp: sim/não'],
       ['aceita_whatsapp', 'Não', 'Aceita receber mensagens: sim/não'],
       ['e_multiplicador', 'Não', 'É multiplicador: sim/não'],
       ['email', 'Não', 'email@exemplo.com'],

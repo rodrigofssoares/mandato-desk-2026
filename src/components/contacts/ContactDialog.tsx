@@ -50,8 +50,10 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
     resolver: zodResolver(contactSchema),
     defaultValues: {
       nome: '',
+      nome_whatsapp: '',
       whatsapp: '',
       em_canal_whatsapp: false,
+      aceita_whatsapp: false,
       e_multiplicador: false,
       email: '',
       telefone: '',
@@ -83,8 +85,10 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
       const tagIds = contact.contact_tags?.map((ct) => ct.tag_id) ?? [];
       form.reset({
         nome: contact.nome ?? '',
+        nome_whatsapp: contact.nome_whatsapp ?? '',
         whatsapp: contact.whatsapp ?? '',
         em_canal_whatsapp: contact.em_canal_whatsapp ?? false,
+        aceita_whatsapp: contact.aceita_whatsapp ?? false,
         e_multiplicador: contact.e_multiplicador ?? false,
         email: contact.email ?? '',
         telefone: contact.telefone ?? '',
@@ -149,6 +153,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
             <Tabs defaultValue="pessoais" className="w-full">
               <TabsList className="w-full mb-4">
                 <TabsTrigger value="pessoais" className="flex-1 text-xs">Pessoais</TabsTrigger>
+                <TabsTrigger value="etiquetas" className="flex-1 text-xs">Etiquetas</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 text-xs">Endereço</TabsTrigger>
                 <TabsTrigger value="redes" className="flex-1 text-xs">Redes</TabsTrigger>
                 <TabsTrigger value="obs" className="flex-1 text-xs">Obs</TabsTrigger>
@@ -172,6 +177,11 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     {form.formState.errors.nome && (
                       <p className="text-xs text-destructive mt-1">{form.formState.errors.nome.message}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="nome_whatsapp">Nome no WhatsApp</Label>
+                    <Input id="nome_whatsapp" {...form.register('nome_whatsapp')} placeholder="Nome exibido no WhatsApp" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -228,7 +238,24 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   </div>
 
                   {/* Checkboxes lado a lado */}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    <label
+                      htmlFor="aceita_whatsapp"
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
+                        form.watch('aceita_whatsapp')
+                          ? "border-green-500/50 bg-green-500/5"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <Checkbox
+                        id="aceita_whatsapp"
+                        checked={form.watch('aceita_whatsapp')}
+                        onCheckedChange={(checked) => form.setValue('aceita_whatsapp', !!checked, { shouldDirty: true })}
+                      />
+                      <span className="text-xs leading-tight">Aceita WhatsApp</span>
+                    </label>
+
                     <label
                       htmlFor="em_canal_whatsapp"
                       className={cn(
@@ -323,7 +350,10 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   </div>
                 </div>
 
-                {/* Card: Etiquetas */}
+              </TabsContent>
+
+              {/* --- Etiquetas --- */}
+              <TabsContent value="etiquetas" className="space-y-4 mt-0">
                 <div className="rounded-lg border bg-card p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-7 h-7 rounded-md bg-orange-500/10 flex items-center justify-center">
