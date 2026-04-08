@@ -1,0 +1,401 @@
+# Importação e Exportação de Dados — Base Politica Pro
+
+Documento técnico descrevendo todas as funcionalidades de importação e exportação de dados do CRM.
+
+---
+
+## 1. Importação de Contatos (CSV / XLSX)
+
+**Componente:** `src/components/contacts/ContactImportDialog.tsx`
+
+### Formatos aceitos
+
+| Formato | Extensões | Detalhes |
+|---------|-----------|----------|
+| CSV | `.csv` | Delimitador `,` ou `;`, suporte a campos entre aspas, quebras CRLF e LF |
+| Excel | `.xlsx`, `.xls` | Múltiplas abas — ignora automaticamente aba "Instruções" |
+
+### Colunas aceitas na importação
+
+| Coluna no arquivo | Campo no banco | Tipo | Obrigatório | Observações |
+|-------------------|----------------|------|:-----------:|-------------|
+| `nome_completo` | name | texto | **SIM** | Máx. 255 caracteres |
+| `whatsapp` | whatsapp | texto | **SIM** | 12-13 dígitos após normalização (prefixo 55) |
+| `whatsapp_habilitado` | whatsapp_enabled | booleano | não | Aceita: sim/não, true/false, 1/0, yes/no |
+| `nome_whatsapp` | whatsapp_name | texto | não | Nome de exibição no WhatsApp |
+| `email` | email | texto | não | Validação de formato de e-mail |
+| `telefone` | phone | texto | não | Normalizado para apenas dígitos |
+| `genero` | gender | texto | não | Masculino, Feminino, Outro |
+| `endereco` | address | texto | não | Máx. 500 caracteres |
+| `numero` | address_number | texto | não | Número do endereço |
+| `complemento` | complement | texto | não | Apartamento, bloco, etc. |
+| `bairro` | neighborhood | texto | não | Máx. 255 caracteres |
+| `cidade` | city | texto | não | Máx. 255 caracteres |
+| `uf` | state | texto | não | Sigla do estado (2 caracteres) |
+| `cep` | zip_code | texto | não | Com ou sem hífen |
+| `origem` | origin | texto | não | Fonte/origem do contato, máx. 255 caracteres |
+| `observacoes` | observations | texto | não | Máx. 2000 caracteres |
+| `notas_assessor` | assessor_notes | texto | não | Notas internas, máx. 2000 caracteres |
+| `declarou_voto` | declarou_voto | booleano | não | Aceita: sim/não, true/false, 1/0 |
+| `etiquetas` | (tags) | texto | não | Nomes separados por vírgula; cria automaticamente se não existir |
+
+### Regras de duplicidade
+
+- Duplicidade baseada no **número de WhatsApp normalizado**
+- Se o WhatsApp já existe no banco → **atualiza** o contato existente
+- Se o WhatsApp não existe → **cria** novo contato
+- Campos vazios na planilha **não sobrescrevem** dados existentes
+
+### Normalização automática (antes da validação)
+
+| Campo | Normalização aplicada |
+|-------|----------------------|
+| Telefone/WhatsApp | Remove não-dígitos → adiciona prefixo "55" se ausente |
+| Nome | Remove emojis → Title Case → remove espaços extras |
+| E-mail | Minúsculas → remove espaços → remove emojis |
+
+### Processamento em lotes
+
+O import é processado em **5 fases** com lotes de **100 itens**:
+
+1. **Preparando** — Carrega todos os contatos e etiquetas existentes (3 queries)
+2. **Criando** — Insere novos contatos em lotes de 100
+3. **Atualizando** — Atualiza contatos existentes (individual)
+4. **Etiquetas** — Cria etiquetas novas, vincula contact_tag
+5. **Concluído** — Registra atividade e exibe resultados
+
+### Preview antes de importar
+
+- Mostra as **primeiras 5 linhas válidas** do arquivo
+- Exibe estatísticas: total de linhas, linhas de dados, válidas, vazias, inválidas
+
+### Template de importação
+
+O sistema oferece download de template XLSX com:
+- Aba "Contatos" com cabeçalhos corretos
+- Aba "Instruções" com orientações de preenchimento
+
+---
+
+## 2. Operações em Massa (Bulk Import)
+
+**Página:** `src/pages/BulkImport.tsx`
+
+### Formato de entrada
+
+Texto colado diretamente na interface (não é upload de arquivo):
+
+```
+NUMERO,NOME
+NUMERO,NOME,EMAIL
+```
+
+Separador: vírgula (`,`)
+
+### Operações disponíveis
+
+| Operação | Descrição |
+|----------|-----------|
+| **Adicionar** | Cria novos contatos |
+| **Excluir** | Remove contatos pelo número |
+| **Editar** | Atualiza dados de contatos existentes |
+| **Etiquetar** | Adiciona etiqueta a contatos pelo número |
+
+### Limites
+
+- **Máximo por operação:** 1.000 contatos
+- **Validação de telefone:** 12-13 dígitos após normalização
+- Parsing e validação em tempo real
+- Diálogo de confirmação antes de executar
+- Exibe relatório com contatos "não encontrados"
+- Opção de re-importar contatos não encontrados
+- Copiar itens com erro para área de transferência
+
+---
+
+## 3. Exportação de Contatos
+
+**Componente:** `src/components/contacts/ExportMenu.tsx`
+
+### Opções de exportação
+
+- **Exportar filtrados** — aplica filtros ativos
+- **Exportar todos** — ignora filtros
+
+### Formatos de saída
+
+| Formato | Detalhes |
+|---------|----------|
+| CSV | UTF-8, delimitador vírgula, campos com aspas duplas se contêm vírgula/quebra de linha |
+| XLSX | Biblioteca `xlsx` v0.18.5, larguras de coluna customizadas |
+
+### Colunas exportadas
+
+| Coluna | Largura XLSX |
+|--------|:------------:|
+| id | 36 |
+| nome_completo | 25 |
+| whatsapp | 15 |
+| whatsapp_habilitado | 18 |
+| nome_whatsapp | 15 |
+| email | 25 |
+| telefone | 15 |
+| genero | 12 |
+| endereco | 30 |
+| numero | 10 |
+| complemento | 20 |
+| bairro | 20 |
+| cidade | 20 |
+| uf | 6 |
+| cep | 12 |
+| origem | 15 |
+| observacoes | 30 |
+| notas_assessor | 30 |
+| declarou_voto | 15 |
+| etiquetas | 25 |
+
+### Filtros aplicáveis na exportação
+
+- Termo de busca (nome, email, whatsapp, bairro, telefone)
+- Etiquetas (multi-seleção, requer todas as selecionadas)
+- Status de demanda (aberta, em andamento, resolvida, sem demanda)
+- Favoritos
+- WhatsApp habilitado
+- Declaração de voto
+- Intervalo de datas (created_at com tratamento de timezone)
+
+### Paginação
+
+- Busca dados em lotes de **1.000 itens** (limite do PostgREST)
+- Concatena automaticamente todos os lotes antes de gerar o arquivo
+
+### Nome do arquivo
+
+```
+contatos_YYYY-MM-DD_filtrado.csv
+contatos_YYYY-MM-DD_completo.xlsx
+```
+
+---
+
+## 4. Exportação de Etiquetas
+
+**Componente:** `src/components/tags/TagsExportMenu.tsx`
+
+### Colunas exportadas
+
+| Coluna | Largura XLSX | Observações |
+|--------|:------------:|-------------|
+| id | 36 | UUID |
+| nome | 25 | Nome da etiqueta |
+| categoria | 15 | Mapeamento: professionals→Perfil, relationships→Interesse, demands→Campanhas |
+| cor | 10 | Código de cor |
+| criado_em | 12 | Data de criação |
+
+### Formatos: CSV e XLSX
+
+---
+
+## 5. Exportação de Demandas
+
+**Componente:** `src/components/demands/DemandsExportMenu.tsx`
+
+### Colunas exportadas
+
+| Coluna | Largura XLSX | Observações |
+|--------|:------------:|-------------|
+| id | 36 | UUID |
+| titulo | 30 | Título da demanda |
+| descricao | 40 | Descrição completa |
+| status | 15 | open→Aberta, in_progress→Em Andamento, resolved→Resolvida |
+| prioridade | 12 | low→Baixa, medium→Média, high→Alta |
+| bairro | 20 | Bairro relacionado |
+| contato_nome | 25 | Nome do contato vinculado |
+| contato_id | 36 | UUID do contato |
+| criado_em | 12 | Data de criação |
+| atualizado_em | 12 | Data da última atualização |
+| etiquetas | 25 | Nomes das etiquetas separados por vírgula |
+
+### Formatos: CSV e XLSX
+
+---
+
+## 6. Exportação de Atividades
+
+**Componente:** `src/components/activities/ActivitiesExportMenu.tsx`
+
+### Colunas exportadas
+
+| Coluna | Largura XLSX | Observações |
+|--------|:------------:|-------------|
+| id | 36 | UUID |
+| tipo | 18 | Ver mapeamento abaixo |
+| descricao | 40 | Descrição da atividade |
+| tipo_entidade | 15 | Ver mapeamento abaixo |
+| entidade_nome | 30 | Nome da entidade afetada |
+| entidade_id | 36 | UUID da entidade |
+| usuario_nome | 25 | Nome do usuário responsável |
+| usuario_id | 36 | UUID do usuário |
+| data | 20 | Timestamp da atividade |
+
+### Mapeamento de tipos de atividade
+
+| Valor interno | Label exportado |
+|---------------|-----------------|
+| create | Criação |
+| update | Atualização |
+| delete | Exclusão |
+| status_change | Mudança de Status |
+| assignment | Atribuição |
+| import | Importação |
+| merge | Mesclagem |
+| bulk_delete | Exclusão em Massa |
+
+### Mapeamento de tipos de entidade
+
+| Valor interno | Label exportado |
+|---------------|-----------------|
+| contact | Contato |
+| demand | Demanda |
+| tag | Etiqueta |
+| leader | Liderança |
+| user | Usuário |
+| permission | Permissão |
+| role | Perfil |
+
+### Formatos: CSV e XLSX
+
+---
+
+## 7. Etiquetas de Endereço (PDF)
+
+**Utilitário:** `src/lib/addressLabels.ts`
+**Modal:** `src/components/contacts/PrintLabelsModal.tsx`
+
+### Formato do PDF
+
+- Biblioteca: **jsPDF** v4.0.0
+- Tamanho da página: A4
+- **1 etiqueta por página**
+- Caixa centralizada: 120mm x 50mm
+
+### Conteúdo da etiqueta
+
+| Linha | Tamanho fonte | Conteúdo |
+|-------|:-------------:|----------|
+| 1 | 16pt negrito | Nome completo |
+| 2 | 14pt | Instituição/Origem (opcional, configurável) |
+| 3 | 13pt | Endereço + número |
+| 4 | 13pt | Bairro + CEP (formatado 12345-678) |
+| 5 | 13pt | Cidade + UF |
+
+### Validação de endereço
+
+Para gerar a etiqueta, o contato **deve ter todos os campos preenchidos:**
+- Nome completo
+- Endereço (rua)
+- Número
+- Bairro
+- Cidade
+- Estado (UF)
+- CEP
+
+Contatos com endereço incompleto são **ignorados** e listados no modal com o motivo.
+
+### Limites
+
+- **Máximo por lote:** 500 contatos
+- Checkbox para incluir/excluir campo de instituição
+- Diálogo de impressão aberto automaticamente
+
+---
+
+## 8. Limites e Restrições — Resumo Geral
+
+### Limites de campo (validação Zod)
+
+| Campo | Máximo |
+|-------|:------:|
+| name (nome_completo) | 255 caracteres |
+| email | 255 caracteres |
+| phone / whatsapp | 20 caracteres |
+| address (endereco) | 500 caracteres |
+| neighborhood, city, origin | 255 caracteres |
+| state (uf) | 2 caracteres |
+| observations, assessor_notes | 2.000 caracteres |
+
+### Limites operacionais
+
+| Operação | Limite |
+|----------|:------:|
+| Lote de importação (por transação) | 100 itens |
+| Operação em massa (BulkImport) | 1.000 contatos |
+| Paginação de exportação (PostgREST) | 1.000 por query |
+| Etiquetas PDF por lote | 500 contatos |
+| Tamanho de arquivo (importação) | Sem limite hard (carrega em memória) |
+
+---
+
+## 9. Tratamento de Erros
+
+### Na importação
+
+- Erros rastreados **linha por linha** (número da linha + mensagem)
+- Erros **não interrompem** o processo — as demais linhas continuam
+- Relatório final exibe: criados, atualizados, ignorados, erros
+- Opção de copiar erros para área de transferência
+- Headers duplicados são removidos automaticamente
+- Linhas vazias são ignoradas
+
+### Tipos de erro capturados
+
+- Campo obrigatório ausente (`nome_completo` ou `whatsapp`)
+- Formato de telefone inválido (não resulta em 12-13 dígitos)
+- Formato de e-mail inválido
+- Falha na validação do schema Zod
+- Erro de insert/update no banco
+- Erro na criação de etiquetas
+
+### Na exportação
+
+- Try-catch com notificação toast
+- Tratamento de resultado vazio (sem dados para exportar)
+- Erros logados no console
+
+---
+
+## 10. Registro de Atividades
+
+Toda importação é registrada automaticamente via `logActivity()` (`src/lib/activityLog.ts`):
+
+- **Tipo:** `import`
+- **Entidade:** `contact`
+- **Detalhes registrados:** criados, atualizados, ignorados, etiquetas criadas, nome do arquivo
+
+---
+
+## 11. Dependências
+
+| Biblioteca | Versão | Uso |
+|------------|--------|-----|
+| `xlsx` | 0.18.5 | Parse e geração de arquivos Excel |
+| `jspdf` | 4.0.0 | Geração de PDF (etiquetas de endereço) |
+| `zod` | — | Validação de schema dos campos |
+
+---
+
+## 12. Arquivos-chave no código
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `src/components/contacts/ContactImportDialog.tsx` | Interface principal de importação |
+| `src/pages/BulkImport.tsx` | Operações em massa via texto |
+| `src/components/contacts/ExportMenu.tsx` | Exportação de contatos |
+| `src/components/tags/TagsExportMenu.tsx` | Exportação de etiquetas |
+| `src/components/demands/DemandsExportMenu.tsx` | Exportação de demandas |
+| `src/components/activities/ActivitiesExportMenu.tsx` | Exportação de atividades |
+| `src/lib/normalization.ts` | Normalização de telefone, nome, email |
+| `src/lib/validation.ts` | Schemas de validação Zod |
+| `src/lib/addressLabels.ts` | Geração de PDF de etiquetas |
+| `src/components/contacts/PrintLabelsModal.tsx` | Modal de configuração de etiquetas |
+| `src/lib/activityLog.ts` | Registro de atividades |

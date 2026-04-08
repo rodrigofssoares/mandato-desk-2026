@@ -71,18 +71,25 @@ export function ContactListItem({ contact, onEdit, onDelete, onClick }: ContactL
 
       {/* Tags */}
       <div className="hidden xl:flex items-center gap-1 w-48">
-        {tags.slice(0, 3).map((tag) => (
-          <Badge
-            key={tag.id}
-            variant="secondary"
-            className="text-[10px] px-1.5 py-0"
-            style={tag.cor ? { backgroundColor: tag.cor + '20', color: tag.cor, borderColor: tag.cor + '40' } : undefined}
-          >
-            {tag.nome}
-          </Badge>
-        ))}
+        {tags.slice(0, 3).map((tag) => {
+          const label = tag.nome.length > 12 ? tag.nome.slice(0, 11) + '…' : tag.nome;
+          return (
+            <Tooltip key={tag.id}>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] px-1.5 py-0 whitespace-nowrap"
+                  style={tag.cor ? { backgroundColor: tag.cor + '20', color: tag.cor, borderColor: tag.cor + '40' } : undefined}
+                >
+                  {label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{tag.nome}</TooltipContent>
+            </Tooltip>
+          );
+        })}
         {tags.length > 3 && (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 whitespace-nowrap">
             +{tags.length - 3}
           </Badge>
         )}

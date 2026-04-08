@@ -24,8 +24,10 @@ export interface ContactFilters {
 export interface Contact {
   id: string;
   nome: string;
+  nome_whatsapp?: string | null;
   whatsapp?: string | null;
   em_canal_whatsapp?: boolean;
+  aceita_whatsapp?: boolean;
   e_multiplicador?: boolean;
   email?: string | null;
   telefone?: string | null;

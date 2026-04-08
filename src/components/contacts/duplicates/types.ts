@@ -10,7 +10,8 @@ export type MergeableFieldKey =
   | 'logradouro' | 'numero' | 'complemento' | 'bairro' | 'cidade' | 'estado' | 'cep'
   | 'instagram' | 'twitter' | 'tiktok' | 'youtube'
   | 'declarou_voto' | 'ranking' | 'leader_id' | 'origem'
-  | 'observacoes' | 'notas_assessor' | 'is_favorite' | 'ultimo_contato' | 'em_canal_whatsapp';
+  | 'observacoes' | 'notas_assessor' | 'is_favorite' | 'ultimo_contato' | 'em_canal_whatsapp'
+  | 'aceita_whatsapp' | 'nome_whatsapp';
 
 export const MERGEABLE_FIELDS: { key: MergeableFieldKey; label: string }[] = [
   { key: 'nome', label: 'Nome' },
@@ -39,4 +40,6 @@ export const MERGEABLE_FIELDS: { key: MergeableFieldKey; label: string }[] = [
   { key: 'is_favorite', label: 'Favorito' },
   { key: 'ultimo_contato', label: 'Ultimo Contato' },
   { key: 'em_canal_whatsapp', label: 'Em Canal WhatsApp' },
+  { key: 'aceita_whatsapp', label: 'Aceita WhatsApp' },
+  { key: 'nome_whatsapp', label: 'Nome WhatsApp' },
 ];

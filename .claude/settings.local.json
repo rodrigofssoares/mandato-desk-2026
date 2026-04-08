@@ -29,7 +29,8 @@
       "Bash(cd \"C:/Users/Sporte/Antigravity/Mandato Desk 2026\" && npx tsc --noEmit 2>&1 | grep -E \"useContacts|ContactFilters|ContactCard|ContactList|ContactDialog|ContactsPagination|ExportMenu|Contacts\\\\.tsx|contactValidation\")",
       "mcp__claude_ai_Supabase__list_projects",
       "mcp__claude_ai_Supabase__list_tables",
-      "mcp__claude_ai_Supabase__execute_sql"
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__apply_migration"
     ]
   }
 }

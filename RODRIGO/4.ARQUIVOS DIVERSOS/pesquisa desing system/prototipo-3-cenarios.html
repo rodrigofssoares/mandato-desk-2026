@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandato Desk 2026 — 3 Cenários Navy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ===== CENARIO A: Navy Puro (so primary) ===== */
+[data-c="a"]{
+  --bg:#F5F7FA;--surface:#FFFFFF;--muted:#EEF2F7;--elevated:#E3E9F0;
+  --border:#D4DCE8;--border-s:#E8EDF3;
+  --txt:#0C1829;--txt2:#475569;--txtm:#8494A9;
+  --p50:#EBF1F7;--p100:#D0DDE9;--p400:#3A6BA8;--p500:#1A4480;--p600:#153A6A;
+  --ring:213 65% 30%;
+  --acc:#0ea5e9;--acc-bg:#f0f9ff;
+  --sidebar-bg:#F8FAFC;--sidebar-border:#E2E8F0;--sidebar-txt:#475569;--sidebar-active:#1A4480;--sidebar-active-bg:#EBF1F7;
+  --dark-bg:#020617;--dark-card:#0f172a;--dark-border:#1e293b;--dark-txt:#F1F5F9;--dark-txt2:#94A3B8;
+  --success:#16A34A;--warning:#D97706;--error:#DC2626;--info:#2563EB;
+  --label:"Cenario A: Navy Puro";
+  --desc:"So troca primary de sky blue para navy. Sem gold accent, dark mode inalterado.";
+}
+
+/* ===== CENARIO B: Navy + Gold Accent ===== */
+[data-c="b"]{
+  --bg:#F5F7FA;--surface:#FFFFFF;--muted:#EEF2F7;--elevated:#E3E9F0;
+  --border:#D4DCE8;--border-s:#E8EDF3;
+  --txt:#0C1829;--txt2:#475569;--txtm:#8494A9;
+  --p50:#EBF1F7;--p100:#D0DDE9;--p400:#3A6BA8;--p500:#1A4480;--p600:#153A6A;
+  --ring:213 65% 30%;
+  --acc:#C5A347;--acc-bg:#FFF8E6;
+  --sidebar-bg:#F8FAFC;--sidebar-border:#E2E8F0;--sidebar-txt:#475569;--sidebar-active:#1A4480;--sidebar-active-bg:#EBF1F7;
+  --dark-bg:#020617;--dark-card:#0f172a;--dark-border:#1e293b;--dark-txt:#F1F5F9;--dark-txt2:#94A3B8;
+  --success:#16A34A;--warning:#D97706;--error:#DC2626;--info:#2563EB;
+  --label:"Cenario B: Navy + Gold Accent";
+  --desc:"Primary navy + gold (#C5A347) como cor de destaque para favoritos, badges e CTAs secundarios.";
+}
+
+/* ===== CENARIO C: Navy + Gold + Dark Mode Ajustado ===== */
+[data-c="c"]{
+  --bg:#F5F7FA;--surface:#FFFFFF;--muted:#EEF2F7;--elevated:#E3E9F0;
+  --border:#D4DCE8;--border-s:#E8EDF3;
+  --txt:#0C1829;--txt2:#475569;--txtm:#8494A9;
+  --p50:#EBF1F7;--p100:#D0DDE9;--p400:#3A6BA8;--p500:#1A4480;--p600:#153A6A;
+  --ring:213 65% 30%;
+  --acc:#C5A347;--acc-bg:#FFF8E6;
+  --sidebar-bg:#F8FAFC;--sidebar-border:#E2E8F0;--sidebar-txt:#475569;--sidebar-active:#1A4480;--sidebar-active-bg:#EBF1F7;
+  --dark-bg:#080E1C;--dark-card:#0F1628;--dark-border:#1A2540;--dark-txt:#EDF0F7;--dark-txt2:#8B93B0;
+  --success:#16A34A;--warning:#D97706;--error:#DC2626;--info:#2563EB;
+  --label:"Cenario C: Navy + Gold + Dark Ajustado";
+  --desc:"Navy + gold + dark mode com tons navy (nao slate puro). Mais coeso e imersivo.";
+}
+
+body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* Layout */
+.header{padding:20px 32px;text-align:center;border-bottom:1px solid #222}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.03em}
+.header p{font-size:13px;color:#888;margin-top:4px}
+
+.tabs{display:flex;justify-content:center;gap:4px;padding:16px;background:#111;position:sticky;top:0;z-index:10;border-bottom:1px solid #222}
+.tab{padding:8px 20px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;background:transparent;color:#888;transition:all .2s}
+.tab:hover{color:#ccc}
+.tab.on{background:#222;color:#fff}
+
+.scenarios{display:flex;gap:20px;padding:20px;min-height:calc(100vh - 130px)}
+.scene{flex:1;min-width:0;border-radius:16px;overflow:hidden;border:1px solid #333;transition:all .3s}
+
+/* Inner app mock */
+.mock{display:flex;height:600px;overflow:hidden}
+.m-side{width:180px;padding:12px 8px;border-right:1px solid var(--sidebar-border);background:var(--sidebar-bg);display:flex;flex-direction:column;flex-shrink:0}
+.m-logo{display:flex;align-items:center;gap:7px;padding:8px;margin-bottom:8px}
+.m-logo-ic{width:28px;height:28px;border-radius:7px;background:var(--p500);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:'Space Grotesk'}
+.m-logo-txt{font-family:'Space Grotesk';font-size:12px;font-weight:700;color:var(--txt)}
+.m-nav-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;font-size:11.5px;font-weight:500;color:var(--sidebar-txt);margin-bottom:1px;cursor:default}
+.m-nav-item.on{background:var(--sidebar-active-bg);color:var(--sidebar-active);font-weight:600}
+.m-nav-item svg{width:14px;height:14px;opacity:.6}
+.m-nav-item.on svg{opacity:1}
+
+.m-main{flex:1;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+.m-topbar{height:36px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--txtm);flex-shrink:0}
+.m-content{flex:1;padding:12px;overflow-y:auto}
+
+/* Stat cards */
+.m-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.m-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;position:relative;overflow:hidden}
+.m-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.m-stat.s1::before{background:var(--p500)}
+.m-stat.s2::before{background:var(--success)}
+.m-stat.s3::before{background:var(--acc)}
+.m-stat.s4::before{background:var(--info)}
+.m-stat-v{font-family:'Space Grotesk';font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--txt)}
+.m-stat-l{font-size:9.5px;color:var(--txtm);margin-top:1px}
+
+/* Buttons */
+.m-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;font-size:10.5px;font-weight:600;border:none;cursor:default;font-family:'Inter'}
+.m-btn-p{background:var(--p500);color:#fff}
+.m-btn-acc{background:var(--acc);color:#fff}
+.m-btn-o{background:transparent;border:1px solid var(--border);color:var(--txt2)}
+
+/* Cards */
+.m-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+.m-card-title{font-family:'Space Grotesk';font-size:11px;font-weight:700;color:var(--txt);margin-bottom:6px}
+
+/* Mini bars */
+.m-bar-track{height:16px;background:var(--muted);border-radius:4px;overflow:hidden;margin-bottom:4px}
+.m-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:8px;font-weight:600;color:#fff}
+
+/* Tags */
+.m-tag{display:inline-flex;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:500;margin-right:3px}
+
+/* Contact mini cards */
+.m-contact{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-s)}
+.m-contact:last-child{border-bottom:none}
+.m-c-av{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.m-c-name{font-size:11px;font-weight:600;color:var(--txt)}
+.m-c-sub{font-size:9px;color:var(--txtm)}
+.m-c-fav{color:var(--acc);font-size:12px;margin-left:auto}
+
+/* Dark mode toggle area */
+.m-dark{margin-top:8px}
+.m-dark-card{background:var(--dark-bg);border:1px solid var(--dark-border);border-radius:8px;padding:10px;margin-bottom:6px}
+.m-dark-title{font-family:'Space Grotesk';font-size:10px;font-weight:700;color:var(--dark-txt);margin-bottom:6px}
+.m-dark-stat{display:flex;gap:6px;margin-bottom:4px}
+.m-dark-s{flex:1;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:6px;padding:7px;position:relative;overflow:hidden}
+.m-dark-s::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.m-dark-s.ds1::before{background:var(--p400)}
+.m-dark-s.ds2::before{background:#4ADE80}
+.m-dark-s.ds3::before{background:var(--acc)}
+.m-dark-sv{font-family:'Space Grotesk';font-size:14px;font-weight:800;color:var(--dark-txt);letter-spacing:-0.02em}
+.m-dark-sl{font-size:8px;color:var(--dark-txt2)}
+.m-dark-btn{display:inline-flex;padding:4px 8px;border-radius:5px;font-size:9px;font-weight:600;border:none;cursor:default;font-family:'Inter'}
+.m-dark-btn-p{background:var(--p500);color:#fff}
+.m-dark-btn-acc{background:var(--acc);color:#fff}
+
+/* Scene label */
+.scene-label{padding:12px 16px;background:#111;border-bottom:1px solid #222}
+.scene-label h3{font-family:'Space Grotesk';font-size:13px;font-weight:700;color:#fff;letter-spacing:-0.01em}
+.scene-label p{font-size:10.5px;color:#888;margin-top:2px}
+
+/* View switch */
+.view-area{display:none}
+.view-area.on{display:block}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Mandato Desk 2026 — Comparacao de 3 Cenarios</h1>
+  <p>Mesmo layout, 3 combinacoes de cores diferentes. Clique nas abas para ver Light Mode, Dark Mode e Contatos.</p>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="setView('dash',this)">Dashboard Light</button>
+  <button class="tab" onclick="setView('dark',this)">Preview Dark Mode</button>
+  <button class="tab" onclick="setView('cont',this)">Contatos</button>
+</div>
+
+<div class="scenarios">
+  <!-- ===== CENARIO A ===== -->
+  <div class="scene" data-c="a">
+    <div class="scene-label"><h3>A: Navy Puro</h3><p>So troca primary. Sem gold, dark mode inalterado.</p></div>
+
+    <div class="view-area on" data-view="dash">
+      <div class="mock">
+        <div class="m-side">
+          <div class="m-logo"><div class="m-logo-ic">M</div><div class="m-logo-txt">Mandato Desk</div></div>
+          <div class="m-nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contatos</div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Demandas</div>
+        </div>
+        <div class="m-main">
+          <div class="m-topbar">Mandato Desk / <b style="color:var(--txt);margin-left:4px">Dashboard</b></div>
+          <div class="m-content">
+            <div class="m-stats">
+              <div class="m-stat s1"><div class="m-stat-v">2.847</div><div class="m-stat-l">Total Contatos</div></div>
+              <div class="m-stat s2"><div class="m-stat-v">1.923</div><div class="m-stat-l">Declararam Voto</div></div>
+              <div class="m-stat s3"><div class="m-stat-v">489</div><div class="m-stat-l">Favoritos</div></div>
+              <div class="m-stat s4"><div class="m-stat-v">2.156</div><div class="m-stat-l">Com Endereco</div></div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <span class="m-btn m-btn-p">Novo Contato</span>
+              <span class="m-btn m-btn-o">Exportar</span>
+            </div>
+            <div class="m-card">
+              <div class="m-card-title">Declaracao de Voto</div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:67%;background:var(--success)">67,5%</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:32%;background:var(--txtm)">32,5%</div></div>
+            </div>
+            <div class="m-card">
+              <div class="m-card-title">Top Etiquetas</div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:80%;background:var(--p500)">Zona Sul</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:65%;background:var(--success)">Saude</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:50%;background:var(--acc)">Educacao</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-area" data-view="dark">
+      <div style="padding:12px;background:var(--dark-bg);min-height:564px">
+        <div class="m-dark-card">
+          <div class="m-dark-title">Dashboard — Dark Mode</div>
+          <div class="m-dark-stat">
+            <div class="m-dark-s ds1"><div class="m-dark-sv">2.847</div><div class="m-dark-sl">Contatos</div></div>
+            <div class="m-dark-s ds2"><div class="m-dark-sv">1.923</div><div class="m-dark-sl">Voto</div></div>
+            <div class="m-dark-s ds3"><div class="m-dark-sv">489</div><div class="m-dark-sl">Favoritos</div></div>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:6px">
+            <span class="m-dark-btn m-dark-btn-p">Novo Contato</span>
+            <span class="m-dark-btn" style="background:var(--dark-border);color:var(--dark-txt2)">Exportar</span>
+          </div>
+        </div>
+        <div class="m-dark-card">
+          <div class="m-dark-title">Etiquetas</div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="width:80%;height:100%;background:var(--p400);border-radius:3px"></div></div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="width:65%;height:100%;background:#4ADE80;border-radius:3px"></div></div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden"><div style="width:50%;height:100%;background:var(--acc);border-radius:3px"></div></div>
+        </div>
+        <p style="font-size:9px;color:var(--dark-txt2);text-align:center;margin-top:10px">Dark mode atual (slate puro, sem ajustes)</p>
+      </div>
+    </div>
+
+    <div class="view-area" data-view="cont">
+      <div class="mock">
+        <div class="m-side">
+          <div class="m-logo"><div class="m-logo-ic">M</div><div class="m-logo-txt">Mandato Desk</div></div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+          <div class="m-nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contatos</div>
+        </div>
+        <div class="m-main">
+          <div class="m-topbar">Mandato Desk / <b style="color:var(--txt);margin-left:4px">Contatos</b></div>
+          <div class="m-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-family:'Space Grotesk';font-size:15px;font-weight:700;color:var(--txt)">Contatos <span style="font-size:10px;background:var(--p500);color:#fff;padding:1px 6px;border-radius:10px;font-family:'Inter';font-weight:600">2.847</span></div>
+              <span class="m-btn m-btn-p">+ Novo</span>
+            </div>
+            <div style="display:flex;gap:4px;margin-bottom:8px">
+              <span class="m-tag" style="background:var(--p50);color:var(--p500)">Todos</span>
+              <span class="m-tag" style="background:var(--muted);color:var(--txtm)">Zona Sul</span>
+              <span class="m-tag" style="background:var(--muted);color:var(--txtm)">Saude</span>
+            </div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--p500)">MC</div><div><div class="m-c-name">Maria da Conceicao</div><div class="m-c-sub">(21) 99876-5432</div></div><div class="m-c-fav">&#9733;</div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--success)">JR</div><div><div class="m-c-name">Jose Roberto Santos</div><div class="m-c-sub">(21) 98765-1234</div></div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--info)">AL</div><div><div class="m-c-name">Ana Lucia Ferreira</div><div class="m-c-sub">(21) 97654-3210</div></div><div class="m-c-fav">&#9733;</div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--acc)">CE</div><div><div class="m-c-name">Carlos Eduardo Mendes</div><div class="m-c-sub">(21) 96543-2109</div></div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--error)">PO</div><div><div class="m-c-name">Patricia Oliveira</div><div class="m-c-sub">(21) 95432-1098</div></div><div class="m-c-fav">&#9733;</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CENARIO B ===== -->
+  <div class="scene" data-c="b">
+    <div class="scene-label"><h3>B: Navy + Gold Accent</h3><p>Primary navy + gold (#C5A347) em favoritos, badges, CTAs secundarios.</p></div>
+
+    <div class="view-area on" data-view="dash">
+      <div class="mock">
+        <div class="m-side">
+          <div class="m-logo"><div class="m-logo-ic">M</div><div class="m-logo-txt">Mandato Desk</div></div>
+          <div class="m-nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contatos</div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Demandas</div>
+        </div>
+        <div class="m-main">
+          <div class="m-topbar">Mandato Desk / <b style="color:var(--txt);margin-left:4px">Dashboard</b></div>
+          <div class="m-content">
+            <div class="m-stats">
+              <div class="m-stat s1"><div class="m-stat-v">2.847</div><div class="m-stat-l">Total Contatos</div></div>
+              <div class="m-stat s2"><div class="m-stat-v">1.923</div><div class="m-stat-l">Declararam Voto</div></div>
+              <div class="m-stat s3"><div class="m-stat-v">489</div><div class="m-stat-l">Favoritos</div></div>
+              <div class="m-stat s4"><div class="m-stat-v">2.156</div><div class="m-stat-l">Com Endereco</div></div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <span class="m-btn m-btn-p">Novo Contato</span>
+              <span class="m-btn m-btn-acc">Destaque</span>
+              <span class="m-btn m-btn-o">Exportar</span>
+            </div>
+            <div class="m-card">
+              <div class="m-card-title">Declaracao de Voto</div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:67%;background:var(--success)">67,5%</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:32%;background:var(--txtm)">32,5%</div></div>
+            </div>
+            <div class="m-card">
+              <div class="m-card-title">Top Etiquetas</div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:80%;background:var(--p500)">Zona Sul</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:65%;background:var(--success)">Saude</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:50%;background:var(--acc)">Educacao</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-area" data-view="dark">
+      <div style="padding:12px;background:var(--dark-bg);min-height:564px">
+        <div class="m-dark-card">
+          <div class="m-dark-title">Dashboard — Dark Mode</div>
+          <div class="m-dark-stat">
+            <div class="m-dark-s ds1"><div class="m-dark-sv">2.847</div><div class="m-dark-sl">Contatos</div></div>
+            <div class="m-dark-s ds2"><div class="m-dark-sv">1.923</div><div class="m-dark-sl">Voto</div></div>
+            <div class="m-dark-s ds3"><div class="m-dark-sv">489</div><div class="m-dark-sl">Favoritos</div></div>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:6px">
+            <span class="m-dark-btn m-dark-btn-p">Novo Contato</span>
+            <span class="m-dark-btn m-dark-btn-acc">Destaque</span>
+            <span class="m-dark-btn" style="background:var(--dark-border);color:var(--dark-txt2)">Exportar</span>
+          </div>
+        </div>
+        <div class="m-dark-card">
+          <div class="m-dark-title">Etiquetas</div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="width:80%;height:100%;background:var(--p400);border-radius:3px"></div></div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="width:65%;height:100%;background:#4ADE80;border-radius:3px"></div></div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden"><div style="width:50%;height:100%;background:var(--acc);border-radius:3px"></div></div>
+        </div>
+        <p style="font-size:9px;color:var(--dark-txt2);text-align:center;margin-top:10px">Dark mode atual (slate puro) + gold accent</p>
+      </div>
+    </div>
+
+    <div class="view-area" data-view="cont">
+      <div class="mock">
+        <div class="m-side">
+          <div class="m-logo"><div class="m-logo-ic">M</div><div class="m-logo-txt">Mandato Desk</div></div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+          <div class="m-nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contatos</div>
+        </div>
+        <div class="m-main">
+          <div class="m-topbar">Mandato Desk / <b style="color:var(--txt);margin-left:4px">Contatos</b></div>
+          <div class="m-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-family:'Space Grotesk';font-size:15px;font-weight:700;color:var(--txt)">Contatos <span style="font-size:10px;background:var(--p500);color:#fff;padding:1px 6px;border-radius:10px;font-family:'Inter';font-weight:600">2.847</span></div>
+              <span class="m-btn m-btn-p">+ Novo</span>
+            </div>
+            <div style="display:flex;gap:4px;margin-bottom:8px">
+              <span class="m-tag" style="background:var(--p50);color:var(--p500)">Todos</span>
+              <span class="m-tag" style="background:var(--muted);color:var(--txtm)">Zona Sul</span>
+              <span class="m-tag" style="background:var(--muted);color:var(--txtm)">Saude</span>
+            </div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--p500)">MC</div><div><div class="m-c-name">Maria da Conceicao</div><div class="m-c-sub">(21) 99876-5432</div></div><div class="m-c-fav" style="color:var(--acc)">&#9733;</div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--success)">JR</div><div><div class="m-c-name">Jose Roberto Santos</div><div class="m-c-sub">(21) 98765-1234</div></div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--info)">AL</div><div><div class="m-c-name">Ana Lucia Ferreira</div><div class="m-c-sub">(21) 97654-3210</div></div><div class="m-c-fav" style="color:var(--acc)">&#9733;</div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--acc)">CE</div><div><div class="m-c-name">Carlos Eduardo Mendes</div><div class="m-c-sub">(21) 96543-2109</div></div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--error)">PO</div><div><div class="m-c-name">Patricia Oliveira</div><div class="m-c-sub">(21) 95432-1098</div></div><div class="m-c-fav" style="color:var(--acc)">&#9733;</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CENARIO C ===== -->
+  <div class="scene" data-c="c">
+    <div class="scene-label"><h3>C: Navy + Gold + Dark Ajustado</h3><p>Tudo de B + dark mode com tons navy (nao slate). Mais coeso.</p></div>
+
+    <div class="view-area on" data-view="dash">
+      <div class="mock">
+        <div class="m-side">
+          <div class="m-logo"><div class="m-logo-ic">M</div><div class="m-logo-txt">Mandato Desk</div></div>
+          <div class="m-nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contatos</div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Demandas</div>
+        </div>
+        <div class="m-main">
+          <div class="m-topbar">Mandato Desk / <b style="color:var(--txt);margin-left:4px">Dashboard</b></div>
+          <div class="m-content">
+            <div class="m-stats">
+              <div class="m-stat s1"><div class="m-stat-v">2.847</div><div class="m-stat-l">Total Contatos</div></div>
+              <div class="m-stat s2"><div class="m-stat-v">1.923</div><div class="m-stat-l">Declararam Voto</div></div>
+              <div class="m-stat s3"><div class="m-stat-v">489</div><div class="m-stat-l">Favoritos</div></div>
+              <div class="m-stat s4"><div class="m-stat-v">2.156</div><div class="m-stat-l">Com Endereco</div></div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <span class="m-btn m-btn-p">Novo Contato</span>
+              <span class="m-btn m-btn-acc">Destaque</span>
+              <span class="m-btn m-btn-o">Exportar</span>
+            </div>
+            <div class="m-card">
+              <div class="m-card-title">Declaracao de Voto</div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:67%;background:var(--success)">67,5%</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:32%;background:var(--txtm)">32,5%</div></div>
+            </div>
+            <div class="m-card">
+              <div class="m-card-title">Top Etiquetas</div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:80%;background:var(--p500)">Zona Sul</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:65%;background:var(--success)">Saude</div></div>
+              <div class="m-bar-track"><div class="m-bar-fill" style="width:50%;background:var(--acc)">Educacao</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-area" data-view="dark">
+      <div style="padding:12px;background:var(--dark-bg);min-height:564px">
+        <div class="m-dark-card" style="background:var(--dark-card);border-color:var(--dark-border)">
+          <div class="m-dark-title">Dashboard — Dark Mode Navy</div>
+          <div class="m-dark-stat">
+            <div class="m-dark-s ds1" style="background:var(--dark-card);border-color:var(--dark-border)"><div class="m-dark-sv">2.847</div><div class="m-dark-sl">Contatos</div></div>
+            <div class="m-dark-s ds2" style="background:var(--dark-card);border-color:var(--dark-border)"><div class="m-dark-sv">1.923</div><div class="m-dark-sl">Voto</div></div>
+            <div class="m-dark-s ds3" style="background:var(--dark-card);border-color:var(--dark-border)"><div class="m-dark-sv">489</div><div class="m-dark-sl">Favoritos</div></div>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:6px">
+            <span class="m-dark-btn m-dark-btn-p">Novo Contato</span>
+            <span class="m-dark-btn m-dark-btn-acc">Destaque</span>
+            <span class="m-dark-btn" style="background:var(--dark-border);color:var(--dark-txt2)">Exportar</span>
+          </div>
+        </div>
+        <div class="m-dark-card" style="background:var(--dark-card);border-color:var(--dark-border)">
+          <div class="m-dark-title">Etiquetas</div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="width:80%;height:100%;background:var(--p400);border-radius:3px"></div></div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="width:65%;height:100%;background:#4ADE80;border-radius:3px"></div></div>
+          <div style="height:12px;background:var(--dark-border);border-radius:3px;overflow:hidden"><div style="width:50%;height:100%;background:var(--acc);border-radius:3px"></div></div>
+        </div>
+        <p style="font-size:9px;color:var(--dark-txt2);text-align:center;margin-top:10px">Dark mode navy (#080E1C) — tons quentes, mais coeso</p>
+      </div>
+    </div>
+
+    <div class="view-area" data-view="cont">
+      <div class="mock">
+        <div class="m-side">
+          <div class="m-logo"><div class="m-logo-ic">M</div><div class="m-logo-txt">Mandato Desk</div></div>
+          <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+          <div class="m-nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contatos</div>
+        </div>
+        <div class="m-main">
+          <div class="m-topbar">Mandato Desk / <b style="color:var(--txt);margin-left:4px">Contatos</b></div>
+          <div class="m-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-family:'Space Grotesk';font-size:15px;font-weight:700;color:var(--txt)">Contatos <span style="font-size:10px;background:var(--p500);color:#fff;padding:1px 6px;border-radius:10px;font-family:'Inter';font-weight:600">2.847</span></div>
+              <span class="m-btn m-btn-p">+ Novo</span>
+            </div>
+            <div style="display:flex;gap:4px;margin-bottom:8px">
+              <span class="m-tag" style="background:var(--p50);color:var(--p500)">Todos</span>
+              <span class="m-tag" style="background:var(--muted);color:var(--txtm)">Zona Sul</span>
+              <span class="m-tag" style="background:var(--muted);color:var(--txtm)">Saude</span>
+            </div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--p500)">MC</div><div><div class="m-c-name">Maria da Conceicao</div><div class="m-c-sub">(21) 99876-5432</div></div><div class="m-c-fav" style="color:var(--acc)">&#9733;</div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--success)">JR</div><div><div class="m-c-name">Jose Roberto Santos</div><div class="m-c-sub">(21) 98765-1234</div></div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--info)">AL</div><div><div class="m-c-name">Ana Lucia Ferreira</div><div class="m-c-sub">(21) 97654-3210</div></div><div class="m-c-fav" style="color:var(--acc)">&#9733;</div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--acc)">CE</div><div><div class="m-c-name">Carlos Eduardo Mendes</div><div class="m-c-sub">(21) 96543-2109</div></div></div>
+            <div class="m-contact"><div class="m-c-av" style="background:var(--error)">PO</div><div><div class="m-c-name">Patricia Oliveira</div><div class="m-c-sub">(21) 95432-1098</div></div><div class="m-c-fav" style="color:var(--acc)">&#9733;</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setView(v, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.view-area').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll(`[data-view="${v}"]`).forEach(el => el.classList.add('on'));
+}
+</script>
+</body>
+</html>

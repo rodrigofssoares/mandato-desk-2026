@@ -90,7 +90,7 @@ export default function Tags() {
                           style={{ backgroundColor: tag.cor }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{tag.nome}</p>
+                          <p className="font-medium line-clamp-2 text-sm leading-tight">{tag.nome}</p>
                         </div>
                         <Badge variant="secondary" className="shrink-0 text-xs">
                           {tag.contact_count}

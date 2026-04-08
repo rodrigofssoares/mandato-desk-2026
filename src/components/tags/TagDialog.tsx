@@ -158,6 +158,21 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
             </div>
           </div>
 
+          {isEdit && tag && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Código da Etiqueta</Label>
+              <div
+                className="bg-muted/50 border border-border rounded-md px-3 py-2 font-mono text-xs text-muted-foreground cursor-pointer select-all"
+                onClick={() => {
+                  navigator.clipboard.writeText(tag.id);
+                }}
+                title="Clique para copiar"
+              >
+                {tag.id}
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

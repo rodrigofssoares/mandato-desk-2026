@@ -3,8 +3,10 @@ import { z } from 'zod';
 export const contactSchema = z.object({
   // Dados Pessoais
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(200),
+  nome_whatsapp: z.string().max(200).optional().or(z.literal('')),
   whatsapp: z.string().max(20).optional().or(z.literal('')),
   em_canal_whatsapp: z.boolean().optional().default(false),
+  aceita_whatsapp: z.boolean().optional().default(false),
   e_multiplicador: z.boolean().optional().default(false),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   telefone: z.string().max(20).optional().or(z.literal('')),

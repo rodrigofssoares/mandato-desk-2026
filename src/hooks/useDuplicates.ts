@@ -8,6 +8,7 @@ import { logActivity } from '@/lib/activityLog';
 export interface DuplicateContact {
   id: string;
   nome: string;
+  nome_whatsapp?: string | null;
   whatsapp?: string | null;
   email?: string | null;
   telefone?: string | null;
@@ -33,6 +34,7 @@ export interface DuplicateContact {
   is_favorite?: boolean;
   ultimo_contato?: string | null;
   em_canal_whatsapp?: boolean;
+  aceita_whatsapp?: boolean;
   created_at: string;
   updated_at?: string;
   merged_into?: string | null;

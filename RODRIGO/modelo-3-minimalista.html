@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelo 3 - Minimalista com switches</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fafafa; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); }
+
+  .dialog { position: relative; z-index: 10; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; width: 100%; max-width: 640px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+
+  .dialog-header { padding: 24px 24px 16px; border-bottom: 1px solid #2a2a2a; }
+  .dialog-header h2 { font-size: 18px; font-weight: 600; }
+  .dialog-header p { font-size: 12px; color: #888; margin-top: 2px; }
+
+  .tabs { display: flex; gap: 4px; padding: 0 24px; margin-top: 12px; }
+  .tab { padding: 8px 16px; font-size: 13px; border-radius: 6px; cursor: pointer; border: none; background: transparent; color: #888; transition: all 0.2s; }
+  .tab:hover { color: #ccc; background: #222; }
+  .tab.active { background: #fff; color: #000; font-weight: 500; }
+
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .content::-webkit-scrollbar { width: 6px; }
+  .content::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: #ccc; margin-bottom: 6px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 12px; font-size: 14px; background: #111; border: 1px solid #333; border-radius: 8px; color: #fafafa; outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: #555; }
+  .field input::placeholder { color: #555; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+  .separator { border: none; border-top: 1px solid #2a2a2a; margin: 20px 0; }
+  .section-label { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+
+  /* Switches estilo iOS */
+  .switch-row { display: flex; gap: 0; flex-direction: column; margin-bottom: 20px; border: 1px solid #2a2a2a; border-radius: 10px; overflow: hidden; }
+  .switch-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #141414; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid #222; }
+  .switch-item:last-child { border-bottom: none; }
+  .switch-item:hover { background: #1a1a1a; }
+  .switch-label { font-size: 13px; color: #ddd; }
+  .switch-track { width: 40px; height: 22px; background: #333; border-radius: 11px; position: relative; transition: background 0.3s; flex-shrink: 0; }
+  .switch-thumb { width: 18px; height: 18px; background: #888; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.3s; }
+  .switch-item.on .switch-track { background: #4ade80; }
+  .switch-item.on .switch-thumb { left: 20px; background: #fff; }
+
+  /* Slider */
+  .slider-container { margin-bottom: 16px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-header label { font-size: 13px; font-weight: 500; color: #ccc; }
+  .slider-value { font-size: 13px; font-weight: 700; color: #4ade80; }
+  .slider-track-container { position: relative; padding: 8px 0; }
+  input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: #333; border-radius: 2px; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-top: 4px; }
+  .slider-dots { display: flex; justify-content: space-between; position: absolute; width: 100%; top: 50%; transform: translateY(-50%); padding: 0 8px; pointer-events: none; }
+  .slider-dot { width: 4px; height: 4px; background: #444; border-radius: 50%; }
+
+  .footer { padding: 16px 24px; border-top: 1px solid #2a2a2a; display: flex; justify-content: flex-end; gap: 10px; }
+  .btn { padding: 9px 20px; font-size: 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+  .btn-outline { background: transparent; border: 1px solid #333; color: #ccc; }
+  .btn-outline:hover { background: #222; }
+  .btn-primary { background: #fff; color: #000; }
+  .btn-primary:hover { background: #ddd; }
+</style>
+</head>
+<body>
+
+<div class="overlay"></div>
+
+<div class="dialog">
+  <div class="dialog-header">
+    <h2>Novo Contato</h2>
+    <p>Modelo 3 - Minimalista com switches tipo iOS</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('pessoais')">Pessoais</button>
+      <button class="tab" onclick="switchTab('endereco')">Endereco</button>
+      <button class="tab" onclick="switchTab('redes')">Redes</button>
+      <button class="tab" onclick="switchTab('obs')">Obs</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- PESSOAIS -->
+    <div id="tab-pessoais" class="tab-panel active">
+      <div class="field">
+        <label>Nome *</label>
+        <input type="text" placeholder="Nome completo">
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>WhatsApp</label>
+          <input type="text" placeholder="(00) 00000-0000">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input type="text" placeholder="(00) 0000-0000">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" placeholder="email@exemplo.com">
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Data de Nascimento</label>
+          <input type="date">
+        </div>
+        <div class="field">
+          <label>Genero</label>
+          <select>
+            <option value="">Selecione</option>
+            <option>Masculino</option>
+            <option>Feminino</option>
+            <option>Outro</option>
+            <option>Prefiro nao informar</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="separator">
+      <div class="section-label">Status do contato</div>
+
+      <!-- Switches empilhados tipo lista iOS -->
+      <div class="switch-row">
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label">Ja esta no canal do WhatsApp</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label">E multiplicador</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label">Declarou voto</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+      </div>
+
+      <!-- Ranking -->
+      <div class="slider-container">
+        <div class="slider-header">
+          <label>Ranking</label>
+          <span class="slider-value" id="ranking-val-3">0</span>
+        </div>
+        <div class="slider-track-container">
+          <input type="range" min="0" max="10" value="0" oninput="document.getElementById('ranking-val-3').textContent=this.value">
+        </div>
+        <div class="slider-labels"><span>0</span><span>5</span><span>10</span></div>
+      </div>
+
+      <!-- Lideranca -->
+      <div class="field">
+        <label>Lideranca vinculada</label>
+        <select>
+          <option value="">Selecione uma lideranca</option>
+          <option>Nenhuma</option>
+          <option>Joao Silva</option>
+          <option>Maria Santos</option>
+        </select>
+      </div>
+
+      <hr class="separator">
+      <div class="section-label">Etiquetas</div>
+
+      <div style="border: 1px solid #2a2a2a; border-radius: 10px; overflow: hidden;">
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label" style="color: #f87171;">Prioridade Alta</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label" style="color: #60a5fa;">Comunidade</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label" style="color: #4ade80;">Apoiador</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+        <div class="switch-item" onclick="this.classList.toggle('on')">
+          <span class="switch-label" style="color: #facc15;">Evento</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENDERECO -->
+    <div id="tab-endereco" class="tab-panel">
+      <div class="field"><label>Logradouro</label><input placeholder="Rua, Avenida..."></div>
+      <div class="grid-2">
+        <div class="field"><label>Numero</label><input></div>
+        <div class="field"><label>Complemento</label><input placeholder="Apto, Bloco..."></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Bairro</label><input></div>
+        <div class="field"><label>Cidade</label><input></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Estado</label><select><option>UF</option></select></div>
+        <div class="field"><label>CEP</label><input placeholder="00000-000"></div>
+      </div>
+    </div>
+
+    <!-- REDES -->
+    <div id="tab-redes" class="tab-panel">
+      <div class="field"><label>Instagram</label><input placeholder="@usuario"></div>
+      <div class="field"><label>Twitter / X</label><input placeholder="@usuario"></div>
+      <div class="field"><label>TikTok</label><input placeholder="@usuario"></div>
+      <div class="field"><label>YouTube</label><input placeholder="Canal ou URL"></div>
+    </div>
+
+    <!-- OBS -->
+    <div id="tab-obs" class="tab-panel">
+      <div class="field"><label>Origem</label><input placeholder="Ex: Indicacao, Evento..."></div>
+      <div class="field"><label>Observacoes</label><textarea rows="4" placeholder="Observacoes gerais sobre o contato..."></textarea></div>
+      <div class="field"><label>Notas do Assessor</label><textarea rows="4" placeholder="Notas internas da assessoria..."></textarea></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn btn-outline">Cancelar</button>
+    <button class="btn btn-primary">Criar Contato</button>
+  </div>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>

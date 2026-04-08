@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandato Desk 2026 — Protótipo V2 Moderno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ===== PALETTE 1: Midnight Gradient ===== */
+[data-palette="midnight"]{
+  --bg-primary:#06091A;
+  --bg-surface:#0D1225;
+  --bg-surface-2:#111832;
+  --bg-muted:#151C3A;
+  --bg-elevated:#1A2345;
+  --border-default:rgba(255,255,255,0.06);
+  --border-subtle:rgba(255,255,255,0.03);
+  --border-focus:rgba(99,139,255,0.5);
+  --text-primary:#F0F2F8;
+  --text-secondary:#8B93B0;
+  --text-muted:#565E7A;
+  --primary-400:#7B8FFF;
+  --primary-500:#638BFF;
+  --primary-600:#4A6FE5;
+  --primary-glow:rgba(99,139,255,0.15);
+  --primary-glow-strong:rgba(99,139,255,0.25);
+  --accent-400:#FFC26E;
+  --accent-500:#FFB347;
+  --accent-600:#E5993A;
+  --accent-glow:rgba(255,179,71,0.12);
+  --secondary-400:#A78BFA;
+  --secondary-500:#8B5CF6;
+  --success:#4ADE80;
+  --success-bg:rgba(74,222,128,0.08);
+  --warning:#FBBF24;
+  --warning-bg:rgba(251,191,36,0.08);
+  --error:#F87171;
+  --error-bg:rgba(248,113,113,0.08);
+  --info:#60A5FA;
+  --info-bg:rgba(96,165,250,0.08);
+  --glass-bg:rgba(13,18,37,0.6);
+  --glass-border:rgba(255,255,255,0.06);
+  --glass-blur:16px;
+  --sidebar-bg:rgba(6,9,26,0.95);
+  --sidebar-active-bg:rgba(99,139,255,0.12);
+  --card-shadow:0 1px 2px rgba(0,0,0,0.4),0 0 40px rgba(99,139,255,0.03);
+  --card-hover-shadow:0 8px 32px rgba(99,139,255,0.08);
+  --gradient-primary:linear-gradient(135deg,#638BFF,#8B5CF6);
+  --gradient-accent:linear-gradient(135deg,#FFB347,#FF6B6B);
+  --gradient-subtle:linear-gradient(180deg,rgba(99,139,255,0.04) 0%,transparent 60%);
+  --font-heading:'Plus Jakarta Sans','Inter',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --label:"Midnight Gradient";
+  --label-sub:"Jakarta Sans + Inter — Aura blue/purple com gold accent";
+}
+
+/* ===== PALETTE 2: Obsidian Navy ===== */
+[data-palette="obsidian"]{
+  --bg-primary:#080C18;
+  --bg-surface:#0F1423;
+  --bg-surface-2:#141A2E;
+  --bg-muted:#181F35;
+  --bg-elevated:#1E2742;
+  --border-default:rgba(255,255,255,0.07);
+  --border-subtle:rgba(255,255,255,0.035);
+  --border-focus:rgba(45,184,166,0.5);
+  --text-primary:#EDF0F7;
+  --text-secondary:#7E8AA0;
+  --text-muted:#505B73;
+  --primary-400:#5EEAD4;
+  --primary-500:#2DD4BF;
+  --primary-600:#14B8A6;
+  --primary-glow:rgba(45,212,191,0.12);
+  --primary-glow-strong:rgba(45,212,191,0.22);
+  --accent-400:#FCA5A5;
+  --accent-500:#F87171;
+  --accent-600:#EF4444;
+  --accent-glow:rgba(248,113,113,0.1);
+  --secondary-400:#93C5FD;
+  --secondary-500:#3B82F6;
+  --success:#4ADE80;
+  --success-bg:rgba(74,222,128,0.08);
+  --warning:#FBBF24;
+  --warning-bg:rgba(251,191,36,0.08);
+  --error:#F87171;
+  --error-bg:rgba(248,113,113,0.08);
+  --info:#60A5FA;
+  --info-bg:rgba(96,165,250,0.08);
+  --glass-bg:rgba(15,20,35,0.55);
+  --glass-border:rgba(255,255,255,0.07);
+  --glass-blur:20px;
+  --sidebar-bg:rgba(8,12,24,0.95);
+  --sidebar-active-bg:rgba(45,212,191,0.1);
+  --card-shadow:0 1px 2px rgba(0,0,0,0.5),0 0 40px rgba(45,212,191,0.02);
+  --card-hover-shadow:0 8px 32px rgba(45,212,191,0.06);
+  --gradient-primary:linear-gradient(135deg,#2DD4BF,#3B82F6);
+  --gradient-accent:linear-gradient(135deg,#F87171,#FB923C);
+  --gradient-subtle:linear-gradient(180deg,rgba(45,212,191,0.03) 0%,transparent 60%);
+  --font-heading:'Manrope','Inter',sans-serif;
+  --font-body:'DM Sans','Inter',sans-serif;
+  --label:"Obsidian Navy";
+  --label-sub:"Manrope + DM Sans — Teal primary com coral accent";
+}
+
+/* ===== PALETTE 3: Carbon Minimal ===== */
+[data-palette="carbon"]{
+  --bg-primary:#09090B;
+  --bg-surface:#111113;
+  --bg-surface-2:#18181B;
+  --bg-muted:#1F1F23;
+  --bg-elevated:#27272A;
+  --border-default:rgba(255,255,255,0.08);
+  --border-subtle:rgba(255,255,255,0.04);
+  --border-focus:rgba(255,255,255,0.3);
+  --text-primary:#FAFAFA;
+  --text-secondary:#A1A1AA;
+  --text-muted:#52525B;
+  --primary-400:#E4E4E7;
+  --primary-500:#FAFAFA;
+  --primary-600:#D4D4D8;
+  --primary-glow:rgba(250,250,250,0.06);
+  --primary-glow-strong:rgba(250,250,250,0.12);
+  --accent-400:#60A5FA;
+  --accent-500:#3B82F6;
+  --accent-600:#2563EB;
+  --accent-glow:rgba(59,130,246,0.1);
+  --secondary-400:#A78BFA;
+  --secondary-500:#8B5CF6;
+  --success:#4ADE80;
+  --success-bg:rgba(74,222,128,0.06);
+  --warning:#FBBF24;
+  --warning-bg:rgba(251,191,36,0.06);
+  --error:#F87171;
+  --error-bg:rgba(248,113,113,0.06);
+  --info:#60A5FA;
+  --info-bg:rgba(96,165,250,0.06);
+  --glass-bg:rgba(17,17,19,0.6);
+  --glass-border:rgba(255,255,255,0.08);
+  --glass-blur:20px;
+  --sidebar-bg:rgba(9,9,11,0.98);
+  --sidebar-active-bg:rgba(250,250,250,0.06);
+  --card-shadow:0 0 0 1px rgba(255,255,255,0.04);
+  --card-hover-shadow:0 0 0 1px rgba(255,255,255,0.08),0 4px 20px rgba(0,0,0,0.3);
+  --gradient-primary:linear-gradient(135deg,#FAFAFA,#A1A1AA);
+  --gradient-accent:linear-gradient(135deg,#3B82F6,#8B5CF6);
+  --gradient-subtle:linear-gradient(180deg,rgba(255,255,255,0.02) 0%,transparent 60%);
+  --font-heading:'Space Grotesk','Inter',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --label:"Carbon Minimal";
+  --label-sub:"Space Grotesk + Inter — Monocromatico estilo Linear/Vercel";
+}
+
+/* ===== BASE ===== */
+body{
+  font-family:var(--font-body);
+  background:var(--bg-primary);
+  color:var(--text-primary);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  transition:background .5s ease,color .3s ease;
+  overflow:hidden;
+  height:100vh;
+}
+
+/* ===== LAYOUT ===== */
+.app{display:flex;height:100vh}
+
+/* Sidebar */
+.sidebar{
+  width:240px;
+  background:var(--sidebar-bg);
+  backdrop-filter:blur(20px);
+  border-right:1px solid var(--border-default);
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+  transition:all .4s ease;
+  position:relative;
+  z-index:10;
+}
+.sidebar::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,var(--primary-400) 0%,transparent 50%,var(--accent-500) 100%);
+  opacity:0.15;
+}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border-default)}
+.sidebar-brand{display:flex;align-items:center;gap:10px}
+.sidebar-logo{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--gradient-primary);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;color:#fff;
+  font-family:var(--font-heading);
+  box-shadow:0 2px 12px var(--primary-glow-strong);
+}
+.sidebar-brand h2{
+  font-family:var(--font-heading);
+  font-size:14px;font-weight:700;color:var(--text-primary);
+  letter-spacing:-0.02em;
+}
+.sidebar-brand small{font-size:10.5px;color:var(--text-muted);font-weight:500}
+
+.sidebar-nav{padding:10px 8px;flex:1;overflow-y:auto}
+.nav-section{
+  font-size:9.5px;text-transform:uppercase;letter-spacing:0.1em;
+  padding:14px 10px 5px;color:var(--text-muted);font-weight:600;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:8px;cursor:pointer;
+  font-size:13px;font-weight:500;
+  transition:all .15s ease;margin-bottom:1px;
+  color:var(--text-secondary);text-decoration:none;position:relative;
+}
+.nav-item:hover{background:var(--bg-muted);color:var(--text-primary)}
+.nav-item.active{
+  background:var(--sidebar-active-bg);
+  color:var(--primary-400);font-weight:600;
+}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;
+  border-radius:0 2px 2px 0;
+  background:var(--gradient-primary);
+}
+.nav-item svg{width:17px;height:17px;opacity:.6;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.nav-badge{
+  margin-left:auto;font-size:10px;font-weight:700;
+  background:var(--primary-glow-strong);color:var(--primary-400);
+  padding:1px 7px;border-radius:10px;
+}
+
+.sidebar-footer{
+  padding:14px 16px;border-top:1px solid var(--border-default);
+  display:flex;align-items:center;gap:9px;
+}
+.sidebar-footer-av{
+  width:30px;height:30px;border-radius:8px;
+  background:var(--gradient-primary);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;
+}
+.sidebar-footer .name{font-size:12.5px;font-weight:600;color:var(--text-primary)}
+.sidebar-footer .role{font-size:10.5px;color:var(--text-muted)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.main::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:300px;
+  background:var(--gradient-subtle);pointer-events:none;z-index:0;
+}
+
+/* Topbar */
+.topbar{
+  height:52px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur));
+  border-bottom:1px solid var(--border-default);
+  display:flex;align-items:center;padding:0 24px;
+  justify-content:space-between;flex-shrink:0;
+  position:relative;z-index:5;
+}
+.topbar-left{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted)}
+.topbar-left .sep{opacity:.3}
+.topbar-left .current{color:var(--text-primary);font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.cmd-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:8px;border:1px solid var(--border-default);
+  background:var(--bg-surface);color:var(--text-muted);
+  font-size:12px;cursor:pointer;transition:all .15s ease;
+  font-family:var(--font-body);
+}
+.cmd-btn:hover{border-color:var(--border-focus);color:var(--text-secondary)}
+.cmd-btn svg{width:14px;height:14px}
+.kbd{
+  font-size:10px;font-weight:500;color:var(--text-muted);
+  background:var(--bg-muted);padding:1px 5px;border-radius:3px;
+  border:1px solid var(--border-default);
+  font-family:var(--font-body);margin-left:8px;
+}
+
+/* Content */
+.content{flex:1;overflow-y:auto;padding:24px;position:relative;z-index:1}
+.content::-webkit-scrollbar{width:5px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:var(--border-default);border-radius:3px}
+
+/* ===== PALETTE SWITCHER ===== */
+.palette-bar{
+  position:fixed;top:10px;right:20px;z-index:100;
+  display:flex;gap:4px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur));
+  border:1px solid var(--glass-border);
+  border-radius:12px;padding:4px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+.pal-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:8px;border:none;cursor:pointer;
+  font-size:11.5px;font-weight:600;
+  font-family:var(--font-body);
+  background:transparent;color:var(--text-muted);
+  transition:all .2s ease;
+}
+.pal-btn:hover{color:var(--text-secondary)}
+.pal-btn.active{background:var(--bg-elevated);color:var(--text-primary)}
+.pal-dot{width:8px;height:8px;border-radius:50%}
+
+/* ===== PALETTE INFO ===== */
+.p-info{
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur));
+  border:1px solid var(--glass-border);
+  border-radius:10px;padding:10px 16px;
+  margin-bottom:20px;display:flex;align-items:center;gap:10px;
+  font-size:12px;color:var(--text-secondary);
+}
+.p-info-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--gradient-primary);flex-shrink:0;
+  box-shadow:0 0 10px var(--primary-glow-strong);
+}
+.p-info strong{color:var(--text-primary)}
+.p-info .right{margin-left:auto;color:var(--text-muted);font-size:11px}
+
+/* ===== PAGE HEADER ===== */
+.page-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.page-title{
+  font-family:var(--font-heading);font-size:24px;font-weight:800;
+  letter-spacing:-0.03em;background:var(--gradient-primary);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.page-title-plain{
+  font-family:var(--font-heading);font-size:24px;font-weight:800;
+  letter-spacing:-0.03em;color:var(--text-primary);
+}
+
+/* ===== GLASS CARDS ===== */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur));
+  border:1px solid var(--glass-border);
+  border-radius:14px;padding:20px;
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);
+}
+.glass:hover{
+  border-color:rgba(255,255,255,0.1);
+  box-shadow:var(--card-hover-shadow);
+  transform:translateY(-1px);
+}
+
+/* ===== STAT CARDS ===== */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stat{
+  background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+}
+.stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--stat-gradient,var(--gradient-primary));
+  opacity:.7;
+}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--card-hover-shadow)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.stat-icon-wrap{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--stat-icon-bg,var(--primary-glow));
+}
+.stat-icon-wrap svg{width:18px;height:18px;color:var(--stat-icon-color,var(--primary-400))}
+.stat-trend{
+  font-size:11px;font-weight:600;display:flex;align-items:center;gap:2px;
+  padding:2px 6px;border-radius:6px;
+}
+.stat-trend.up{color:var(--success);background:var(--success-bg)}
+.stat-trend.down{color:var(--error);background:var(--error-bg)}
+.stat-val{
+  font-family:var(--font-heading);font-size:30px;font-weight:800;
+  letter-spacing:-0.04em;line-height:1;margin-bottom:3px;
+}
+.stat-lbl{font-size:12px;color:var(--text-muted);font-weight:500}
+
+/* ===== GROWTH MINI CARDS ===== */
+.growth-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.growth-card{
+  background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:10px;padding:12px 14px;
+  transition:all .2s ease;
+}
+.growth-card:hover{border-color:var(--border-focus)}
+.growth-val{
+  font-family:var(--font-heading);font-size:20px;font-weight:700;
+  letter-spacing:-0.02em;display:flex;align-items:baseline;gap:6px;
+}
+.growth-lbl{font-size:11px;color:var(--text-muted);margin-top:1px;font-weight:500}
+.trend-sm{font-size:11px;font-weight:600}
+.trend-sm.up{color:var(--success)}
+.trend-sm.down{color:var(--error)}
+
+/* ===== DASHBOARD GRID ===== */
+.dash-grid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.dash-left{display:flex;flex-direction:column;gap:14px}
+
+/* Chart area */
+.chart-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.chart-title{font-family:var(--font-heading);font-size:14px;font-weight:700;letter-spacing:-0.01em}
+.chart-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+
+/* Sparkline */
+.spark-wrap{height:180px;position:relative;border-radius:10px;overflow:hidden}
+.spark-wrap svg{width:100%;height:100%}
+.spark-gradient{stop-color:var(--primary-500)}
+
+/* Bar chart */
+.bars{display:flex;align-items:flex-end;gap:6px;height:180px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar{
+  width:100%;border-radius:5px 5px 2px 2px;min-height:3px;
+  transition:all .6s cubic-bezier(.22,1,.36,1);position:relative;
+}
+.bar:hover{filter:brightness(1.2)}
+.bar-v{font-size:9.5px;font-weight:600;color:var(--text-secondary);margin-bottom:3px}
+.bar-l{font-size:9.5px;color:var(--text-muted);margin-top:6px;text-align:center;font-weight:500;white-space:nowrap}
+
+/* H-bars */
+.hbar{margin-bottom:14px}
+.hbar-top{display:flex;justify-content:space-between;margin-bottom:5px}
+.hbar-name{font-size:12px;font-weight:500;color:var(--text-secondary)}
+.hbar-val{font-size:12px;font-weight:700;font-family:var(--font-heading)}
+.hbar-track{height:24px;background:var(--bg-muted);border-radius:6px;overflow:hidden}
+.hbar-fill{
+  height:100%;border-radius:6px;display:flex;align-items:center;
+  padding-left:8px;font-size:10px;font-weight:600;color:#fff;
+  transition:width 1s cubic-bezier(.22,1,.36,1);
+}
+
+/* Right panel */
+.right-col{display:flex;flex-direction:column;gap:14px}
+
+/* Birthday */
+.bday{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border-subtle)}
+.bday:last-child{border-bottom:none}
+.bday-av{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.bday-name{font-size:12.5px;font-weight:600}
+.bday-date{font-size:10.5px;color:var(--text-muted)}
+
+/* Activity */
+.act{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--border-subtle)}
+.act:last-child{border-bottom:none}
+.act-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.act-text{font-size:12px;color:var(--text-secondary);line-height:1.4}
+.act-text b{color:var(--text-primary);font-weight:600}
+.act-time{font-size:10px;color:var(--text-muted);margin-top:1px}
+
+/* ===== CONTACTS PAGE ===== */
+.contacts-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.contacts-title{
+  font-family:var(--font-heading);font-size:24px;font-weight:800;
+  letter-spacing:-0.03em;display:flex;align-items:center;gap:10px;
+}
+.cnt-badge{
+  font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;
+  background:var(--primary-glow-strong);color:var(--primary-400);
+}
+.cnt-actions{display:flex;gap:6px}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:500;
+  font-family:var(--font-body);border:none;cursor:pointer;transition:all .15s ease;
+}
+.btn-primary{background:var(--gradient-primary);color:#fff;box-shadow:0 2px 10px var(--primary-glow)}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--border-default);color:var(--text-secondary)}
+.btn-outline:hover{background:var(--bg-muted);border-color:var(--border-focus)}
+.btn-ghost{background:transparent;color:var(--text-secondary);padding:7px 10px}
+.btn-ghost:hover{background:var(--bg-muted)}
+.btn svg{width:15px;height:15px}
+
+/* Search */
+.search-row{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.search-wrap{position:relative;flex:1}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none}
+.search-in{
+  width:100%;height:38px;
+  background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:8px;padding:0 12px 0 34px;font-size:12.5px;
+  font-family:var(--font-body);color:var(--text-primary);
+  transition:all .2s ease;
+}
+.search-in::placeholder{color:var(--text-muted)}
+.search-in:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--primary-glow)}
+.sel-in{
+  height:38px;background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:8px;padding:0 10px;font-size:12px;font-family:var(--font-body);
+  color:var(--text-primary);cursor:pointer;appearance:none;min-width:150px;
+}
+.vw-tog{display:flex;border:1px solid var(--border-default);border-radius:8px;overflow:hidden}
+.vw-btn{
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg-surface);border:none;cursor:pointer;color:var(--text-muted);transition:all .15s ease;
+}
+.vw-btn.active{background:var(--primary-glow-strong);color:var(--primary-400)}
+.vw-btn svg{width:15px;height:15px}
+
+/* Filters */
+.filters{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:5px 11px;border-radius:20px;font-size:11.5px;font-weight:500;
+  background:var(--bg-surface);color:var(--text-muted);
+  border:1px solid var(--border-default);cursor:pointer;transition:all .15s ease;
+}
+.chip:hover{color:var(--text-secondary);border-color:var(--border-focus)}
+.chip.active{background:var(--primary-glow);color:var(--primary-400);border-color:var(--primary-400)}
+.chip svg{width:13px;height:13px}
+
+/* Contact Grid */
+.c-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.c-card{
+  background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:14px;padding:16px;position:relative;
+  transition:all .3s cubic-bezier(.22,1,.36,1);cursor:pointer;
+}
+.c-card:hover{
+  border-color:rgba(255,255,255,0.12);
+  box-shadow:var(--card-hover-shadow);
+  transform:translateY(-2px);
+}
+.c-card-top{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.c-av{
+  width:42px;height:42px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;flex-shrink:0;
+  font-family:var(--font-heading);
+}
+.c-name{font-size:13.5px;font-weight:600;font-family:var(--font-heading);letter-spacing:-0.01em}
+.c-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.c-fav{
+  position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;cursor:pointer;
+  color:var(--text-muted);transition:all .15s ease;
+}
+.c-fav:hover{background:var(--warning-bg);color:var(--accent-500)}
+.c-fav.on{color:var(--accent-500)}
+.c-fav svg{width:15px;height:15px}
+.c-details{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.c-det{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-secondary)}
+.c-det svg{width:13px;height:13px;color:var(--text-muted);flex-shrink:0}
+.c-tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{
+  font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:6px;
+  border:1px solid transparent;
+}
+
+/* Contact List */
+.c-list{display:none;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:14px;overflow:hidden}
+.c-list.on{display:flex}
+.c-grid.on{display:grid}
+.l-hdr{
+  display:grid;grid-template-columns:34px 1fr 130px 170px 1fr 90px 70px;
+  padding:9px 14px;background:var(--bg-muted);
+  font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;
+  border-bottom:1px solid var(--border-default);
+}
+.l-row{
+  display:grid;grid-template-columns:34px 1fr 130px 170px 1fr 90px 70px;
+  padding:11px 14px;border-bottom:1px solid var(--border-subtle);
+  align-items:center;font-size:12.5px;transition:background .1s ease;
+}
+.l-row:hover{background:var(--bg-muted)}
+.l-row:last-child{border-bottom:none}
+.l-fav{color:var(--text-muted);cursor:pointer;background:none;border:none;padding:0}
+.l-fav.on{color:var(--accent-500)}
+.l-fav svg{width:14px;height:14px}
+.l-name{font-weight:600;font-family:var(--font-heading);font-size:12.5px}
+.l-cell{color:var(--text-secondary);font-size:12px}
+.l-tags{display:flex;gap:3px}
+.l-date{font-size:11px;color:var(--text-muted)}
+.l-acts{display:flex;gap:3px}
+.l-act{
+  width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;cursor:pointer;color:var(--text-muted);transition:all .15s ease;
+}
+.l-act:hover{background:var(--bg-muted);color:var(--text-primary)}
+.l-act svg{width:13px;height:13px}
+
+/* Pagination */
+.pag{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-subtle)}
+.pag-info{font-size:12px;color:var(--text-muted)}
+.pag-btns{display:flex;gap:3px}
+.pg{
+  width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--border-default);
+  cursor:pointer;font-size:11px;font-weight:500;color:var(--text-secondary);
+  transition:all .15s ease;font-family:var(--font-body);
+}
+.pg:hover{background:var(--bg-muted)}
+.pg.active{background:var(--primary-glow-strong);color:var(--primary-400);border-color:var(--primary-400)}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp .45s cubic-bezier(.22,1,.36,1) forwards;opacity:0}
+.d1{animation-delay:.04s}.d2{animation-delay:.08s}.d3{animation-delay:.12s}
+.d4{animation-delay:.16s}.d5{animation-delay:.2s}.d6{animation-delay:.24s}
+
+.hidden{display:none!important}
+</style>
+</head>
+
+<body data-palette="midnight">
+
+<!-- PALETTE SWITCHER -->
+<div class="palette-bar">
+  <button class="pal-btn active" onclick="setPal('midnight',this)"><span class="pal-dot" style="background:linear-gradient(135deg,#638BFF,#8B5CF6)"></span>Midnight</button>
+  <button class="pal-btn" onclick="setPal('obsidian',this)"><span class="pal-dot" style="background:linear-gradient(135deg,#2DD4BF,#3B82F6)"></span>Obsidian</button>
+  <button class="pal-btn" onclick="setPal('carbon',this)"><span class="pal-dot" style="background:linear-gradient(135deg,#FAFAFA,#71717A)"></span>Carbon</button>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">M</div>
+        <div><h2>Mandato Desk</h2><small>2026</small></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item active" data-nav="dashboard" onclick="goTo('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" data-nav="contacts" onclick="goTo('contacts')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contatos
+        <span class="nav-badge">2.847</span>
+      </a>
+      <a class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 4l3 12h14l3-12-5.5 7L12 3 7.5 11z"/></svg>
+        Liderancas
+      </a>
+      <a class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+        Demandas
+        <span class="nav-badge">38</span>
+      </a>
+      <a class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Etiquetas
+      </a>
+      <div class="nav-section">Ferramentas</div>
+      <a class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        Mapa
+      </a>
+      <a class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importacao
+      </a>
+      <div class="nav-section">Sistema</div>
+      <a class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Permissoes
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-av">RS</div>
+      <div><div class="name">Rodrigo Sporte</div><div class="role">Administrador</div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span>Mandato Desk</span><span class="sep">/</span>
+        <span class="current" id="bc">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <button class="cmd-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          Buscar...
+          <span class="kbd">Ctrl K</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="pg-dash">
+        <div class="p-info anim">
+          <span class="p-info-dot"></span>
+          <span id="info1"></span>
+          <span class="right">Troque a paleta no canto superior direito</span>
+        </div>
+
+        <div class="page-hdr anim d1">
+          <div class="page-title">Dashboard</div>
+          <button class="btn btn-outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row anim d2">
+          <div class="stat" style="--stat-gradient:var(--gradient-primary);--stat-icon-bg:var(--primary-glow);--stat-icon-color:var(--primary-400)">
+            <div class="stat-top">
+              <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+              <span class="stat-trend up">+4,2%</span>
+            </div>
+            <div class="stat-val">2.847</div>
+            <div class="stat-lbl">Total de Contatos</div>
+          </div>
+          <div class="stat" style="--stat-gradient:linear-gradient(135deg,#4ADE80,#22C55E);--stat-icon-bg:var(--success-bg);--stat-icon-color:var(--success)">
+            <div class="stat-top">
+              <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+              <span class="stat-trend up">67,5%</span>
+            </div>
+            <div class="stat-val">1.923</div>
+            <div class="stat-lbl">Declararam Voto</div>
+          </div>
+          <div class="stat" style="--stat-gradient:linear-gradient(135deg,#FFB347,#FF6B6B);--stat-icon-bg:var(--warning-bg);--stat-icon-color:var(--accent-500)">
+            <div class="stat-top">
+              <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            </div>
+            <div class="stat-val">489</div>
+            <div class="stat-lbl">Favoritos</div>
+          </div>
+          <div class="stat" style="--stat-gradient:linear-gradient(135deg,#A78BFA,#8B5CF6);--stat-icon-bg:rgba(139,92,246,0.1);--stat-icon-color:var(--secondary-400)">
+            <div class="stat-top">
+              <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+              <span class="stat-trend up">75,7%</span>
+            </div>
+            <div class="stat-val">2.156</div>
+            <div class="stat-lbl">Com Endereco</div>
+          </div>
+        </div>
+
+        <!-- Growth -->
+        <div class="growth-row anim d3">
+          <div class="growth-card"><div class="growth-val">12 <span class="trend-sm up">+4</span></div><div class="growth-lbl">Novos Hoje</div></div>
+          <div class="growth-card"><div class="growth-val">8 <span class="trend-sm down">-2</span></div><div class="growth-lbl">Novos Ontem</div></div>
+          <div class="growth-card"><div class="growth-val">67 <span class="trend-sm up">+15</span></div><div class="growth-lbl">Ultimos 7 Dias</div></div>
+          <div class="growth-card"><div class="growth-val">284 <span class="trend-sm up">+8%</span></div><div class="growth-lbl">Este Mes</div></div>
+          <div class="growth-card"><div class="growth-val">263</div><div class="growth-lbl">Mes Passado</div></div>
+        </div>
+
+        <!-- Charts + Right -->
+        <div class="dash-grid anim d4">
+          <div class="dash-left">
+            <div class="glass">
+              <div class="chart-hdr"><div><div class="chart-title">Crescimento de Contatos</div><div class="chart-sub">Ultimos 30 dias</div></div></div>
+              <div class="spark-wrap">
+                <svg viewBox="0 0 600 180" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" class="spark-gradient" stop-opacity=".2"/><stop offset="100%" class="spark-gradient" stop-opacity=".01"/></linearGradient>
+                    <linearGradient id="sl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--primary-500)"/><stop offset="100%" stop-color="var(--accent-500)"/></linearGradient>
+                  </defs>
+                  <path d="M0,160 C40,150 70,142 100,135 C130,128 160,120 190,108 C220,96 250,102 280,92 C310,82 340,70 370,65 C400,60 430,48 460,38 C490,30 520,35 550,22 C570,16 585,12 600,8 L600,180 L0,180 Z" fill="url(#sg)"/>
+                  <path d="M0,160 C40,150 70,142 100,135 C130,128 160,120 190,108 C220,96 250,102 280,92 C310,82 340,70 370,65 C400,60 430,48 460,38 C490,30 520,35 550,22 C570,16 585,12 600,8" fill="none" stroke="url(#sl)" stroke-width="2.5" stroke-linecap="round"/>
+                  <circle cx="600" cy="8" r="4" fill="var(--primary-400)"><animate attributeName="r" values="4;6;4" dur="2s" repeatCount="indefinite"/></circle>
+                  <circle cx="600" cy="8" r="10" fill="var(--primary-400)" opacity=".15"><animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".15;0;.15" dur="2s" repeatCount="indefinite"/></circle>
+                </svg>
+              </div>
+            </div>
+
+            <div class="glass">
+              <div class="chart-hdr"><div><div class="chart-title">Distribuicao por Etiqueta</div><div class="chart-sub">Top 8 etiquetas</div></div></div>
+              <div class="bars">
+                <div class="bar-col"><div class="bar-v">412</div><div class="bar" style="height:85%;background:var(--primary-500)"></div><div class="bar-l">Zona Sul</div></div>
+                <div class="bar-col"><div class="bar-v">387</div><div class="bar" style="height:79%;background:var(--success)"></div><div class="bar-l">Saude</div></div>
+                <div class="bar-col"><div class="bar-v">298</div><div class="bar" style="height:61%;background:var(--accent-500)"></div><div class="bar-l">Educacao</div></div>
+                <div class="bar-col"><div class="bar-v">256</div><div class="bar" style="height:52%;background:var(--secondary-500)"></div><div class="bar-l">Infraestr.</div></div>
+                <div class="bar-col"><div class="bar-v">201</div><div class="bar" style="height:41%;background:var(--info)"></div><div class="bar-l">Idosos</div></div>
+                <div class="bar-col"><div class="bar-v">178</div><div class="bar" style="height:36%;background:var(--error)"></div><div class="bar-l">Juventude</div></div>
+                <div class="bar-col"><div class="bar-v">143</div><div class="bar" style="height:29%;background:var(--accent-400)"></div><div class="bar-l">Comercio</div></div>
+                <div class="bar-col"><div class="bar-v">98</div><div class="bar" style="height:20%;background:var(--secondary-400)"></div><div class="bar-l">Cultura</div></div>
+              </div>
+            </div>
+
+            <div class="glass">
+              <div class="chart-hdr"><div class="chart-title">Declaracao de Voto</div></div>
+              <div class="hbar">
+                <div class="hbar-top"><span class="hbar-name">Declararam Voto</span><span class="hbar-val" style="color:var(--success)">1.923 (67,5%)</span></div>
+                <div class="hbar-track"><div class="hbar-fill" style="width:67.5%;background:linear-gradient(90deg,var(--success),#22C55E)">67,5%</div></div>
+              </div>
+              <div class="hbar">
+                <div class="hbar-top"><span class="hbar-name">Nao Declararam</span><span class="hbar-val" style="color:var(--text-muted)">924 (32,5%)</span></div>
+                <div class="hbar-track"><div class="hbar-fill" style="width:32.5%;background:var(--text-muted)">32,5%</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right -->
+          <div class="right-col">
+            <div class="glass">
+              <div class="chart-hdr"><div class="chart-title">Aniversariantes Hoje</div><span style="font-size:16px">&#127874;</span></div>
+              <div class="bday"><div class="bday-av" style="background:var(--gradient-primary)">MC</div><div><div class="bday-name">Maria da Conceicao</div><div class="bday-date">07 Abril &middot; 62 anos</div></div></div>
+              <div class="bday"><div class="bday-av" style="background:linear-gradient(135deg,var(--success),#059669)">JR</div><div><div class="bday-name">Jose Roberto Silva</div><div class="bday-date">07 Abril &middot; 45 anos</div></div></div>
+              <div class="bday"><div class="bday-av" style="background:linear-gradient(135deg,var(--secondary-500),#7C3AED)">AL</div><div><div class="bday-name">Ana Lucia Ferreira</div><div class="bday-date">07 Abril &middot; 38 anos</div></div></div>
+              <div style="margin-top:12px;margin-bottom:6px"><div class="chart-title" style="font-size:12px;color:var(--text-muted)">Proximos 7 Dias</div></div>
+              <div class="bday"><div class="bday-av" style="background:var(--gradient-accent)">PH</div><div><div class="bday-name">Paulo Henrique Souza</div><div class="bday-date">09 Abril &middot; 51 anos</div></div></div>
+              <div class="bday"><div class="bday-av" style="background:linear-gradient(135deg,#F87171,#DC2626)">RM</div><div><div class="bday-name">Rosa Maria Santos</div><div class="bday-date">11 Abril &middot; 73 anos</div></div></div>
+            </div>
+
+            <div class="glass">
+              <div class="chart-hdr"><div class="chart-title">Atividade Recente</div></div>
+              <div class="act"><div class="act-dot" style="background:var(--success)"></div><div><div class="act-text"><b>Rodrigo</b> adicionou <b>Carlos Eduardo</b></div><div class="act-time">12 min atras</div></div></div>
+              <div class="act"><div class="act-dot" style="background:var(--primary-400)"></div><div><div class="act-text"><b>Mariana</b> atualizou etiqueta de <b>Joao Pedro</b></div><div class="act-time">28 min</div></div></div>
+              <div class="act"><div class="act-dot" style="background:var(--accent-500)"></div><div><div class="act-text"><b>Rodrigo</b> importou <b>47 contatos</b></div><div class="act-time">1h</div></div></div>
+              <div class="act"><div class="act-dot" style="background:var(--error)"></div><div><div class="act-text"><b>Patricia</b> removeu duplicado</div><div class="act-time">2h</div></div></div>
+              <div class="act"><div class="act-dot" style="background:var(--secondary-400)"></div><div><div class="act-text"><b>Sistema</b> atribuiu <b>Demanda #142</b></div><div class="act-time">3h</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CONTACTS ===== -->
+      <div id="pg-cnt" class="hidden">
+        <div class="p-info anim"><span class="p-info-dot"></span><span id="info2"></span><span class="right">Troque a paleta no canto superior direito</span></div>
+
+        <div class="contacts-hdr anim d1">
+          <div class="contacts-title">Contatos <span class="cnt-badge">2.847</span></div>
+          <div class="cnt-actions">
+            <button class="btn btn-outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button>
+            <button class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Contato</button>
+          </div>
+        </div>
+
+        <div class="search-row anim d2">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-in" placeholder="Buscar por nome, e-mail ou WhatsApp...">
+          </div>
+          <select class="sel-in"><option>Mais recentes</option><option>Nome A-Z</option><option>Favoritos</option></select>
+          <div class="vw-tog">
+            <button class="vw-btn active" id="g-btn" onclick="setVw('grid')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button class="vw-btn" id="l-btn" onclick="setVw('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+          </div>
+        </div>
+
+        <div class="filters anim d3">
+          <span class="chip active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Todos</span>
+          <span class="chip">Zona Sul</span><span class="chip">Saude</span><span class="chip">Educacao</span>
+          <span class="chip">Infraestrutura</span><span class="chip">Idosos</span>
+          <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Favoritos</span>
+          <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Declararam Voto</span>
+        </div>
+
+        <div class="c-grid on anim d4" id="cg"></div>
+        <div class="c-list" id="cl">
+          <div class="l-hdr"><div></div><div>Nome</div><div>WhatsApp</div><div>Email</div><div>Etiquetas</div><div>Criado</div><div></div></div>
+        </div>
+
+        <div class="pag anim d5">
+          <div class="pag-info">Mostrando 1-12 de 2.847</div>
+          <div class="pag-btns"><button class="pg">&lsaquo;</button><button class="pg active">1</button><button class="pg">2</button><button class="pg">3</button><button class="pg">...</button><button class="pg">237</button><button class="pg">&rsaquo;</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const D=[
+  {n:"Maria da Conceicao Silva",i:"MC",w:"(21) 99876-5432",e:"maria.conceicao@email.com",t:[{n:"Zona Sul",c:"#638BFF"},{n:"Saude",c:"#4ADE80"},{n:"Idosos",c:"#A78BFA"}],f:1,d:"02/04/2026",bg:"linear-gradient(135deg,#638BFF,#8B5CF6)"},
+  {n:"Jose Roberto Santos",i:"JR",w:"(21) 98765-1234",e:"jose.roberto@email.com",t:[{n:"Educacao",c:"#FFB347"},{n:"Juventude",c:"#F87171"}],f:0,d:"01/04/2026",bg:"linear-gradient(135deg,#4ADE80,#22C55E)"},
+  {n:"Ana Lucia Ferreira",i:"AL",w:"(21) 97654-3210",e:"ana.lucia@email.com",t:[{n:"Infraestr.",c:"#A78BFA"},{n:"Zona Sul",c:"#638BFF"}],f:1,d:"31/03/2026",bg:"linear-gradient(135deg,#A78BFA,#7C3AED)"},
+  {n:"Carlos Eduardo Mendes",i:"CE",w:"(21) 96543-2109",e:"carlos.mendes@email.com",t:[{n:"Comercio",c:"#22D3EE"},{n:"Zona Sul",c:"#638BFF"}],f:0,d:"30/03/2026",bg:"linear-gradient(135deg,#FFB347,#FF6B6B)"},
+  {n:"Patricia Oliveira Lima",i:"PO",w:"(21) 95432-1098",e:"patricia.lima@email.com",t:[{n:"Saude",c:"#4ADE80"}],f:1,d:"29/03/2026",bg:"linear-gradient(135deg,#F87171,#DC2626)"},
+  {n:"Francisco Souza Neto",i:"FS",w:"(21) 94321-0987",e:"francisco.neto@email.com",t:[{n:"Cultura",c:"#EC4899"},{n:"Idosos",c:"#A78BFA"}],f:0,d:"28/03/2026",bg:"linear-gradient(135deg,#22D3EE,#0891B2)"},
+  {n:"Claudia Regina Dias",i:"CR",w:"(21) 93210-9876",e:"claudia.dias@email.com",t:[{n:"Educacao",c:"#FFB347"},{n:"Zona Sul",c:"#638BFF"},{n:"Juventude",c:"#F87171"}],f:0,d:"27/03/2026",bg:"linear-gradient(135deg,#EC4899,#BE185D)"},
+  {n:"Antonio Carlos Moreira",i:"AC",w:"(21) 92109-8765",e:"antonio.moreira@email.com",t:[{n:"Infraestr.",c:"#A78BFA"}],f:1,d:"26/03/2026",bg:"linear-gradient(135deg,#3B82F6,#1D4ED8)"},
+  {n:"Fernanda Rodrigues Costa",i:"FR",w:"(21) 91098-7654",e:"fernanda.costa@email.com",t:[{n:"Saude",c:"#4ADE80"},{n:"Idosos",c:"#A78BFA"}],f:0,d:"25/03/2026",bg:"linear-gradient(135deg,#4ADE80,#16A34A)"},
+  {n:"Marcos Vinicius Almeida",i:"MV",w:"(21) 90987-6543",e:"marcos.almeida@email.com",t:[{n:"Comercio",c:"#22D3EE"},{n:"Zona Sul",c:"#638BFF"}],f:0,d:"24/03/2026",bg:"linear-gradient(135deg,#FBBF24,#D97706)"},
+  {n:"Sandra Helena Pires",i:"SH",w:"(21) 98111-2222",e:"sandra.pires@email.com",t:[{n:"Cultura",c:"#EC4899"},{n:"Educacao",c:"#FFB347"}],f:1,d:"23/03/2026",bg:"linear-gradient(135deg,#8B5CF6,#6D28D9)"},
+  {n:"Pedro Paulo Goncalves",i:"PP",w:"(21) 97222-3333",e:"pedro.goncalves@email.com",t:[{n:"Juventude",c:"#F87171"},{n:"Infraestr.",c:"#A78BFA"}],f:0,d:"22/03/2026",bg:"linear-gradient(135deg,#60A5FA,#3B82F6)"},
+];
+
+const M={
+  midnight:{l:"Midnight Gradient",s:"Plus Jakarta Sans + Inter",c:"Blue/Purple com gold accent"},
+  obsidian:{l:"Obsidian Navy",s:"Manrope + DM Sans",c:"Teal primary com coral accent"},
+  carbon:{l:"Carbon Minimal",s:"Space Grotesk + Inter",c:"Monocromatico estilo Linear/Vercel"},
+};
+
+function renderGrid(){
+  document.getElementById('cg').innerHTML=D.map(c=>`
+    <div class="c-card">
+      <button class="c-fav ${c.f?'on':''}"><svg viewBox="0 0 24 24" fill="${c.f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <div class="c-card-top">
+        <div class="c-av" style="background:${c.bg}">${c.i}</div>
+        <div><div class="c-name">${c.n}</div><div class="c-sub">${c.d}</div></div>
+      </div>
+      <div class="c-details">
+        <div class="c-det"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${c.w}</div>
+        <div class="c-det"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${c.e}</div>
+      </div>
+      <div class="c-tags">${c.t.map(t=>`<span class="tag" style="background:${t.c}15;color:${t.c};border-color:${t.c}25">${t.n}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+function renderList(){
+  const el=document.getElementById('cl');
+  const hdr=el.querySelector('.l-hdr');
+  el.innerHTML='';el.appendChild(hdr);
+  el.insertAdjacentHTML('beforeend',D.map(c=>`
+    <div class="l-row">
+      <button class="l-fav ${c.f?'on':''}"><svg viewBox="0 0 24 24" fill="${c.f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <div class="l-name">${c.n}</div>
+      <div class="l-cell">${c.w}</div>
+      <div class="l-cell">${c.e}</div>
+      <div class="l-tags">${c.t.slice(0,2).map(t=>`<span class="tag" style="background:${t.c}15;color:${t.c};font-size:10px;padding:1px 6px">${t.n}</span>`).join('')}${c.t.length>2?`<span class="tag" style="background:var(--bg-muted);color:var(--text-muted);font-size:10px;padding:1px 6px">+${c.t.length-2}</span>`:''}</div>
+      <div class="l-date">${c.d}</div>
+      <div class="l-acts">
+        <button class="l-act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="l-act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      </div>
+    </div>`).join(''));
+}
+
+function updInfo(p){
+  const m=M[p];
+  const t=`<strong>${m.l}</strong> &mdash; ${m.s} &mdash; ${m.c}`;
+  document.getElementById('info1').innerHTML=t;
+  document.getElementById('info2').innerHTML=t;
+}
+
+function setPal(p,btn){
+  document.body.setAttribute('data-palette',p);
+  document.querySelectorAll('.pal-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updInfo(p);
+}
+
+function goTo(pg){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector(`.nav-item[data-nav="${pg}"]`).classList.add('active');
+  document.getElementById('pg-dash').classList.toggle('hidden',pg!=='dashboard');
+  document.getElementById('pg-cnt').classList.toggle('hidden',pg!=='contacts');
+  document.getElementById('bc').textContent=pg==='dashboard'?'Dashboard':'Contatos';
+}
+
+function setVw(v){
+  document.getElementById('cg').classList.toggle('on',v==='grid');
+  document.getElementById('cg').style.display=v==='grid'?'grid':'none';
+  document.getElementById('cl').classList.toggle('on',v==='list');
+  document.getElementById('g-btn').classList.toggle('active',v==='grid');
+  document.getElementById('l-btn').classList.toggle('active',v==='list');
+}
+
+renderGrid();renderList();updInfo('midnight');
+</script>
+</body>
+</html>

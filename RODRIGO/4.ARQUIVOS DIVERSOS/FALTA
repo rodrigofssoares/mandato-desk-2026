@@ -1,0 +1,46 @@
+ O que posso migrar do projeto antigo
+                                                                                            
+  Lógica / Utilitários (src/lib/)                                                          
+                                                                                            
+  - Normalização — funções de normalizar telefone, nome e email (normalization.ts)            - Geocoding avançado — cache de CEP, integração BrasilAPI, fallback Nominatim               (geocoding.ts)                                                                              - Activity Log — sistema de auditoria/log de atividades (activityLog.ts)                    - Impressão de etiquetas — geração de labels de endereço (addressLabels.ts)                 - Webhooks logic — helpers de disparo de webhooks (webhooks.ts)                                                                                                                         Componentes / Features                                                                                                                                                                  - Detecção de duplicatas — comparação side-by-side + merge de contatos                    
+  - Import avançado — seleção de aba Excel, preview de linhas, detecção de duplicatas no
+  import
+  - Impressão de etiquetas — botão + modal de print labels
+  - Mapa mais completo — legenda, lista lateral, popup com detalhes, card de mapa
+  - Export de demandas — menu de exportação CSV/Excel
+  - Contatos ignorados — lista de contatos ignorados
+  - Favoritos — seção de favoritos
+
+  Campos de contato que faltam no novo
+
+  - whatsapp_name / whatsapp_habilitado
+  - is_favorite (favoritos)
+  - ultimo_contato_em (último contato)
+  - pin_color (cor no mapa)
+  - cep_validated_at (validação de CEP)
+  - Campos de merge (merged_at, merged_by, merged_from_contact_id)
+  - google_contact_id (sync Google)
+
+  Tabelas Supabase que faltam
+
+  - activities (log de auditoria)
+  - cep_coordinates (cache de geocoding)
+  - contact_merges (histórico de merges)
+  - contact_sync / google_oauth_tokens / google_sync_* (integração Google)
+  - team_members (equipe)
+
+  Funções RPC no banco
+
+  - get_duplicate_contacts() — detectar duplicatas
+  - normalize_phone() — normalizar telefone no banco
+  - has_permission() / has_role() — verificação de permissões
+
+  ---
+  O que NÃO precisa migrar (já existe ou foi melhorado no novo)
+
+  - Dashboard (já tem stats, gráficos, aniversários, feed)
+  - Sistema de permissões (já implementado com matriz completa)
+  - Hooks de dados (novo projeto tem hooks mais organizados)
+  - API tokens e webhooks (já existem)
+  - Branding/personalização (já existe)
+  - Tema dark/light (já usa next-themes)
