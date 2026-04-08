@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { contactSchema, type ContactFormData } from '@/lib/contactValidation';
 import { useCreateContact, useUpdateContact, useContactTags, useLeaders, type Contact } from '@/hooks/useContacts';
@@ -149,7 +148,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-          <ScrollArea className="flex-1 px-6">
+          <div className="flex-1 overflow-y-auto px-6">
             <Tabs defaultValue="pessoais" className="w-full">
               <TabsList className="w-full mb-4">
                 <TabsTrigger value="pessoais" className="flex-1 text-xs">Pessoais</TabsTrigger>
@@ -496,7 +495,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
 
             {/* Espaço para o botão não ficar colado */}
             <div className="h-4" />
-          </ScrollArea>
+          </div>
 
           <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-background">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
