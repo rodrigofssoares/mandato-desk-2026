@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Paintbrush, Save, Sun, Moon, Monitor, Upload, X, User } from 'lucide-react';
+import { Loader2, Paintbrush, Save, Sun, Moon, Upload, X, User } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useBranding, useUpdateBranding, useUploadPoliticianPhoto } from '@/hooks/useBranding';
 
@@ -69,9 +69,21 @@ export default function Branding() {
   }
 
   const themeOptions = [
-    { value: 'light', label: 'Claro', icon: Sun, description: 'Fundo branco com texto escuro' },
-    { value: 'dark', label: 'Escuro', icon: Moon, description: 'Fundo escuro com texto claro' },
-    { value: 'system', label: 'Sistema', icon: Monitor, description: 'Segue a configuração do seu dispositivo' },
+    {
+      value: 'navy', label: 'Navy', icon: Sun,
+      description: 'Institucional e confiável',
+      preview: { bg: '#F5F7FA', sidebar: '#F8FAFC', primary: '#1A4480', text: '#0C1829' },
+    },
+    {
+      value: 'midnight', label: 'Midnight', icon: Moon,
+      description: 'Dark mode azul moderno',
+      preview: { bg: '#06091A', sidebar: '#0D1225', primary: '#638BFF', text: '#F0F2F8' },
+    },
+    {
+      value: 'obsidian', label: 'Obsidian', icon: Moon,
+      description: 'Dark mode teal sofisticado',
+      preview: { bg: '#080C18', sidebar: '#0F1423', primary: '#2DD4BF', text: '#EDF0F7' },
+    },
   ];
 
   return (
@@ -88,12 +100,13 @@ export default function Branding() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Tema</CardTitle>
-          <CardDescription>Escolha entre tema claro ou escuro</CardDescription>
+          <CardDescription>Escolha a aparência do sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-3">
             {themeOptions.map((opt) => {
               const isActive = theme === opt.value;
+              const p = opt.preview;
               return (
                 <button
                   key={opt.value}
@@ -106,31 +119,32 @@ export default function Branding() {
                     }
                   `}
                 >
-                  {/* Mini preview */}
-                  <div className={`
-                    w-full aspect-video rounded-md border overflow-hidden relative
-                    ${opt.value === 'dark' ? 'bg-zinc-900 border-zinc-700' : ''}
-                    ${opt.value === 'light' ? 'bg-white border-zinc-200' : ''}
-                    ${opt.value === 'system' ? 'bg-gradient-to-r from-white to-zinc-900 border-zinc-400' : ''}
-                  `}>
+                  {/* Mini preview com cores reais */}
+                  <div
+                    className="w-full aspect-video rounded-md border overflow-hidden relative"
+                    style={{ background: p.bg, borderColor: `${p.text}15` }}
+                  >
                     {/* Sidebar mini */}
-                    <div className={`
-                      absolute left-0 top-0 bottom-0 w-1/4
-                      ${opt.value === 'dark' ? 'bg-zinc-800' : ''}
-                      ${opt.value === 'light' ? 'bg-zinc-100' : ''}
-                      ${opt.value === 'system' ? 'bg-zinc-300' : ''}
-                    `} />
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-1/4"
+                      style={{ background: p.sidebar, borderRight: `1px solid ${p.text}10` }}
+                    />
                     {/* Header mini */}
-                    <div className={`
-                      absolute left-1/4 top-0 right-0 h-1/5
-                      ${opt.value === 'dark' ? 'bg-zinc-800/50' : ''}
-                      ${opt.value === 'light' ? 'bg-zinc-50' : ''}
-                      ${opt.value === 'system' ? 'bg-zinc-200' : ''}
-                    `} />
+                    <div
+                      className="absolute left-1/4 top-0 right-0 h-1/5"
+                      style={{ background: p.sidebar, borderBottom: `1px solid ${p.text}10` }}
+                    />
+                    {/* Content dots */}
+                    <div className="absolute left-[30%] top-[30%] right-[8%] flex gap-1">
+                      <div className="h-2 flex-1 rounded-sm" style={{ background: p.primary }} />
+                      <div className="h-2 flex-1 rounded-sm" style={{ background: `${p.primary}40` }} />
+                      <div className="h-2 flex-1 rounded-sm" style={{ background: `${p.primary}20` }} />
+                    </div>
                   </div>
                   <div className="text-center">
                     <opt.icon className="h-4 w-4 mx-auto mb-1" />
                     <span className="text-sm font-medium">{opt.label}</span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{opt.description}</p>
                   </div>
                 </button>
               );

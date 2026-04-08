@@ -27,16 +27,16 @@ export default {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			primary: {
-  				'50': '#f0f9ff',
-  				'100': '#e0f2fe',
-  				'200': '#bae6fd',
-  				'300': '#7dd3fc',
-  				'400': '#38bdf8',
-  				'500': '#0ea5e9',
-  				'600': '#0284c7',
-  				'700': '#0369a1',
-  				'800': '#075985',
-  				'900': '#0c4a6e',
+  				'50': '#EBF1F7',
+  				'100': '#D0DDE9',
+  				'200': '#A1BBCF',
+  				'300': '#7299B5',
+  				'400': '#3A6BA8',
+  				'500': '#1A4480',
+  				'600': '#153A6A',
+  				'700': '#102E54',
+  				'800': '#0C2240',
+  				'900': '#08162C',
   				DEFAULT: 'hsl(var(--primary))',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
@@ -87,10 +87,10 @@ export default {
   				high: '#ef4444'
   			},
   			dark: {
-  				bg: '#020617',
-  				card: '#0f172a',
-  				border: '#1e293b',
-  				hover: '#334155'
+  				bg: '#06091A',
+  				card: '#0D1225',
+  				border: '#1A2345',
+  				hover: '#243352'
   			}
   		},
   		borderRadius: {

@@ -3,49 +3,49 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* shadcn HSL tokens — Light Mode */
-    --background: 210 20% 97%;
-    --foreground: 222 47% 11%;
+  :root, .navy {
+    /* shadcn HSL tokens — Navy (Light) */
+    --background: 213 25% 97%;
+    --foreground: 215 50% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 215 50% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 199 89% 48%;
+    --popover-foreground: 215 50% 8%;
+    --primary: 213 65% 30%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --secondary: 213 25% 95%;
+    --secondary-foreground: 215 50% 8%;
+    --muted: 213 25% 95%;
+    --muted-foreground: 215 16% 53%;
+    --accent: 213 25% 95%;
+    --accent-foreground: 215 50% 8%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 199 89% 48%;
+    --border: 213 25% 87%;
+    --input: 213 25% 87%;
+    --ring: 213 65% 30%;
     --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar Navy */
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 215 25% 27%;
+    --sidebar-primary: 213 65% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 213 25% 95%;
+    --sidebar-accent-foreground: 215 25% 27%;
+    --sidebar-border: 213 25% 91%;
+    --sidebar-ring: 213 65% 30%;
 
-    /* OKLCH Design System tokens */
-    --color-bg: oklch(97% 0.005 90);
-    --color-surface: oklch(99% 0.002 90);
-    --color-muted: oklch(95% 0.008 90);
-    --color-border: oklch(90% 0.01 90);
-    --color-border-subtle: oklch(93% 0.008 90);
-    --color-text-primary: oklch(25% 0.015 260);
-    --color-text-secondary: oklch(45% 0.02 260);
-    --color-text-muted: oklch(55% 0.025 260);
-    --color-text-subtle: oklch(62% 0.025 260);
+    /* OKLCH Design System tokens — Navy */
+    --color-bg: oklch(97% 0.006 220);
+    --color-surface: oklch(99% 0.002 220);
+    --color-muted: oklch(95% 0.008 220);
+    --color-border: oklch(90% 0.012 220);
+    --color-border-subtle: oklch(93% 0.008 220);
+    --color-text-primary: oklch(15% 0.02 220);
+    --color-text-secondary: oklch(40% 0.02 220);
+    --color-text-muted: oklch(55% 0.02 220);
+    --color-text-subtle: oklch(62% 0.02 220);
 
     /* Layout */
     --app-sidebar-width: 0px;
@@ -54,48 +54,92 @@
     --app-bottom-nav-height: 0px;
   }
 
-  .dark {
-    /* shadcn HSL tokens — Dark Mode */
-    --background: 222 47% 3%;
-    --foreground: 210 40% 98%;
-    --card: 217 33% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 217 33% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 199 89% 48%;
+  .dark, .midnight {
+    /* shadcn HSL tokens — Midnight (Dark) */
+    --background: 228 60% 6%;
+    --foreground: 228 30% 96%;
+    --card: 228 40% 10%;
+    --card-foreground: 228 30% 96%;
+    --popover: 228 40% 10%;
+    --popover-foreground: 228 30% 96%;
+    --primary: 226 100% 69%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
+    --secondary: 228 40% 15%;
+    --secondary-foreground: 228 30% 96%;
+    --muted: 228 40% 15%;
+    --muted-foreground: 228 15% 54%;
+    --accent: 228 40% 15%;
+    --accent-foreground: 228 30% 96%;
+    --destructive: 0 86% 71%;
     --destructive-foreground: 0 0% 100%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 199 89% 48%;
+    --border: 228 40% 15%;
+    --input: 228 40% 15%;
+    --ring: 226 100% 69%;
 
-    /* Sidebar Dark */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Sidebar Midnight */
+    --sidebar-background: 228 55% 5%;
+    --sidebar-foreground: 228 30% 96%;
+    --sidebar-primary: 226 100% 69%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 228 40% 13%;
+    --sidebar-accent-foreground: 228 30% 96%;
+    --sidebar-border: 228 40% 13%;
+    --sidebar-ring: 226 100% 69%;
 
-    /* OKLCH Design System tokens — Dark */
-    --color-bg: oklch(11% 0.025 260);
-    --color-surface: oklch(15% 0.02 260);
-    --color-muted: oklch(22% 0.015 260);
-    --color-border: oklch(26% 0.012 260);
-    --color-border-subtle: oklch(22% 0.01 260 / 0.6);
-    --color-text-primary: oklch(98% 0.002 260);
-    --color-text-secondary: oklch(83% 0.015 260);
-    --color-text-muted: oklch(72% 0.02 260);
-    --color-text-subtle: oklch(62% 0.025 260);
+    /* OKLCH Design System tokens — Midnight */
+    --color-bg: oklch(11% 0.03 250);
+    --color-surface: oklch(15% 0.025 250);
+    --color-muted: oklch(20% 0.02 250);
+    --color-border: oklch(24% 0.015 250);
+    --color-border-subtle: oklch(20% 0.012 250 / 0.6);
+    --color-text-primary: oklch(97% 0.005 250);
+    --color-text-secondary: oklch(75% 0.015 250);
+    --color-text-muted: oklch(60% 0.02 250);
+    --color-text-subtle: oklch(50% 0.02 250);
+  }
+
+  .obsidian {
+    /* shadcn HSL tokens — Obsidian (Dark) */
+    --background: 220 50% 6%;
+    --foreground: 222 30% 95%;
+    --card: 222 35% 10%;
+    --card-foreground: 222 30% 95%;
+    --popover: 222 35% 10%;
+    --popover-foreground: 222 30% 95%;
+    --primary: 171 65% 50%;
+    --primary-foreground: 220 50% 6%;
+    --secondary: 222 35% 15%;
+    --secondary-foreground: 222 30% 95%;
+    --muted: 222 35% 15%;
+    --muted-foreground: 222 15% 49%;
+    --accent: 222 35% 15%;
+    --accent-foreground: 222 30% 95%;
+    --destructive: 0 86% 71%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 35% 17%;
+    --input: 222 35% 17%;
+    --ring: 171 65% 50%;
+
+    /* Sidebar Obsidian */
+    --sidebar-background: 220 50% 5%;
+    --sidebar-foreground: 222 30% 95%;
+    --sidebar-primary: 171 65% 50%;
+    --sidebar-primary-foreground: 220 50% 6%;
+    --sidebar-accent: 222 35% 13%;
+    --sidebar-accent-foreground: 222 30% 95%;
+    --sidebar-border: 222 35% 13%;
+    --sidebar-ring: 171 65% 50%;
+
+    /* OKLCH Obsidian */
+    --color-bg: oklch(10% 0.025 240);
+    --color-surface: oklch(14% 0.02 240);
+    --color-muted: oklch(19% 0.018 240);
+    --color-border: oklch(23% 0.014 240);
+    --color-border-subtle: oklch(19% 0.012 240 / 0.6);
+    --color-text-primary: oklch(96% 0.005 240);
+    --color-text-secondary: oklch(72% 0.015 240);
+    --color-text-muted: oklch(58% 0.02 240);
+    --color-text-subtle: oklch(48% 0.02 240);
   }
 
   * {
@@ -116,12 +160,12 @@
 
   /* Glassmorphism */
   .glass {
-    background: oklch(99% 0.002 90 / 0.8);
+    background: oklch(99% 0.002 220 / 0.8);
     backdrop-filter: blur(10px);
-    border: 1px solid oklch(90% 0.01 90 / 0.5);
+    border: 1px solid oklch(90% 0.012 220 / 0.5);
   }
   .dark .glass {
-    background: oklch(15% 0.02 260 / 0.75);
+    background: oklch(15% 0.02 250 / 0.75);
     backdrop-filter: blur(12px);
     border: 1px solid oklch(100% 0 0 / 0.05);
   }
