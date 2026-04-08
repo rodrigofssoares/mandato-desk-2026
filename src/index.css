@@ -54,7 +54,7 @@
     --app-bottom-nav-height: 0px;
   }
 
-  .dark, .midnight {
+  .midnight {
     /* shadcn HSL tokens — Midnight (Dark) */
     --background: 228 60% 6%;
     --foreground: 228 30% 96%;
@@ -164,7 +164,7 @@
     backdrop-filter: blur(10px);
     border: 1px solid oklch(90% 0.012 220 / 0.5);
   }
-  .dark .glass {
+  :is(.midnight, .obsidian) .glass {
     background: oklch(15% 0.02 250 / 0.75);
     backdrop-filter: blur(12px);
     border: 1px solid oklch(100% 0 0 / 0.05);
@@ -197,7 +197,7 @@
     outline: 2px solid #2563eb;
     outline-offset: 2px;
   }
-  .dark .focus-visible-ring:focus-visible {
+  :is(.midnight, .obsidian) .focus-visible-ring:focus-visible {
     outline-color: #60a5fa;
   }
 

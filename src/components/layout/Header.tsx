@@ -25,7 +25,8 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function Header() {
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'midnight' || resolvedTheme === 'obsidian';
   const { isImpersonating } = useImpersonation();
 
   const currentPageTitle =
@@ -52,13 +53,18 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={() => {
-              const next: Record<string, string> = { navy: 'midnight', midnight: 'obsidian', obsidian: 'navy' };
-              setTheme(next[theme ?? 'navy'] ?? 'navy');
+              const order = ['navy', 'midnight', 'obsidian'];
+              const current = order.indexOf(theme ?? 'navy');
+              setTheme(order[(current + 1) % order.length]);
             }}
             aria-label="Alternar tema"
+            title={`Tema: ${theme ?? 'navy'}`}
           >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            {isDark ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </header>

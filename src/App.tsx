@@ -212,7 +212,6 @@ export default function App() {
         attribute="class"
         defaultTheme="navy"
         themes={['navy', 'midnight', 'obsidian']}
-        value={{ navy: 'navy', midnight: 'dark midnight', obsidian: 'dark obsidian' }}
       >
         <BrowserRouter>
           <AuthProvider>
