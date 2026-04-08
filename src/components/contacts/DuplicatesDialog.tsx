@@ -135,10 +135,6 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
       if (current.includes(contactId)) {
         return { ...prev, [groupKey]: current.filter((id) => id !== contactId) };
       }
-      // Max 2 selected per group
-      if (current.length >= 2) {
-        return { ...prev, [groupKey]: [current[1], contactId] };
-      }
       return { ...prev, [groupKey]: [...current, contactId] };
     });
   }
@@ -162,6 +158,27 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
     setDeletingContact(null);
     refetch();
     onSuccess?.();
+  }
+
+  // Delete all selected contacts in a group
+  const [deletingGroupKey, setDeletingGroupKey] = useState<string | null>(null);
+  const [batchDeleting, setBatchDeleting] = useState(false);
+
+  async function handleDeleteSelected(groupKey: string) {
+    const ids = selectedByGroup[groupKey] ?? [];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    try {
+      for (const id of ids) {
+        await deleteSingle.mutateAsync(id);
+      }
+      setSelectedByGroup((prev) => ({ ...prev, [groupKey]: [] }));
+      setDeletingGroupKey(null);
+      refetch();
+      onSuccess?.();
+    } finally {
+      setBatchDeleting(false);
+    }
   }
 
   function handleCompare(groupKey: string, group: DuplicateGroup) {
@@ -292,11 +309,29 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                           <div className="flex items-center gap-2 px-6 py-2 border-b border-border/50">
                             <span className="text-xs text-muted-foreground flex-1">
                               {selectedCount === 0
-                                ? "Clique para selecionar contatos"
-                                : selectedCount === 1
-                                ? "Selecione mais 1 para comparar/mesclar"
-                                : "2 selecionados"}
+                                ? "Selecione os contatos que deseja excluir"
+                                : `${selectedCount} selecionado${selectedCount !== 1 ? "s" : ""}`}
                             </span>
+
+                            {selectedCount >= 1 && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-7 gap-1.5 text-xs"
+                                disabled={batchDeleting}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingGroupKey(key);
+                                }}
+                              >
+                                {batchDeleting && deletingGroupKey === key ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                                Excluir {selectedCount}
+                              </Button>
+                            )}
 
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -314,7 +349,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                                   Comparar
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Comparar os 2 selecionados lado a lado</TooltipContent>
+                              <TooltipContent>Selecione exatamente 2 para comparar</TooltipContent>
                             </Tooltip>
 
                             <Tooltip>
@@ -333,7 +368,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                                   Mesclar
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Mesclar os 2 selecionados em um so</TooltipContent>
+                              <TooltipContent>Selecione exatamente 2 para mesclar</TooltipContent>
                             </Tooltip>
                           </div>
 
@@ -462,6 +497,33 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch delete confirmation */}
+      <AlertDialog open={!!deletingGroupKey} onOpenChange={(o) => !o && setDeletingGroupKey(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contatos selecionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir{" "}
+              <strong>{deletingGroupKey ? (selectedByGroup[deletingGroupKey]?.length ?? 0) : 0} contatos</strong>?
+              Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={batchDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingGroupKey && handleDeleteSelected(deletingGroupKey)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={batchDeleting}
+            >
+              {batchDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Excluir {deletingGroupKey ? (selectedByGroup[deletingGroupKey]?.length ?? 0) : 0} contatos
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
