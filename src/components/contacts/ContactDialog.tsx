@@ -303,9 +303,9 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </div>
                   </div>
 
-                  {/* Liderança vinculada */}
+                  {/* Articulador vinculado */}
                   <div>
-                    <Label htmlFor="leader_id">Liderança vinculada</Label>
+                    <Label htmlFor="leader_id">Articulador vinculado</Label>
                     <Select
                       value={form.watch('leader_id') || '__none__'}
                       onValueChange={(v) => form.setValue('leader_id', v === '__none__' ? '' : v, { shouldDirty: true })}
