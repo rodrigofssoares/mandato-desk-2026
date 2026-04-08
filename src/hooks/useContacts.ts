@@ -25,6 +25,7 @@ export interface Contact {
   nome: string;
   whatsapp?: string | null;
   em_canal_whatsapp?: boolean;
+  e_multiplicador?: boolean;
   email?: string | null;
   telefone?: string | null;
   genero?: string | null;

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User, CheckSquare, Tag } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -23,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 import { contactSchema, type ContactFormData } from '@/lib/contactValidation';
 import { useCreateContact, useUpdateContact, useContactTags, useLeaders, type Contact } from '@/hooks/useContacts';
 
@@ -37,6 +37,8 @@ const ESTADOS = [
   'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
 ];
 
+const RANKING_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
 export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProps) {
   const isEditing = !!contact;
   const createMutation = useCreateContact();
@@ -50,6 +52,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
       nome: '',
       whatsapp: '',
       em_canal_whatsapp: false,
+      e_multiplicador: false,
       email: '',
       telefone: '',
       genero: null,
@@ -82,6 +85,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         nome: contact.nome ?? '',
         whatsapp: contact.whatsapp ?? '',
         em_canal_whatsapp: contact.em_canal_whatsapp ?? false,
+        e_multiplicador: contact.e_multiplicador ?? false,
         email: contact.email ?? '',
         telefone: contact.telefone ?? '',
         genero: (contact.genero as ContactFormData['genero']) ?? null,
@@ -122,6 +126,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const selectedTagIds = form.watch('tag_ids') ?? [];
+  const currentRanking = form.watch('ranking') ?? 0;
 
   function toggleTag(tagId: string) {
     const current = form.getValues('tag_ids') ?? [];
@@ -146,234 +151,315 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                 <TabsTrigger value="pessoais" className="flex-1 text-xs">Pessoais</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 text-xs">Endereço</TabsTrigger>
                 <TabsTrigger value="redes" className="flex-1 text-xs">Redes</TabsTrigger>
-                <TabsTrigger value="politico" className="flex-1 text-xs">Político</TabsTrigger>
                 <TabsTrigger value="obs" className="flex-1 text-xs">Obs</TabsTrigger>
               </TabsList>
 
               {/* --- Dados Pessoais --- */}
               <TabsContent value="pessoais" className="space-y-4 mt-0">
-                <div>
-                  <Label htmlFor="nome">Nome *</Label>
-                  <Input id="nome" {...form.register('nome')} placeholder="Nome completo" />
-                  {form.formState.errors.nome && (
-                    <p className="text-xs text-destructive mt-1">{form.formState.errors.nome.message}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="whatsapp">WhatsApp</Label>
-                    <Input id="whatsapp" {...form.register('whatsapp')} placeholder="(00) 00000-0000" />
+
+                {/* Card: Dados Básicos */}
+                <div className="rounded-lg border bg-card p-4 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-7 h-7 rounded-md bg-blue-500/10 flex items-center justify-center">
+                      <User className="h-3.5 w-3.5 text-blue-400" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground">Dados Básicos</span>
                   </div>
+
                   <div>
-                    <Label htmlFor="telefone">Telefone</Label>
-                    <Input id="telefone" {...form.register('telefone')} placeholder="(00) 0000-0000" />
+                    <Label htmlFor="nome">Nome *</Label>
+                    <Input id="nome" {...form.register('nome')} placeholder="Nome completo" />
+                    {form.formState.errors.nome && (
+                      <p className="text-xs text-destructive mt-1">{form.formState.errors.nome.message}</p>
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="em_canal_whatsapp"
-                    checked={form.watch('em_canal_whatsapp')}
-                    onCheckedChange={(checked) => form.setValue('em_canal_whatsapp', !!checked, { shouldDirty: true })}
-                  />
-                  <Label htmlFor="em_canal_whatsapp" className="cursor-pointer">Já está no canal do WhatsApp</Label>
-                </div>
-                <div>
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" {...form.register('email')} placeholder="email@exemplo.com" />
-                  {form.formState.errors.email && (
-                    <p className="text-xs text-destructive mt-1">{form.formState.errors.email.message}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="genero">Gênero</Label>
-                    <Select
-                      value={form.watch('genero') ?? ''}
-                      onValueChange={(v) => form.setValue('genero', v as ContactFormData['genero'], { shouldDirty: true })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="masculino">Masculino</SelectItem>
-                        <SelectItem value="feminino">Feminino</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
-                        <SelectItem value="prefiro_nao_informar">Prefiro não informar</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="whatsapp">WhatsApp</Label>
+                      <Input id="whatsapp" {...form.register('whatsapp')} placeholder="(00) 00000-0000" />
+                    </div>
+                    <div>
+                      <Label htmlFor="telefone">Telefone</Label>
+                      <Input id="telefone" {...form.register('telefone')} placeholder="(00) 0000-0000" />
+                    </div>
                   </div>
+
                   <div>
-                    <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                    <Input id="data_nascimento" type="date" {...form.register('data_nascimento')} />
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input id="email" type="email" {...form.register('email')} placeholder="email@exemplo.com" />
+                    {form.formState.errors.email && (
+                      <p className="text-xs text-destructive mt-1">{form.formState.errors.email.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                      <Input id="data_nascimento" type="date" {...form.register('data_nascimento')} />
+                    </div>
+                    <div>
+                      <Label htmlFor="genero">Gênero</Label>
+                      <Select
+                        value={form.watch('genero') ?? ''}
+                        onValueChange={(v) => form.setValue('genero', v as ContactFormData['genero'], { shouldDirty: true })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="masculino">Masculino</SelectItem>
+                          <SelectItem value="feminino">Feminino</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                          <SelectItem value="prefiro_nao_informar">Prefiro não informar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
-                {/* Tags */}
-                <div>
-                  <Label>Etiquetas</Label>
-                  <div className="border rounded-md p-3 mt-1 max-h-40 overflow-y-auto">
-                    {allTags.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Nenhuma etiqueta cadastrada</p>
-                    )}
-                    <div className="grid grid-cols-2 gap-2">
-                      {allTags.map((tag) => (
-                        <label key={tag.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                          <Checkbox
-                            checked={selectedTagIds.includes(tag.id)}
-                            onCheckedChange={() => toggleTag(tag.id)}
-                          />
-                          <span
-                            className="truncate"
-                            style={tag.cor ? { color: tag.cor } : undefined}
-                          >
-                            {tag.nome}
-                          </span>
-                        </label>
+                {/* Card: Status e Classificação */}
+                <div className="rounded-lg border bg-card p-4 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-7 h-7 rounded-md bg-green-500/10 flex items-center justify-center">
+                      <CheckSquare className="h-3.5 w-3.5 text-green-400" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground">Status e Classificação</span>
+                  </div>
+
+                  {/* Checkboxes lado a lado */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <label
+                      htmlFor="em_canal_whatsapp"
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
+                        form.watch('em_canal_whatsapp')
+                          ? "border-green-500/50 bg-green-500/5"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <Checkbox
+                        id="em_canal_whatsapp"
+                        checked={form.watch('em_canal_whatsapp')}
+                        onCheckedChange={(checked) => form.setValue('em_canal_whatsapp', !!checked, { shouldDirty: true })}
+                      />
+                      <span className="text-xs leading-tight">Canal do WhatsApp</span>
+                    </label>
+
+                    <label
+                      htmlFor="e_multiplicador"
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
+                        form.watch('e_multiplicador')
+                          ? "border-green-500/50 bg-green-500/5"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <Checkbox
+                        id="e_multiplicador"
+                        checked={form.watch('e_multiplicador')}
+                        onCheckedChange={(checked) => form.setValue('e_multiplicador', !!checked, { shouldDirty: true })}
+                      />
+                      <span className="text-xs leading-tight">Multiplicador</span>
+                    </label>
+
+                    <label
+                      htmlFor="declarou_voto"
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
+                        form.watch('declarou_voto')
+                          ? "border-green-500/50 bg-green-500/5"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <Checkbox
+                        id="declarou_voto"
+                        checked={form.watch('declarou_voto')}
+                        onCheckedChange={(checked) => form.setValue('declarou_voto', !!checked, { shouldDirty: true })}
+                      />
+                      <span className="text-xs leading-tight">Declarou voto</span>
+                    </label>
+                  </div>
+
+                  {/* Ranking com botões */}
+                  <div>
+                    <Label>Ranking</Label>
+                    <div className="flex gap-1.5 mt-2">
+                      {RANKING_VALUES.map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => form.setValue('ranking', val, { shouldDirty: true })}
+                          className={cn(
+                            "flex-1 h-9 rounded-md text-xs font-semibold border transition-colors",
+                            currentRanking === val
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground"
+                          )}
+                        >
+                          {val}
+                        </button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Liderança vinculada */}
+                  <div>
+                    <Label htmlFor="leader_id">Liderança vinculada</Label>
+                    <Select
+                      value={form.watch('leader_id') || '__none__'}
+                      onValueChange={(v) => form.setValue('leader_id', v === '__none__' ? '' : v, { shouldDirty: true })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma liderança" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Nenhuma</SelectItem>
+                        {leaders.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Card: Etiquetas */}
+                <div className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-md bg-orange-500/10 flex items-center justify-center">
+                      <Tag className="h-3.5 w-3.5 text-orange-400" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground">Etiquetas</span>
+                  </div>
+                  {allTags.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Nenhuma etiqueta cadastrada</p>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    {allTags.map((tag) => (
+                      <label
+                        key={tag.id}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors",
+                          selectedTagIds.includes(tag.id)
+                            ? "border-green-500/50 bg-green-500/5"
+                            : "border-border hover:border-muted-foreground/30"
+                        )}
+                      >
+                        <Checkbox
+                          checked={selectedTagIds.includes(tag.id)}
+                          onCheckedChange={() => toggleTag(tag.id)}
+                        />
+                        <span
+                          className="text-xs truncate"
+                          style={tag.cor ? { color: tag.cor } : undefined}
+                        >
+                          {tag.nome}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
               </TabsContent>
 
               {/* --- Endereço --- */}
               <TabsContent value="endereco" className="space-y-4 mt-0">
-                <div>
-                  <Label htmlFor="logradouro">Logradouro</Label>
-                  <Input id="logradouro" {...form.register('logradouro')} placeholder="Rua, Avenida..." />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border bg-card p-4 space-y-4">
                   <div>
-                    <Label htmlFor="numero">Número</Label>
-                    <Input id="numero" {...form.register('numero')} />
+                    <Label htmlFor="logradouro">Logradouro</Label>
+                    <Input id="logradouro" {...form.register('logradouro')} placeholder="Rua, Avenida..." />
                   </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="complemento">Complemento</Label>
-                    <Input id="complemento" {...form.register('complemento')} placeholder="Apto, Bloco..." />
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label htmlFor="numero">Número</Label>
+                      <Input id="numero" {...form.register('numero')} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="complemento">Complemento</Label>
+                      <Input id="complemento" {...form.register('complemento')} placeholder="Apto, Bloco..." />
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="bairro">Bairro</Label>
-                    <Input id="bairro" {...form.register('bairro')} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="bairro">Bairro</Label>
+                      <Input id="bairro" {...form.register('bairro')} />
+                    </div>
+                    <div>
+                      <Label htmlFor="cidade">Cidade</Label>
+                      <Input id="cidade" {...form.register('cidade')} />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="cidade">Cidade</Label>
-                    <Input id="cidade" {...form.register('cidade')} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="estado">Estado</Label>
-                    <Select
-                      value={form.watch('estado') ?? ''}
-                      onValueChange={(v) => form.setValue('estado', v, { shouldDirty: true })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="UF" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ESTADOS.map((uf) => (
-                          <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="cep">CEP</Label>
-                    <Input id="cep" {...form.register('cep')} placeholder="00000-000" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="estado">Estado</Label>
+                      <Select
+                        value={form.watch('estado') ?? ''}
+                        onValueChange={(v) => form.setValue('estado', v, { shouldDirty: true })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="UF" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ESTADOS.map((uf) => (
+                            <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="cep">CEP</Label>
+                      <Input id="cep" {...form.register('cep')} placeholder="00000-000" />
+                    </div>
                   </div>
                 </div>
               </TabsContent>
 
               {/* --- Redes Sociais --- */}
               <TabsContent value="redes" className="space-y-4 mt-0">
-                <div>
-                  <Label htmlFor="instagram">Instagram</Label>
-                  <Input id="instagram" {...form.register('instagram')} placeholder="@usuario" />
-                </div>
-                <div>
-                  <Label htmlFor="twitter">Twitter / X</Label>
-                  <Input id="twitter" {...form.register('twitter')} placeholder="@usuario" />
-                </div>
-                <div>
-                  <Label htmlFor="tiktok">TikTok</Label>
-                  <Input id="tiktok" {...form.register('tiktok')} placeholder="@usuario" />
-                </div>
-                <div>
-                  <Label htmlFor="youtube">YouTube</Label>
-                  <Input id="youtube" {...form.register('youtube')} placeholder="Canal ou URL" />
-                </div>
-              </TabsContent>
-
-              {/* --- Político --- */}
-              <TabsContent value="politico" className="space-y-4 mt-0">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="declarou_voto"
-                    checked={form.watch('declarou_voto')}
-                    onCheckedChange={(checked) => form.setValue('declarou_voto', !!checked, { shouldDirty: true })}
-                  />
-                  <Label htmlFor="declarou_voto" className="cursor-pointer">Declarou voto</Label>
-                </div>
-
-                <div>
-                  <Label>Ranking: {form.watch('ranking')}</Label>
-                  <Slider
-                    min={0}
-                    max={10}
-                    step={1}
-                    value={[form.watch('ranking') ?? 0]}
-                    onValueChange={([v]) => form.setValue('ranking', v, { shouldDirty: true })}
-                    className="mt-2"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>0</span>
-                    <span>10</span>
+                <div className="rounded-lg border bg-card p-4 space-y-4">
+                  <div>
+                    <Label htmlFor="instagram">Instagram</Label>
+                    <Input id="instagram" {...form.register('instagram')} placeholder="@usuario" />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="leader_id">Liderança vinculada</Label>
-                  <Select
-                    value={form.watch('leader_id') || '__none__'}
-                    onValueChange={(v) => form.setValue('leader_id', v === '__none__' ? '' : v, { shouldDirty: true })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma liderança" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Nenhuma</SelectItem>
-                      {leaders.map((l) => (
-                        <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <Label htmlFor="twitter">Twitter / X</Label>
+                    <Input id="twitter" {...form.register('twitter')} placeholder="@usuario" />
+                  </div>
+                  <div>
+                    <Label htmlFor="tiktok">TikTok</Label>
+                    <Input id="tiktok" {...form.register('tiktok')} placeholder="@usuario" />
+                  </div>
+                  <div>
+                    <Label htmlFor="youtube">YouTube</Label>
+                    <Input id="youtube" {...form.register('youtube')} placeholder="Canal ou URL" />
+                  </div>
                 </div>
               </TabsContent>
 
               {/* --- Observações --- */}
               <TabsContent value="obs" className="space-y-4 mt-0">
-                <div>
-                  <Label htmlFor="origem">Origem</Label>
-                  <Input id="origem" {...form.register('origem')} placeholder="Ex: Indicação, Evento..." />
-                </div>
-                <div>
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    {...form.register('observacoes')}
-                    placeholder="Observações gerais sobre o contato..."
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="notas_assessor">Notas do Assessor</Label>
-                  <Textarea
-                    id="notas_assessor"
-                    {...form.register('notas_assessor')}
-                    placeholder="Notas internas da assessoria..."
-                    rows={4}
-                  />
+                <div className="rounded-lg border bg-card p-4 space-y-4">
+                  <div>
+                    <Label htmlFor="origem">Origem</Label>
+                    <Input id="origem" {...form.register('origem')} placeholder="Ex: Indicação, Evento..." />
+                  </div>
+                  <div>
+                    <Label htmlFor="observacoes">Observações</Label>
+                    <Textarea
+                      id="observacoes"
+                      {...form.register('observacoes')}
+                      placeholder="Observações gerais sobre o contato..."
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="notas_assessor">Notas do Assessor</Label>
+                    <Textarea
+                      id="notas_assessor"
+                      {...form.register('notas_assessor')}
+                      placeholder="Notas internas da assessoria..."
+                      rows={4}
+                    />
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
