@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ImpersonationProvider } from '@/context/ImpersonationContext';
 import { AuthHandler } from '@/components/auth/AuthHandler';
 import { Loader2 } from 'lucide-react';
+import { setActivityLogQueryClient } from '@/lib/activityLog';
 
 // Pages
 import Auth from '@/pages/Auth';
@@ -35,6 +36,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Registra queryClient para o activityLog poder invalidar o cache do dashboard
+setActivityLogQueryClient(queryClient);
 
 import { AppLayout } from '@/components/layout/AppLayout';
 
