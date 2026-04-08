@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GitMerge, AlertTriangle, Loader2 } from "lucide-react";
+import { GitMerge, AlertTriangle, Loader2, ArrowLeftRight } from "lucide-react";
 import type { DuplicateContact } from "@/hooks/useDuplicates";
 import { useMergeContacts } from "@/hooks/useDuplicates";
 import { MERGEABLE_FIELDS, type MergeableFieldKey } from "./types";
@@ -84,71 +84,64 @@ export function ContactMergeModal({
 }: ContactMergeModalProps) {
   const mergeMutation = useMergeContacts();
 
+  // Which side is kept vs deleted — user can toggle
+  const [keepSide, setKeepSide] = useState<"A" | "B">("A");
+
   const [fieldSelections, setFieldSelections] = useState<
     Record<MergeableFieldKey, "A" | "B">
   >({} as Record<MergeableFieldKey, "A" | "B">);
 
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  // Determine kept (older) and deleted (newer) contacts
-  const keptContact =
-    contacts &&
-    (new Date(contacts[0].created_at).getTime() <=
-    new Date(contacts[1].created_at).getTime()
-      ? contacts[0]
-      : contacts[1]);
+  const contactA = contacts?.[0] ?? null;
+  const contactB = contacts?.[1] ?? null;
 
-  const deletedContact =
-    contacts &&
-    (new Date(contacts[0].created_at).getTime() <=
-    new Date(contacts[1].created_at).getTime()
-      ? contacts[1]
-      : contacts[0]);
+  const keptContact = keepSide === "A" ? contactA : contactB;
+  const deletedContact = keepSide === "A" ? contactB : contactA;
 
-  // Label helpers: A = keptContact, B = deletedContact
   function getValueA(key: MergeableFieldKey): unknown {
-    return keptContact ? keptContact[key] : undefined;
+    return contactA ? contactA[key] : undefined;
   }
   function getValueB(key: MergeableFieldKey): unknown {
-    return deletedContact ? deletedContact[key] : undefined;
+    return contactB ? contactB[key] : undefined;
   }
 
-  // Initialize selections when contacts change
+  // Initialize selections when contacts change or keepSide changes
   useEffect(() => {
-    if (!contacts || !keptContact || !deletedContact) return;
+    if (!contactA || !contactB) return;
 
     const selections = {} as Record<MergeableFieldKey, "A" | "B">;
 
     for (const { key } of MERGEABLE_FIELDS) {
-      const aHas = hasValue(keptContact[key]);
-      const bHas = hasValue(deletedContact[key]);
+      const aHas = hasValue(contactA[key]);
+      const bHas = hasValue(contactB[key]);
 
       if (aHas && !bHas) {
         selections[key] = "A";
       } else if (!aHas && bHas) {
         selections[key] = "B";
       } else {
-        // Both have values or neither — default to A (older/kept)
-        selections[key] = "A";
+        // Both have or both empty — default to the kept side
+        selections[key] = keepSide;
       }
     }
 
     setFieldSelections(selections);
 
-    // Tags: union of all tag IDs from both contacts, all selected by default
+    // Tags: union of all tag IDs, all selected
     const allTagIds = new Set<string>();
-    keptContact.contact_tags?.forEach((ct) => allTagIds.add(ct.tag_id));
-    deletedContact.contact_tags?.forEach((ct) => allTagIds.add(ct.tag_id));
+    contactA.contact_tags?.forEach((ct) => allTagIds.add(ct.tag_id));
+    contactB.contact_tags?.forEach((ct) => allTagIds.add(ct.tag_id));
     setSelectedTagIds([...allTagIds]);
-  }, [contacts]);
+  }, [contacts, keepSide]);
 
   // Build unified tag list
   const unifiedTags: UnifiedTag[] = (() => {
-    if (!keptContact || !deletedContact) return [];
+    if (!contactA || !contactB) return [];
 
     const tagMap = new Map<string, UnifiedTag>();
 
-    keptContact.contact_tags?.forEach((ct) => {
+    contactA.contact_tags?.forEach((ct) => {
       tagMap.set(ct.tag_id, {
         id: ct.tag_id,
         nome: ct.tags.nome,
@@ -157,7 +150,7 @@ export function ContactMergeModal({
       });
     });
 
-    deletedContact.contact_tags?.forEach((ct) => {
+    contactB.contact_tags?.forEach((ct) => {
       if (tagMap.has(ct.tag_id)) {
         tagMap.get(ct.tag_id)!.origin = "AB";
       } else {
@@ -183,15 +176,19 @@ export function ContactMergeModal({
     );
   }
 
+  function swapSides() {
+    setKeepSide((prev) => (prev === "A" ? "B" : "A"));
+  }
+
   async function handleMerge() {
     if (!keptContact || !deletedContact) return;
 
-    // Build mergedData from field selections
+    // Build mergedData: pick field values based on selections
+    // Selections reference A/B (the original contacts[0]/contacts[1])
     const mergedData: Record<string, unknown> = {};
     for (const { key } of MERGEABLE_FIELDS) {
-      const selection = fieldSelections[key] ?? "A";
-      mergedData[key] =
-        selection === "A" ? keptContact[key] : deletedContact[key];
+      const selection = fieldSelections[key] ?? keepSide;
+      mergedData[key] = selection === "A" ? contactA![key] : contactB![key];
     }
 
     await mergeMutation.mutateAsync({
@@ -216,12 +213,11 @@ export function ContactMergeModal({
             Mesclar Contatos
           </DialogTitle>
           <DialogDescription>
-            Escolha quais valores manter para cada campo. O contato mais antigo
-            sera preservado e o mais novo sera marcado como mesclado.
+            Escolha qual contato manter, selecione os valores de cada campo, e confirme a mesclagem.
           </DialogDescription>
         </DialogHeader>
 
-        {!contacts || !keptContact || !deletedContact ? (
+        {!contacts || !contactA || !contactB ? (
           <div className="py-8 text-center text-muted-foreground text-sm">
             Nenhum contato selecionado para mesclar.
           </div>
@@ -231,63 +227,102 @@ export function ContactMergeModal({
             <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
               <AlertDescription className="text-amber-800 dark:text-amber-400 text-sm">
-                O contato mais antigo sera mantido e o mais novo sera excluido.
-                Todas as demandas serao transferidas automaticamente.
+                O contato marcado como "MANTER" sera preservado com os dados escolhidos.
+                O outro sera excluido e todas as demandas serao transferidas.
               </AlertDescription>
             </Alert>
 
-            {/* Contact summary row */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Kept contact */}
-              <div className="rounded-lg border-2 border-green-400 bg-green-50 dark:bg-green-950/20 p-3 space-y-1">
+            {/* Contact cards with keep/delete choice */}
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
+              {/* Contact A card */}
+              <button
+                type="button"
+                onClick={() => setKeepSide("A")}
+                className={cn(
+                  "rounded-lg border-2 p-3 space-y-1 text-left transition-all",
+                  keepSide === "A"
+                    ? "border-green-400 bg-green-50 dark:bg-green-950/20 ring-1 ring-green-300"
+                    : "border-red-400 bg-red-50 dark:bg-red-950/20 hover:ring-1 hover:ring-red-300"
+                )}
+              >
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-600 text-white text-xs">
-                    MANTER
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Contato A (mais antigo)
-                  </span>
+                  {keepSide === "A" ? (
+                    <Badge className="bg-green-600 text-white text-xs">MANTER</Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-xs">EXCLUIR</Badge>
+                  )}
                 </div>
-                <p className="font-semibold text-sm leading-snug">
-                  {keptContact.nome}
+                <p className="font-semibold text-sm leading-snug">{contactA.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {contactA.whatsapp || contactA.email || "(sem contato)"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Criado em {formatDate(keptContact.created_at)}
+                  Criado em {formatDate(contactA.created_at)}
                 </p>
-              </div>
+              </button>
 
-              {/* Deleted contact */}
-              <div className="rounded-lg border-2 border-red-400 bg-red-50 dark:bg-red-950/20 p-3 space-y-1">
+              {/* Swap button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full"
+                onClick={swapSides}
+                title="Trocar quem manter/excluir"
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+              </Button>
+
+              {/* Contact B card */}
+              <button
+                type="button"
+                onClick={() => setKeepSide("B")}
+                className={cn(
+                  "rounded-lg border-2 p-3 space-y-1 text-left transition-all",
+                  keepSide === "B"
+                    ? "border-green-400 bg-green-50 dark:bg-green-950/20 ring-1 ring-green-300"
+                    : "border-red-400 bg-red-50 dark:bg-red-950/20 hover:ring-1 hover:ring-red-300"
+                )}
+              >
                 <div className="flex items-center gap-2">
-                  <Badge variant="destructive" className="text-xs">
-                    EXCLUIR
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Contato B (mais novo)
-                  </span>
+                  {keepSide === "B" ? (
+                    <Badge className="bg-green-600 text-white text-xs">MANTER</Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-xs">EXCLUIR</Badge>
+                  )}
                 </div>
-                <p className="font-semibold text-sm leading-snug">
-                  {deletedContact.nome}
+                <p className="font-semibold text-sm leading-snug">{contactB.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {contactB.whatsapp || contactB.email || "(sem contato)"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Criado em {formatDate(deletedContact.created_at)}
+                  Criado em {formatDate(contactB.created_at)}
                 </p>
-              </div>
+              </button>
             </div>
 
+            <p className="text-xs text-muted-foreground text-center">
+              Clique no card ou use o botao de trocar para escolher qual manter
+            </p>
+
             {/* Field selection table */}
-            <ScrollArea className="max-h-[350px] rounded-md border">
+            <ScrollArea className="max-h-[300px] rounded-md border">
               <div className="p-1">
                 {/* Table header */}
-                <div className="grid grid-cols-[180px_1fr_1fr] gap-2 px-3 py-2 bg-muted/50 rounded text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky top-0">
+                <div className="grid grid-cols-[180px_1fr_1fr] gap-2 px-3 py-2 bg-muted/50 rounded text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky top-0 z-10">
                   <span>Campo</span>
                   <span className="flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-                    Manter (A)
+                    <span className={cn(
+                      "inline-block w-2 h-2 rounded-full",
+                      keepSide === "A" ? "bg-green-500" : "bg-red-400"
+                    )} />
+                    Contato A {keepSide === "A" ? "(manter)" : "(excluir)"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-red-400" />
-                    Excluir (B)
+                    <span className={cn(
+                      "inline-block w-2 h-2 rounded-full",
+                      keepSide === "B" ? "bg-green-500" : "bg-red-400"
+                    )} />
+                    Contato B {keepSide === "B" ? "(manter)" : "(excluir)"}
                   </span>
                 </div>
 
@@ -301,7 +336,7 @@ export function ContactMergeModal({
                     hasValue(valA) &&
                     hasValue(valB);
                   const isDisabled = bothEmpty || sameValue;
-                  const currentSelection = fieldSelections[key] ?? "A";
+                  const currentSelection = fieldSelections[key] ?? keepSide;
 
                   return (
                     <div
@@ -326,24 +361,22 @@ export function ContactMergeModal({
                       <button
                         type="button"
                         disabled={isDisabled}
-                        onClick={() =>
-                          !isDisabled && toggleFieldSelection(key, "A")
-                        }
+                        onClick={() => !isDisabled && toggleFieldSelection(key, "A")}
                         className={cn(
                           "flex items-center gap-2 rounded px-2 py-1 text-left w-full transition-colors",
                           isDisabled
                             ? "cursor-default"
-                            : "cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20",
+                            : "cursor-pointer hover:bg-accent/50",
                           !isDisabled &&
                             currentSelection === "A" &&
-                            "bg-green-100 ring-1 ring-green-400 dark:bg-green-900/30"
+                            "bg-primary/10 ring-1 ring-primary/40"
                         )}
                       >
                         <span
                           className={cn(
                             "inline-flex h-3.5 w-3.5 shrink-0 rounded-full border-2 transition-colors",
                             !isDisabled && currentSelection === "A"
-                              ? "border-green-500 bg-green-500"
+                              ? "border-primary bg-primary"
                               : "border-muted-foreground bg-transparent"
                           )}
                         />
@@ -354,24 +387,22 @@ export function ContactMergeModal({
                       <button
                         type="button"
                         disabled={isDisabled}
-                        onClick={() =>
-                          !isDisabled && toggleFieldSelection(key, "B")
-                        }
+                        onClick={() => !isDisabled && toggleFieldSelection(key, "B")}
                         className={cn(
                           "flex items-center gap-2 rounded px-2 py-1 text-left w-full transition-colors",
                           isDisabled
                             ? "cursor-default"
-                            : "cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20",
+                            : "cursor-pointer hover:bg-accent/50",
                           !isDisabled &&
                             currentSelection === "B" &&
-                            "bg-red-100 ring-1 ring-red-400 dark:bg-red-900/30"
+                            "bg-primary/10 ring-1 ring-primary/40"
                         )}
                       >
                         <span
                           className={cn(
                             "inline-flex h-3.5 w-3.5 shrink-0 rounded-full border-2 transition-colors",
                             !isDisabled && currentSelection === "B"
-                              ? "border-red-500 bg-red-500"
+                              ? "border-primary bg-primary"
                               : "border-muted-foreground bg-transparent"
                           )}
                         />
@@ -390,8 +421,7 @@ export function ContactMergeModal({
                 <div className="space-y-2">
                   <p className="text-sm font-semibold">Etiquetas</p>
                   <p className="text-xs text-muted-foreground">
-                    Selecione as etiquetas que devem ser mantidas no contato
-                    resultante.
+                    Selecione as etiquetas que devem ser mantidas no contato resultante.
                   </p>
                   <div className="flex flex-wrap gap-3">
                     {unifiedTags.map((tag) => {

@@ -330,6 +330,28 @@ export function useMergeContacts() {
   });
 }
 
+// ---------- useDeleteSingleDuplicate ----------
+
+export function useDeleteSingleDuplicate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('contacts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
+      toast.success('Contato excluido com sucesso');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao excluir contato: ${error.message}`);
+    },
+  });
+}
+
 // ---------- useBulkDeleteDuplicates ----------
 
 interface BulkDeleteParams {

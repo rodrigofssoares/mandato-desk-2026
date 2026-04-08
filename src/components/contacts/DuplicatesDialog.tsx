@@ -11,10 +11,12 @@ import {
   Mail,
   User,
   AlertTriangle,
+  Check,
 } from "lucide-react";
 import {
   useDuplicateGroups,
   useBulkDeleteDuplicates,
+  useDeleteSingleDuplicate,
   type DuplicateContact,
   type DuplicateGroup,
 } from "@/hooks/useDuplicates";
@@ -51,6 +53,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 // ---------- Props ----------
@@ -89,6 +101,9 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
   const [strategy, setStrategy] = useState<"keep_newest" | "keep_oldest">("keep_newest");
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
+  // Selection state: track selected contact IDs per group for compare/merge
+  const [selectedByGroup, setSelectedByGroup] = useState<Record<string, string[]>>({});
+
   // Sub-modal state
   const [viewContact, setViewContact] = useState<DuplicateContact | null>(null);
   const [compareContacts, setCompareContacts] = useState<[DuplicateContact, DuplicateContact] | null>(null);
@@ -97,8 +112,12 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
   const [showMerge, setShowMerge] = useState(false);
   const [showView, setShowView] = useState(false);
 
+  // Delete confirmation
+  const [deletingContact, setDeletingContact] = useState<DuplicateContact | null>(null);
+
   const { data: groups, isLoading, refetch } = useDuplicateGroups(open);
   const bulkDelete = useBulkDeleteDuplicates();
+  const deleteSingle = useDeleteSingleDuplicate();
 
   const safeGroups: DuplicateGroup[] = groups ?? [];
   const totalGroups = safeGroups.length;
@@ -110,10 +129,55 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
     );
   }
 
+  function toggleContactSelection(groupKey: string, contactId: string) {
+    setSelectedByGroup((prev) => {
+      const current = prev[groupKey] ?? [];
+      if (current.includes(contactId)) {
+        return { ...prev, [groupKey]: current.filter((id) => id !== contactId) };
+      }
+      // Max 2 selected per group
+      if (current.length >= 2) {
+        return { ...prev, [groupKey]: [current[1], contactId] };
+      }
+      return { ...prev, [groupKey]: [...current, contactId] };
+    });
+  }
+
+  function getSelectedContacts(groupKey: string, group: DuplicateGroup): DuplicateContact[] {
+    const ids = selectedByGroup[groupKey] ?? [];
+    return ids
+      .map((id) => group.contacts.find((c) => c.id === id))
+      .filter(Boolean) as DuplicateContact[];
+  }
+
   async function handleBulkDelete() {
     await bulkDelete.mutateAsync({ groups: safeGroups, strategy });
     refetch();
     onSuccess?.();
+  }
+
+  async function handleDeleteSingle() {
+    if (!deletingContact) return;
+    await deleteSingle.mutateAsync(deletingContact.id);
+    setDeletingContact(null);
+    refetch();
+    onSuccess?.();
+  }
+
+  function handleCompare(groupKey: string, group: DuplicateGroup) {
+    const selected = getSelectedContacts(groupKey, group);
+    if (selected.length === 2) {
+      setCompareContacts([selected[0], selected[1]]);
+      setShowCompare(true);
+    }
+  }
+
+  function handleMerge(groupKey: string, group: DuplicateGroup) {
+    const selected = getSelectedContacts(groupKey, group);
+    if (selected.length === 2) {
+      setMergeContacts([selected[0], selected[1]]);
+      setShowMerge(true);
+    }
   }
 
   return (
@@ -128,7 +192,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
             </DialogTitle>
             <DialogDescription>
               {totalGroups > 0
-                ? `${totalGroups} grupo${totalGroups !== 1 ? "s" : ""} com duplicatas — ${totalDuplicates} contato${totalDuplicates !== 1 ? "s" : ""} ser${totalDuplicates !== 1 ? "ao" : "a"} removido${totalDuplicates !== 1 ? "s" : ""}`
+                ? `${totalGroups} grupo${totalGroups !== 1 ? "s" : ""} com duplicatas — ${totalDuplicates} contato${totalDuplicates !== 1 ? "s" : ""} duplicado${totalDuplicates !== 1 ? "s" : ""}`
                 : "Analise e resolva contatos duplicados na sua base."}
             </DialogDescription>
           </DialogHeader>
@@ -165,6 +229,10 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                   ? "Removendo..."
                   : `Remover ${totalDuplicates} Duplicado${totalDuplicates !== 1 ? "s" : ""}`}
               </Button>
+
+              <p className="text-xs text-muted-foreground ml-auto">
+                Selecione 2 contatos em um grupo para comparar ou mesclar
+              </p>
             </div>
           )}
 
@@ -184,7 +252,8 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                 {safeGroups.map((group) => {
                   const key = `${group.match_field}:${group.match_value}`;
                   const isExpanded = expandedGroups.includes(key);
-                  const canCompareOrMerge = group.contacts.length === 2;
+                  const selectedIds = selectedByGroup[key] ?? [];
+                  const selectedCount = selectedIds.length;
 
                   return (
                     <Collapsible key={key} open={isExpanded}>
@@ -219,99 +288,144 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                       {/* Contact rows */}
                       <CollapsibleContent>
                         <div className="bg-muted/20">
-                          {group.contacts.map((contact, idx) => (
-                            <div key={contact.id}>
-                              <div className="flex items-center gap-3 px-6 py-2.5">
-                                {/* Contact info */}
-                                <div className="flex-1 min-w-0 space-y-0.5">
-                                  <p className="text-sm font-medium truncate">{contact.nome}</p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {contact.whatsapp
-                                      ? contact.whatsapp
-                                      : contact.email
-                                      ? contact.email
-                                      : "(sem contato)"}
-                                  </p>
-                                </div>
+                          {/* Group actions bar */}
+                          <div className="flex items-center gap-2 px-6 py-2 border-b border-border/50">
+                            <span className="text-xs text-muted-foreground flex-1">
+                              {selectedCount === 0
+                                ? "Clique para selecionar contatos"
+                                : selectedCount === 1
+                                ? "Selecione mais 1 para comparar/mesclar"
+                                : "2 selecionados"}
+                            </span>
 
-                                {/* Created at */}
-                                <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
-                                  {formatDate(contact.created_at)}
-                                </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs"
+                                  disabled={selectedCount !== 2}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCompare(key, group);
+                                  }}
+                                >
+                                  <GitCompare className="h-3.5 w-3.5" />
+                                  Comparar
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Comparar os 2 selecionados lado a lado</TooltipContent>
+                            </Tooltip>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={() => {
-                                          setViewContact(contact);
-                                          setShowView(true);
-                                        }}
-                                      >
-                                        <Eye className="h-3.5 w-3.5" />
-                                        <span className="sr-only">Ver detalhes</span>
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Ver detalhes</TooltipContent>
-                                  </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs"
+                                  disabled={selectedCount !== 2}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMerge(key, group);
+                                  }}
+                                >
+                                  <GitMerge className="h-3.5 w-3.5" />
+                                  Mesclar
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Mesclar os 2 selecionados em um so</TooltipContent>
+                            </Tooltip>
+                          </div>
 
-                                  {canCompareOrMerge && (
-                                    <>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7"
-                                            onClick={() => {
-                                              setCompareContacts([
-                                                group.contacts[0],
-                                                group.contacts[1],
-                                              ]);
-                                              setShowCompare(true);
-                                            }}
-                                          >
-                                            <GitCompare className="h-3.5 w-3.5" />
-                                            <span className="sr-only">Comparar</span>
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Comparar</TooltipContent>
-                                      </Tooltip>
-
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7"
-                                            onClick={() => {
-                                              setMergeContacts([
-                                                group.contacts[0],
-                                                group.contacts[1],
-                                              ]);
-                                              setShowMerge(true);
-                                            }}
-                                          >
-                                            <GitMerge className="h-3.5 w-3.5" />
-                                            <span className="sr-only">Mesclar</span>
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Mesclar</TooltipContent>
-                                      </Tooltip>
-                                    </>
+                          {group.contacts.map((contact, idx) => {
+                            const isSelected = selectedIds.includes(contact.id);
+                            return (
+                              <div key={contact.id}>
+                                <div
+                                  className={cn(
+                                    "flex items-center gap-3 px-6 py-2.5 cursor-pointer transition-colors",
+                                    isSelected
+                                      ? "bg-primary/10 border-l-2 border-l-primary"
+                                      : "hover:bg-muted/40 border-l-2 border-l-transparent"
                                   )}
-                                </div>
-                              </div>
+                                  onClick={() => toggleContactSelection(key, contact.id)}
+                                >
+                                  {/* Selection indicator */}
+                                  <span
+                                    className={cn(
+                                      "flex items-center justify-center h-5 w-5 rounded border-2 shrink-0 transition-colors",
+                                      isSelected
+                                        ? "bg-primary border-primary text-primary-foreground"
+                                        : "border-muted-foreground/40"
+                                    )}
+                                  >
+                                    {isSelected && <Check className="h-3 w-3" />}
+                                  </span>
 
-                              {idx < group.contacts.length - 1 && (
-                                <Separator className="mx-6" />
-                              )}
-                            </div>
-                          ))}
+                                  {/* Contact info */}
+                                  <div className="flex-1 min-w-0 space-y-0.5">
+                                    <p className="text-sm font-medium truncate">{contact.nome}</p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {contact.whatsapp
+                                        ? contact.whatsapp
+                                        : contact.email
+                                        ? contact.email
+                                        : "(sem contato)"}
+                                    </p>
+                                  </div>
+
+                                  {/* Created at */}
+                                  <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+                                    {formatDate(contact.created_at)}
+                                  </span>
+
+                                  {/* Actions */}
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setViewContact(contact);
+                                            setShowView(true);
+                                          }}
+                                        >
+                                          <Eye className="h-3.5 w-3.5" />
+                                          <span className="sr-only">Ver detalhes</span>
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Ver detalhes</TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-destructive hover:text-destructive"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeletingContact(contact);
+                                          }}
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                          <span className="sr-only">Excluir</span>
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Excluir este contato</TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+
+                                {idx < group.contacts.length - 1 && (
+                                  <Separator className="mx-6" />
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
@@ -328,6 +442,30 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deletingContact} onOpenChange={(o) => !o && setDeletingContact(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contato</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deletingContact?.nome}</strong>? Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSingle}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteSingle.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sub-modals */}
       <ContactViewDrawer
