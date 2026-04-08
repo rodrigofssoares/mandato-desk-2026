@@ -26,6 +26,7 @@ const schema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(6, 'Mínimo de 6 caracteres'),
   nome: z.string().min(1, 'Nome é obrigatório'),
+  telefone: z.string().optional(),
   role: z.enum(ROLES),
 });
 
@@ -52,6 +53,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       email: '',
       password: '',
       nome: '',
+      telefone: '',
       role: 'assistente',
     },
   });
@@ -63,6 +65,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       email: data.email,
       password: data.password,
       nome: data.nome,
+      telefone: data.telefone,
       role: data.role,
     });
     reset();
@@ -99,6 +102,11 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             {errors.password && (
               <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="telefone">Telefone</Label>
+            <Input id="telefone" placeholder="(11) 99999-9999" {...register('telefone')} />
           </div>
 
           <div className="space-y-2">

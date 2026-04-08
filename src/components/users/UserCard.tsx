@@ -13,11 +13,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Shield, UserCheck, UserX, RefreshCw, KeyRound } from 'lucide-react';
+import { MoreVertical, Shield, UserCheck, UserX, RefreshCw, KeyRound, Pencil, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUpdateUserRole, useUpdateUserStatus, type UserProfile } from '@/hooks/useUsers';
 import { ROLES, ROLE_LABELS, ROLE_LEVELS, type Role } from '@/types/permissions';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { EditUserDialog } from './EditUserDialog';
 
 interface UserCardProps {
   user: UserProfile;
@@ -51,6 +52,7 @@ export function UserCard({ user }: UserCardProps) {
   const updateRole = useUpdateUserRole();
   const updateStatus = useUpdateUserStatus();
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const isOwnCard = currentUser?.id === user.id;
   const currentUserLevel = ROLE_LEVELS[(currentUser?.role as Role) ?? 'estagiario'];
@@ -73,6 +75,12 @@ export function UserCard({ user }: UserCardProps) {
             <div className="flex-1 min-w-0 space-y-1">
               <p className="font-medium truncate">{user.nome || '(sem nome)'}</p>
               <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+              {user.telefone && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {user.telefone}
+                </p>
+              )}
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="default" className={roleColorMap[user.role] ?? 'bg-gray-100 text-gray-700'}>
                   {ROLE_LABELS[user.role] ?? user.role}
@@ -91,6 +99,11 @@ export function UserCard({ user }: UserCardProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Shield className="h-4 w-4 mr-2" />
@@ -151,15 +164,26 @@ export function UserCard({ user }: UserCardProps) {
             )}
 
             {isOwnCard && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => setPasswordDialogOpen(true)}
-                title="Alterar minha senha"
-              >
-                <KeyRound className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setEditDialogOpen(true)}
+                  title="Editar meu perfil"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPasswordDialogOpen(true)}
+                  title="Alterar minha senha"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>
@@ -171,6 +195,14 @@ export function UserCard({ user }: UserCardProps) {
         userId={user.id}
         userName={user.nome || user.email}
         isOwnPassword={isOwnCard}
+      />
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={user}
+        isOwnProfile={isOwnCard}
+        currentUserRole={(currentUser?.role as Role) ?? 'estagiario'}
       />
     </>
   );

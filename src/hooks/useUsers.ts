@@ -127,11 +127,13 @@ export function useCreateUser() {
       password,
       nome,
       role,
+      telefone,
     }: {
       email: string;
       password: string;
       nome: string;
       role: Role;
+      telefone?: string;
     }) => {
       // 1. Cria o usuário via auth
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -152,6 +154,7 @@ export function useCreateUser() {
           role,
           status_aprovacao: 'ATIVO',
           nome,
+          telefone: telefone || null,
         })
         .eq('id', signUpData.user.id);
 
@@ -170,6 +173,42 @@ export function useCreateUser() {
     onError: (error) => {
       console.error('Erro ao criar usuário:', error);
       toast.error(`Erro ao criar usuário: ${error.message}`);
+    },
+  });
+}
+
+interface UpdateProfileParams {
+  userId: string;
+  nome?: string;
+  telefone?: string;
+  role?: Role;
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId, nome, telefone, role }: UpdateProfileParams) => {
+      const updates: Record<string, unknown> = {};
+      if (nome !== undefined) updates.nome = nome;
+      if (telefone !== undefined) updates.telefone = telefone || null;
+      if (role !== undefined) updates.role = role;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'profiles'] });
+      toast.success('Perfil atualizado com sucesso');
+      logActivity({ type: 'update', entity_type: 'user', description: 'Atualizou perfil de usuario' });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao atualizar perfil: ${error.message}`);
     },
   });
 }
