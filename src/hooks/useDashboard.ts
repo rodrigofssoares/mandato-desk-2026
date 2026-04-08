@@ -283,7 +283,7 @@ export function useRecentActivities(
         entityType: a.entity_type as string,
         entityName: a.entity_name as string | null,
         description: a.description as string | null,
-        responsibleName: a.profiles?.nome ?? 'Sistema',
+        responsibleName: a.profiles?.nome || 'Usuário',
         createdAt: a.created_at as string,
       }));
     },
