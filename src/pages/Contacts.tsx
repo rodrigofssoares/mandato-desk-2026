@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload } from 'lucide-react';
+import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQueryClient } from '@tanstack/react-query';
 import { useContacts, useDeleteContact, type ContactFilters as Filters, type Contact } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ContactCard } from '@/components/contacts/ContactCard';
@@ -30,11 +31,14 @@ import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { ContactFilters } from '@/components/contacts/ContactFilters';
 import { ContactsPagination } from '@/components/contacts/ContactsPagination';
 import { ExportMenu } from '@/components/contacts/ExportMenu';
+import { DuplicatesDialog } from '@/components/contacts/DuplicatesDialog';
+import { useDuplicateCount } from '@/hooks/useDuplicates';
 
 type ViewMode = 'grid' | 'list';
 
 export default function Contacts() {
   const { can } = usePermissions();
+  const queryClient = useQueryClient();
 
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -48,6 +52,9 @@ export default function Contacts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
+  const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+
+  const { data: duplicateCount = 0 } = useDuplicateCount();
 
   // Debounce search
   const debounceRef = useMemo(() => ({ timer: null as ReturnType<typeof setTimeout> | null }), []);
@@ -104,6 +111,21 @@ export default function Contacts() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {can.mergeContacts() && duplicateCount > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDuplicatesOpen(true)}
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Duplicados
+              <Badge variant="destructive" className="ml-1 text-xs px-1.5 py-0">
+                {duplicateCount}
+              </Badge>
+            </Button>
+          )}
+
           {can.exportData() && <ExportMenu filters={queryFilters} />}
 
           {can.createContact() && (
@@ -286,6 +308,15 @@ export default function Contacts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Duplicates Dialog */}
+      <DuplicatesDialog
+        open={duplicatesOpen}
+        onOpenChange={setDuplicatesOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['contacts'] });
+        }}
+      />
     </div>
   );
 }
