@@ -27,6 +27,7 @@ import { useApiToken, useGenerateToken, useRevokeToken } from '@/hooks/useApiTok
 import { toast } from 'sonner';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://SEU-PROJETO.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const BASE_API_URL = `${SUPABASE_URL}/functions/v1/api-proxy`;
 
 // ---- Tipos ----
@@ -292,6 +293,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
   // Gerar curl
   const curlCommand = useMemo(() => {
     const parts = [`curl -X ${method} '${fullUrl}'`];
+    parts.push(`  -H "apikey: ${SUPABASE_ANON_KEY || 'SUA_ANON_KEY'}"`);
     if (tokenValue) {
       parts.push(`  -H "Authorization: Bearer ${tokenValue}"`);
     } else {
@@ -335,6 +337,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
       const fetchOptions: RequestInit = {
         method,
         headers: {
+          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${tokenValue}`,
           'Content-Type': 'application/json',
         },
@@ -661,19 +664,23 @@ export default function Api() {
               <div className="space-y-2 text-sm">
                 <p><strong>Autenticacao:</strong></p>
                 <p className="text-muted-foreground">
-                  Adicione o header <code className="bg-muted px-1.5 py-0.5 rounded text-xs">Authorization: Bearer {'<seu_token>'}</code> em todas as requisicoes.
-                  Esse e o unico header de autenticacao necessario.
+                  Todas as requisicoes precisam de dois headers:
                 </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 text-xs mt-1">
+                  <li><code className="bg-muted px-1 rounded">apikey</code> — Chave publica do projeto (fixa, ja preenchida nos exemplos)</li>
+                  <li><code className="bg-muted px-1 rounded">Authorization: Bearer {'<seu_token>'}</code> — Seu token pessoal gerado acima</li>
+                </ul>
               </div>
 
               <div className="space-y-2 text-sm">
                 <p><strong>Exemplo rapido:</strong></p>
                 <div className="relative">
                   <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">{`curl ${BASE_API_URL}/contacts \\
+  -H "apikey: ${SUPABASE_ANON_KEY}" \\
   -H "Authorization: Bearer ${tokenForCurl}" \\
   -H "Content-Type: application/json"`}</pre>
                   <div className="absolute top-2 right-2">
-                    <CopyButton text={`curl ${BASE_API_URL}/contacts \\\n  -H "Authorization: Bearer ${tokenForCurl}" \\\n  -H "Content-Type: application/json"`} />
+                    <CopyButton text={`curl ${BASE_API_URL}/contacts \\\n  -H "apikey: ${SUPABASE_ANON_KEY}" \\\n  -H "Authorization: Bearer ${tokenForCurl}" \\\n  -H "Content-Type: application/json"`} />
                   </div>
                 </div>
               </div>
@@ -704,6 +711,7 @@ export default function Api() {
                       <div className="space-y-4">
                         {group.endpoints.map((endpoint) => {
                           const curlParts = [`curl -X ${endpoint.method} '${BASE_API_URL}${endpoint.path}'`];
+                          curlParts.push(`  -H "apikey: ${SUPABASE_ANON_KEY}"`);
                           curlParts.push(`  -H "Authorization: Bearer ${tokenForCurl}"`);
                           curlParts.push(`  -H "Content-Type: application/json"`);
                           if (endpoint.body) {
