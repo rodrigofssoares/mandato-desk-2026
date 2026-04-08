@@ -7,6 +7,7 @@ import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useTags, useDeleteTag } from '@/hooks/useTags';
 import { usePermissions } from '@/hooks/usePermissions';
 import { TagDialog } from '@/components/tags/TagDialog';
+import { TagsExportMenu } from '@/components/tags/TagsExportMenu';
 import type { Tag } from '@/hooks/useTags';
 
 const categoryMap: Record<string, { label: string; value: string }> = {
@@ -45,6 +46,7 @@ export default function Tags() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Etiquetas</h1>
+        {can.exportData() && <TagsExportMenu />}
         {can.createTag() && (
           <Button onClick={handleNewTag}>
             <Plus className="h-4 w-4 mr-2" />

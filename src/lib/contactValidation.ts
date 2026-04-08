@@ -42,22 +42,46 @@ export const contactSchema = z.object({
 
 export type ContactFormData = z.infer<typeof contactSchema>;
 
-/** Remove todos os caracteres não-numéricos de um telefone */
-export function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, '');
-}
+/** Remove todos os caracteres não-numéricos de um telefone e adiciona prefixo 55 */
+export { normalizePhone } from './normalization';
 
-/** Formata o nome: capitaliza cada palavra */
-export function formatName(name: string): string {
-  return name
-    .trim()
-    .replace(/\s+/g, ' ')
-    .split(' ')
-    .map((word) => {
-      if (['de', 'da', 'do', 'das', 'dos', 'e'].includes(word.toLowerCase())) {
-        return word.toLowerCase();
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(' ');
+/** Formata o nome: capitaliza cada palavra respeitando preposições pt-BR */
+export { normalizeName as formatName } from './normalization';
+
+// --- Schema de Importação ---
+
+export const importContactSchema = z.object({
+  nome_completo: z.string().min(1, 'Nome é obrigatório').max(255),
+  whatsapp: z.string().min(1, 'WhatsApp é obrigatório').max(20),
+  whatsapp_habilitado: z.boolean().optional(),
+  nome_whatsapp: z.string().max(255).optional(),
+  email: z.string().email('E-mail inválido').max(255).optional().or(z.literal('')),
+  telefone: z.string().max(20).optional().or(z.literal('')),
+  genero: z.enum(['masculino', 'feminino', 'outro']).optional().nullable(),
+  endereco: z.string().max(500).optional().or(z.literal('')),
+  numero: z.string().max(20).optional().or(z.literal('')),
+  complemento: z.string().max(255).optional().or(z.literal('')),
+  bairro: z.string().max(255).optional().or(z.literal('')),
+  cidade: z.string().max(255).optional().or(z.literal('')),
+  uf: z.string().max(2).optional().or(z.literal('')),
+  cep: z.string().max(10).optional().or(z.literal('')),
+  origem: z.string().max(255).optional().or(z.literal('')),
+  observacoes: z.string().max(2000).optional().or(z.literal('')),
+  notas_assessor: z.string().max(2000).optional().or(z.literal('')),
+  declarou_voto: z.boolean().optional(),
+  etiquetas: z.string().optional().or(z.literal('')),
+});
+
+export type ImportContactData = z.infer<typeof importContactSchema>;
+
+/**
+ * Converte strings em booleanos para campos de importação.
+ * Aceita: sim/não, true/false, 1/0, yes/no, s/n
+ */
+export function parseBoolean(value: string | undefined | null): boolean | undefined {
+  if (!value || value.trim() === '') return undefined;
+  const lower = value.trim().toLowerCase();
+  if (['sim', 'true', '1', 'yes', 's'].includes(lower)) return true;
+  if (['nao', 'não', 'false', '0', 'no', 'n'].includes(lower)) return false;
+  return undefined;
 }

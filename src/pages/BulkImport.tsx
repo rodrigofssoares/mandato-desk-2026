@@ -12,10 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Loader2, Upload, FileSpreadsheet, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Upload, FileSpreadsheet, CheckCircle, XCircle, ClipboardCopy, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { normalizePhone, normalizeName } from '@/lib/normalization';
 import * as XLSX from 'xlsx';
 
 type ImportMode = 'add' | 'delete' | 'edit' | 'tag';
@@ -24,7 +35,7 @@ interface ParsedContact {
   nome: string;
   whatsapp?: string;
   email?: string;
-  status?: 'pending' | 'success' | 'error';
+  status?: 'pending' | 'success' | 'error' | 'not_found';
   error?: string;
 }
 
@@ -34,6 +45,7 @@ export default function BulkImport() {
   const [parsed, setParsed] = useState<ParsedContact[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<{ success: number; failed: number } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const parseText = useCallback((text: string) => {
     const lines = text.trim().split('\n').filter((l) => l.trim());
@@ -43,8 +55,8 @@ export default function BulkImport() {
         : line.split(',').map((p) => p.trim());
 
       return {
-        nome: parts[0] || '',
-        whatsapp: parts[1] || undefined,
+        nome: normalizeName(parts[0] || ''),
+        whatsapp: parts[1] ? normalizePhone(parts[1]) : undefined,
         email: parts[2] || undefined,
         status: 'pending' as const,
       };
@@ -74,12 +86,11 @@ export default function BulkImport() {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        // Skip header row if first cell looks like a header
         const startIdx = rows[0]?.[0]?.toLowerCase?.().includes('nom') ? 1 : 0;
 
         const contacts: ParsedContact[] = rows.slice(startIdx).map((row) => ({
-          nome: String(row[0] ?? '').trim(),
-          whatsapp: row[1] ? String(row[1]).trim() : undefined,
+          nome: normalizeName(String(row[0] ?? '').trim()),
+          whatsapp: row[1] ? normalizePhone(String(row[1]).trim()) : undefined,
           email: row[2] ? String(row[2]).trim() : undefined,
           status: 'pending' as const,
         })).filter((c) => c.nome);
@@ -92,7 +103,6 @@ export default function BulkImport() {
       }
     };
     reader.readAsArrayBuffer(file);
-    // Reset input
     e.target.value = '';
   };
 
@@ -127,19 +137,36 @@ export default function BulkImport() {
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         try {
-          let query = supabase.from('contacts').delete();
-          if (c.whatsapp) {
-            query = query.eq('whatsapp', c.whatsapp);
-          } else if (c.email) {
-            query = query.eq('email', c.email);
-          } else {
-            query = query.eq('nome', c.nome);
-          }
-          const { error } = await query;
-          if (error) throw error;
+          let matchField: string;
+          let matchValue: string;
 
-          updated[i] = { ...c, status: 'success' };
-          success++;
+          if (c.whatsapp) {
+            matchField = 'whatsapp';
+            matchValue = c.whatsapp;
+          } else if (c.email) {
+            matchField = 'email';
+            matchValue = c.email;
+          } else {
+            matchField = 'nome';
+            matchValue = c.nome;
+          }
+
+          // Check if exists first
+          const { data: found } = await supabase
+            .from('contacts')
+            .select('id')
+            .eq(matchField, matchValue)
+            .maybeSingle();
+
+          if (!found) {
+            updated[i] = { ...c, status: 'not_found', error: 'Contato não encontrado' };
+            failed++;
+          } else {
+            const { error } = await supabase.from('contacts').delete().eq('id', found.id);
+            if (error) throw error;
+            updated[i] = { ...c, status: 'success' };
+            success++;
+          }
         } catch (err: any) {
           updated[i] = { ...c, status: 'error', error: err.message };
           failed++;
@@ -147,22 +174,28 @@ export default function BulkImport() {
         setParsed([...updated]);
       }
     } else if (mode === 'edit') {
-      // Edit mode: match by whatsapp, update nome and email
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         try {
-          if (!c.whatsapp) throw new Error('WhatsApp necessario para editar');
-          const updateData: Record<string, unknown> = { nome: c.nome };
-          if (c.email) updateData.email = c.email;
+          if (!c.whatsapp) throw new Error('WhatsApp necessário para editar');
 
-          const { error } = await supabase
+          const { data: found } = await supabase
             .from('contacts')
-            .update(updateData)
-            .eq('whatsapp', c.whatsapp);
-          if (error) throw error;
+            .select('id')
+            .eq('whatsapp', c.whatsapp)
+            .maybeSingle();
 
-          updated[i] = { ...c, status: 'success' };
-          success++;
+          if (!found) {
+            updated[i] = { ...c, status: 'not_found', error: 'Contato não encontrado' };
+            failed++;
+          } else {
+            const updateData: Record<string, unknown> = { nome: c.nome };
+            if (c.email) updateData.email = c.email;
+            const { error } = await supabase.from('contacts').update(updateData).eq('id', found.id);
+            if (error) throw error;
+            updated[i] = { ...c, status: 'success' };
+            success++;
+          }
         } catch (err: any) {
           updated[i] = { ...c, status: 'error', error: err.message };
           failed++;
@@ -170,11 +203,9 @@ export default function BulkImport() {
         setParsed([...updated]);
       }
     } else if (mode === 'tag') {
-      // Tag mode: nome is tag name, whatsapp is contact identifier
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         try {
-          // Find or create tag
           const tagName = c.nome;
           let { data: tag } = await supabase
             .from('tags')
@@ -192,23 +223,23 @@ export default function BulkImport() {
             tag = newTag;
           }
 
-          // Find contact
-          if (!c.whatsapp) throw new Error('WhatsApp do contato necessario');
+          if (!c.whatsapp) throw new Error('WhatsApp do contato necessário');
           const { data: contact } = await supabase
             .from('contacts')
             .select('id')
             .eq('whatsapp', c.whatsapp)
             .maybeSingle();
 
-          if (!contact) throw new Error('Contato nao encontrado');
-
-          // Link
-          await supabase
-            .from('contact_tags')
-            .upsert({ contact_id: contact.id, tag_id: tag!.id }, { onConflict: 'contact_id,tag_id' });
-
-          updated[i] = { ...c, status: 'success' };
-          success++;
+          if (!contact) {
+            updated[i] = { ...c, status: 'not_found', error: 'Contato não encontrado' };
+            failed++;
+          } else {
+            await supabase
+              .from('contact_tags')
+              .upsert({ contact_id: contact.id, tag_id: tag!.id }, { onConflict: 'contact_id,tag_id' });
+            updated[i] = { ...c, status: 'success' };
+            success++;
+          }
         } catch (err: any) {
           updated[i] = { ...c, status: 'error', error: err.message };
           failed++;
@@ -219,7 +250,29 @@ export default function BulkImport() {
 
     setResults({ success, failed });
     setIsProcessing(false);
-    toast.success(`Importacao concluida: ${success} sucesso, ${failed} falhas`);
+    toast.success(`Importação concluída: ${success} sucesso, ${failed} falhas`);
+  };
+
+  const errorItems = parsed.filter((c) => c.status === 'error');
+  const notFoundItems = parsed.filter((c) => c.status === 'not_found');
+
+  const copyErrors = () => {
+    const items = [...errorItems, ...notFoundItems];
+    const text = items
+      .map((c) => `${c.nome},${c.whatsapp ?? ''},${c.email ?? ''} — ${c.error ?? 'Não encontrado'}`)
+      .join('\n');
+    navigator.clipboard.writeText(text);
+    toast.success('Erros copiados para a área de transferência');
+  };
+
+  const reimportErrors = () => {
+    const items = [...errorItems, ...notFoundItems];
+    const text = items
+      .map((c) => `${c.nome},${c.whatsapp ?? ''},${c.email ?? ''}`)
+      .join('\n');
+    setRawText(text);
+    parseText(text);
+    toast.success('Erros carregados para re-importação');
   };
 
   const modeLabels: Record<ImportMode, { tab: string; action: string; hint: string }> = {
@@ -249,10 +302,10 @@ export default function BulkImport() {
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
         <FileSpreadsheet className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Importacao em Massa</h1>
+        <h1 className="text-2xl font-bold">Importação em Massa</h1>
       </div>
 
-      <Tabs value={mode} onValueChange={(v) => setMode(v as ImportMode)}>
+      <Tabs value={mode} onValueChange={(v) => { setMode(v as ImportMode); setParsed([]); setRawText(''); setResults(null); }}>
         <TabsList>
           {Object.entries(modeLabels).map(([key, { tab }]) => (
             <TabsTrigger key={key} value={key}>
@@ -299,9 +352,12 @@ export default function BulkImport() {
                 {parsed.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">
-                        Preview: {parsed.length} registros
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">
+                          Preview: {parsed.length} registros
+                        </p>
+                        <Badge variant="secondary">{parsed.length} registros</Badge>
+                      </div>
                       {results && (
                         <div className="flex gap-3 text-sm">
                           <span className="flex items-center gap-1 text-green-600">
@@ -343,6 +399,11 @@ export default function BulkImport() {
                                     Erro
                                   </Badge>
                                 )}
+                                {c.status === 'not_found' && (
+                                  <Badge variant="outline" className="text-yellow-700 border-yellow-400" title={c.error}>
+                                    Não encontrado
+                                  </Badge>
+                                )}
                                 {c.status === 'pending' && (
                                   <Badge variant="secondary">Pendente</Badge>
                                 )}
@@ -353,13 +414,52 @@ export default function BulkImport() {
                       </Table>
                     </div>
 
-                    <Button
-                      onClick={handleExecute}
-                      disabled={isProcessing || parsed.length === 0}
-                    >
-                      {isProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {action}
-                    </Button>
+                    {/* Action buttons */}
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        onClick={() => setShowConfirm(true)}
+                        disabled={isProcessing || parsed.length === 0}
+                      >
+                        {isProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        {action}
+                      </Button>
+
+                      {/* Error actions */}
+                      {results && (errorItems.length > 0 || notFoundItems.length > 0) && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={copyErrors} className="gap-2">
+                            <ClipboardCopy className="h-4 w-4" />
+                            Copiar erros
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={reimportErrors} className="gap-2">
+                            <RefreshCw className="h-4 w-4" />
+                            Re-importar erros
+                          </Button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Not found section */}
+                    {results && notFoundItems.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-yellow-700">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="text-sm font-medium">{notFoundItems.length} não encontrados</span>
+                        </div>
+                        <div className="max-h-32 overflow-y-auto border border-yellow-200 rounded-lg">
+                          <Table>
+                            <TableBody>
+                              {notFoundItems.map((c, i) => (
+                                <TableRow key={i}>
+                                  <TableCell className="text-sm">{c.nome}</TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">{c.whatsapp ?? '-'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -367,6 +467,25 @@ export default function BulkImport() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Confirmation dialog */}
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar operação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja {modeLabels[mode].tab.toLowerCase()} {parsed.length} contatos?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowConfirm(false); handleExecute(); }}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

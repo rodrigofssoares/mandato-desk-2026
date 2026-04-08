@@ -5,49 +5,97 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { downloadFile, rowsToCSV, downloadXLSX, dateForFilename } from '@/lib/exportUtils';
 import type { ContactFilters } from '@/hooks/useContacts';
 
 interface ExportMenuProps {
   filters: ContactFilters;
 }
 
-async function fetchAllContacts(filters: ContactFilters) {
-  let query = supabase
-    .from('contacts')
-    .select('*, contact_tags(tag_id, tags(nome))');
+const COL_WIDTHS = [
+  { wch: 36 }, // id
+  { wch: 25 }, // Nome
+  { wch: 15 }, // WhatsApp
+  { wch: 18 }, // WhatsApp Habilitado
+  { wch: 25 }, // Email
+  { wch: 15 }, // Telefone
+  { wch: 12 }, // Gênero
+  { wch: 14 }, // Data Nascimento
+  { wch: 30 }, // Logradouro
+  { wch: 10 }, // Número
+  { wch: 20 }, // Complemento
+  { wch: 20 }, // Bairro
+  { wch: 20 }, // Cidade
+  { wch: 6 },  // Estado
+  { wch: 12 }, // CEP
+  { wch: 15 }, // Instagram
+  { wch: 15 }, // Twitter
+  { wch: 15 }, // TikTok
+  { wch: 15 }, // YouTube
+  { wch: 15 }, // Declarou Voto
+  { wch: 8 },  // Ranking
+  { wch: 10 }, // Favorito
+  { wch: 15 }, // Origem
+  { wch: 30 }, // Observações
+  { wch: 30 }, // Notas Assessor
+  { wch: 25 }, // Etiquetas
+  { wch: 14 }, // Criado em
+];
 
-  if (filters.search && filters.search.trim()) {
-    const term = `%${filters.search.trim()}%`;
-    query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
+async function fetchAllContactsPaginated(filters: ContactFilters, ignoreFilters = false) {
+  let allData: any[] = [];
+  let offset = 0;
+  const batchSize = 1000;
+
+  while (true) {
+    let query = supabase
+      .from('contacts')
+      .select('*, contact_tags(tag_id, tags(nome))');
+
+    if (!ignoreFilters) {
+      if (filters.search && filters.search.trim()) {
+        const term = `%${filters.search.trim()}%`;
+        query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
+      }
+      if (filters.is_favorite) query = query.eq('is_favorite', true);
+      if (filters.declarou_voto === true) query = query.eq('declarou_voto', true);
+      if (filters.declarou_voto === false) query = query.eq('declarou_voto', false);
+      if (filters.leader_id) query = query.eq('leader_id', filters.leader_id);
+      if (filters.date_from) query = query.gte('created_at', filters.date_from);
+      if (filters.date_to) query = query.lte('created_at', `${filters.date_to}T23:59:59`);
+    }
+
+    query = query.order('nome', { ascending: true }).range(offset, offset + batchSize - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allData = allData.concat(data);
+    if (data.length < batchSize) break;
+    offset += batchSize;
   }
-  if (filters.is_favorite) query = query.eq('is_favorite', true);
-  if (filters.declarou_voto === true) query = query.eq('declarou_voto', true);
-  if (filters.declarou_voto === false) query = query.eq('declarou_voto', false);
-  if (filters.leader_id) query = query.eq('leader_id', filters.leader_id);
-  if (filters.date_from) query = query.gte('created_at', filters.date_from);
-  if (filters.date_to) query = query.lte('created_at', `${filters.date_to}T23:59:59`);
 
-  query = query.order('nome', { ascending: true });
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
+  return allData;
 }
 
-function contactsToRows(contacts: Awaited<ReturnType<typeof fetchAllContacts>>) {
+function contactsToRows(contacts: any[]) {
   return contacts.map((c: Record<string, unknown>) => ({
+    id: c.id ?? '',
     Nome: c.nome ?? '',
     WhatsApp: c.whatsapp ?? '',
+    'WhatsApp Habilitado': c.em_canal_whatsapp ? 'Sim' : 'Não',
     Email: c.email ?? '',
     Telefone: c.telefone ?? '',
-    Gênero: c.genero ?? '',
+    'Gênero': c.genero ?? '',
     'Data Nascimento': c.data_nascimento ?? '',
     Logradouro: c.logradouro ?? '',
-    Número: c.numero ?? '',
+    'Número': c.numero ?? '',
     Complemento: c.complemento ?? '',
     Bairro: c.bairro ?? '',
     Cidade: c.cidade ?? '',
@@ -61,7 +109,7 @@ function contactsToRows(contacts: Awaited<ReturnType<typeof fetchAllContacts>>) 
     Ranking: c.ranking ?? 0,
     Favorito: c.is_favorite ? 'Sim' : 'Não',
     Origem: c.origem ?? '',
-    Observações: c.observacoes ?? '',
+    'Observações': c.observacoes ?? '',
     'Notas Assessor': c.notas_assessor ?? '',
     Etiquetas: Array.isArray(c.contact_tags)
       ? (c.contact_tags as Array<{ tags: { nome: string } }>).map((ct) => ct.tags?.nome).filter(Boolean).join(', ')
@@ -70,68 +118,30 @@ function contactsToRows(contacts: Awaited<ReturnType<typeof fetchAllContacts>>) 
   }));
 }
 
-function downloadFile(content: string, filename: string, mimeType: string) {
-  const blob = new Blob(['\uFEFF' + content], { type: mimeType }); // BOM for Excel UTF-8
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export function ExportMenu({ filters }: ExportMenuProps) {
   const [isExporting, setIsExporting] = useState(false);
 
-  const exportCSV = async () => {
+  const doExport = async (format: 'csv' | 'xlsx', filtered: boolean) => {
     setIsExporting(true);
+    const suffix = filtered ? 'filtrado' : 'completo';
     try {
-      const contacts = await fetchAllContacts(filters);
+      const contacts = await fetchAllContactsPaginated(filters, !filtered);
       const rows = contactsToRows(contacts);
       if (rows.length === 0) {
         toast.error('Nenhum contato para exportar');
         return;
       }
 
-      const headers = Object.keys(rows[0]);
-      const csvLines = [
-        headers.join(';'),
-        ...rows.map((row) =>
-          headers.map((h) => {
-            const val = String((row as Record<string, unknown>)[h] ?? '').replace(/"/g, '""');
-            return `"${val}"`;
-          }).join(';')
-        ),
-      ];
-
-      downloadFile(csvLines.join('\n'), `contatos_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8;');
-      toast.success(`${rows.length} contatos exportados em CSV`);
-    } catch (err) {
-      toast.error('Erro ao exportar CSV');
-      console.error(err);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const exportXLSX = async () => {
-    setIsExporting(true);
-    try {
-      const contacts = await fetchAllContacts(filters);
-      const rows = contactsToRows(contacts);
-      if (rows.length === 0) {
-        toast.error('Nenhum contato para exportar');
-        return;
+      const date = dateForFilename();
+      if (format === 'csv') {
+        const csv = rowsToCSV(rows);
+        downloadFile(csv, `contatos_${date}_${suffix}.csv`, 'text/csv;charset=utf-8;');
+      } else {
+        await downloadXLSX(rows, `contatos_${date}_${suffix}.xlsx`, 'Contatos', COL_WIDTHS);
       }
-
-      const XLSX = await import('xlsx');
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Contatos');
-      XLSX.writeFile(wb, `contatos_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success(`${rows.length} contatos exportados em XLSX`);
+      toast.success(`${rows.length} contatos exportados em ${format.toUpperCase()}`);
     } catch (err) {
-      toast.error('Erro ao exportar XLSX');
+      toast.error(`Erro ao exportar ${format.toUpperCase()}`);
       console.error(err);
     } finally {
       setIsExporting(false);
@@ -147,13 +157,24 @@ export function ExportMenu({ filters }: ExportMenuProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={exportCSV} className="gap-2">
+        <DropdownMenuLabel>Filtrados</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => doExport('csv', true)} className="gap-2">
           <FileText className="h-4 w-4" />
-          Exportar CSV
+          CSV Filtrado
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={exportXLSX} className="gap-2">
+        <DropdownMenuItem onClick={() => doExport('xlsx', true)} className="gap-2">
           <FileSpreadsheet className="h-4 w-4" />
-          Exportar XLSX
+          XLSX Filtrado
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Completo</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => doExport('csv', false)} className="gap-2">
+          <FileText className="h-4 w-4" />
+          CSV Completo
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => doExport('xlsx', false)} className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" />
+          XLSX Completo
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

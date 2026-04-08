@@ -13,6 +13,7 @@ import { useDemands } from '@/hooks/useDemands';
 import { usePermissions } from '@/hooks/usePermissions';
 import { DemandKanban } from '@/components/demands/DemandKanban';
 import { DemandDialog } from '@/components/demands/DemandDialog';
+import { DemandsExportMenu } from '@/components/demands/DemandsExportMenu';
 import type { Demand } from '@/hooks/useDemands';
 
 export default function Demands() {
@@ -41,12 +42,15 @@ export default function Demands() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Demandas</h1>
-        {can.createDemand() && (
-          <Button onClick={handleNewDemand}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Demanda
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {can.exportData() && <DemandsExportMenu />}
+          {can.createDemand() && (
+            <Button onClick={handleNewDemand}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Demanda
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

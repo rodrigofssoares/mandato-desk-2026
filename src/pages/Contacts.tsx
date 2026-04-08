@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy } from 'lucide-react';
+import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,8 @@ import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { ContactFilters } from '@/components/contacts/ContactFilters';
 import { ContactsPagination } from '@/components/contacts/ContactsPagination';
 import { ExportMenu } from '@/components/contacts/ExportMenu';
+import { ContactImportDialog } from '@/components/contacts/ContactImportDialog';
+import { PrintLabelsModal } from '@/components/contacts/PrintLabelsModal';
 import { DuplicatesDialog } from '@/components/contacts/DuplicatesDialog';
 import { useDuplicateCount } from '@/hooks/useDuplicates';
 
@@ -53,6 +55,8 @@ export default function Contacts() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
 
   const { data: duplicateCount = 0 } = useDuplicateCount();
 
@@ -126,7 +130,31 @@ export default function Contacts() {
             </Button>
           )}
 
+          {can.importContacts() && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Importar
+            </Button>
+          )}
+
           {can.exportData() && <ExportMenu filters={queryFilters} />}
+
+          {can.exportData() && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setLabelsOpen(true)}
+              className="gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Etiquetas
+            </Button>
+          )}
 
           {can.createContact() && (
             <Button size="sm" onClick={openCreate} className="gap-2">
@@ -308,6 +336,22 @@ export default function Contacts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <ContactImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['contacts'] });
+        }}
+      />
+
+      {/* Print Labels Modal */}
+      <PrintLabelsModal
+        open={labelsOpen}
+        onOpenChange={setLabelsOpen}
+        filters={queryFilters}
+      />
 
       {/* Duplicates Dialog */}
       <DuplicatesDialog

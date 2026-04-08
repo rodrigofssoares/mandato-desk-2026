@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRecentActivities, useProfilesList } from '@/hooks/useDashboard';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ActivitiesExportMenu } from '@/components/activities/ActivitiesExportMenu';
 
 const ACTIVITY_ICONS: Record<string, React.ElementType> = {
   create: Plus,
@@ -50,6 +52,8 @@ export function ActivityFeed() {
   const [activityType, setActivityType] = useState<string>('');
   const [responsibleId, setResponsibleId] = useState<string>('');
 
+  const { can } = usePermissions();
+
   const { data: activities, isLoading } = useRecentActivities(page, {
     activityType: activityType || undefined,
     responsibleId: responsibleId || undefined,
@@ -59,7 +63,7 @@ export function ActivityFeed() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Atividades Recentes</CardTitle>
+        <div className="flex items-center justify-between"><CardTitle className="text-lg">Atividades Recentes</CardTitle>{can.exportData() && <ActivitiesExportMenu />}</div>
         <div className="flex flex-col sm:flex-row gap-2 mt-2">
           <Select value={activityType} onValueChange={(v) => { setActivityType(v === 'all' ? '' : v); setPage(0); }}>
             <SelectTrigger className="w-full sm:w-[180px]">
