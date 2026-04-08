@@ -51,12 +51,13 @@ const HEADER_MAP: Record<string, string> = {
   nome_completo: 'nome_completo',
   nome: 'nome_completo',
   whatsapp: 'whatsapp',
-  whatsapp_habilitado: 'whatsapp_habilitado',
-  em_canal_whatsapp: 'whatsapp_habilitado',
-  canal_whatsapp: 'whatsapp_habilitado',
-  canal_do_whatsapp: 'whatsapp_habilitado',
+  canal_whatsapp: 'canal_whatsapp',
+  whatsapp_habilitado: 'canal_whatsapp',
+  em_canal_whatsapp: 'canal_whatsapp',
+  canal_do_whatsapp: 'canal_whatsapp',
   nome_whatsapp: 'nome_whatsapp',
-  aceita_whatsapp: 'aceita_whatsapp',
+  receber_whatsapp: 'receber_whatsapp',
+  aceita_whatsapp: 'receber_whatsapp',
   email: 'email',
   telefone: 'telefone',
   genero: 'genero',
@@ -92,8 +93,8 @@ const HEADER_MAP: Record<string, string> = {
   liderança_id: 'leader_id',
   favorito: 'is_favorite',
   is_favorite: 'is_favorite',
-  e_multiplicador: 'e_multiplicador',
-  multiplicador: 'e_multiplicador',
+  multiplicador: 'multiplicador',
+  e_multiplicador: 'multiplicador',
   ultimo_contato: 'ultimo_contato',
   último_contato: 'ultimo_contato',
 };
@@ -145,52 +146,89 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     const wb = XLSX.utils.book_new();
 
     const headers = [
-      'nome_completo', 'nome_whatsapp', 'whatsapp', 'em_canal_whatsapp', 'aceita_whatsapp',
-      'e_multiplicador', 'email', 'telefone', 'genero', 'data_nascimento',
+      'nome_completo', 'nome_whatsapp', 'whatsapp', 'canal_whatsapp', 'receber_whatsapp',
+      'multiplicador', 'email', 'telefone', 'genero', 'data_nascimento',
       'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
       'instagram', 'twitter', 'tiktok', 'youtube',
       'declarou_voto', 'ranking', 'leader_id', 'favorito',
       'origem', 'observacoes', 'notas_assessor', 'ultimo_contato', 'etiquetas',
     ];
-    const wsContatos = XLSX.utils.aoa_to_sheet([headers]);
-    wsContatos['!cols'] = headers.map(() => ({ wch: 20 }));
+
+    // 3 exemplos fictícios
+    const examples = [
+      [
+        'Maria da Silva', 'Maria', '5511999887766', 'sim', 'sim',
+        'nao', 'maria@email.com', '5511988776655', 'feminino', '1985-03-20',
+        'Rua das Flores', '123', 'Apto 4B', 'Centro', 'São Paulo', 'SP', '01001-000',
+        '@mariasilva', '', '', '',
+        'sim', '8', '', 'sim',
+        'Evento comunitário', 'Moradora ativa do bairro', 'Contato feito na reunião de março', '2026-04-01', 'Liderança, Saúde',
+      ],
+      [
+        'João Santos', '', '5521988776655', 'nao', 'sim',
+        'sim', 'joao.santos@gmail.com', '', 'masculino', '1990-07-10',
+        'Av. Brasil', '456', '', 'Copacabana', 'Rio de Janeiro', 'RJ', '22041-080',
+        '', '@joaosantos', '', '',
+        'nao', '5', '', 'nao',
+        'Indicação', '', 'Multiplicador na zona sul', '', 'Educação',
+      ],
+      [
+        'Ana Oliveira', 'Aninha', '5531977665544', 'sim', 'nao',
+        'nao', '', '5531966554433', 'feminino', '',
+        'Rua Minas Gerais', '789', 'Casa 2', 'Savassi', 'Belo Horizonte', 'MG', '30130-150',
+        '@anaoliveira', '', '@ana.tiktok', '',
+        'sim', '3', '', 'nao',
+        'Redes sociais', 'Interessada em projetos de cultura', '', '2026-03-15', 'Cultura, Juventude',
+      ],
+    ];
+
+    const wsContatos = XLSX.utils.aoa_to_sheet([headers, ...examples]);
+    wsContatos['!cols'] = headers.map(() => ({ wch: 22 }));
     XLSX.utils.book_append_sheet(wb, wsContatos, 'Contatos');
 
     const instructions = [
-      ['Campo', 'Obrigatório', 'Formato'],
-      ['nome_completo', 'SIM', 'Texto, máx 255 caracteres'],
-      ['nome_whatsapp', 'Não', 'Nome de exibição no WhatsApp'],
-      ['whatsapp', 'SIM', 'Apenas dígitos, ex: 5511999887766'],
-      ['em_canal_whatsapp', 'Não', 'Está no canal do WhatsApp: sim/não'],
-      ['aceita_whatsapp', 'Não', 'Aceita receber mensagens: sim/não'],
-      ['e_multiplicador', 'Não', 'É multiplicador: sim/não'],
-      ['email', 'Não', 'email@exemplo.com'],
-      ['telefone', 'Não', 'Apenas dígitos'],
-      ['genero', 'Não', 'masculino, feminino ou outro'],
-      ['data_nascimento', 'Não', 'YYYY-MM-DD (ex: 1990-05-15)'],
-      ['endereco', 'Não', 'Logradouro/Rua, máx 500 chars'],
-      ['numero', 'Não', 'Número do endereço'],
-      ['complemento', 'Não', 'Apto, bloco, etc'],
-      ['bairro', 'Não', 'Máx 255 caracteres'],
-      ['cidade', 'Não', 'Máx 255 caracteres'],
-      ['uf', 'Não', 'Sigla do estado, 2 caracteres (ex: SP)'],
-      ['cep', 'Não', 'Com ou sem hífen (ex: 12345-678)'],
-      ['instagram', 'Não', 'Usuário ou URL do Instagram'],
-      ['twitter', 'Não', 'Usuário ou URL do Twitter/X'],
-      ['tiktok', 'Não', 'Usuário ou URL do TikTok'],
-      ['youtube', 'Não', 'Usuário ou URL do YouTube'],
-      ['declarou_voto', 'Não', 'sim ou nao'],
-      ['ranking', 'Não', 'Número de 0 a 10'],
-      ['leader_id', 'Não', 'UUID da liderança vinculada'],
-      ['favorito', 'Não', 'sim ou nao'],
-      ['origem', 'Não', 'Fonte do contato'],
-      ['observacoes', 'Não', 'Máx 2000 caracteres'],
-      ['notas_assessor', 'Não', 'Notas internas, máx 2000 chars'],
-      ['ultimo_contato', 'Não', 'YYYY-MM-DD (data do último contato)'],
-      ['etiquetas', 'Não', 'Nomes separados por vírgula'],
+      ['INSTRUÇÕES DE PREENCHIMENTO'],
+      [''],
+      ['Este modelo contém 30 campos. Apenas nome_completo e whatsapp são obrigatórios.'],
+      ['Os 3 exemplos na aba "Contatos" podem ser apagados antes de importar.'],
+      ['Campos com "sim/não" aceitam também: true/false, 1/0, yes/no, s/n.'],
+      ['Se o WhatsApp já existe no sistema, o contato será ATUALIZADO (não duplicado).'],
+      ['Campos em branco na planilha NÃO sobrescrevem dados já cadastrados.'],
+      [''],
+      ['Campo', 'Obrigatório', 'Descrição', 'Exemplo'],
+      ['nome_completo', 'SIM', 'Nome completo do contato (máx 255 caracteres)', 'Maria da Silva'],
+      ['nome_whatsapp', 'Não', 'Nome que aparece no perfil do WhatsApp', 'Maria'],
+      ['whatsapp', 'SIM', 'Número com DDD e código do país (apenas dígitos)', '5511999887766'],
+      ['canal_whatsapp', 'Não', 'Contato está no canal do WhatsApp? (sim/não)', 'sim'],
+      ['receber_whatsapp', 'Não', 'Aceita receber mensagens pelo WhatsApp? (sim/não)', 'sim'],
+      ['multiplicador', 'Não', 'É um multiplicador/articulador? (sim/não)', 'nao'],
+      ['email', 'Não', 'Endereço de e-mail válido', 'maria@email.com'],
+      ['telefone', 'Não', 'Telefone fixo ou celular alternativo (apenas dígitos)', '5511988776655'],
+      ['genero', 'Não', 'Gênero: masculino, feminino ou outro', 'feminino'],
+      ['data_nascimento', 'Não', 'Data no formato AAAA-MM-DD', '1985-03-20'],
+      ['endereco', 'Não', 'Logradouro (rua, avenida, etc.)', 'Rua das Flores'],
+      ['numero', 'Não', 'Número do endereço', '123'],
+      ['complemento', 'Não', 'Apartamento, bloco, casa, sala, etc.', 'Apto 4B'],
+      ['bairro', 'Não', 'Bairro do endereço', 'Centro'],
+      ['cidade', 'Não', 'Cidade', 'São Paulo'],
+      ['uf', 'Não', 'Sigla do estado (2 letras)', 'SP'],
+      ['cep', 'Não', 'CEP com ou sem hífen', '01001-000'],
+      ['instagram', 'Não', 'Usuário do Instagram (com ou sem @)', '@mariasilva'],
+      ['twitter', 'Não', 'Usuário do Twitter/X (com ou sem @)', '@mariasilva'],
+      ['tiktok', 'Não', 'Usuário do TikTok (com ou sem @)', '@mariasilva'],
+      ['youtube', 'Não', 'Canal ou usuário do YouTube', '@mariasilva'],
+      ['declarou_voto', 'Não', 'Declarou voto? (sim/não)', 'sim'],
+      ['ranking', 'Não', 'Nota de engajamento de 0 a 10', '8'],
+      ['leader_id', 'Não', 'ID (UUID) da liderança vinculada', ''],
+      ['favorito', 'Não', 'Marcar como favorito? (sim/não)', 'sim'],
+      ['origem', 'Não', 'Como o contato chegou ao sistema', 'Evento comunitário'],
+      ['observacoes', 'Não', 'Observações gerais (máx 2000 caracteres)', 'Moradora ativa'],
+      ['notas_assessor', 'Não', 'Notas internas da equipe (máx 2000 caracteres)', 'Acompanhar demanda'],
+      ['ultimo_contato', 'Não', 'Data do último contato (AAAA-MM-DD)', '2026-04-01'],
+      ['etiquetas', 'Não', 'Etiquetas separadas por vírgula (cria se não existir)', 'Liderança, Saúde'],
     ];
     const wsInstrucoes = XLSX.utils.aoa_to_sheet(instructions);
-    wsInstrucoes['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 45 }];
+    wsInstrucoes['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 50 }, { wch: 25 }];
     XLSX.utils.book_append_sheet(wb, wsInstrucoes, 'Instruções');
 
     XLSX.writeFile(wb, 'template_importacao_contatos.xlsx');
@@ -247,9 +285,9 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         if (raw.telefone) normalized.telefone = normalizePhone(raw.telefone);
         if (raw.genero) normalized.genero = raw.genero.toLowerCase();
         if (raw.declarou_voto) normalized.declarou_voto = parseBoolean(raw.declarou_voto);
-        if (raw.whatsapp_habilitado) normalized.whatsapp_habilitado = parseBoolean(raw.whatsapp_habilitado);
-        if (raw.aceita_whatsapp) normalized.aceita_whatsapp = parseBoolean(raw.aceita_whatsapp);
-        if (raw.e_multiplicador) normalized.e_multiplicador = parseBoolean(raw.e_multiplicador);
+        if (raw.canal_whatsapp) normalized.canal_whatsapp = parseBoolean(raw.canal_whatsapp);
+        if (raw.receber_whatsapp) normalized.receber_whatsapp = parseBoolean(raw.receber_whatsapp);
+        if (raw.multiplicador) normalized.multiplicador = parseBoolean(raw.multiplicador);
         if (raw.is_favorite) normalized.is_favorite = parseBoolean(raw.is_favorite);
         if (raw.ranking) {
           const r = parseInt(raw.ranking, 10);
@@ -357,10 +395,10 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         if (n.observacoes) obj.observacoes = n.observacoes;
         if (n.notas_assessor) obj.notas_assessor = n.notas_assessor;
         if (n.declarou_voto !== undefined) obj.declarou_voto = n.declarou_voto;
-        if (n.whatsapp_habilitado !== undefined) obj.em_canal_whatsapp = n.whatsapp_habilitado;
+        if (n.canal_whatsapp !== undefined) obj.em_canal_whatsapp = n.canal_whatsapp;
         if (n.nome_whatsapp) obj.nome_whatsapp = n.nome_whatsapp;
-        if (n.aceita_whatsapp !== undefined) obj.aceita_whatsapp = n.aceita_whatsapp;
-        if (n.e_multiplicador !== undefined) obj.e_multiplicador = n.e_multiplicador;
+        if (n.receber_whatsapp !== undefined) obj.aceita_whatsapp = n.receber_whatsapp;
+        if (n.multiplicador !== undefined) obj.e_multiplicador = n.multiplicador;
         if (n.data_nascimento) obj.data_nascimento = n.data_nascimento;
         if (n.instagram) obj.instagram = n.instagram;
         if (n.twitter) obj.twitter = n.twitter;
@@ -417,10 +455,10 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       if (n.observacoes) updates.observacoes = n.observacoes;
       if (n.notas_assessor) updates.notas_assessor = n.notas_assessor;
       if (n.declarou_voto !== undefined) updates.declarou_voto = n.declarou_voto;
-      if (n.whatsapp_habilitado !== undefined) updates.em_canal_whatsapp = n.whatsapp_habilitado;
+      if (n.canal_whatsapp !== undefined) updates.em_canal_whatsapp = n.canal_whatsapp;
       if (n.nome_whatsapp) updates.nome_whatsapp = n.nome_whatsapp;
-      if (n.aceita_whatsapp !== undefined) updates.aceita_whatsapp = n.aceita_whatsapp;
-      if (n.e_multiplicador !== undefined) updates.e_multiplicador = n.e_multiplicador;
+      if (n.receber_whatsapp !== undefined) updates.aceita_whatsapp = n.receber_whatsapp;
+      if (n.multiplicador !== undefined) updates.e_multiplicador = n.multiplicador;
       if (n.data_nascimento) updates.data_nascimento = n.data_nascimento;
       if (n.instagram) updates.instagram = n.instagram;
       if (n.twitter) updates.twitter = n.twitter;
