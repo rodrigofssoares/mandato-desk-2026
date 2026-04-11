@@ -1,17 +1,18 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 22:05 UTC
+**Última atualização:** 2026-04-11 22:35 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
 ---
 
 ## Status geral
-- **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 11 (Fase 0 + Fase 1 completas ✅; Fase 2 — 32/33/34 ok)
+- **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
+- **Concluídas:** 12 (Fase 0 + Fase 1 completas ✅; Fase 2 completa — 32/33/34/35 ok)
 - **Em andamento:** 0
-- **Pendentes:** 18
+- **Pendentes:** 11
 - **Bloqueadas:** 0
+- **Opcionais (fora da contagem):** 14 Parte B, 98
 
 ## Bootstrap (setup inicial — concluído)
 - [x] `.env` atualizado com novo `SUPABASE_ACCESS_TOKEN`
@@ -39,7 +40,7 @@
 - [x] `32-func-page-settings-hub` — hub `/settings` com 7 abas, absorvendo Users/Permissoes/Google/Api/Webhooks/Branding; Funis e IA desabilitadas com tooltip; URL sync; build + 12/12 testes verdes
 - [x] `33-func-tab-campos-personalizados` — CustomFieldsManager + CustomFieldFormDialog plugados na aba Geral; CRUD completo dos 5 tipos, editor de opções para seleção, validações, confirmação de delete; build + 12/12 testes verdes
 - [x] `34-func-tab-funis` — BoardsListPanel + BoardFormDialog + BoardStagesManager (drag-drop @dnd-kit) plugados na aba Funis; CRUD de boards com estágios iniciais, toggle default, expand inline com reorder persistido; 8 cores de estágio; build + 12/12 verdes
-- [ ] `35-func-tab-ia`
+- [x] `35-func-tab-ia` — useAISettings + testApiKey + AISettingsTab completo (provider/modelo/chave/enabled/features); aba habilitada em Settings.tsx; máscara da chave + audit log + banner de segurança; build + 12/12 verdes
 
 ### Fase 3 — Board
 - [ ] `30-func-page-board`
@@ -67,11 +68,26 @@
 ---
 
 ## Próxima ação
-Issue 34 concluída ✅. Próxima: **`35-func-tab-ia`** — habilitar a aba IA (hoje desabilitada), criar `useAISettings` hook e preencher `AISettingsTab` com o form (provider/modelo/chave/features/enabled). Schema já existe (migration 016). Lembrar de remover `'ia'` do `DISABLED_TABS` em `Settings.tsx`. Chave API deve ser mascarada após salvar; não-admin vê form desabilitado.
+Issue 35 concluída ✅. Fase 2 completa. Próxima: **`30-func-page-board`** — primeira issue da Fase 3. Criar a página `/board/:boardId?` (ou `/board` usando o board default) com layout Kanban: colunas = `board_stages`, cards = `board_items`, drag-drop entre colunas usando `@dnd-kit` (mesma lib do `BoardStagesManager`). Reusar `useBoards`, `useBoardDetail`, `useDefaultBoard`, `useBoardItems`, `useBoardItemCounts`, `useMoveBoardItem`. Card mostra nome do contato, telefone, indicador "parado há X dias" baseado em `moved_at`. Adicionar rota em `App.tsx`. Lembrar do CRUD completo: criar item (botão "+ adicionar contato" por coluna abrindo seletor), mover (drag-drop), remover do board (menu de contexto no card).
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 35 — aba IA: Central de configuração de IA
+- Criados 3 arquivos:
+  - `src/hooks/useAISettings.ts` — query do singleton + `useUpdateAISettings`. Exporta `maskKey` (3 primeiros + 12 bullets + 4 últimos). O hook sempre retorna a chave **mascarada** quando admin (defense in depth, mesmo com RLS já bloqueando não-admin) e nunca a chave real ao componente; expõe a flag `api_key_set` para o form decidir o placeholder.
+  - `src/lib/ai/testApiKey.ts` — função pura que faz `GET` no endpoint de modelos de cada provider (`api.anthropic.com/v1/models`, `api.openai.com/v1/models`, `generativelanguage.googleapis.com/v1/models`). Retorna `{ ok: true } | { ok: false, error }`. Documentado no JSDoc que este é o **único** ponto do frontend que toca chave em texto plano (admin acabou de digitar) — uso real fica sempre server-side via Edge Function.
+  - `src/components/settings/AISettingsTab.tsx` — substitui o stub. Form controlado com state local hidratado por `useEffect(settings)`. Cards: Provider (Select), Modelo (Select reativo ao provider), Chave API (Input password + botão Testar), IA ativa (Switch), Features (3 checkboxes desabilitadas se `aiEnabled=false`). Rodapé com botão Salvar.
+- **Settings.tsx**: removido `'ia'` de `DISABLED_TABS` (que ficou vazio mas mantive a const por consistência da assinatura). Removidos imports `Tooltip/TooltipContent/TooltipTrigger` e o wrapper `<span>` em volta do TabsTrigger — ficou `<TabsTrigger value="ia">IA</TabsTrigger>` simples.
+- **Decisão de Provider/Modelo via Select** em vez de RadioGroup: o projeto não tem `radio-group.tsx` em `components/ui/`, e Select já é o padrão usado em outras abas — evita instalar componente novo.
+- **Hidratação do input de chave**: o input começa SEMPRE vazio. Se `api_key_set=true`, o `CardDescription` mostra a chave mascarada (`sk-••••••••••••ABCD`) e diz "deixe em branco para mantê-la". No `handleSave`, se `apiKeyInput.trim()` for vazio, `api_key` **não vai** no patch (mantém a existente). Após save bem-sucedido, o input é resetado para evitar re-envio acidental em saves sequenciais.
+- **Reset de modelo ao trocar de provider**: `useEffect([provider, model])` reseta o modelo para o primeiro disponível se o atual não estiver na lista do novo provider. Evita modelo "órfão".
+- **Não-admin**: o componente faz early return com Alert "Acesso restrito" se `!isAdmin`. RLS já bloqueia o SELECT de qualquer jeito, mas o frontend ainda dá feedback claro.
+- **Banner de segurança (issue 14 A.4)**: Alert no topo explicando que a chave fica protegida por RLS, chamadas reais são server-side e não-compartilhar admin com terceiros.
+- **Audit log (issue 14 A.5)**: `useUpdateAISettings.onSuccess` chama `logActivity({ type: 'update', entity_type: 'ai_settings', entity_id: data.id, description: 'Configuração de IA alterada' })` — `entity_type` já estava no union do `logActivity.ts` (ativado na issue 20).
+- **Gotcha TS resolvido**: `if (result.ok)` não estava narrowing o discriminated union do `TestApiKeyResult` no tsc 5.x. Trocado por `if (result.ok === true)` e funcionou.
+- Build CSS continua 91KB / gzip 19.57KB; bundle total 2537KB / gzip 754KB (sem mudança relevante). 12/12 testes verdes.
 
 ### Issue 34 — aba Funis: Gerenciar boards e estágios
 - Criados 4 arquivos em `src/components/settings/`:
