@@ -1,6 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { GeneralTab } from '@/components/settings/GeneralTab';
 import { FunisTab } from '@/components/settings/FunisTab';
@@ -22,7 +21,6 @@ const TABS = [
 type SettingsTab = (typeof TABS)[number];
 
 const DEFAULT_TAB: SettingsTab = 'geral';
-const DISABLED_TABS: readonly SettingsTab[] = ['ia'];
 
 function isValidTab(value: string | null): value is SettingsTab {
   return value !== null && (TABS as readonly string[]).includes(value);
@@ -35,7 +33,6 @@ export default function Settings() {
 
   const handleTabChange = (value: string) => {
     if (!isValidTab(value)) return;
-    if (DISABLED_TABS.includes(value)) return;
     const next = new URLSearchParams(searchParams);
     next.set('tab', value);
     // ao trocar de aba principal, limpa sub-aba de integrações
@@ -59,18 +56,7 @@ export default function Settings() {
           <TabsTrigger value="equipe">Equipe</TabsTrigger>
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <TabsTrigger value="ia" disabled>
-                  IA
-                </TabsTrigger>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Em breve</TooltipContent>
-          </Tooltip>
-
+          <TabsTrigger value="ia">IA</TabsTrigger>
           <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
         </TabsList>
 
