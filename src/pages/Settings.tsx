@@ -1,0 +1,113 @@
+import { useSearchParams } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { GeneralTab } from '@/components/settings/GeneralTab';
+import { FunisTab } from '@/components/settings/FunisTab';
+import { TeamTab } from '@/components/settings/TeamTab';
+import { PermsTab } from '@/components/settings/PermsTab';
+import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
+import { AISettingsTab } from '@/components/settings/AISettingsTab';
+import { BrandingTab } from '@/components/settings/BrandingTab';
+
+const TABS = [
+  'geral',
+  'funis',
+  'equipe',
+  'permissoes',
+  'integracoes',
+  'ia',
+  'personalizacao',
+] as const;
+type SettingsTab = (typeof TABS)[number];
+
+const DEFAULT_TAB: SettingsTab = 'geral';
+const DISABLED_TABS: readonly SettingsTab[] = ['funis', 'ia'];
+
+function isValidTab(value: string | null): value is SettingsTab {
+  return value !== null && (TABS as readonly string[]).includes(value);
+}
+
+export default function Settings() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const activeTab: SettingsTab = isValidTab(rawTab) ? rawTab : DEFAULT_TAB;
+
+  const handleTabChange = (value: string) => {
+    if (!isValidTab(value)) return;
+    if (DISABLED_TABS.includes(value)) return;
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', value);
+    // ao trocar de aba principal, limpa sub-aba de integrações
+    if (value !== 'integracoes') {
+      next.delete('sub');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <SettingsIcon className="h-6 w-6 text-muted-foreground" />
+        <h1 className="text-2xl font-bold">Configurações</h1>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="h-auto flex-wrap justify-start">
+          <TabsTrigger value="geral">Geral</TabsTrigger>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* span wrapper: botão desabilitado não dispara eventos de mouse */}
+              <span>
+                <TabsTrigger value="funis" disabled>
+                  Funis
+                </TabsTrigger>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Em breve</TooltipContent>
+          </Tooltip>
+
+          <TabsTrigger value="equipe">Equipe</TabsTrigger>
+          <TabsTrigger value="permissoes">Permissões</TabsTrigger>
+          <TabsTrigger value="integracoes">Integrações</TabsTrigger>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <TabsTrigger value="ia" disabled>
+                  IA
+                </TabsTrigger>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Em breve</TooltipContent>
+          </Tooltip>
+
+          <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="geral" className="mt-4">
+          <GeneralTab />
+        </TabsContent>
+        <TabsContent value="funis" className="mt-4">
+          <FunisTab />
+        </TabsContent>
+        <TabsContent value="equipe" className="mt-4">
+          <TeamTab />
+        </TabsContent>
+        <TabsContent value="permissoes" className="mt-4">
+          <PermsTab />
+        </TabsContent>
+        <TabsContent value="integracoes" className="mt-4">
+          <IntegrationsTab />
+        </TabsContent>
+        <TabsContent value="ia" className="mt-4">
+          <AISettingsTab />
+        </TabsContent>
+        <TabsContent value="personalizacao" className="mt-4">
+          <BrandingTab />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
