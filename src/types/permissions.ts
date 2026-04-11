@@ -3,10 +3,10 @@ export type Role = typeof ROLES[number];
 
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Administrador',
-  proprietario: 'Proprietario',
+  proprietario: 'Proprietário',
   assessor: 'Assessor',
   assistente: 'Assistente',
-  estagiario: 'Estagiario',
+  estagiario: 'Estagiário',
 };
 
 export const ROLE_LEVELS: Record<Role, number> = {
@@ -20,7 +20,7 @@ export const ROLE_LEVELS: Record<Role, number> = {
 export const SECOES = [
   'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
   'mapa', 'importacao', 'usuarios', 'google', 'api',
-  'webhooks', 'personalizacao', 'permissoes', 'relatorios'
+  'webhooks', 'personalizacao', 'permissoes', 'relatorios', 'campanha'
 ] as const;
 export type Secao = typeof SECOES[number];
 
@@ -31,12 +31,13 @@ export const SECAO_LABELS: Record<Secao, string> = {
   demandas: 'Demandas',
   etiquetas: 'Etiquetas',
   mapa: 'Mapa de Leads',
-  importacao: 'Importacao',
-  usuarios: 'Usuarios',
+  importacao: 'Importação',
+  usuarios: 'Usuários',
   google: 'Google Contacts',
   api: 'API',
   webhooks: 'Webhooks',
-  personalizacao: 'Personalizacao',
-  permissoes: 'Permissoes',
-  relatorios: 'Relatorios',
+  personalizacao: 'Personalização',
+  permissoes: 'Permissões',
+  relatorios: 'Relatórios',
+  campanha: 'Campos de Campanha',
 };
