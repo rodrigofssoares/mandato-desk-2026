@@ -12,6 +12,7 @@ export const contactSchema = z.object({
   telefone: z.string().max(20).optional().or(z.literal('')),
   genero: z.enum(['masculino', 'feminino', 'outro', 'prefiro_nao_informar']).optional().nullable(),
   data_nascimento: z.string().optional().or(z.literal('')),
+  ultimo_contato: z.string().optional().or(z.literal('')),
 
   // Endereço
   logradouro: z.string().max(300).optional().or(z.literal('')),

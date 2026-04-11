@@ -1,4 +1,6 @@
-import { Star, Pencil, Trash2, Check, Phone, Mail } from 'lucide-react';
+import { Star, Pencil, Trash2, Check, Phone, Mail, Calendar, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -84,6 +86,26 @@ export function ContactCard({ contact, onEdit, onDelete, onClick }: ContactCardP
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                     +{tags.length - 4}
                   </Badge>
+                )}
+              </div>
+            )}
+
+            {(contact.ultimo_contato || contact.updated_at) && (
+              <div className="mt-2 pt-2 border-t border-border/50 space-y-0.5">
+                {contact.ultimo_contato && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3 shrink-0" />
+                    Último contato: {format(new Date(contact.ultimo_contato), 'dd/MM/yyyy', { locale: ptBR })}
+                  </p>
+                )}
+                {contact.updated_at && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    <span className="truncate">
+                      Atualizado {format(new Date(contact.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                      {' '}por {contact.atualizado_por ?? 'Automação'}
+                    </span>
+                  </p>
                 )}
               </div>
             )}

@@ -54,6 +54,7 @@ export interface Contact {
   ultimo_contato?: string | null;
   created_at: string;
   updated_at?: string;
+  atualizado_por?: string | null;
   contact_tags?: { tag_id: string; tags: Tag }[];
 }
 
@@ -320,7 +321,7 @@ export function useUpdateContact() {
 
       const { data, error } = await supabase
         .from('contacts')
-        .update({ ...cleaned, updated_at: new Date().toISOString() })
+        .update(cleaned)
         .eq('id', id)
         .select()
         .single();

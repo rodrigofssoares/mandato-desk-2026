@@ -104,6 +104,16 @@ export function ContactListItem({ contact, onEdit, onDelete, onClick }: ContactL
         {format(new Date(contact.created_at), 'dd/MM/yyyy')}
       </span>
 
+      {/* Atualização */}
+      <div className="hidden 2xl:flex flex-col w-44 text-right text-[10px] text-muted-foreground leading-tight">
+        {contact.updated_at && (
+          <span className="truncate">
+            Atualizado {format(new Date(contact.updated_at), "dd/MM 'às' HH:mm")}
+          </span>
+        )}
+        <span className="truncate">por {contact.atualizado_por ?? 'Automação'}</span>
+      </div>
+
       {/* Actions */}
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
         {can.editContact() && (

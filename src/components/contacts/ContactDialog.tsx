@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, User, CheckSquare, Tag } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Loader2, User, CheckSquare, Tag, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +60,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
       telefone: '',
       genero: null,
       data_nascimento: '',
+      ultimo_contato: '',
       logradouro: '',
       numero: '',
       complemento: '',
@@ -93,6 +96,9 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         telefone: contact.telefone ?? '',
         genero: (contact.genero as ContactFormData['genero']) ?? null,
         data_nascimento: contact.data_nascimento ?? '',
+        ultimo_contato: contact.ultimo_contato
+          ? format(new Date(contact.ultimo_contato), "yyyy-MM-dd'T'HH:mm")
+          : '',
         logradouro: contact.logradouro ?? '',
         numero: contact.numero ?? '',
         complemento: contact.complemento ?? '',
@@ -118,10 +124,18 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   }, [contact, form]);
 
   const onSubmit = async (data: ContactFormData) => {
+    // Converte "yyyy-MM-ddTHH:mm" (datetime-local) para ISO UTC antes de enviar
+    const payload: ContactFormData = {
+      ...data,
+      ultimo_contato: data.ultimo_contato
+        ? new Date(data.ultimo_contato).toISOString()
+        : '',
+    };
+
     if (isEditing && contact) {
-      await updateMutation.mutateAsync({ id: contact.id, data });
+      await updateMutation.mutateAsync({ id: contact.id, data: payload });
     } else {
-      await createMutation.mutateAsync(data);
+      await createMutation.mutateAsync(payload);
     }
     onOpenChange(false);
   };
@@ -225,7 +239,33 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                       </Select>
                     </div>
                   </div>
+
+                  <div>
+                    <Label htmlFor="ultimo_contato">Último Contato</Label>
+                    <Input
+                      id="ultimo_contato"
+                      type="datetime-local"
+                      {...form.register('ultimo_contato')}
+                    />
+                  </div>
                 </div>
+
+                {/* Card: Auditoria (apenas edição) */}
+                {isEditing && contact?.updated_at && (
+                  <div className="rounded-lg border bg-muted/30 p-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Última atualização em{' '}
+                      <strong className="text-foreground">
+                        {format(new Date(contact.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </strong>
+                      {' '}por{' '}
+                      <strong className="text-foreground">
+                        {contact.atualizado_por ?? 'Automação'}
+                      </strong>
+                    </span>
+                  </div>
+                )}
 
                 {/* Card: Status e Classificação */}
                 <div className="rounded-lg border bg-card p-4 space-y-4">
