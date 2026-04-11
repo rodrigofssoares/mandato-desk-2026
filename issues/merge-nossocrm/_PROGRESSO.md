@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 23:00 UTC
+**Última atualização:** 2026-04-11 23:10 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 14 (Fase 0 + 1 + 2 completas ✅; Fase 3 — 30/30b ok)
+- **Concluídas:** 15 (Fase 0 + 1 + 2 + 3 completas ✅)
 - **Em andamento:** 0
-- **Pendentes:** 9
+- **Pendentes:** 8
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -45,7 +45,7 @@
 ### Fase 3 — Board
 - [x] `30-func-page-board` — rota `/board` com Kanban DnD funcional, BoardSelector, BoardCard com badge "parado há X dias", BoardCardDetailSheet (tarefas pendentes + ações), AddContactToBoardDialog, header com link p/ Settings; protótipo (issue 01) absorvido nessa entrega; bug `telefone_whatsapp` no `useBoardItems` corrigido para `whatsapp/telefone`; build + 12/12 verdes
 - [x] `30b-func-board-stages-dnd-reorder` — botão "Editar estágios" no header da página `/board` abre Sheet lateral com `BoardStagesManager` reusado direto da issue 34 (drag-drop vertical, edit nome/cor inline, delete bloqueia se tem items, add stage, batch reorder). Sem duplicar componente; build + 12/12 verdes
-- [ ] `41-func-contato-aba-personalizados`
+- [x] `41-func-contato-aba-personalizados` — `CustomFieldInput` (5 tipos: texto/número/data/booleano/seleção) + `CustomFieldsPanel` (load/save com `useContactCustomValues` + `useSaveContactCustomValues`); aba "Personalizados" inserida no `ContactDialog` entre Pessoais e Campanha; empty state quando não há campos + link p/ Settings; aviso quando contato ainda não foi salvo (cria contato → salva → reabre → aba habilitada); build + 12/12 verdes
 
 ### Fase 4 — Tarefas
 - [ ] `31-func-page-tarefas`
@@ -68,11 +68,21 @@
 ---
 
 ## Próxima ação
-Issue 30b concluída ✅. Fase 3 ainda tem 1 issue pendente. Próxima: **`41-func-contato-aba-personalizados`** — adicionar uma aba "Personalizados" na tela de detalhe de contato (`/contacts` → modal/sheet de detalhe) que mostra os campos personalizados do contato (`useContactCustomValues`) e permite editá-los em lote (`useSaveContactCustomValues`). Ver como o detalhe de contato é mostrado hoje em `src/pages/Contacts.tsx` ou `src/components/contacts/`. Hooks já existem (issue 22).
+Issue 41 concluída ✅. Fase 3 fechada. Próxima: **`31-func-page-tarefas`** — primeira issue da Fase 4. Criar a página `/tarefas` (rota nova em App.tsx) com lista filtrada de tarefas usando os hooks da issue 21 (`useTarefas` com filtros search/tipo/responsavel/concluida/periodo, `useTarefasHoje`, mutations create/update/toggle/delete). Reusar `agruparPorDia` (issue 15) para agrupar visualmente. Sidebar não tocada — issue 50 cuida.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 41 — aba "Personalizados" no ContactDialog
+- Criados 2 arquivos em `src/components/contacts/`:
+  - `CustomFieldInput.tsx` — switch por `campo.tipo` renderizando o input adequado: `Input` (texto), `Input type="number"` (número), `Input type="date"` (data), `Switch` (booleano), `Select` com opções do campo (seleção). Aceita `value: string|number|boolean|null` e devolve via `onChange`. **Gotcha TS**: o Input do shadcn não aceita `value: boolean`, então o branch número faz `typeof value === 'number' ? value : ''` para evitar passar boolean por engano.
+  - `CustomFieldsPanel.tsx` — componente self-contained (não usa o `useForm` do `ContactDialog`). State local `values: ValoresContato` hidratado por `useEffect` quando `useContactCustomValues(contactId)` carrega. Botão "Salvar campos personalizados" chama `useSaveContactCustomValues({contactId, values, campos})`. 3 estados: sem `contactId` ("Salve o contato primeiro"), sem campos configurados ("Configurar em Settings → Geral" com link), normal (formulário).
+- **`ContactDialog.tsx`**: novo `<TabsTrigger value="personalizados">` inserido entre Pessoais e Campanha (mesmo ordem da issue), e novo `<TabsContent value="personalizados">` com `<CustomFieldsPanel contactId={contact?.id} />`.
+- **Decisão de UX**: o painel **NÃO** está integrado ao `useForm` do contato porque (a) os campos custom vivem em outra tabela, (b) o save é em lote separado (`useSaveContactCustomValues` upserta tudo), (c) durante a criação o `contact?.id` ainda não existe — então é mais limpo o painel ter seu próprio botão "Salvar". Quando o usuário cria um contato novo, vê o aviso "Salve o contato primeiro" e depois reabre pra preencher os personalizados. Alternativa rejeitada: incluir os custom no submit do form principal — daria muita acoplamento e quebraria se o user não tivesse os hooks de custom_fields ainda carregados.
+- **Hooks já existiam** (issue 22). Zero código de banco neste passo.
+- **Empty state com link** para `/settings?tab=geral` (a aba que tem o `CustomFieldsManager` da issue 33).
+- 12/12 testes verdes, build verde. Bundle: 2558→2563KB / gzip 759→760KB.
 
 ### Issue 30b — reorder de estágios via DnD na página Board
 - **Decisão pragmática**: a issue pediu pra criar `src/components/board/BoardStagesManager.tsx` (novo). Mas o `src/components/settings/BoardStagesManager.tsx` já existe (criado na issue 34) e já faz **exatamente** o que a issue 30b pede: drag-drop com `@dnd-kit/sortable`, edit nome/cor inline, delete bloqueado se tem items, add stage, batch reorder via `useReorderBoardStages`. Duplicar seria desperdício e fonte de drift futuro.
