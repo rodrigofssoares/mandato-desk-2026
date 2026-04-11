@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GitBranch } from 'lucide-react';
+import { BoardsListPanel } from './BoardsListPanel';
 
 export function FunisTab() {
   return (
@@ -11,16 +12,14 @@ export function FunisTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Em breve</CardTitle>
+          <CardTitle>Boards de contatos</CardTitle>
           <CardDescription>
-            Gerenciamento de boards e estágios — será preenchida na issue 34.
+            Configure os funis usados na aba Board. Cada board tem seus próprios estágios e pode ser
+            marcado como padrão para aparecer ao abrir a página Board.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Aqui você poderá criar e editar funis (boards) de contatos, definir estágios, reordenar colunas
-            via drag-and-drop e marcar um board como padrão da organização.
-          </p>
+          <BoardsListPanel />
         </CardContent>
       </Card>
     </div>

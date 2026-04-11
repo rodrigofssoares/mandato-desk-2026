@@ -22,7 +22,7 @@ const TABS = [
 type SettingsTab = (typeof TABS)[number];
 
 const DEFAULT_TAB: SettingsTab = 'geral';
-const DISABLED_TABS: readonly SettingsTab[] = ['funis', 'ia'];
+const DISABLED_TABS: readonly SettingsTab[] = ['ia'];
 
 function isValidTab(value: string | null): value is SettingsTab {
   return value !== null && (TABS as readonly string[]).includes(value);
@@ -55,19 +55,7 @@ export default function Settings() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="geral">Geral</TabsTrigger>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {/* span wrapper: botão desabilitado não dispara eventos de mouse */}
-              <span>
-                <TabsTrigger value="funis" disabled>
-                  Funis
-                </TabsTrigger>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Em breve</TooltipContent>
-          </Tooltip>
-
+          <TabsTrigger value="funis">Funis</TabsTrigger>
           <TabsTrigger value="equipe">Equipe</TabsTrigger>
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
