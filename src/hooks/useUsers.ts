@@ -50,7 +50,7 @@ export function useUpdateUserRole() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Cargo atualizado com sucesso');
-      logActivity({ type: 'update', entity_type: 'user', description: 'Alterou role de um usuario' });
+      logActivity({ type: 'update', entity_type: 'user', description: 'Alterou role de um usuário' });
     },
     onError: (error) => {
       console.error('Erro ao atualizar cargo:', error);
@@ -80,7 +80,7 @@ export function useUpdateUserStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Status atualizado com sucesso');
-      logActivity({ type: 'status_change', entity_type: 'user', description: 'Alterou status de um usuario' });
+      logActivity({ type: 'status_change', entity_type: 'user', description: 'Alterou status de um usuário' });
     },
     onError: (error) => {
       console.error('Erro ao atualizar status:', error);
@@ -106,7 +106,7 @@ export function useDeleteUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuário desativado com sucesso');
-      logActivity({ type: 'status_change', entity_type: 'user', description: 'Desativou um usuario' });
+      logActivity({ type: 'status_change', entity_type: 'user', description: 'Desativou um usuário' });
     },
     onError: (error) => {
       console.error('Erro ao desativar usuário:', error);
@@ -168,7 +168,7 @@ export function useCreateUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuário criado com sucesso');
-      logActivity({ type: 'create', entity_type: 'user', description: 'Criou um usuario' });
+      logActivity({ type: 'create', entity_type: 'user', description: 'Criou um usuário' });
     },
     onError: (error) => {
       console.error('Erro ao criar usuário:', error);
@@ -205,7 +205,7 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'profiles'] });
       toast.success('Perfil atualizado com sucesso');
-      logActivity({ type: 'update', entity_type: 'user', description: 'Atualizou perfil de usuario' });
+      logActivity({ type: 'update', entity_type: 'user', description: 'Atualizou perfil de usuário' });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar perfil: ${error.message}`);

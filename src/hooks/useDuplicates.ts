@@ -241,7 +241,7 @@ export function useMergeContacts() {
         .eq('id', deletedId)
         .single();
       if (snapshotError) throw snapshotError;
-      if (!snapshotData) throw new Error('Contato a ser mesclado nao encontrado');
+      if (!snapshotData) throw new Error('Contato a ser mesclado não encontrado');
 
       // 1. Update kept contact with merged data
       const { error: updateError } = await supabase
@@ -325,7 +325,7 @@ export function useDeleteSingleDuplicate() {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
-      toast.success('Contato excluido com sucesso');
+      toast.success('Contato excluído com sucesso');
       logActivity({ type: 'delete', entity_type: 'contact', description: 'Excluiu um contato duplicado' });
     },
     onError: (error: Error) => {

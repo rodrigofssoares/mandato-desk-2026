@@ -61,7 +61,7 @@ export function DemandCard({ demand, onClick }: DemandCardProps) {
 
           {demand.responsible && (
             <div className="text-xs text-muted-foreground">
-              Responsavel: {demand.responsible.nome}
+              Responsável: {demand.responsible.nome}
             </div>
           )}
 

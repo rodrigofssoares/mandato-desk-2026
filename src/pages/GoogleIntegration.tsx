@@ -7,7 +7,7 @@ export default function GoogleIntegration() {
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
         <CloudCog className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Integracao Google Contacts</h1>
+        <h1 className="text-2xl font-bold">Integração Google Contacts</h1>
       </div>
 
       <Card className="max-w-lg">
@@ -19,17 +19,17 @@ export default function GoogleIntegration() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Esta funcionalidade permitira sincronizar seus contatos do Google Contacts
+            Esta funcionalidade permitirá sincronizar seus contatos do Google Contacts
             diretamente com o CRM, importando e exportando dados automaticamente.
           </p>
           <div className="space-y-2 text-sm">
             <p className="font-medium">Recursos planejados:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li>Importacao de contatos do Google</li>
-              <li>Exportacao de contatos para o Google</li>
-              <li>Sincronizacao bidirecional automatica</li>
+              <li>Importação de contatos do Google</li>
+              <li>Exportação de contatos para o Google</li>
+              <li>Sincronização bidirecional automática</li>
               <li>Mapeamento de campos personalizados</li>
-              <li>Deteccao de duplicatas</li>
+              <li>Detecção de duplicatas</li>
             </ul>
           </div>
         </CardContent>

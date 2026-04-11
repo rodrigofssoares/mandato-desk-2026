@@ -120,14 +120,14 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="yes">Sim</SelectItem>
-                <SelectItem value="no">Nao</SelectItem>
+                <SelectItem value="no">Não</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Date range */}
           <div className="space-y-2">
-            <Label>Periodo</Label>
+            <Label>Período</Label>
             <div className="flex gap-2">
               <Input
                 type="date"

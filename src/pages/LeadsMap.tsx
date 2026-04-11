@@ -68,7 +68,7 @@ export default function LeadsMap() {
               <MapPinOff className="h-5 w-5 text-red-500" />
               <div>
                 <p className="text-2xl font-bold">{stats.withoutCoords}</p>
-                <p className="text-xs text-muted-foreground">Nao Mapeados</p>
+                <p className="text-xs text-muted-foreground">Não Mapeados</p>
               </div>
             </CardContent>
           </Card>
@@ -96,7 +96,7 @@ export default function LeadsMap() {
             size="sm"
             onClick={() => setViewMode('standard')}
           >
-            Padrao
+            Padrão
           </Button>
           <Button
             variant={viewMode === 'temporal' ? 'default' : 'ghost'}

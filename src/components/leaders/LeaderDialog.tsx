@@ -27,10 +27,10 @@ import { useLeaderTypes, useCreateLeaderType } from '@/hooks/useLeaderTypes';
 import type { Leader } from '@/hooks/useLeaders';
 
 const leaderSchema = z.object({
-  name: z.string().min(1, 'Nome e obrigatorio'),
-  leader_type_id: z.string().uuid('Tipo invalido'),
-  whatsapp: z.string().min(1, 'WhatsApp e obrigatorio'),
-  email: z.string().email('Email invalido').or(z.literal('')).optional(),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  leader_type_id: z.string().uuid('Tipo inválido'),
+  whatsapp: z.string().min(1, 'WhatsApp é obrigatório'),
+  email: z.string().email('Email inválido').or(z.literal('')).optional(),
   phone: z.string().optional(),
   region: z.string().optional(),
   city: z.string().optional(),
@@ -325,8 +325,8 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="leader-region">Regiao</Label>
-              <Input id="leader-region" {...register('region')} placeholder="Regiao" />
+              <Label htmlFor="leader-region">Região</Label>
+              <Input id="leader-region" {...register('region')} placeholder="Região" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="leader-city">Cidade</Label>
@@ -335,7 +335,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="leader-neighborhoods">Bairros (separados por virgula)</Label>
+            <Label htmlFor="leader-neighborhoods">Bairros (separados por vírgula)</Label>
             <Input
               id="leader-neighborhoods"
               {...register('neighborhoods_text')}
@@ -363,11 +363,11 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="leader-address">Endereco</Label>
+            <Label htmlFor="leader-address">Endereço</Label>
             <Input
               id="leader-address"
               {...register('address')}
-              placeholder="Endereco completo"
+              placeholder="Endereço completo"
             />
           </div>
 

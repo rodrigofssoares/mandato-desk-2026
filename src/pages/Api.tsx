@@ -86,7 +86,7 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
   },
   tags: {
     POST: JSON.stringify({
-      name: 'Saude',
+      name: 'Saúde',
       category: 'demands',
       color: '#EF4444',
     }, null, 2),
@@ -169,10 +169,10 @@ const contactFields = [
   { campo: 'email', tipo: 'string', obrigatorio: false, descricao: 'E-mail' },
   { campo: 'cpf', tipo: 'string', obrigatorio: false, descricao: 'CPF' },
   { campo: 'birth_date', tipo: 'date', obrigatorio: false, descricao: 'Data de nascimento (YYYY-MM-DD)' },
-  { campo: 'gender', tipo: 'string', obrigatorio: false, descricao: 'Genero' },
+  { campo: 'gender', tipo: 'string', obrigatorio: false, descricao: 'Gênero' },
   { campo: 'zip_code', tipo: 'string', obrigatorio: false, descricao: 'CEP' },
   { campo: 'address', tipo: 'string', obrigatorio: false, descricao: 'Logradouro' },
-  { campo: 'number', tipo: 'string', obrigatorio: false, descricao: 'Numero' },
+  { campo: 'number', tipo: 'string', obrigatorio: false, descricao: 'Número' },
   { campo: 'complement', tipo: 'string', obrigatorio: false, descricao: 'Complemento' },
   { campo: 'neighborhood', tipo: 'string', obrigatorio: false, descricao: 'Bairro' },
   { campo: 'city', tipo: 'string', obrigatorio: false, descricao: 'Cidade' },
@@ -184,16 +184,16 @@ const contactFields = [
   { campo: 'twitter', tipo: 'string', obrigatorio: false, descricao: 'Twitter/X' },
   { campo: 'declarou_voto', tipo: 'boolean', obrigatorio: false, descricao: 'Declarou voto' },
   { campo: 'is_favorite', tipo: 'boolean', obrigatorio: false, descricao: 'Favorito' },
-  { campo: 'voter_registration', tipo: 'string', obrigatorio: false, descricao: 'Titulo de eleitor' },
+  { campo: 'voter_registration', tipo: 'string', obrigatorio: false, descricao: 'Título de eleitor' },
   { campo: 'electoral_zone', tipo: 'string', obrigatorio: false, descricao: 'Zona eleitoral' },
-  { campo: 'electoral_section', tipo: 'string', obrigatorio: false, descricao: 'Secao eleitoral' },
-  { campo: 'political_group', tipo: 'string', obrigatorio: false, descricao: 'Grupo politico' },
-  { campo: 'notes', tipo: 'string', obrigatorio: false, descricao: 'Observacoes' },
+  { campo: 'electoral_section', tipo: 'string', obrigatorio: false, descricao: 'Seção eleitoral' },
+  { campo: 'political_group', tipo: 'string', obrigatorio: false, descricao: 'Grupo político' },
+  { campo: 'notes', tipo: 'string', obrigatorio: false, descricao: 'Observações' },
   { campo: 'leader_id', tipo: 'uuid', obrigatorio: false, descricao: 'ID do articulador vinculado' },
   { campo: 'source', tipo: 'string', obrigatorio: false, descricao: 'Origem do contato' },
-  { campo: 'occupation', tipo: 'string', obrigatorio: false, descricao: 'Profissao' },
-  { campo: 'em_canal_whatsapp', tipo: 'boolean', obrigatorio: false, descricao: 'Esta no canal do WhatsApp' },
-  { campo: 'e_multiplicador', tipo: 'boolean', obrigatorio: false, descricao: 'E multiplicador' },
+  { campo: 'occupation', tipo: 'string', obrigatorio: false, descricao: 'Profissão' },
+  { campo: 'em_canal_whatsapp', tipo: 'boolean', obrigatorio: false, descricao: 'Está no canal do WhatsApp' },
+  { campo: 'e_multiplicador', tipo: 'boolean', obrigatorio: false, descricao: 'É multiplicador' },
 ];
 
 // ---- Componentes auxiliares ----
@@ -230,7 +230,7 @@ function StatusBadge({ status }: { status: number }) {
       <div className="flex items-center gap-1.5 text-yellow-600">
         <AlertCircle className="h-4 w-4" />
         <span className="font-mono font-bold">{status}</span>
-        <span className="text-xs">{status === 401 ? 'Nao autorizado' : status === 404 ? 'Nao encontrado' : 'Erro do cliente'}</span>
+        <span className="text-xs">{status === 401 ? 'Não autorizado' : status === 404 ? 'Não encontrado' : 'Erro do cliente'}</span>
       </div>
     );
   }
@@ -289,7 +289,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
       JSON.parse(val);
       setJsonError(null);
     } catch {
-      setJsonError('JSON invalido');
+      setJsonError('JSON inválido');
     }
   };
 
@@ -340,7 +340,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
     }
 
     if (needsId(method) && !resourceId.trim()) {
-      toast.error('Informe o ID do registro para esta operacao');
+      toast.error('Informe o ID do registro para esta operação');
       return;
     }
 
@@ -384,7 +384,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
       setResponse({
         status: 0,
         statusText: 'Erro de rede',
-        body: { error: err instanceof Error ? err.message : 'Falha na conexao' },
+        body: { error: err instanceof Error ? err.message : 'Falha na conexão' },
         duration,
       });
     } finally {
@@ -417,7 +417,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Operacao</Label>
+            <Label>Operação</Label>
             <Select value={method} onValueChange={(v) => handleMethodChange(v as HttpMethod)}>
               <SelectTrigger>
                 <SelectValue />
@@ -457,7 +457,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
         {method === 'GET' && !resourceId.trim() && (
           <div className="space-y-2">
             <Label>
-              Parametros de busca
+              Parâmetros de busca
               <span className="text-muted-foreground text-xs ml-2">(opcional)</span>
             </Label>
             <Input
@@ -475,7 +475,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
                 <FileJson className="h-4 w-4" />
-                Corpo da requisicao (JSON)
+                Corpo da requisição (JSON)
               </Label>
               {jsonError && (
                 <span className="text-xs text-red-500 flex items-center gap-1">
@@ -520,7 +520,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
             ) : (
               <Send className="h-4 w-4" />
             )}
-            {sending ? 'Enviando...' : 'Enviar Requisicao'}
+            {sending ? 'Enviando...' : 'Enviar Requisição'}
           </Button>
           {!tokenValue && (
             <span className="text-xs text-muted-foreground">
@@ -602,7 +602,7 @@ export default function Api() {
                 {token.last_used_at && (
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    Ultimo uso: {new Date(token.last_used_at).toLocaleString('pt-BR')}
+                    Último uso: {new Date(token.last_used_at).toLocaleString('pt-BR')}
                   </span>
                 )}
               </div>
@@ -677,18 +677,18 @@ export default function Api() {
               </div>
 
               <div className="space-y-2 text-sm">
-                <p><strong>Autenticacao:</strong></p>
+                <p><strong>Autenticação:</strong></p>
                 <p className="text-muted-foreground">
-                  Todas as requisicoes precisam de dois headers:
+                  Todas as requisições precisam de dois headers:
                 </p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-1 text-xs mt-1">
-                  <li><code className="bg-muted px-1 rounded">apikey</code> — Chave publica do projeto (fixa, ja preenchida nos exemplos)</li>
+                  <li><code className="bg-muted px-1 rounded">apikey</code> — Chave pública do projeto (fixa, já preenchida nos exemplos)</li>
                   <li><code className="bg-muted px-1 rounded">Authorization: Bearer {'<seu_token>'}</code> — Seu token pessoal gerado acima</li>
                 </ul>
               </div>
 
               <div className="space-y-2 text-sm">
-                <p><strong>Exemplo rapido:</strong></p>
+                <p><strong>Exemplo rápido:</strong></p>
                 <div className="relative">
                   <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">{`curl ${BASE_API_URL}/contacts \\
   -H "apikey: ${SUPABASE_ANON_KEY}" \\
@@ -701,13 +701,13 @@ export default function Api() {
               </div>
 
               <div className="space-y-2 text-sm">
-                <p><strong>Parametros de listagem (GET):</strong></p>
+                <p><strong>Parâmetros de listagem (GET):</strong></p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-1 text-xs">
-                  <li><code className="bg-muted px-1 rounded">?limit=100</code> — Quantidade por pagina (max 1000)</li>
-                  <li><code className="bg-muted px-1 rounded">?offset=0</code> — Deslocamento para paginacao</li>
+                  <li><code className="bg-muted px-1 rounded">?limit=100</code> — Quantidade por página (máx 1000)</li>
+                  <li><code className="bg-muted px-1 rounded">?offset=0</code> — Deslocamento para paginação</li>
                   <li><code className="bg-muted px-1 rounded">?search=joao</code> — Busca textual (nome, telefone, email)</li>
-                  <li><code className="bg-muted px-1 rounded">?order=name.asc</code> — Ordenacao (campo.asc ou campo.desc)</li>
-                  <li><code className="bg-muted px-1 rounded">?city=eq.Sao Paulo</code> — Filtro por coluna (eq, neq, gt, gte, lt, lte, ilike)</li>
+                  <li><code className="bg-muted px-1 rounded">?order=name.asc</code> — Ordenação (campo.asc ou campo.desc)</li>
+                  <li><code className="bg-muted px-1 rounded">?city=eq.São Paulo</code> — Filtro por coluna (eq, neq, gt, gte, lt, lte, ilike)</li>
                 </ul>
               </div>
             </CardContent>
@@ -778,8 +778,8 @@ export default function Api() {
                     <tr className="border-b">
                       <th className="text-left py-2 pr-4 font-medium">Campo</th>
                       <th className="text-left py-2 pr-4 font-medium">Tipo</th>
-                      <th className="text-left py-2 pr-4 font-medium">Obrigatorio</th>
-                      <th className="text-left py-2 font-medium">Descricao</th>
+                      <th className="text-left py-2 pr-4 font-medium">Obrigatório</th>
+                      <th className="text-left py-2 font-medium">Descrição</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -791,7 +791,7 @@ export default function Api() {
                           {field.obrigatorio ? (
                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Sim</Badge>
                           ) : (
-                            <span className="text-muted-foreground">Nao</span>
+                            <span className="text-muted-foreground">Não</span>
                           )}
                         </td>
                         <td className="py-1.5 text-muted-foreground">{field.descricao}</td>
@@ -819,15 +819,15 @@ export default function Api() {
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 w-12 justify-center">400</Badge>
-                  <span className="text-muted-foreground">Requisicao invalida (campo ausente, recurso invalido)</span>
+                  <span className="text-muted-foreground">Requisição inválida (campo ausente, recurso inválido)</span>
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 w-12 justify-center">401</Badge>
-                  <span className="text-muted-foreground">Token invalido ou ausente</span>
+                  <span className="text-muted-foreground">Token inválido ou ausente</span>
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 w-12 justify-center">404</Badge>
-                  <span className="text-muted-foreground">Registro nao encontrado</span>
+                  <span className="text-muted-foreground">Registro não encontrado</span>
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 w-12 justify-center">409</Badge>

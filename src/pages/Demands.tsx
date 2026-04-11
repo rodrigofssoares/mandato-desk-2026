@@ -84,7 +84,7 @@ export default function Demands() {
         <div className="text-center py-16">
           <p className="text-muted-foreground text-lg">Nenhuma demanda cadastrada</p>
           <p className="text-muted-foreground text-sm mt-1">
-            Clique em "Nova Demanda" para comecar
+            Clique em "Nova Demanda" para começar
           </p>
         </div>
       ) : (

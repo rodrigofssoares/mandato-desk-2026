@@ -132,7 +132,7 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
                     }
                   />
                   <FieldRow label="Telefone" value={val(contact.telefone)} />
-                  <FieldRow label="Genero" value={val(contact.genero)} />
+                  <FieldRow label="Gênero" value={val(contact.genero)} />
                   <FieldRow label="Origem" value={val(contact.origem)} />
                   <FieldRow
                     label="Data de Nascimento"
@@ -144,9 +144,9 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
 
             <Separator />
 
-            {/* Endereco */}
+            {/* Endereço */}
             <Collapsible open={endereco.open}>
-              <SectionHeader title="Endereco" open={endereco.open} onToggle={endereco.toggle} />
+              <SectionHeader title="Endereço" open={endereco.open} onToggle={endereco.toggle} />
               <CollapsibleContent>
                 <div className="pb-2 space-y-0.5">
                   <FieldRow
@@ -162,7 +162,7 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
                       )
                     }
                   />
-                  <FieldRow label="Numero" value={val(contact.numero)} />
+                  <FieldRow label="Número" value={val(contact.numero)} />
                   <FieldRow label="Complemento" value={val(contact.complemento)} />
                   <FieldRow label="Bairro" value={val(contact.bairro)} />
                   <FieldRow label="Cidade" value={val(contact.cidade)} />
@@ -244,12 +244,12 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
 
             <Separator />
 
-            {/* Observacoes */}
+            {/* Observações */}
             <Collapsible open={obs.open}>
-              <SectionHeader title="Observacoes" open={obs.open} onToggle={obs.toggle} />
+              <SectionHeader title="Observações" open={obs.open} onToggle={obs.toggle} />
               <CollapsibleContent>
                 <div className="pb-2 space-y-0.5">
-                  <FieldRow label="Observacoes" value={val(contact.observacoes)} />
+                  <FieldRow label="Observações" value={val(contact.observacoes)} />
                   <FieldRow label="Notas do Assessor" value={val(contact.notas_assessor)} />
                 </div>
               </CollapsibleContent>

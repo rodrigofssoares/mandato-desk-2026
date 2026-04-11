@@ -14,13 +14,13 @@ const PAGE_TITLES: Record<string, string> = {
   '/demands': 'Demandas',
   '/tags': 'Etiquetas',
   '/leads-map': 'Mapa de Leads',
-  '/bulk-import': 'Importacao',
-  '/users': 'Usuarios',
-  '/permissoes': 'Permissoes',
+  '/bulk-import': 'Importação',
+  '/users': 'Usuários',
+  '/permissoes': 'Permissões',
   '/google-integration': 'Google Contacts',
   '/api': 'API',
   '/webhooks': 'Webhooks',
-  '/branding': 'Personalizacao',
+  '/branding': 'Personalização',
 };
 
 export function Header() {
@@ -34,7 +34,7 @@ export function Header() {
     Object.entries(PAGE_TITLES).find(([path]) =>
       path !== '/' && location.pathname.startsWith(path)
     )?.[1] ??
-    'Pagina';
+    'Página';
 
   return (
     <>

@@ -30,7 +30,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import type { Demand } from '@/hooks/useDemands';
 
 const demandSchema = z.object({
-  title: z.string().min(1, 'Titulo e obrigatorio'),
+  title: z.string().min(1, 'Título é obrigatório'),
   description: z.string().optional(),
   status: z.enum(['open', 'in_progress', 'resolved']),
   priority: z.enum(['low', 'medium', 'high']),
@@ -186,15 +186,15 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Titulo *</Label>
-            <Input id="title" {...register('title')} placeholder="Titulo da demanda" />
+            <Label htmlFor="title">Título *</Label>
+            <Input id="title" {...register('title')} placeholder="Título da demanda" />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descricao</Label>
+            <Label htmlFor="description">Descrição</Label>
             <Textarea
               id="description"
               {...register('description')}
@@ -260,13 +260,13 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
           </div>
 
           <div className="space-y-2">
-            <Label>Responsavel</Label>
+            <Label>Responsável</Label>
             <Select
               value={watchResponsibleId ?? '_none'}
               onValueChange={(v) => setValue('responsible_id', v === '_none' ? null : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o responsavel" />
+                <SelectValue placeholder="Selecione o responsável" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="_none">Nenhum</SelectItem>

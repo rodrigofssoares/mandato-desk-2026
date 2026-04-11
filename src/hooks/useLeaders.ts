@@ -176,7 +176,7 @@ export function useDeleteLeader() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaders'] });
-      toast.success('Articulador excluido com sucesso');
+      toast.success('Articulador excluído com sucesso');
       logActivity({ type: 'delete', entity_type: 'leader', description: 'Excluiu um articulador' });
     },
     onError: (error: Error) => {

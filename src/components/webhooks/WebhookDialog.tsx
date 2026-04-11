@@ -19,8 +19,8 @@ import { useCreateWebhook, useUpdateWebhook, WEBHOOK_EVENTS } from '@/hooks/useW
 import type { Webhook, WebhookEvent } from '@/hooks/useWebhooks';
 
 const webhookSchema = z.object({
-  name: z.string().min(1, 'Nome obrigatorio'),
-  url: z.string().url('URL invalida'),
+  name: z.string().min(1, 'Nome obrigatório'),
+  url: z.string().url('URL inválida'),
   events: z.array(z.string()).min(1, 'Selecione pelo menos um evento'),
   is_active: z.boolean(),
 });

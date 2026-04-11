@@ -484,7 +484,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir contato</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir <strong>{deletingContact?.nome}</strong>? Esta acao nao pode ser desfeita.
+              Tem certeza que deseja excluir <strong>{deletingContact?.nome}</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -510,7 +510,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
             <AlertDialogDescription>
               Tem certeza que deseja excluir{" "}
               <strong>{deletingGroupKey ? (selectedByGroup[deletingGroupKey]?.length ?? 0) : 0} contatos</strong>?
-              Esta acao nao pode ser desfeita.
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

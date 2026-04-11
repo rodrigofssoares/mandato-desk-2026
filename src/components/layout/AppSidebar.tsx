@@ -160,7 +160,7 @@ export function AppSidebar() {
         <div className="flex flex-col gap-2 px-2 py-1 group-data-[collapsible=icon]:items-center">
           <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-medium truncate">
-              {profile?.nome ?? 'Usuario'}
+              {profile?.nome ?? 'Usuário'}
             </span>
             <span className="text-xs text-muted-foreground truncate">
               {profile?.email ?? ''}
