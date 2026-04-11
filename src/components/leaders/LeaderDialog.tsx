@@ -32,7 +32,7 @@ const leaderSchema = z.object({
   whatsapp: z.string().min(1, 'WhatsApp e obrigatorio'),
   email: z.string().email('Email invalido').or(z.literal('')).optional(),
   phone: z.string().optional(),
-  region: z.string().min(1, 'Regiao e obrigatoria'),
+  region: z.string().optional(),
   city: z.string().optional(),
   neighborhoods_text: z.string().optional(),
   birth_date: z.string().optional(),
@@ -159,7 +159,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
       nome: data.name,
       leader_type_id: data.leader_type_id,
       whatsapp: data.whatsapp,
-      region: data.region,
+      region: data.region || undefined,
       active: data.active,
       neighborhoods,
       email: rest.email || undefined,
@@ -325,11 +325,8 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="leader-region">Regiao *</Label>
+              <Label htmlFor="leader-region">Regiao</Label>
               <Input id="leader-region" {...register('region')} placeholder="Regiao" />
-              {errors.region && (
-                <p className="text-sm text-destructive">{errors.region.message}</p>
-              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="leader-city">Cidade</Label>
