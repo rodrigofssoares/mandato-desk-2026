@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,23 +17,18 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Check, Loader2, Plus, X } from 'lucide-react';
 import { useCreateLeader, useUpdateLeader } from '@/hooks/useLeaders';
+import { useLeaderTypes, useCreateLeaderType } from '@/hooks/useLeaderTypes';
 import type { Leader } from '@/hooks/useLeaders';
 
 const leaderSchema = z.object({
   name: z.string().min(1, 'Nome e obrigatorio'),
-  leadership_type: z.enum([
-    'assessor_parlamentar',
-    'lider_regional',
-    'coordenador_area',
-    'mobilizador',
-    'multiplicador',
-    'outro',
-  ]),
+  leader_type_id: z.string().uuid('Tipo invalido'),
   whatsapp: z.string().min(1, 'WhatsApp e obrigatorio'),
   email: z.string().email('Email invalido').or(z.literal('')).optional(),
   phone: z.string().optional(),
@@ -57,7 +52,12 @@ interface LeaderDialogProps {
 export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) {
   const createLeader = useCreateLeader();
   const updateLeader = useUpdateLeader();
+  const { data: leaderTypes = [] } = useLeaderTypes();
+  const createLeaderType = useCreateLeaderType();
   const isEdit = !!leader;
+
+  const [isAddingType, setIsAddingType] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
 
   const {
     register,
@@ -70,7 +70,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
     resolver: zodResolver(leaderSchema),
     defaultValues: {
       name: '',
-      leadership_type: 'outro',
+      leader_type_id: '',
       whatsapp: '',
       email: '',
       phone: '',
@@ -88,7 +88,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
     if (leader) {
       reset({
         name: leader.nome,
-        leadership_type: leader.leadership_type,
+        leader_type_id: leader.leader_type_id,
         whatsapp: leader.whatsapp ?? '',
         email: leader.email ?? '',
         phone: leader.phone ?? '',
@@ -103,7 +103,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
     } else {
       reset({
         name: '',
-        leadership_type: 'outro',
+        leader_type_id: '',
         whatsapp: '',
         email: '',
         phone: '',
@@ -116,10 +116,38 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
         active: true,
       });
     }
-  }, [leader, reset]);
+    setIsAddingType(false);
+    setNewTypeName('');
+  }, [leader, reset, open]);
 
-  const watchType = watch('leadership_type');
+  const watchType = watch('leader_type_id');
   const watchActive = watch('active');
+
+  // Quando abre em modo "novo" e ainda nao tem tipo selecionado, padroniza em "Cabo Eleitoral"
+  useEffect(() => {
+    if (!isEdit && !watchType && leaderTypes.length > 0) {
+      const cabo = leaderTypes.find((t) => t.slug === 'cabo_eleitoral');
+      if (cabo) setValue('leader_type_id', cabo.id);
+    }
+  }, [isEdit, watchType, leaderTypes, setValue]);
+
+  const handleCreateType = async () => {
+    const label = newTypeName.trim();
+    if (!label) return;
+    try {
+      const created = await createLeaderType.mutateAsync({ label });
+      setValue('leader_type_id', created.id, { shouldValidate: true });
+      setIsAddingType(false);
+      setNewTypeName('');
+    } catch {
+      /* erro ja tratado pelo toast no hook */
+    }
+  };
+
+  // Esconde "Outro" do dropdown, exceto se for o valor atual (edit de registro legado)
+  const visibleTypes = leaderTypes.filter(
+    (t) => t.slug !== 'outro' || t.id === watchType
+  );
 
   const onSubmit = async (data: LeaderFormData) => {
     const { neighborhoods_text, ...rest } = data;
@@ -129,7 +157,7 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
 
     const payload: any = {
       nome: data.name,
-      leadership_type: data.leadership_type,
+      leader_type_id: data.leader_type_id,
       whatsapp: data.whatsapp,
       region: data.region,
       active: data.active,
@@ -170,22 +198,94 @@ export function LeaderDialog({ open, onOpenChange, leader }: LeaderDialogProps) 
 
           <div className="space-y-2">
             <Label>Tipo</Label>
-            <Select
-              value={watchType}
-              onValueChange={(v) => setValue('leadership_type', v as any)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="assessor_parlamentar">Assessor Parlamentar</SelectItem>
-                <SelectItem value="lider_regional">Lider Regional</SelectItem>
-                <SelectItem value="coordenador_area">Coordenador de Area</SelectItem>
-                <SelectItem value="mobilizador">Mobilizador</SelectItem>
-                <SelectItem value="multiplicador">Multiplicador</SelectItem>
-                <SelectItem value="outro">Outro</SelectItem>
-              </SelectContent>
-            </Select>
+            {!isAddingType ? (
+              <div className="flex gap-2">
+                <Select
+                  value={watchType || undefined}
+                  onValueChange={(v) => {
+                    if (v === '__add_new__') {
+                      setIsAddingType(true);
+                      return;
+                    }
+                    setValue('leader_type_id', v, { shouldValidate: true });
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione um tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {visibleTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                    <SelectSeparator />
+                    <SelectItem value="__add_new__">
+                      <span className="flex items-center gap-2 text-primary">
+                        <Plus className="h-3.5 w-3.5" />
+                        Adicionar novo tipo
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Adicionar novo tipo"
+                  onClick={() => setIsAddingType(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  autoFocus
+                  placeholder="Ex: Entusiasta"
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCreateType();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setIsAddingType(false);
+                      setNewTypeName('');
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={handleCreateType}
+                  disabled={createLeaderType.isPending || !newTypeName.trim()}
+                  title="Salvar tipo"
+                >
+                  {createLeaderType.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setIsAddingType(false);
+                    setNewTypeName('');
+                  }}
+                  title="Cancelar"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {errors.leader_type_id && (
+              <p className="text-sm text-destructive">{errors.leader_type_id.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

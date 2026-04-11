@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Search } from 'lucide-react';
 import { useLeaders, useDeleteLeader } from '@/hooks/useLeaders';
+import { useLeaderTypes } from '@/hooks/useLeaderTypes';
 import { usePermissions } from '@/hooks/usePermissions';
 import { LeaderCard } from '@/components/leaders/LeaderCard';
 import { LeaderDialog } from '@/components/leaders/LeaderDialog';
@@ -23,10 +24,11 @@ export default function Leaders() {
   const [editingLeader, setEditingLeader] = useState<Leader | null>(null);
   const { can } = usePermissions();
   const deleteLeader = useDeleteLeader();
+  const { data: leaderTypes = [] } = useLeaderTypes();
 
   const { data: leaders = [], isLoading } = useLeaders({
     search: search || undefined,
-    leadership_type: typeFilter !== 'all' ? typeFilter : undefined,
+    leader_type_id: typeFilter !== 'all' ? typeFilter : undefined,
     active: statusFilter === 'all' ? undefined : statusFilter === 'active',
   });
 
@@ -73,12 +75,11 @@ export default function Leaders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os tipos</SelectItem>
-            <SelectItem value="assessor_parlamentar">Assessor Parlamentar</SelectItem>
-            <SelectItem value="lider_regional">Lider Regional</SelectItem>
-            <SelectItem value="coordenador_area">Coordenador de Area</SelectItem>
-            <SelectItem value="mobilizador">Mobilizador</SelectItem>
-            <SelectItem value="multiplicador">Multiplicador</SelectItem>
-            <SelectItem value="outro">Outro</SelectItem>
+            {leaderTypes.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>

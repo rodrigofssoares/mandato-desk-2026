@@ -3,7 +3,7 @@ import { QueryClient } from '@tanstack/react-query';
 
 interface LogActivityParams {
   type: 'create' | 'update' | 'delete' | 'status_change' | 'assignment' | 'import' | 'merge' | 'bulk_delete';
-  entity_type: 'contact' | 'demand' | 'tag' | 'tag_group' | 'leader' | 'user' | 'permission' | 'role';
+  entity_type: 'contact' | 'demand' | 'tag' | 'tag_group' | 'leader' | 'leader_type' | 'user' | 'permission' | 'role';
   entity_name?: string;
   entity_id?: string;
   description?: string;

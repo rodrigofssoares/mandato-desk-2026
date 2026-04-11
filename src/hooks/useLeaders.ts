@@ -7,7 +7,9 @@ import { logActivity } from '@/lib/activityLog';
 export interface Leader {
   id: string;
   nome: string;
-  leadership_type: 'assessor_parlamentar' | 'lider_regional' | 'coordenador_area' | 'mobilizador' | 'multiplicador' | 'outro';
+  leader_type_id: string;
+  leader_type_label: string | null;
+  leader_type_slug: string | null;
   region: string | null;
   city: string | null;
   neighborhoods: string[] | null;
@@ -27,13 +29,13 @@ export interface Leader {
 
 export interface LeaderFilters {
   search?: string;
-  leadership_type?: string;
+  leader_type_id?: string;
   active?: boolean;
 }
 
 export interface LeaderInsert {
   nome: string;
-  leadership_type?: 'assessor_parlamentar' | 'lider_regional' | 'coordenador_area' | 'mobilizador' | 'outro';
+  leader_type_id?: string;
   region?: string;
   city?: string;
   neighborhoods?: string[];
@@ -56,14 +58,14 @@ export function useLeaders(filters?: LeaderFilters) {
     queryFn: async () => {
       let query = supabase
         .from('leaders')
-        .select('*')
+        .select('*, leader_types(label, slug)')
         .order('nome');
 
       if (filters?.search) {
         query = query.ilike('nome', `%${filters.search}%`);
       }
-      if (filters?.leadership_type) {
-        query = query.eq('leadership_type', filters.leadership_type);
+      if (filters?.leader_type_id) {
+        query = query.eq('leader_type_id', filters.leader_type_id);
       }
       if (filters?.active !== undefined) {
         query = query.eq('active', filters.active);
@@ -98,6 +100,8 @@ export function useLeaders(filters?: LeaderFilters) {
 
       return (leaders ?? []).map((leader: any) => ({
         ...leader,
+        leader_type_label: leader.leader_types?.label ?? null,
+        leader_type_slug: leader.leader_types?.slug ?? null,
         contact_count: countMap[leader.id]?.total ?? 0,
         declared_vote_count: countMap[leader.id]?.declared ?? 0,
       })) as Leader[];

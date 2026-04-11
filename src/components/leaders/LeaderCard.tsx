@@ -12,15 +12,6 @@ interface LeaderCardProps {
   canDelete: boolean;
 }
 
-const typeLabels: Record<string, string> = {
-  assessor_parlamentar: 'Assessor Parlamentar',
-  lider_regional: 'Lider Regional',
-  coordenador_area: 'Coordenador de Area',
-  mobilizador: 'Mobilizador',
-  multiplicador: 'Multiplicador',
-  outro: 'Outro',
-};
-
 export function LeaderCard({ leader, onEdit, onDelete, canEdit, canDelete }: LeaderCardProps) {
   const votePercentage =
     leader.contact_count > 0
@@ -34,7 +25,7 @@ export function LeaderCard({ leader, onEdit, onDelete, canEdit, canDelete }: Lea
           <div className="min-w-0">
             <h3 className="font-semibold text-base truncate">{leader.nome}</h3>
             <Badge variant="secondary" className="mt-1 text-xs">
-              {typeLabels[leader.leadership_type] ?? leader.leadership_type}
+              {leader.leader_type_label ?? '—'}
             </Badge>
           </div>
           <div className="flex items-center gap-1 shrink-0">
