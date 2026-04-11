@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Loader2, User, CheckSquare, Tag, Clock } from 'lucide-react';
 import { CampaignFieldsList } from '@/components/contacts/CampaignFieldsList';
+import { CustomFieldsPanel } from '@/components/contacts/CustomFieldsPanel';
 import { useSetContactCampaignValues } from '@/hooks/useCampaignFields';
 import {
   Dialog,
@@ -181,6 +182,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
             <Tabs defaultValue="pessoais" className="w-full">
               <TabsList className="w-full mb-4 h-auto flex-wrap gap-1 p-1">
                 <TabsTrigger value="pessoais" className="flex-1 min-w-[72px] text-xs">Pessoais</TabsTrigger>
+                <TabsTrigger value="personalizados" className="flex-1 min-w-[72px] text-xs">Personalizados</TabsTrigger>
                 <TabsTrigger value="campanha" className="flex-1 min-w-[72px] text-xs">Campanha</TabsTrigger>
                 <TabsTrigger value="etiquetas" className="flex-1 min-w-[72px] text-xs">Etiquetas</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 min-w-[72px] text-xs">Endereço</TabsTrigger>
@@ -283,6 +285,11 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   </div>
                 )}
 
+              </TabsContent>
+
+              {/* --- Personalizados (campos custom configurados em Settings) --- */}
+              <TabsContent value="personalizados" className="space-y-4 mt-0">
+                <CustomFieldsPanel contactId={contact?.id} />
               </TabsContent>
 
               {/* --- Campanha --- */}
