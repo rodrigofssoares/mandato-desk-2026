@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Loader2, User, CheckSquare, Tag, Clock } from 'lucide-react';
+import { CampaignFieldsList } from '@/components/contacts/CampaignFieldsList';
+import { useSetContactCampaignValues } from '@/hooks/useCampaignFields';
 import {
   Dialog,
   DialogContent,
@@ -44,8 +46,12 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   const isEditing = !!contact;
   const createMutation = useCreateContact();
   const updateMutation = useUpdateContact();
+  const setCampaignValues = useSetContactCampaignValues();
   const { data: allTags = [] } = useContactTags();
   const { data: leaders = [] } = useLeaders();
+
+  // Valores pendentes dos campos de campanha (apenas em modo criação)
+  const [pendingCampaignValues, setPendingCampaignValues] = useState<Record<string, boolean>>({});
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -83,6 +89,8 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   });
 
   useEffect(() => {
+    // Reset dos valores pendentes ao abrir/fechar ou trocar de contato
+    setPendingCampaignValues({});
     if (contact) {
       const tagIds = contact.contact_tags?.map((ct) => ct.tag_id) ?? [];
       form.reset({
@@ -135,7 +143,14 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
     if (isEditing && contact) {
       await updateMutation.mutateAsync({ id: contact.id, data: payload });
     } else {
-      await createMutation.mutateAsync(payload);
+      const created = await createMutation.mutateAsync(payload);
+      // Grava os campos de campanha marcados durante a criação
+      if (created?.id && Object.values(pendingCampaignValues).some(Boolean)) {
+        await setCampaignValues.mutateAsync({
+          contactId: created.id,
+          values: pendingCampaignValues,
+        });
+      }
     }
     onOpenChange(false);
   };
@@ -166,6 +181,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
             <Tabs defaultValue="pessoais" className="w-full">
               <TabsList className="w-full mb-4 h-auto flex-wrap gap-1 p-1">
                 <TabsTrigger value="pessoais" className="flex-1 min-w-[72px] text-xs">Pessoais</TabsTrigger>
+                <TabsTrigger value="campanha" className="flex-1 min-w-[72px] text-xs">Campanha</TabsTrigger>
                 <TabsTrigger value="etiquetas" className="flex-1 min-w-[72px] text-xs">Etiquetas</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 min-w-[72px] text-xs">Endereço</TabsTrigger>
                 <TabsTrigger value="redes" className="flex-1 min-w-[72px] text-xs">Redes</TabsTrigger>
@@ -266,6 +282,11 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </span>
                   </div>
                 )}
+
+              </TabsContent>
+
+              {/* --- Campanha --- */}
+              <TabsContent value="campanha" className="space-y-4 mt-0">
 
                 {/* Card: Status e Classificação */}
                 <div className="rounded-lg border bg-card p-4 space-y-4">
@@ -388,6 +409,13 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </Select>
                   </div>
                 </div>
+
+                {/* Campos customizados de campanha */}
+                <CampaignFieldsList
+                  contactId={contact?.id}
+                  pendingValues={pendingCampaignValues}
+                  onPendingChange={setPendingCampaignValues}
+                />
 
               </TabsContent>
 
