@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,9 +18,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Loader2, Plus, X } from 'lucide-react';
 import { useCreateTag, useUpdateTag } from '@/hooks/useTags';
+import { useTagGroups, useCreateTagGroup, MAX_TAG_GROUPS } from '@/hooks/useTagGroups';
 import type { Tag } from '@/hooks/useTags';
 
 const PRESET_COLORS = [
@@ -28,9 +36,11 @@ const PRESET_COLORS = [
   '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280',
 ];
 
+const NEW_GROUP_VALUE = '__new_group__';
+
 const tagSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  category: z.enum(['geral', 'professionals', 'relationships', 'demands']),
+  group_id: z.string().uuid('Selecione um grupo'),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Cor inválida'),
 });
 
@@ -40,13 +50,19 @@ interface TagDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tag?: Tag | null;
-  defaultCategory?: string;
+  defaultGroupId?: string;
 }
 
-export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialogProps) {
+export function TagDialog({ open, onOpenChange, tag, defaultGroupId }: TagDialogProps) {
   const createTag = useCreateTag();
   const updateTag = useUpdateTag();
+  const { data: groups = [] } = useTagGroups();
+  const createGroup = useCreateTagGroup();
   const isEdit = !!tag;
+  const groupsAtLimit = groups.length >= MAX_TAG_GROUPS;
+
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [newGroupLabel, setNewGroupLabel] = useState('');
 
   const {
     register,
@@ -59,35 +75,69 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
     resolver: zodResolver(tagSchema),
     defaultValues: {
       name: '',
-      category: (defaultCategory as any) ?? 'geral',
+      group_id: '',
       color: '#6B7280',
     },
   });
 
   useEffect(() => {
+    if (!open) return;
+    const fallbackGroup = defaultGroupId ?? groups[0]?.id ?? '';
     if (tag) {
       reset({
         name: tag.nome,
-        category: tag.categoria,
+        group_id: tag.group_id,
         color: tag.cor,
       });
     } else {
       reset({
         name: '',
-        category: (defaultCategory as any) ?? 'geral',
+        group_id: fallbackGroup,
         color: '#6B7280',
       });
     }
-  }, [tag, defaultCategory, reset]);
+    setCreatingGroup(false);
+    setNewGroupLabel('');
+  }, [tag, defaultGroupId, groups, reset, open]);
 
   const watchColor = watch('color');
-  const watchCategory = watch('category');
+  const watchGroupId = watch('group_id');
+
+  const handleSelectChange = (value: string) => {
+    if (value === NEW_GROUP_VALUE) {
+      setCreatingGroup(true);
+      return;
+    }
+    setValue('group_id', value, { shouldValidate: true });
+  };
+
+  const handleConfirmNewGroup = async () => {
+    const label = newGroupLabel.trim();
+    if (!label) return;
+    try {
+      const group = await createGroup.mutateAsync({ label });
+      setValue('group_id', group.id, { shouldValidate: true });
+      setCreatingGroup(false);
+      setNewGroupLabel('');
+    } catch {
+      // toast handled in hook
+    }
+  };
 
   const onSubmit = async (data: TagFormData) => {
     if (isEdit) {
-      await updateTag.mutateAsync({ id: tag.id, nome: data.name, categoria: data.category, cor: data.color });
+      await updateTag.mutateAsync({
+        id: tag.id,
+        nome: data.name,
+        group_id: data.group_id,
+        cor: data.color,
+      });
     } else {
-      await createTag.mutateAsync({ nome: data.name, categoria: data.category, cor: data.color });
+      await createTag.mutateAsync({
+        nome: data.name,
+        group_id: data.group_id,
+        cor: data.color,
+      });
     }
     onOpenChange(false);
   };
@@ -109,21 +159,90 @@ export function TagDialog({ open, onOpenChange, tag, defaultCategory }: TagDialo
           </div>
 
           <div className="space-y-2">
-            <Label>Categoria</Label>
-            <Select
-              value={watchCategory}
-              onValueChange={(v) => setValue('category', v as any)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="geral">Geral</SelectItem>
-                <SelectItem value="professionals">Profissionais</SelectItem>
-                <SelectItem value="relationships">Relacionamentos</SelectItem>
-                <SelectItem value="demands">Demandas</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Grupo</Label>
+            {creatingGroup ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    autoFocus
+                    value={newGroupLabel}
+                    onChange={(e) => setNewGroupLabel(e.target.value)}
+                    placeholder="Nome do novo grupo (ex: Redes Sociais)"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleConfirmNewGroup();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleConfirmNewGroup}
+                    disabled={!newGroupLabel.trim() || createGroup.isPending}
+                  >
+                    {createGroup.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Criar'
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setCreatingGroup(false);
+                      setNewGroupLabel('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {groups.length}/{MAX_TAG_GROUPS} grupos criados
+                </p>
+              </div>
+            ) : (
+              <Select value={watchGroupId} onValueChange={handleSelectChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um grupo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {groups.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.label}
+                    </SelectItem>
+                  ))}
+                  <SelectSeparator />
+                  {groupsAtLimit ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="relative flex items-center gap-2 pl-8 pr-2 py-1.5 text-sm text-muted-foreground cursor-not-allowed">
+                            <Plus className="h-3.5 w-3.5" />
+                            Criar novo grupo...
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Limite de {MAX_TAG_GROUPS} grupos atingido
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <SelectItem value={NEW_GROUP_VALUE}>
+                      <span className="flex items-center gap-2">
+                        <Plus className="h-3.5 w-3.5" />
+                        Criar novo grupo...
+                      </span>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            )}
+            {errors.group_id && (
+              <p className="text-sm text-destructive">{errors.group_id.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">

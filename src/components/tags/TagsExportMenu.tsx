@@ -11,17 +11,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { downloadFile, rowsToCSV, downloadXLSX, dateForFilename } from '@/lib/exportUtils';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  professionals: 'Perfil',
-  relationships: 'Interesse',
-  demands: 'Campanhas',
-  geral: 'Geral',
-};
-
 const COL_WIDTHS = [
   { wch: 36 }, // id
   { wch: 25 }, // nome
-  { wch: 15 }, // categoria
+  { wch: 20 }, // grupo
   { wch: 10 }, // cor
   { wch: 12 }, // criado_em
 ];
@@ -30,7 +23,7 @@ function tagsToRows(tags: any[]) {
   return tags.map((t) => ({
     id: t.id,
     nome: t.nome ?? '',
-    categoria: CATEGORY_LABELS[t.categoria] ?? t.categoria ?? '',
+    grupo: t.tag_group?.label ?? '',
     cor: t.cor ?? '',
     criado_em: t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR') : '',
   }));
@@ -42,7 +35,7 @@ export function TagsExportMenu() {
   const fetchTags = async () => {
     const { data, error } = await supabase
       .from('tags')
-      .select('*')
+      .select('*, tag_group:tag_groups(slug, label)')
       .order('nome', { ascending: true });
     if (error) throw error;
     return data ?? [];

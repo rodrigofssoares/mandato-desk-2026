@@ -12,6 +12,7 @@ export interface PermissaoPerfil {
   pode_criar: boolean;
   pode_editar: boolean;
   pode_deletar: boolean;
+  pode_deletar_em_massa: boolean;
   so_proprio: boolean;
 }
 
@@ -45,7 +46,7 @@ export function useUpdatePermissao() {
       value,
     }: {
       id: string;
-      field: 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'so_proprio';
+      field: 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'pode_deletar_em_massa' | 'so_proprio';
       value: boolean;
     }) => {
       const { error } = await supabase
@@ -91,6 +92,7 @@ function generateDefaultPermissions() {
     pode_criar: boolean;
     pode_editar: boolean;
     pode_deletar: boolean;
+    pode_deletar_em_massa: boolean;
     so_proprio: boolean;
   }> = [];
 
@@ -139,11 +141,15 @@ function generateDefaultPermissions() {
     for (const secao of SECOES) {
       const config = roleDefaults[role];
 
+      // Bulk delete é liberado por padrão só para admin e proprietario
+      const allowsBulkDelete = role === 'admin' || role === 'proprietario';
+
       if (config.fullAccess.includes(secao)) {
         defaults.push({
           role, secao,
           pode_ver: true, pode_criar: true,
           pode_editar: true, pode_deletar: true,
+          pode_deletar_em_massa: allowsBulkDelete,
           so_proprio: false,
         });
       } else if (config.viewCreateEdit.includes(secao)) {
@@ -151,6 +157,7 @@ function generateDefaultPermissions() {
           role, secao,
           pode_ver: true, pode_criar: true,
           pode_editar: true, pode_deletar: false,
+          pode_deletar_em_massa: false,
           so_proprio: role === 'assessor' ? false : true,
         });
       } else if (config.viewCreate.includes(secao)) {
@@ -158,6 +165,7 @@ function generateDefaultPermissions() {
           role, secao,
           pode_ver: true, pode_criar: true,
           pode_editar: false, pode_deletar: false,
+          pode_deletar_em_massa: false,
           so_proprio: true,
         });
       } else if (config.viewOnly.includes(secao)) {
@@ -165,6 +173,7 @@ function generateDefaultPermissions() {
           role, secao,
           pode_ver: true, pode_criar: false,
           pode_editar: false, pode_deletar: false,
+          pode_deletar_em_massa: false,
           so_proprio: false,
         });
       } else {
@@ -172,6 +181,7 @@ function generateDefaultPermissions() {
           role, secao,
           pode_ver: false, pode_criar: false,
           pode_editar: false, pode_deletar: false,
+          pode_deletar_em_massa: false,
           so_proprio: false,
         });
       }

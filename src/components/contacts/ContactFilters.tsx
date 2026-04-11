@@ -64,10 +64,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     }
   };
 
-  // Agrupa tags por categoria
+  // Agrupa tags por grupo
   const tagsByCategory: Record<string, typeof allTags> = {};
   allTags.forEach((tag) => {
-    const cat = tag.categoria || 'Sem categoria';
+    const cat = tag.group_label || 'Sem categoria';
     if (!tagsByCategory[cat]) tagsByCategory[cat] = [];
     tagsByCategory[cat].push(tag);
   });

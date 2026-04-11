@@ -62,7 +62,9 @@ export interface Tag {
   id: string;
   nome: string;
   cor?: string | null;
-  categoria?: string | null;
+  group_id?: string | null;
+  group_label?: string | null;
+  group_slug?: string | null;
 }
 
 // ---------- useContacts ----------
@@ -403,12 +405,18 @@ export function useContactTags() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tags')
-        .select('id, nome, cor, categoria')
-        .order('categoria', { ascending: true })
+        .select('id, nome, cor, group_id, tag_group:tag_groups(slug, label)')
         .order('nome', { ascending: true });
 
       if (error) throw error;
-      return data as Tag[];
+      return (data ?? []).map((t: any) => ({
+        id: t.id,
+        nome: t.nome,
+        cor: t.cor,
+        group_id: t.group_id,
+        group_slug: t.tag_group?.slug ?? null,
+        group_label: t.tag_group?.label ?? null,
+      })) as Tag[];
     },
   });
 }

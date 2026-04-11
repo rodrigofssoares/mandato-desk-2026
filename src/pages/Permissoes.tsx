@@ -27,17 +27,18 @@ import { usePermissoesAll, useUpdatePermissao, useSeedPermissoes, type Permissao
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { ROLES, ROLE_LABELS, SECOES, SECAO_LABELS, type Role, type Secao } from '@/types/permissions';
 
-type PermField = 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'so_proprio';
+type PermField = 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'pode_deletar_em_massa' | 'so_proprio';
 
 const FIELD_LABELS: Record<PermField, string> = {
   pode_ver: 'Ver',
   pode_criar: 'Criar',
   pode_editar: 'Editar',
   pode_deletar: 'Deletar',
+  pode_deletar_em_massa: 'Excluir em massa',
   so_proprio: 'Só próprio',
 };
 
-const PERM_FIELDS: PermField[] = ['pode_ver', 'pode_criar', 'pode_editar', 'pode_deletar', 'so_proprio'];
+const PERM_FIELDS: PermField[] = ['pode_ver', 'pode_criar', 'pode_editar', 'pode_deletar', 'pode_deletar_em_massa', 'so_proprio'];
 
 export default function Permissoes() {
   const [roleFilter, setRoleFilter] = useState<'todos' | Role>('todos');

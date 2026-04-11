@@ -175,7 +175,7 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
     onOpenChange(false);
   };
 
-  const demandsTags = tags.filter((t) => t.categoria === 'demands');
+  const demandsTags = tags.filter((t) => t.group_slug === 'demandas');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
