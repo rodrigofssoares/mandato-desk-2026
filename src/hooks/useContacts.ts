@@ -93,7 +93,7 @@ export function useContacts(filters: ContactFilters = {}) {
 
       let query = supabase
         .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor, categoria))', { count: 'exact' });
+        .select('*, contact_tags(tag_id, tags(id, nome, cor))', { count: 'exact' });
 
       // Search
       if (search && search.trim()) {
@@ -253,7 +253,7 @@ export function useContact(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor, categoria))')
+        .select('*, contact_tags(tag_id, tags(id, nome, cor))')
         .eq('id', id!)
         .single();
 

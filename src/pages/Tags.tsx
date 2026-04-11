@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Plus, Pencil, Trash2, CheckSquare, Search, X } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, CheckSquare, Search, X, LayoutGrid, List } from 'lucide-react';
 import { useTags, useDeleteTag } from '@/hooks/useTags';
 import { useTagGroups } from '@/hooks/useTagGroups';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -26,6 +26,17 @@ export default function Tags() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    return (localStorage.getItem('tags_view_mode') as 'grid' | 'list') ?? 'grid';
+  });
+
+  const changeViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tags_view_mode', mode);
+    }
+  };
 
   // Define a aba inicial quando os grupos carregam
   if (!activeTab && groups.length > 0) {
@@ -116,6 +127,30 @@ export default function Tags() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">Etiquetas</h1>
         <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-md border bg-background p-0.5">
+            <Button
+              type="button"
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => changeViewMode('grid')}
+              className="h-8 px-2 gap-1.5"
+              title="Visualização em grade"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Grade</span>
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => changeViewMode('list')}
+              className="h-8 px-2 gap-1.5"
+              title="Visualização em lista"
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Lista</span>
+            </Button>
+          </div>
           {can.exportData() && <TagsExportMenu />}
           {!selectMode && can.editTag() && (
             <Button variant="outline" onClick={enterSelectMode} className="gap-2">
@@ -193,20 +228,30 @@ export default function Tags() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div
+                    className={
+                      viewMode === 'grid'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
+                        : 'flex flex-col gap-2'
+                    }
+                  >
                     {visibleTags.map((tag) => {
                       const isSelected = selectedIds.has(tag.id);
                       return (
                         <Card
                           key={tag.id}
-                          className={`hover:shadow-md transition-all cursor-pointer ${
-                            isSelected ? 'ring-2 ring-primary' : ''
-                          }`}
+                          className={`transition-all cursor-pointer ${
+                            viewMode === 'grid' ? 'hover:shadow-md' : 'hover:bg-accent/40'
+                          } ${isSelected ? 'ring-2 ring-primary' : ''}`}
                           onClick={() => {
                             if (selectMode) toggleSelection(tag.id);
                           }}
                         >
-                          <CardContent className="p-4 flex items-center gap-3">
+                          <CardContent
+                            className={`flex items-center gap-3 ${
+                              viewMode === 'grid' ? 'p-4' : 'px-4 py-2.5'
+                            }`}
+                          >
                             {selectMode && (
                               <Checkbox
                                 checked={isSelected}
