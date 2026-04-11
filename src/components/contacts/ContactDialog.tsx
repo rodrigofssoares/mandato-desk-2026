@@ -273,23 +273,6 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </label>
 
                     <label
-                      htmlFor="e_multiplicador"
-                      className={cn(
-                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
-                        form.watch('e_multiplicador')
-                          ? "border-green-500/50 bg-green-500/5"
-                          : "border-border hover:border-muted-foreground/30"
-                      )}
-                    >
-                      <Checkbox
-                        id="e_multiplicador"
-                        checked={form.watch('e_multiplicador')}
-                        onCheckedChange={(checked) => form.setValue('e_multiplicador', !!checked, { shouldDirty: true })}
-                      />
-                      <span className="text-xs leading-tight">Multiplicador</span>
-                    </label>
-
-                    <label
                       htmlFor="declarou_voto"
                       className={cn(
                         "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
@@ -304,6 +287,23 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                         onCheckedChange={(checked) => form.setValue('declarou_voto', !!checked, { shouldDirty: true })}
                       />
                       <span className="text-xs leading-tight">Declarou voto</span>
+                    </label>
+
+                    <label
+                      htmlFor="e_multiplicador"
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors",
+                        form.watch('e_multiplicador')
+                          ? "border-green-500/50 bg-green-500/5"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <Checkbox
+                        id="e_multiplicador"
+                        checked={form.watch('e_multiplicador')}
+                        onCheckedChange={(checked) => form.setValue('e_multiplicador', !!checked, { shouldDirty: true })}
+                      />
+                      <span className="text-xs leading-tight">Multiplicador</span>
                     </label>
                   </div>
 
