@@ -51,6 +51,9 @@ export interface TarefaFilters {
   demand_id?: string;
   board_item_id?: string;
   concluida?: boolean;
+  /** Range customizado em ISO (usado pela vista calendário). Aplicado junto com o filtro de período se ambos forem informados. */
+  rangeStart?: string;
+  rangeEnd?: string;
 }
 
 // ============================================================================
@@ -86,6 +89,14 @@ export function useTarefas(filters: TarefaFilters = {}) {
       }
       if (filters.concluida !== undefined) {
         query = query.eq('concluida', filters.concluida);
+      }
+
+      // Range customizado (calendário) — aplica gte/lte direto em data_agendada
+      if (filters.rangeStart) {
+        query = query.gte('data_agendada', filters.rangeStart);
+      }
+      if (filters.rangeEnd) {
+        query = query.lte('data_agendada', filters.rangeEnd);
       }
 
       // Filtro por período

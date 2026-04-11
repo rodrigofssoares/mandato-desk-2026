@@ -53,6 +53,8 @@ interface Props {
   tarefa?: Tarefa | null;
   /** Pre-seleciona um contato (usado pela aba Tarefas dentro do ContactDialog futuramente) */
   defaultContactId?: string | null;
+  /** Pre-preenche data_agendada no modo create (usado pela vista calendário quando clica num dia vazio). ISO string. */
+  defaultDataAgendada?: string | null;
 }
 
 type VinculoTipo = 'nenhum' | 'contato' | 'articulador' | 'demanda';
@@ -71,7 +73,13 @@ function fromDatetimeLocal(value: string): string | null {
   return d.toISOString();
 }
 
-export function TarefaFormDialog({ open, onOpenChange, tarefa, defaultContactId }: Props) {
+export function TarefaFormDialog({
+  open,
+  onOpenChange,
+  tarefa,
+  defaultContactId,
+  defaultDataAgendada,
+}: Props) {
   const isEdit = !!tarefa;
 
   const [titulo, setTitulo] = useState('');
@@ -110,14 +118,14 @@ export function TarefaFormDialog({ open, onOpenChange, tarefa, defaultContactId 
       setTitulo('');
       setDescricao('');
       setTipo('TAREFA');
-      setDataAgendada('');
+      setDataAgendada(toDatetimeLocal(defaultDataAgendada ?? null));
       setResponsavelId('');
       setContactId(defaultContactId ?? null);
       setLeaderId(null);
       setDemandId(null);
       setVinculoTipo(defaultContactId ? 'contato' : 'nenhum');
     }
-  }, [open, tarefa, defaultContactId]);
+  }, [open, tarefa, defaultContactId, defaultDataAgendada]);
 
   const handleVinculoTipoChange = (next: VinculoTipo) => {
     setVinculoTipo(next);

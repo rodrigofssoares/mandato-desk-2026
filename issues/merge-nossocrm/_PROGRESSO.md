@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 23:55 UTC
+**Última atualização:** 2026-04-11 — issue 31b concluída
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 16 (Fase 0 + 1 + 2 + 3 completas ✅, Fase 4 iniciada)
+- **Concluídas:** 17 (Fase 0 + 1 + 2 + 3 completas ✅, Fase 4 em andamento 2/3)
 - **Em andamento:** 0
-- **Pendentes:** 7
+- **Pendentes:** 6
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -49,7 +49,7 @@
 
 ### Fase 4 — Tarefas
 - [x] `31-func-page-tarefas` — rota `/tarefas` com `TarefasFilters` (search/período/responsável/concluída + chips de tipo) + `TarefasList` agrupada (Atrasadas/Hoje/Amanhã/Esta semana/Próximas/Sem data via `agruparTarefasPorDia`) + `TarefaFormDialog` (CRUD: título/tipo/data-hora/responsável/vínculo contato|articulador|demanda/descrição) + `TarefasBulkToolbar` (concluir/adiar/excluir em lote, sticky bottom). Reusa `useTarefas`, `useToggleTarefaConcluida`, `useDeleteTarefa`, hooks de bulk e `useContact` para resolver nome do contato selecionado. Protótipo (issue 02) absorvido nessa entrega; build + 12/12 verdes
-- [ ] `31b-func-tarefas-calendar-view`
+- [x] `31b-func-tarefas-calendar-view` — toggle Lista/Calendário em `/tarefas` com estado em URL (`?view=calendar`), `TarefasCalendar` grid mensal próprio (sem libs novas) via `date-fns`, chips de tarefas com cor do tipo/ícone/hora, +N mais via Popover, click em dia vazio abre create pré-preenchido 09:00, vista mobile como lista vertical. `useTarefas` estendido com `rangeStart/rangeEnd`. `TarefaFormDialog` aceita `defaultDataAgendada`. Build + 12/12 verdes
 - [ ] `42-func-contato-aba-tarefas`
 
 ### Fase 5 — Visão Geral
@@ -68,11 +68,25 @@
 ---
 
 ## Próxima ação
-Issue 31 concluída ✅. Próxima: **`31b-func-tarefas-calendar-view`** — adicionar toggle Lista/Calendário na página `/tarefas`. Criar `TarefasCalendar.tsx` (provavelmente usando uma biblioteca leve tipo `react-day-picker` ou um grid manual mensal) e plugar o mesmo conjunto de tarefas filtradas (`useTarefas(filters)`) renderizando como pontos coloridos por dia. Toggle no header da página `Tarefas.tsx` (Lista é o default).
+Issue 31b concluída ✅. Próxima: **`42-func-contato-aba-tarefas`** — adicionar aba "Tarefas" dentro do `ContactDialog` reusando `TarefaFormDialog` (já aceita `defaultContactId`). Lista as tarefas filtradas por `contact_id`, permite criar nova direto no contexto do contato, editar e marcar como concluída inline. Mesmo padrão da aba "Personalizados" (issue 41): painel self-contained, depende de `contact?.id`, empty state quando contato ainda não foi salvo.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 31b — vista de Calendário na página Tarefas
+- **Sem lib nova**: grid mensal próprio com `date-fns` (`startOfMonth/endOfMonth/startOfWeek/endOfWeek/eachDayOfInterval/isSameMonth/isToday/format/addMonths/subMonths/parseISO`) + `Popover` de shadcn. Rejeitado `react-big-calendar` (peso + estilização difícil) e `react-day-picker` (é date picker, não agenda).
+- **Toggle em URL (`?view=calendar`)** via `useSearchParams`. Default = list. Botões `<List>/<Calendar>` no header em um wrapper com borda, estado ativo por `variant="default"`.
+- **Extensão de `useTarefas`**: adicionado `rangeStart?: string` e `rangeEnd?: string` (ISO) em `TarefaFilters`. O calendário passa `periodo: undefined` e usa range customizado (semana inicial do mês até semana final). **Decisão importante**: range é filtro adicional (aplicado com gte/lte), não substituto do `periodo`, pra não quebrar o filtro existente da lista.
+- **Agrupamento por dia**: `useMemo` que itera as tarefas e monta `Map<'yyyy-MM-dd', Tarefa[]>`. Dentro de cada dia ordena por horário. A chave do dia é `format(parseISO(data_agendada), 'yyyy-MM-dd')` — preserva o fuso local (não usa `toISOString().slice(0,10)`).
+- **Grid**: 7 colunas × 5-6 linhas calculadas por `eachDayOfInterval({ start: startOfWeek(startOfMonth), end: endOfWeek(endOfMonth) })`. Dias fora do mês corrente ficam com `opacity-40`. Dia de hoje marcado com círculo `bg-primary`.
+- **Chip de tarefa**: reusa `TarefaIcon` direto (inclui as cores do tipo). Mostra `HH:mm` + título truncado. Strikethrough + `opacity-60` quando concluída. Click com `stopPropagation()` pra não disparar o onCreate do dia.
+- **+N mais**: `Popover` shadcn, PopoverContent lista todas as tarefas do dia verticalmente com data no topo em `EEEE, d 'de' MMMM`. Click no popover abre edit e fecha o popover.
+- **Responsivo**: `hidden md:block` no grid; `md:hidden` numa lista vertical de **todos os dias do mês corrente** como cards (mesmo vazios, com hint "Tocar p/ criar"). Evita scroll horizontal brutal no mobile.
+- **Pitfall HTML**: a célula do dia começou como `<button>` mas ela contém chips (que também são botões) → HTML inválido (button dentro de button). Troquei por `<div role="button" tabIndex={0}>` com handler de Enter/Space no `onKeyDown`. A célula vira clicável sem quebrar acessibilidade.
+- **`TarefaFormDialog` estendido**: nova prop opcional `defaultDataAgendada?: string | null`. No `useEffect` de reset (modo create), inicializa `dataAgendada` usando `toDatetimeLocal(defaultDataAgendada ?? null)`. Em `Tarefas.tsx`, `handleCreateAtDate(day)` fixa o horário em 09:00 via `setHours/setMinutes/setSeconds/setMilliseconds` antes de salvar no state `createDefaultDate` e passar pro dialog. Ao fechar o dialog, `createDefaultDate` é resetado junto com `editing`.
+- **Query duplicada aceita**: quando em vista calendar, o `useTarefas(filters)` do pai continua rodando (serve pra resolver labels de vínculo e pra ser reaproveitado se voltar pra lista). O componente calendar faz sua própria query com range. Não é otimo mas o overhead é pequeno e react-query cacheia. Não vale a pena o acoplamento de early-return.
+- **Bundle**: 2599→2609KB / gzip 770→773KB (+10KB do componente novo + date-fns helpers já tree-shaken). 12/12 testes verdes.
 
 ### Issue 31 — página Tarefas funcional
 - **Protótipo (issue 02) absorvido**: nunca existiu `src/pages/Tarefas.tsx` nem `src/components/tarefas/`. Como os hooks da issue 21 já estavam prontos, criei direto a versão funcional. Mesmo modelo da issue 30. `TarefasCalendar` ficou de fora — entra na issue 31b.
