@@ -485,6 +485,15 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
 
     // Phase 4: Tags
     setPhase('tags');
+
+    // Busca o grupo padrao "Geral" (obrigatorio para novas tags apos migration 009)
+    const { data: geralGroup } = await supabase
+      .from('tag_groups')
+      .select('id')
+      .eq('slug', 'geral')
+      .single();
+    const geralGroupId = geralGroup?.id;
+
     for (const row of validRows) {
       const tagStr = String(row.normalized.etiquetas ?? '');
       if (!tagStr.trim()) continue;
@@ -501,7 +510,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         if (!tagId) {
           const { data: newTag, error } = await supabase
             .from('tags')
-            .insert({ nome: tagName, categoria: 'geral' })
+            .insert({ nome: tagName, group_id: geralGroupId })
             .select('id')
             .single();
           if (error) {

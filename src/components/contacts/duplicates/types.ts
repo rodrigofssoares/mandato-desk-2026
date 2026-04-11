@@ -2,7 +2,6 @@ export interface DuplicateContactTag {
   id: string;
   nome: string;
   cor?: string | null;
-  categoria?: string | null;
 }
 
 export type MergeableFieldKey =

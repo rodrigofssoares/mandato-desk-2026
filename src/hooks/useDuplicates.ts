@@ -40,7 +40,7 @@ export interface DuplicateContact {
   merged_into?: string | null;
   contact_tags?: {
     tag_id: string;
-    tags: { id: string; nome: string; cor?: string | null; categoria?: string | null };
+    tags: { id: string; nome: string; cor?: string | null };
   }[];
 }
 
@@ -208,7 +208,7 @@ export function useDuplicateGroups(enabled: boolean) {
       // Client-side detection with full contact data
       const { data, error } = await supabase
         .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor, categoria))')
+        .select('*, contact_tags(tag_id, tags(id, nome, cor))')
         .is('merged_into', null)
         .order('created_at', { ascending: true });
 
@@ -237,7 +237,7 @@ export function useMergeContacts() {
       // 0. Snapshot do contato a ser consumido (antes de qualquer modificacao)
       const { data: snapshotData, error: snapshotError } = await supabase
         .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor, categoria))')
+        .select('*, contact_tags(tag_id, tags(id, nome, cor))')
         .eq('id', deletedId)
         .single();
       if (snapshotError) throw snapshotError;

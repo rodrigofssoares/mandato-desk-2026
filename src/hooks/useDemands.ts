@@ -10,7 +10,6 @@ export interface DemandTag {
     id: string;
     nome: string;
     cor: string;
-    categoria: string;
   };
 }
 
@@ -62,7 +61,7 @@ export function useDemands(filters?: DemandFilters) {
           *,
           contact:contacts!contact_id(nome),
           responsible:profiles!responsible_id(nome),
-          demand_tags(tag_id, tags(id, nome, cor, categoria))
+          demand_tags(tag_id, tags(id, nome, cor))
         `)
         .order('created_at', { ascending: false });
 

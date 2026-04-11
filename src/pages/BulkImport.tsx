@@ -203,6 +203,14 @@ export default function BulkImport() {
         setParsed([...updated]);
       }
     } else if (mode === 'tag') {
+      // Busca o grupo "Relacionamentos" (obrigatorio para novas tags apos migration 009)
+      const { data: relGroup } = await supabase
+        .from('tag_groups')
+        .select('id')
+        .eq('slug', 'relacionamentos')
+        .single();
+      const relGroupId = relGroup?.id;
+
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         try {
@@ -216,7 +224,7 @@ export default function BulkImport() {
           if (!tag) {
             const { data: newTag, error: tagErr } = await supabase
               .from('tags')
-              .insert({ nome: tagName, categoria: 'relationships' })
+              .insert({ nome: tagName, group_id: relGroupId })
               .select('id')
               .single();
             if (tagErr) throw tagErr;
