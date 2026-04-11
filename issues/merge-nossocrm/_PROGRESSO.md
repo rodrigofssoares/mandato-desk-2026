@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 7
+- **Concluídas:** 8 (Fase 0 + Fase 1 completas ✅)
 - **Em andamento:** 0
-- **Pendentes:** 22
+- **Pendentes:** 21
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -33,7 +33,7 @@
 - [x] `15-setup-vitest-infra` — vitest 3.2.4 + RTL 16, 12/12 testes passando
 - [x] `20-func-hooks-boards` — useBoards, useBoardStages, useBoardItems (9 mutations) — build ok
 - [x] `21-func-hooks-tarefas` — useTarefas com filtros + bulk ops — build ok
-- [ ] `22-func-hooks-custom-fields`
+- [x] `22-func-hooks-custom-fields` — useCustomFields + useContactCustomValues + upsert em lote — build ok
 
 ### Fase 2 — Settings Hub
 - [ ] `32-func-page-settings-hub`
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Executar **`22-func-hooks-custom-fields`** — hooks `useCustomFields` (definições) + `useContactCustomValues` (valores por contato) com upsert em lote.
+Fase 1 completa ✅. Começar **Fase 2 — Settings Hub**. Próxima: **`32-func-page-settings-hub`** (shell com abas absorvendo páginas existentes Branding/Users/Permissoes/Google/API/Webhooks).
 
 ---
 
@@ -104,6 +104,21 @@ Executar **`22-func-hooks-custom-fields`** — hooks `useCustomFields` (definiç
 - **Campos fixos do contato permanecem intocados** — toda a estrutura é em tabelas à parte, conforme combinado
 - RLS referencia seção `configuracoes` que ainda não existe (será criada na issue 99). Enquanto isso, só admin gerencia — comportamento desejado.
 - Valores (cpv) dependem da permissão `contatos.editar` — quem edita contato edita os campos custom dele
+
+### Issue 22 — hooks de campos personalizados
+- Arquivo: `src/hooks/useCustomFields.ts`
+- Queries: `useCustomFields({ filtravel? })`, `useContactCustomValues(contactId)`
+- Mutations: `useCreateCustomField`, `useUpdateCustomField`, `useDeleteCustomField`, `useSaveContactCustomValues`
+- Helpers exportados: `colunaValorParaTipo()`, `extrairValor()`
+- **Slugify** (do `src/lib/slugify.ts` criado na issue 15) gera a `chave` a partir do `rotulo` com validação:
+  - String vazia bloqueada
+  - Blacklist evita colisão com campos fixos do contato (id, nome, email, telefone, cpf, timestamps)
+  - Código de erro `23505` do Postgres traduzido como "já existe campo com essa chave"
+- **Tipo `selecao`** exige pelo menos 2 opções no create (validação no frontend)
+- **`useUpdateCustomField`**: NÃO regera `chave` ao mudar rotulo — isso manteria estabilidade dos valores já salvos
+- **`useContactCustomValues`**: faz JOIN com `campos_personalizados.tipo` para normalizar o retorno no formato `{ [campo_id]: valor }` — frontend não precisa descobrir qual coluna ler
+- **`useSaveContactCustomValues`**: upsert em lote com `onConflict: 'campo_id,contact_id'`. Frontend passa `{ contactId, values, campos[] }` e o hook monta as rows com a coluna correta por tipo. Uma única query no banco.
+- Delete cascateia automaticamente pelos valores (definido na migration 015)
 
 ### Issue 21 — hooks de tarefas
 - Arquivo: `src/hooks/useTarefas.ts`
