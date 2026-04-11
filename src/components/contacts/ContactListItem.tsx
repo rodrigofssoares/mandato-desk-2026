@@ -44,7 +44,7 @@ export function ContactListItem({ contact, onEdit, onDelete, onClick }: ContactL
         />
       </Button>
 
-      {/* Nome */}
+      {/* Nome + WhatsApp mobile */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-sm truncate">{contact.nome}</span>
@@ -57,9 +57,13 @@ export function ContactListItem({ contact, onEdit, onDelete, onClick }: ContactL
             </Tooltip>
           )}
         </div>
+        {/* Mobile-only inline info */}
+        <div className="md:hidden text-xs text-muted-foreground truncate mt-0.5">
+          {contact.whatsapp || contact.email || '—'}
+        </div>
       </div>
 
-      {/* WhatsApp */}
+      {/* WhatsApp (md+) */}
       <span className="text-sm text-muted-foreground w-36 truncate hidden md:block">
         {contact.whatsapp || '—'}
       </span>

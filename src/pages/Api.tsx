@@ -642,11 +642,11 @@ export default function Api() {
 
       {/* Tabs: Documentacao + Campos */}
       <Tabs defaultValue="como-usar" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="como-usar">Como Usar</TabsTrigger>
-          <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
-          <TabsTrigger value="campos">Campos</TabsTrigger>
-          <TabsTrigger value="respostas">Respostas</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+          <TabsTrigger value="como-usar" className="text-xs sm:text-sm">Como Usar</TabsTrigger>
+          <TabsTrigger value="endpoints" className="text-xs sm:text-sm">Endpoints</TabsTrigger>
+          <TabsTrigger value="campos" className="text-xs sm:text-sm">Campos</TabsTrigger>
+          <TabsTrigger value="respostas" className="text-xs sm:text-sm">Respostas</TabsTrigger>
         </TabsList>
 
         {/* Como usar */}

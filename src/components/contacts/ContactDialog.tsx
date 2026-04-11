@@ -142,20 +142,20 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-2">
+      <DialogContent className="max-w-2xl w-[calc(100%-1rem)] max-h-[calc(100dvh-1rem)] p-0 gap-0 flex flex-col">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
           <DialogTitle>{isEditing ? 'Editar Contato' : 'Novo Contato'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6">
             <Tabs defaultValue="pessoais" className="w-full">
-              <TabsList className="w-full mb-4">
-                <TabsTrigger value="pessoais" className="flex-1 text-xs">Pessoais</TabsTrigger>
-                <TabsTrigger value="etiquetas" className="flex-1 text-xs">Etiquetas</TabsTrigger>
-                <TabsTrigger value="endereco" className="flex-1 text-xs">Endereço</TabsTrigger>
-                <TabsTrigger value="redes" className="flex-1 text-xs">Redes</TabsTrigger>
-                <TabsTrigger value="obs" className="flex-1 text-xs">Obs</TabsTrigger>
+              <TabsList className="w-full mb-4 h-auto flex-wrap gap-1 p-1">
+                <TabsTrigger value="pessoais" className="flex-1 min-w-[72px] text-xs">Pessoais</TabsTrigger>
+                <TabsTrigger value="etiquetas" className="flex-1 min-w-[72px] text-xs">Etiquetas</TabsTrigger>
+                <TabsTrigger value="endereco" className="flex-1 min-w-[72px] text-xs">Endereço</TabsTrigger>
+                <TabsTrigger value="redes" className="flex-1 min-w-[72px] text-xs">Redes</TabsTrigger>
+                <TabsTrigger value="obs" className="flex-1 min-w-[72px] text-xs">Obs</TabsTrigger>
               </TabsList>
 
               {/* --- Dados Pessoais --- */}
@@ -237,7 +237,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   </div>
 
                   {/* Checkboxes lado a lado */}
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <label
                       htmlFor="aceita_whatsapp"
                       className={cn(
@@ -252,7 +252,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                         checked={form.watch('aceita_whatsapp')}
                         onCheckedChange={(checked) => form.setValue('aceita_whatsapp', !!checked, { shouldDirty: true })}
                       />
-                      <span className="text-xs leading-tight">Aceita WhatsApp</span>
+                      <span className="text-xs leading-tight break-words">Aceita WhatsApp</span>
                     </label>
 
                     <label
@@ -269,7 +269,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                         checked={form.watch('em_canal_whatsapp')}
                         onCheckedChange={(checked) => form.setValue('em_canal_whatsapp', !!checked, { shouldDirty: true })}
                       />
-                      <span className="text-xs leading-tight">Canal do WhatsApp</span>
+                      <span className="text-xs leading-tight break-words">Canal do WhatsApp</span>
                     </label>
 
                     <label
@@ -286,7 +286,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                         checked={form.watch('declarou_voto')}
                         onCheckedChange={(checked) => form.setValue('declarou_voto', !!checked, { shouldDirty: true })}
                       />
-                      <span className="text-xs leading-tight">Declarou voto</span>
+                      <span className="text-xs leading-tight break-words">Declarou voto</span>
                     </label>
 
                     <label
@@ -303,21 +303,21 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                         checked={form.watch('e_multiplicador')}
                         onCheckedChange={(checked) => form.setValue('e_multiplicador', !!checked, { shouldDirty: true })}
                       />
-                      <span className="text-xs leading-tight">Multiplicador</span>
+                      <span className="text-xs leading-tight break-words">Multiplicador</span>
                     </label>
                   </div>
 
                   {/* Ranking com botões */}
                   <div>
                     <Label>Ranking</Label>
-                    <div className="flex gap-1.5 mt-2">
+                    <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5 mt-2">
                       {RANKING_VALUES.map((val) => (
                         <button
                           key={val}
                           type="button"
                           onClick={() => form.setValue('ranking', val, { shouldDirty: true })}
                           className={cn(
-                            "flex-1 h-9 rounded-md text-xs font-semibold border transition-colors",
+                            "h-9 w-full rounded-md text-xs font-semibold border transition-colors",
                             currentRanking === val
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-background border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground"
@@ -497,11 +497,11 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
             <div className="h-4" />
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-background">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-t bg-background">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isEditing ? 'Salvar' : 'Criar Contato'}
             </Button>

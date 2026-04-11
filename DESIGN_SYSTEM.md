@@ -395,6 +395,21 @@ Definidos em `components/ui/modalStyles.ts`:
 | Layout | `items-stretch` | `sm:items-center` |
 | Sidebar | Escondida | `md:left-[var(--app-sidebar-width)]` |
 
+### Regras obrigatórias mobile-first
+
+Toda PR que toque em UI **DEVE** seguir estas regras. Se quebrar, reabrir.
+
+1. **Nunca** use `grid-cols-N` (N≥3) sem breakpoint. Sempre `grid-cols-1 sm:grid-cols-2 md:grid-cols-N` (ou `grid-cols-2 sm:grid-cols-4` quando N=4).
+2. **Nunca** use largura fixa `w-[XXXpx]` ou `w-N` (N≥40) em componentes de filtro/select sem prefixar com `w-full sm:w-...`.
+3. Toda **fileira de botões com 6+ itens** (ex.: ranking 0–10) deve usar `grid` com wrap em mobile (`grid-cols-6 sm:grid-cols-11`), nunca `flex` puro com `flex-1`.
+4. O `DialogContent` base (`src/components/ui/dialog.tsx`) já aplica `w-[calc(100%-1rem)] max-h-[calc(100dvh-1rem)] p-4 sm:p-6`. **Não sobrescreva `w-full` nem `p-6` sem sufixar com `sm:`.**
+5. Toda `<Table>` com 4+ colunas deve estar dentro de `<div className="overflow-x-auto">` OU esconder colunas secundárias com `hidden sm:table-cell` / `hidden md:table-cell`.
+6. Todo `TabsList` com 4+ abas deve usar `grid grid-cols-2 sm:grid-cols-N h-auto` OU `flex-wrap h-auto` — nunca deixe abas se espremerem em mobile.
+7. Labels de checkbox/radio/badge com texto >12 caracteres devem ter `break-words` (ou `truncate` se a semântica permitir cortar).
+8. Footers de dialog com Cancelar/Salvar devem usar `flex flex-col-reverse sm:flex-row` e `w-full sm:w-auto` em cada botão.
+9. Grupos de filtros em listagens devem estar em `flex flex-col sm:flex-row gap-3` ou `flex flex-wrap gap-3`.
+10. **Antes de commitar qualquer mudança de UI**: testar em DevTools no preset **iPhone SE (375×667)**. Se algum texto vazar da caixa, voltar e corrigir.
+
 ### Safe Area (Mobile)
 
 ```css

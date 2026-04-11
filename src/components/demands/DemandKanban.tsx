@@ -52,7 +52,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[280px] rounded-lg border ${
+      className={`flex-1 min-w-[260px] snap-start rounded-lg border ${
         isOver ? 'ring-2 ring-primary/50' : ''
       } ${config.bgColor}`}
     >
@@ -128,7 +128,7 @@ export function DemandKanban({ demands, onEditDemand }: DemandKanbanProps) {
       collisionDetection={closestCorners}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none -mx-4 px-4 sm:mx-0 sm:px-0">
         {columns.map((col) => (
           <KanbanColumn
             key={col.status}

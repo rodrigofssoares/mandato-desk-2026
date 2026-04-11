@@ -599,19 +599,19 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Nome</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Bairro</TableHead>
+                    <TableHead className="hidden sm:table-cell">WhatsApp</TableHead>
+                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden lg:table-cell">Bairro</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {parsedRows.slice(0, 5).map((row) => (
                     <TableRow key={row.lineNumber}>
                       <TableCell className="text-xs text-muted-foreground">{row.lineNumber}</TableCell>
-                      <TableCell className="text-sm">{String(row.normalized.nome_completo ?? '')}</TableCell>
-                      <TableCell className="text-sm">{String(row.normalized.whatsapp ?? '')}</TableCell>
-                      <TableCell className="text-sm">{String(row.normalized.email ?? '-')}</TableCell>
-                      <TableCell className="text-sm">{String(row.normalized.bairro ?? '-')}</TableCell>
+                      <TableCell className="text-sm break-words max-w-[140px] sm:max-w-none">{String(row.normalized.nome_completo ?? '')}</TableCell>
+                      <TableCell className="text-sm hidden sm:table-cell">{String(row.normalized.whatsapp ?? '')}</TableCell>
+                      <TableCell className="text-sm hidden md:table-cell break-all">{String(row.normalized.email ?? '-')}</TableCell>
+                      <TableCell className="text-sm hidden lg:table-cell">{String(row.normalized.bairro ?? '-')}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -623,12 +623,12 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
               </p>
             )}
 
-            <div className="flex gap-2">
-              <Button onClick={handleImport} className="gap-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              <Button onClick={handleImport} className="gap-2 w-full sm:w-auto">
                 <Upload className="h-4 w-4" />
                 Importar {totalValid} contatos
               </Button>
-              <Button variant="outline" onClick={reset}>
+              <Button variant="outline" onClick={reset} className="w-full sm:w-auto">
                 Cancelar
               </Button>
             </div>
