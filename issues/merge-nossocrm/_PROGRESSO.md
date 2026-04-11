@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 19:30 UTC
+**Última atualização:** 2026-04-11 21:05 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 8 (Fase 0 + Fase 1 completas ✅)
+- **Concluídas:** 9 (Fase 0 + Fase 1 completas ✅; Fase 2 iniciada — issue 32 ok)
 - **Em andamento:** 0
-- **Pendentes:** 21
+- **Pendentes:** 20
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -36,7 +36,7 @@
 - [x] `22-func-hooks-custom-fields` — useCustomFields + useContactCustomValues + upsert em lote — build ok
 
 ### Fase 2 — Settings Hub
-- [ ] `32-func-page-settings-hub`
+- [x] `32-func-page-settings-hub` — hub `/settings` com 7 abas, absorvendo Users/Permissoes/Google/Api/Webhooks/Branding; Funis e IA desabilitadas com tooltip; URL sync; build + 12/12 testes verdes
 - [ ] `33-func-tab-campos-personalizados`
 - [ ] `34-func-tab-funis`
 - [ ] `35-func-tab-ia`
@@ -67,11 +67,23 @@
 ---
 
 ## Próxima ação
-Fase 1 completa ✅. Começar **Fase 2 — Settings Hub**. Próxima: **`32-func-page-settings-hub`** (shell com abas absorvendo páginas existentes Branding/Users/Permissoes/Google/API/Webhooks).
+Issue 32 concluída ✅. Próxima: **`33-func-tab-campos-personalizados`** — preencher a aba Geral com o manager de Campos Personalizados (CRUD usando `useCustomFields`/`useContactCustomValues` já prontos na issue 22). Plugar no `GeneralTab.tsx` (atualmente stub).
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 32 — Settings Hub (shell com abas)
+- Página: `src/pages/Settings.tsx` + 7 arquivos em `src/components/settings/`
+- **Decisão pragmática**: reusar as páginas legadas como componentes (ex: `TeamTab` = `<Users />`, `PermsTab` = `<Permissoes />`, etc.) em vez de extrair "Content wrappers" como a issue 32 sugeria. Justificativa: todas as páginas legadas já retornam apenas `<div className="p-6 space-y-6">…</div>` no top-level — o wrapper `AppLayout` é aplicado pelo `ProtectedRoute` em `App.tsx`, não dentro das páginas. Logo, importar o default export funciona sem refactor, sem duplicação e sem risco de regressão nas rotas legadas.
+- **Rotas legadas preservadas**: `/users`, `/permissoes`, `/google-integration`, `/api`, `/webhooks`, `/branding` continuam todas funcionais (issue 51 vai redirecionar no futuro). Sidebar também não foi tocada (issue 50).
+- **7 abas na ordem**: Geral | Funis | Equipe | Permissões | Integrações | IA | Personalização
+- **Funis e IA** desabilitadas com tooltip "Em breve". Como `TabsTrigger` tem `disabled:pointer-events-none`, o tooltip precisa ser disparado por um `<span>` wrapper em volta do trigger (senão o mouseover não chega no Radix Tooltip).
+- **URL state**: `useSearchParams` com normalização. Aba default = `geral`. Ao trocar de aba principal, sub-aba de Integrações é limpa. Dentro de `IntegrationsTab`, sub-tab fica em `?tab=integracoes&sub=google|api|webhooks`.
+- **Validação de aba inválida**: se `?tab=xyz` não for uma das 7 conhecidas, fallback para `geral` (não faz redirect, só o Tabs abre na default — URL permanece como estava).
+- **Permissões**: nenhum filtro de visibilidade nas abas — as próprias páginas legadas já têm seu check via `usePermissions`. RBAC granular fica para issue 98 (opcional).
+- Aba "Geral" tem stub com Card "Em construção (issue 33)". A issue 33 vai substituir esse Card pelo `CustomFieldsManager`.
+- Build passou (2.5MB index, já era assim); 12/12 testes verdes (nada em helpers/hooks foi tocado).
 
 ### Issue 10 — schema boards
 - Migration: `supabase/migrations/013_merge_boards.sql`
