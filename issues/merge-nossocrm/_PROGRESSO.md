@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 — issue 42 concluída (Fase 4 fechada ✅)
+**Última atualização:** 2026-04-11 — issue 40 concluída (Fase 5 fechada ✅)
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 18 (Fases 0 + 1 + 2 + 3 + 4 completas ✅)
+- **Concluídas:** 19 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅)
 - **Em andamento:** 0
-- **Pendentes:** 5 (Fase 5: 1 issue, Fase 6: 4 issues)
+- **Pendentes:** 4 (Fase 6: 4 issues)
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -53,7 +53,7 @@
 - [x] `42-func-contato-aba-tarefas` — `ContactTarefasPanel` self-contained (molde `CustomFieldsPanel` issue 41) inserido como aba "Tarefas" no `ContactDialog` entre Personalizados e Campanha. Reusa `TarefaRow` e `TarefaFormDialog` (via `defaultContactId`) — zero duplicação. Sub-abas Pendentes/Concluídas com contadores, empty states próprios, toggle concluir/edit/delete direto nas linhas. `ContactTarefasPendenteBadge` no trigger da aba mostra contagem de pendentes (só quando contato salvo). Empty state "Salve o contato primeiro" quando `contact.id` ausente. Build + 12/12 verdes. **Fase 4 fechada ✅**
 
 ### Fase 5 — Visão Geral
-- [ ] `40-func-evoluir-dashboard`
+- [x] `40-func-evoluir-dashboard` — `useDashboardMetrics(period, boardId)` com ranges atuais/anteriores + 6 componentes novos (`StatCardWithDelta`, `PeriodSelector`, `BoardFunnelCard` com Recharts horizontal + seletor de board + link p/ `/board`, `TarefasHojeCard` (reusa `useTarefasHoje`), `AlertsBadge` + `AlertsModal` agrupando por tipo, `SaudeBaseCard` com Progress para ativos/inativos/perdidos). `Dashboard.tsx` recriado: header com `<PeriodSelector>` + `<AlertsBadge>`, 4 StatCards (Base Total, Novos, Voto Declarado, Multiplicadores), grid principal (Funil + Tarefas Hoje + Aniversários), Saúde da Base, linha inferior (GrowthChart + ActivityFeed), card "Mais métricas" com Tag e Vote charts preservados. Estado de period+board sincronizado via URL (`?period=mes&board=<id>`). 3 tipos de alertas: contatos parados 5+ dias no funil, tarefas vencidas, aniversariantes hoje sem tarefa. Build + 12/12 verdes. **Fase 5 fechada ✅**
 
 ### Fase 6 — Fechamento
 - [ ] `50-func-sidebar-nova`
@@ -68,11 +68,36 @@
 ---
 
 ## Próxima ação
-Issue 42 concluída ✅ — **Fase 4 (Tarefas) fechada**. Próxima: **`40-func-evoluir-dashboard`** (Fase 5, única issue). Evoluir a página de dashboard/Visão Geral absorvendo os widgets e métricas do Nosso CRM. Ver `issues/merge-nossocrm/40-func-evoluir-dashboard.md` para o spec. Depois disso só restam as 4 issues da Fase 6 (sidebar nova, redirects legacy de settings, RBAC hub, finalização).
+Issue 40 concluída ✅ — **Fase 5 (Visão Geral) fechada**. Próxima: **`50-func-sidebar-nova`** (abrir Fase 6). Reorganizar a sidebar adicionando entradas Board/Tarefas/Settings hub e removendo ou redirecionando itens legados. Ver `issues/merge-nossocrm/50-func-sidebar-nova.md`. Fase 6 tem 4 issues: 50 (sidebar), 51 (redirects legacy de settings), 99 (RBAC novas seções), 43 (filtro custom fields na lista de contatos).
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 40 — Visão Geral (Dashboard evoluído)
+- **Hook único `useDashboardMetrics(period, boardId)`** em `src/hooks/useDashboardMetrics.ts` — concentra todas as agregações numa única query e faz cálculo de delta no frontend em vez de espalhar múltiplos hooks. Trade-off: uma query "gorda" vs. muitas pequenas — escolhi a gorda porque React Query já serializa as `count`s em paralelo via `Promise.all`, e a troca de período invalida tudo de uma vez.
+- **Ranges de comparação por período**:
+  - `hoje` → hoje vs. ontem
+  - `7d` → últimos 7d (D-6..D) vs. 7d anteriores (D-13..D-7)
+  - `30d` → últimos 30d vs. 30d anteriores
+  - `mes` → mês corrente vs. mês anterior
+- **Delta snapshot vs. delta flow**: para `Base Total`, `Voto Declarado` e `Multiplicadores` (métricas cumulativas), o "anterior" é o snapshot no fim do período anterior (`created_at <= prevEnd` ou `updated_at <= prevEnd`). Para `Novos no Período` (métrica de fluxo), o anterior é a contagem no range anterior. Isso mantém os deltas coerentes com a semântica de cada métrica.
+- **Saúde da Base**: regra simples baseada em `updated_at` do contato. Ativo = updated nos últimos 30d, Inativo = 30–90d, Perdido = 90d+. Sem necessidade de tabela nova. A soma dos 3 pode divergir ligeiramente do Base Total porque um contato com `updated_at` null cai em "perdidos" — aceitável para visão geral.
+- **Funil**: consome `board_stages` + agregação em memória de `board_items.stage_id`. O `BoardFunnelCard` usa Recharts `BarChart layout="vertical"` com `<Cell fill={stage.cor}>` pra respeitar a cor do estágio (issue 34). Empty states: sem boards → CTA "Criar funil" → `/settings?tab=funis`; sem items → link pra `/board`.
+- **Seletor de board no card do Funil** (não no header global) porque o board só afeta esse card. Sync em URL via `?board=<id>`. A persistência casa com a da página `/board` (issue 30), então alternar entre dashboard e board mantém o mesmo board selecionado.
+- **3 tipos de alertas** calculados junto com as métricas (evita 3 requests extras no componente):
+  1. `contato_parado`: `board_items.moved_at <= now - 5d` no board ativo. Link → `/board?board=<id>`.
+  2. `tarefa_vencida`: `tarefas.data_agendada < startOfDay(now) AND concluida = false`. Link → `/tarefas`.
+  3. `aniversariante_sem_tarefa`: contatos com `data_nascimento` MM-DD = hoje que não têm tarefa agendada para hoje. Link → `/contacts?contact=<id>`.
+- **Aniversariante MM-DD**: Supabase não expõe `EXTRACT(MONTH)` fácil via `.filter()`, então busco todos os contatos com `data_nascimento` e filtro local por `data_nascimento.slice(5) === mmdd`. Performance: aceitável até ~50k contatos (um single fetch).
+- **`AlertsModal` agrupado por tipo** com ícone+cor por grupo. Cada item é `Link` que fecha o modal ao navegar. Lista dentro de ScrollArea com `max-h-[60vh]`.
+- **`StatCardWithDelta`**: delta colorido (verde ↑ / vermelho ↓ / cinza minus), fallback "sem variação" quando delta = 0, "sem comparação" oculto quando `deltaPct === null` (previous=0). Ícone num quadrado colorido à direita, label em caps. Hint opcional (ex: "31% taxa" no card de Voto Declarado, "neste mês" no card Novos).
+- **`PeriodSelector` sync em URL via `?period=`** para permitir linkar `/?period=7d`. Default = `mes`. O `AlertsModal` abre via state local (não vale a pena poluir URL).
+- **Preservação dos componentes existentes**: `BirthdaySection`, `GrowthChart`, `ActivityFeed`, `TagDistributionChart`, `VoteDeclarationChart` ficam intactos. Os dois últimos movidos pra uma seção "Mais métricas" (Card com 2 colunas). `DashboardStatsCards` e `GrowthMetricsCards` ficam aposentados na página (não deletei os arquivos — podem virar úteis em outros contextos, e a issue 50 pode limpar).
+- **Layout responsivo**: 4 StatCards em 1/2/4 colunas. Grid principal 1/3 colunas (Funil ocupa 2/3 em lg). Linha inferior mesmo padrão. "Mais" em 1/2 colunas. Header com `flex-col sm:flex-row` para quebrar em mobile.
+- **TypeScript gotcha com join Supabase**: `select('id, moved_at, contact:contacts(...)')` retornado como array no generic do supabase-js v2, mas na prática vem objeto (many-to-one). Fiz `Array.isArray(raw.contact) ? raw.contact[0] : raw.contact` com cast via `unknown` pra destravar o tsc.
+- **Ícones dos 4 StatCards**: `Users` (base), `UserPlus` (novos), `CheckCircle2` (voto), `Megaphone` (multiplicadores) — todos do lucide, cores suaves em bg-*/10.
+- **Bundle**: 2609→2627KB / gzip 773→779KB (+6KB gzipped). Build + 12/12 testes verdes.
 
 ### Issue 31b — vista de Calendário na página Tarefas
 - **Sem lib nova**: grid mensal próprio com `date-fns` (`startOfMonth/endOfMonth/startOfWeek/endOfWeek/eachDayOfInterval/isSameMonth/isToday/format/addMonths/subMonths/parseISO`) + `Popover` de shadcn. Rejeitado `react-big-calendar` (peso + estilização difícil) e `react-day-picker` (é date picker, não agenda).
