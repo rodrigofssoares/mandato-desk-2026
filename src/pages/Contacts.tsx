@@ -35,6 +35,8 @@ import { ContactImportDialog } from '@/components/contacts/ContactImportDialog';
 import { PrintLabelsModal } from '@/components/contacts/PrintLabelsModal';
 import { DuplicatesDialog } from '@/components/contacts/DuplicatesDialog';
 import { useDuplicateCount } from '@/hooks/useDuplicates';
+import { useFiltrosFavoritos } from '@/hooks/useFiltrosFavoritos';
+import { FiltrosFavoritosBar } from '@/components/contacts/FiltrosFavoritosBar';
 
 type ViewMode = 'grid' | 'list';
 
@@ -59,6 +61,24 @@ export default function Contacts() {
   const [labelsOpen, setLabelsOpen] = useState(false);
 
   const { data: duplicateCount = 0 } = useDuplicateCount();
+  const { favoritos, salvarFavorito, removerFavorito } = useFiltrosFavoritos();
+
+  // Conta filtros ativos (para mostrar/esconder o botão "Salvar filtro")
+  const filtrosAtivosCount = useMemo(
+    () =>
+      [
+        debouncedSearch,
+        filters.tags && filters.tags.length > 0,
+        filters.is_favorite === true,
+        filters.declarou_voto !== undefined && filters.declarou_voto !== null,
+        filters.birthday_filter,
+        filters.last_contact_filter,
+        filters.leader_id,
+        filters.date_from,
+        filters.date_to,
+      ].filter(Boolean).length,
+    [filters, debouncedSearch]
+  );
 
   // Debounce search
   const debounceRef = useMemo(() => ({ timer: null as ReturnType<typeof setTimeout> | null }), []);
@@ -103,6 +123,19 @@ export default function Contacts() {
     setDeletingContact(null);
   };
 
+  const aplicarFiltroFavorito = useCallback(
+    (filtrosSalvos: Filters) => {
+      setFilters({
+        ...filtrosSalvos,
+        page: 1,
+        per_page: filters.per_page,
+      });
+      setSearchInput(filtrosSalvos.search ?? '');
+      setDebouncedSearch(filtrosSalvos.search ?? '');
+    },
+    [filters.per_page]
+  );
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
@@ -144,6 +177,15 @@ export default function Contacts() {
 
           {can.exportData() && <ExportMenu filters={queryFilters} />}
 
+          <FiltrosFavoritosBar
+            favoritos={favoritos}
+            filtrosAtuais={queryFilters}
+            filtrosAtivosCount={filtrosAtivosCount}
+            onSalvar={salvarFavorito}
+            onAplicar={aplicarFiltroFavorito}
+            onRemover={removerFavorito}
+          />
+
           {can.exportData() && (
             <Button
               size="sm"
@@ -181,7 +223,7 @@ export default function Contacts() {
           value={filters.sort_by ?? 'created_desc'}
           onValueChange={(v) => setFilters((prev) => ({ ...prev, sort_by: v as Filters['sort_by'], page: 1 }))}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
