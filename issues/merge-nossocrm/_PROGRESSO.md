@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 5
+- **Concluídas:** 6
 - **Em andamento:** 0
-- **Pendentes:** 24
+- **Pendentes:** 23
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -31,7 +31,7 @@
 
 ### Fase 1 — Infra de testes + Hooks
 - [x] `15-setup-vitest-infra` — vitest 3.2.4 + RTL 16, 12/12 testes passando
-- [ ] `20-func-hooks-boards`
+- [x] `20-func-hooks-boards` — useBoards, useBoardStages, useBoardItems (9 mutations) — build ok
 - [ ] `21-func-hooks-tarefas`
 - [ ] `22-func-hooks-custom-fields`
 
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Executar **`20-func-hooks-boards`** — criar `useBoards.ts`, `useBoardStages.ts`, `useBoardItems.ts` com react-query + mutations (criar board, mover item, reordenar estágios, etc).
+Executar **`21-func-hooks-tarefas`** — criar `useTarefas.ts` com CRUD, filtros, toggle concluída, bulk operations, integração com `agruparTarefasPorDia`.
 
 ---
 
@@ -104,6 +104,20 @@ Executar **`20-func-hooks-boards`** — criar `useBoards.ts`, `useBoardStages.ts
 - **Campos fixos do contato permanecem intocados** — toda a estrutura é em tabelas à parte, conforme combinado
 - RLS referencia seção `configuracoes` que ainda não existe (será criada na issue 99). Enquanto isso, só admin gerencia — comportamento desejado.
 - Valores (cpv) dependem da permissão `contatos.editar` — quem edita contato edita os campos custom dele
+
+### Issue 20 — hooks de boards
+- 3 arquivos: `useBoards.ts`, `useBoardStages.ts`, `useBoardItems.ts`
+- Queries: `useBoards`, `useBoardDetail`, `useDefaultBoard`, `useBoardStages`, `useBoardItems`, `useBoardItemCounts`
+- Mutations: `useCreateBoard`, `useUpdateBoard`, `useDeleteBoard`, `useCreateBoardStage`, `useUpdateBoardStage`, `useDeleteBoardStage`, `useReorderBoardStages`, `useAddContactToBoard`, `useMoveBoardItem`, `useRemoveBoardItem` (total 10)
+- **Destaques**:
+  - `useReorderBoardStages` faz batch via `Promise.all` de UPDATEs (Supabase não tem batch update nativo)
+  - `useMoveBoardItem` atualiza `moved_at = now()` automaticamente — alimenta o indicador "parado há X dias"
+  - `useCreateBoard` e `useUpdateBoard` com `is_default=true` desmarcam os outros do mesmo tipo primeiro (garante unicidade)
+  - `useBoardItems` faz JOIN com `contacts` para trazer nome/telefone/email embutidos
+  - `useBoardItemCounts` retorna map `{stage_id: count}` para contadores das colunas
+  - Tratamento especial de erro "duplicate key" em `useAddContactToBoard` → mensagem amigável
+  - `useMoveBoardItem` **não dispara toast** a cada movimentação (evita barulho no drag-drop)
+- **activityLog.ts estendido**: entity_type agora aceita `board`, `board_stage`, `board_item`, `tarefa`, `campo_personalizado`, `ai_settings` (coluna `activities.entity_type` é TEXT sem constraint, então não precisou de migration)
 
 ### Issue 15 — setup Vitest + 8 testes prioritários
 - Instaladas versões: vitest 3.2.4, @testing-library/react 16.3.2, jest-dom 6.9.1, user-event 14.6.1, jsdom 20.0.3
