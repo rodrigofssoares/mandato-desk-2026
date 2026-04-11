@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 21:30 UTC
+**Última atualização:** 2026-04-11 22:05 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 10 (Fase 0 + Fase 1 completas ✅; Fase 2 — 32 + 33 ok)
+- **Concluídas:** 11 (Fase 0 + Fase 1 completas ✅; Fase 2 — 32/33/34 ok)
 - **Em andamento:** 0
-- **Pendentes:** 19
+- **Pendentes:** 18
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -38,7 +38,7 @@
 ### Fase 2 — Settings Hub
 - [x] `32-func-page-settings-hub` — hub `/settings` com 7 abas, absorvendo Users/Permissoes/Google/Api/Webhooks/Branding; Funis e IA desabilitadas com tooltip; URL sync; build + 12/12 testes verdes
 - [x] `33-func-tab-campos-personalizados` — CustomFieldsManager + CustomFieldFormDialog plugados na aba Geral; CRUD completo dos 5 tipos, editor de opções para seleção, validações, confirmação de delete; build + 12/12 testes verdes
-- [ ] `34-func-tab-funis`
+- [x] `34-func-tab-funis` — BoardsListPanel + BoardFormDialog + BoardStagesManager (drag-drop @dnd-kit) plugados na aba Funis; CRUD de boards com estágios iniciais, toggle default, expand inline com reorder persistido; 8 cores de estágio; build + 12/12 verdes
 - [ ] `35-func-tab-ia`
 
 ### Fase 3 — Board
@@ -67,11 +67,24 @@
 ---
 
 ## Próxima ação
-Issue 33 concluída ✅. Próxima: **`34-func-tab-funis`** — habilitar a aba Funis (hoje desabilitada), criar `FunisTab` funcional com BoardsListPanel + BoardFormDialog + BoardStagesManager embutido para drag-drop. Usa hooks `useBoards`/`useBoardStages` já prontos na issue 20. Lembrar de remover `funis` do array `DISABLED_TABS` em `Settings.tsx` e o wrapper `<span>` do tooltip.
+Issue 34 concluída ✅. Próxima: **`35-func-tab-ia`** — habilitar a aba IA (hoje desabilitada), criar `useAISettings` hook e preencher `AISettingsTab` com o form (provider/modelo/chave/features/enabled). Schema já existe (migration 016). Lembrar de remover `'ia'` do `DISABLED_TABS` em `Settings.tsx`. Chave API deve ser mascarada após salvar; não-admin vê form desabilitado.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 34 — aba Funis: Gerenciar boards e estágios
+- Criados 4 arquivos em `src/components/settings/`:
+  - `stageColors.ts` — paleta de 8 cores (`sky, violet, indigo, emerald, amber, rose, cyan, orange`) com helpers `stageDotClass`, `stageBgClass`, `stageTextClass`, `nextStageColor`. **Importante**: classes Tailwind precisam estar completas no código-fonte (JIT), então usei um Record estático ao invés de `bg-${cor}-500` dinâmico.
+  - `BoardFormDialog.tsx` — criar/editar board. No create pede estágios iniciais (mínimo 2). Color picker popover por linha de estágio. Na edição, só o board (não os estágios — esses são gerenciados pelo `BoardStagesManager` no expand).
+  - `BoardStagesManager.tsx` — drag-drop vertical com `@dnd-kit/sortable` (mesma pattern do `CamposCampanha.tsx`), inline edit de nome, color picker popover, add stage no rodapé, delete com confirmação. O hook `useDeleteBoardStage` já bloqueia delete se o stage tiver items (mostra toast com count).
+  - `BoardsListPanel.tsx` — lista de boards em `Card` + `Collapsible`. Header mostra nome, descrição, badge "Padrão", contadores (N estágios · N contatos), ações (toggle default, editar, deletar). Expand mostra o `BoardStagesManager` embutido.
+- `FunisTab.tsx` agora envolve `BoardsListPanel` num Card (substitui stub).
+- **`Settings.tsx`**: removido `'funis'` do `DISABLED_TABS` e removido o wrapper `<Tooltip>` + `<span>` do `TabsTrigger value="funis"`. O trigger virou `<TabsTrigger value="funis">Funis</TabsTrigger>` simples.
+- **Toggle default no header do board card**: `useUpdateBoard({ is_default: true })` já cuida de desmarcar o board padrão anterior (lógica no hook). Botão fica desabilitado quando o próprio já é default, ícone preenchido quando ativo.
+- **Delete cascateia**: migration 013 define `ON DELETE CASCADE` nos stages e items. Alert dialog explica que os contatos não são removidos, só o posicionamento.
+- Build CSS subiu de 86KB → 91KB (Tailwind JIT incluiu as 8 cores × 3 variações); gzipped 18.93KB → 19.56KB. Aceitável.
+- 12/12 testes verdes (nada em helpers/hooks tocado).
 
 ### Issue 33 — aba Geral: Campos Personalizados funcional
 - Criados `src/components/settings/CustomFieldsManager.tsx` (lista + ações) e `CustomFieldFormDialog.tsx` (create/edit).
