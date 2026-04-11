@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 23:10 UTC
+**Última atualização:** 2026-04-11 23:55 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 15 (Fase 0 + 1 + 2 + 3 completas ✅)
+- **Concluídas:** 16 (Fase 0 + 1 + 2 + 3 completas ✅, Fase 4 iniciada)
 - **Em andamento:** 0
-- **Pendentes:** 8
+- **Pendentes:** 7
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -48,7 +48,7 @@
 - [x] `41-func-contato-aba-personalizados` — `CustomFieldInput` (5 tipos: texto/número/data/booleano/seleção) + `CustomFieldsPanel` (load/save com `useContactCustomValues` + `useSaveContactCustomValues`); aba "Personalizados" inserida no `ContactDialog` entre Pessoais e Campanha; empty state quando não há campos + link p/ Settings; aviso quando contato ainda não foi salvo (cria contato → salva → reabre → aba habilitada); build + 12/12 verdes
 
 ### Fase 4 — Tarefas
-- [ ] `31-func-page-tarefas`
+- [x] `31-func-page-tarefas` — rota `/tarefas` com `TarefasFilters` (search/período/responsável/concluída + chips de tipo) + `TarefasList` agrupada (Atrasadas/Hoje/Amanhã/Esta semana/Próximas/Sem data via `agruparTarefasPorDia`) + `TarefaFormDialog` (CRUD: título/tipo/data-hora/responsável/vínculo contato|articulador|demanda/descrição) + `TarefasBulkToolbar` (concluir/adiar/excluir em lote, sticky bottom). Reusa `useTarefas`, `useToggleTarefaConcluida`, `useDeleteTarefa`, hooks de bulk e `useContact` para resolver nome do contato selecionado. Protótipo (issue 02) absorvido nessa entrega; build + 12/12 verdes
 - [ ] `31b-func-tarefas-calendar-view`
 - [ ] `42-func-contato-aba-tarefas`
 
@@ -68,11 +68,27 @@
 ---
 
 ## Próxima ação
-Issue 41 concluída ✅. Fase 3 fechada. Próxima: **`31-func-page-tarefas`** — primeira issue da Fase 4. Criar a página `/tarefas` (rota nova em App.tsx) com lista filtrada de tarefas usando os hooks da issue 21 (`useTarefas` com filtros search/tipo/responsavel/concluida/periodo, `useTarefasHoje`, mutations create/update/toggle/delete). Reusar `agruparPorDia` (issue 15) para agrupar visualmente. Sidebar não tocada — issue 50 cuida.
+Issue 31 concluída ✅. Próxima: **`31b-func-tarefas-calendar-view`** — adicionar toggle Lista/Calendário na página `/tarefas`. Criar `TarefasCalendar.tsx` (provavelmente usando uma biblioteca leve tipo `react-day-picker` ou um grid manual mensal) e plugar o mesmo conjunto de tarefas filtradas (`useTarefas(filters)`) renderizando como pontos coloridos por dia. Toggle no header da página `Tarefas.tsx` (Lista é o default).
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 31 — página Tarefas funcional
+- **Protótipo (issue 02) absorvido**: nunca existiu `src/pages/Tarefas.tsx` nem `src/components/tarefas/`. Como os hooks da issue 21 já estavam prontos, criei direto a versão funcional. Mesmo modelo da issue 30. `TarefasCalendar` ficou de fora — entra na issue 31b.
+- **Componentes criados em `src/components/tarefas/`**:
+  - `TarefaIcon.tsx` — switch por `tipo` retornando ícone lucide colorido + export `TIPO_LABELS` para reutilização nos filtros e no form. 6 tipos (LIGACAO/REUNIAO/VISITA/WHATSAPP/EMAIL/TAREFA).
+  - `TarefaRow.tsx` — linha com 2 checkboxes (seleção bulk + concluído), ícone, título, vínculo, data formatada `dd/MM 'às' HH:mm` e badge "atrasada" automático. Ações editar/excluir aparecem só no hover.
+  - `TarefasList.tsx` — render das 6 seções (Atrasadas/Hoje/Amanhã/Esta semana/Próximas/Sem data) usando `agruparTarefasPorDia` (issue 15). Empty state amigável quando todas as seções estão vazias. **Atrasadas** vermelho, demais neutras.
+  - `TarefaFormDialog.tsx` — dialog CRUD com 3 comboboxes (Contato/Articulador/Demanda) que aparecem condicionalmente conforme o "tipo de vínculo" escolhido. ContatoCombobox usa `useContacts({search})` pra busca server-side + `useContact(value)` pra resolver o nome do selecionado mesmo fora da busca atual (evita "fica vazio em modo edit"). Data via `<input type="datetime-local">` (sem dependência de calendar primitive). Responsável tem opção "Eu (atual)" → null no payload (hook usa `user?.id` como fallback).
+  - `TarefasFilters.tsx` — busca + período (todas/atrasadas/hoje/amanhã/semana) + responsável + estado (todas/pendentes/concluídas) + chips toggle de tipos (multi-seleção). Botão "Limpar" só aparece quando algum filtro está ativo.
+  - `TarefasBulkToolbar.tsx` — barra sticky no bottom (`sticky bottom-4`) que aparece quando há seleção. Concluir/Adiar (popover com datetime-local)/Excluir (alert dialog de confirmação). Usa os 3 hooks bulk da issue 21.
+- **Página `src/pages/Tarefas.tsx`**: estado local para filters, selectedIds (Set), formOpen, editing, deleting. Resolução de label de vínculo é feita uma vez (useMemo) usando 3 mapas indexados (contacts/leaders/demandas) — evita N+1 e renderiza "Maria S.", "Ana L. (articulador)", "Reforma Praça (demanda)" no `TarefaRow`. Padding bottom extra (`pb-24`) pra não cobrir o último item com a bulk toolbar sticky.
+- **Rota**: adicionada `/tarefas` em `App.tsx` (entre `/board` e o catch-all 404). Sidebar não tocada — issue 50 cuida.
+- **Gotcha TS de `agruparTarefasPorDia`**: o helper exigia `[key: string]: unknown` no `TarefaAgrupavel`, e `Tarefa` (de `useTarefas`) não tem index signature, então o build falhou. Removi o index signature do `TarefaAgrupavel` (ele só precisa de `id`, `data_agendada` e `concluida` mesmo) e o helper continua genérico. Os testes existentes do helper passam normalmente.
+- **Decisão sobre vínculos**: o issue pediu autocomplete `contact/articulador/demanda`. Implementei os 3, com seletor de tipo de vínculo via botões (não 3 campos sempre visíveis) — UX mais limpa. Quando troca de tipo, os outros vínculos são limpos automaticamente.
+- **Decisão sobre `useContacts({per_page: 500})` para resolver labels**: é uma chamada extra mas evita N+1. Para tamanhos típicos (< 1000 contatos) é aceitável. Se virar gargalo no futuro, dá pra trocar por uma query nova `useContactsByIds(ids)`.
+- 12/12 testes verdes, build verde. Bundle: 2563→2599KB / gzip 760→770KB (cresceu ~10KB porque carrega 3 hooks novos no chunk).
 
 ### Issue 41 — aba "Personalizados" no ContactDialog
 - Criados 2 arquivos em `src/components/contacts/`:
