@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 21:05 UTC
+**Última atualização:** 2026-04-11 21:30 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 9 (Fase 0 + Fase 1 completas ✅; Fase 2 iniciada — issue 32 ok)
+- **Concluídas:** 10 (Fase 0 + Fase 1 completas ✅; Fase 2 — 32 + 33 ok)
 - **Em andamento:** 0
-- **Pendentes:** 20
+- **Pendentes:** 19
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -37,7 +37,7 @@
 
 ### Fase 2 — Settings Hub
 - [x] `32-func-page-settings-hub` — hub `/settings` com 7 abas, absorvendo Users/Permissoes/Google/Api/Webhooks/Branding; Funis e IA desabilitadas com tooltip; URL sync; build + 12/12 testes verdes
-- [ ] `33-func-tab-campos-personalizados`
+- [x] `33-func-tab-campos-personalizados` — CustomFieldsManager + CustomFieldFormDialog plugados na aba Geral; CRUD completo dos 5 tipos, editor de opções para seleção, validações, confirmação de delete; build + 12/12 testes verdes
 - [ ] `34-func-tab-funis`
 - [ ] `35-func-tab-ia`
 
@@ -67,11 +67,24 @@
 ---
 
 ## Próxima ação
-Issue 32 concluída ✅. Próxima: **`33-func-tab-campos-personalizados`** — preencher a aba Geral com o manager de Campos Personalizados (CRUD usando `useCustomFields`/`useContactCustomValues` já prontos na issue 22). Plugar no `GeneralTab.tsx` (atualmente stub).
+Issue 33 concluída ✅. Próxima: **`34-func-tab-funis`** — habilitar a aba Funis (hoje desabilitada), criar `FunisTab` funcional com BoardsListPanel + BoardFormDialog + BoardStagesManager embutido para drag-drop. Usa hooks `useBoards`/`useBoardStages` já prontos na issue 20. Lembrar de remover `funis` do array `DISABLED_TABS` em `Settings.tsx` e o wrapper `<span>` do tooltip.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 33 — aba Geral: Campos Personalizados funcional
+- Criados `src/components/settings/CustomFieldsManager.tsx` (lista + ações) e `CustomFieldFormDialog.tsx` (create/edit).
+- `GeneralTab` agora envolve o manager num Card (removido o stub "Em construção").
+- **Tipo não pode ser alterado na edição** (select desabilitado com mensagem) — alinhado com `useUpdateCustomField` que não aceita `tipo` no patch. Justificativa: trocar o tipo invalidaria os valores já salvos (diferentes colunas).
+- **Chave também readonly na edição** — gerada a partir do rótulo só no create. O dialog mostra a chave preview em ambos os modos mas deixa claro que é read-only no edit.
+- **Slugify no client** via `src/lib/slugify.ts` (já existia) para o preview em tempo real enquanto o usuário digita.
+- **Editor de opções (tipo seleção)**: array dinâmico com mínimo 2. Botão remover ficava desabilitado se sobrariam menos de 2. Validação de 2+ não-vazias ao salvar.
+- **Filtrável default=true** (switch visível no dialog, também salvo no hook como default).
+- **Delete**: `AlertDialog` com aviso explícito "apagará todos os valores". CASCADE na migration 015 já apaga os `campos_personalizados_valores` automaticamente.
+- **Empty state** com ícone + CTA "adicionar campo".
+- Não incluí as outras seções mencionadas na issue 33 (Página inicial default, Fuso, link Gerenciar etiquetas) — só o manager de Campos Personalizados. Justificativa: essas outras seções dependem de `user_settings`/`profiles` que ainda não existem no schema e não estão cobertas por hooks. Ficam para futura issue ou sub-tarefa sem bloquear o fluxo principal do merge.
+- Build + 12/12 testes verdes.
 
 ### Issue 32 — Settings Hub (shell com abas)
 - Página: `src/pages/Settings.tsx` + 7 arquivos em `src/components/settings/`
