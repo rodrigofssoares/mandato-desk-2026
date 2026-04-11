@@ -30,6 +30,7 @@ import Branding from '@/pages/Branding';
 import CamposCampanha from '@/pages/CamposCampanha';
 import Settings from '@/pages/Settings';
 import Board from '@/pages/Board';
+import Tarefas from '@/pages/Tarefas';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -221,6 +222,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Board />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tarefas"
+          element={
+            <ProtectedRoute>
+              <Tarefas />
             </ProtectedRoute>
           }
         />

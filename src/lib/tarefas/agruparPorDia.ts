@@ -10,7 +10,6 @@ export interface TarefaAgrupavel {
   id: string;
   data_agendada: string | null;
   concluida: boolean;
-  [key: string]: unknown;
 }
 
 export interface GruposTarefas<T extends TarefaAgrupavel> {
