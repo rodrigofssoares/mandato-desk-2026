@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 2
+- **Concluídas:** 3
 - **Em andamento:** 0
-- **Pendentes:** 27
+- **Pendentes:** 26
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -26,7 +26,7 @@
 ### Fase 0 — Fundação (migrations)
 - [x] `10-func-schema-boards` — migration `013_merge_boards.sql`, build ok
 - [x] `11-func-schema-tarefas` — migration `014_merge_tarefas.sql`, build ok
-- [ ] `12-func-schema-custom-fields`
+- [x] `12-func-schema-custom-fields` — migration `015_merge_custom_fields.sql`, slugify testado, build ok
 - [ ] `13-func-schema-ai-settings` + Parte A da `14-func-ai-key-security-upgrade`
 
 ### Fase 1 — Infra de testes + Hooks
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Executar **`12-func-schema-custom-fields`** — criar tabelas `campos_personalizados` e `campos_personalizados_valores` + habilitar extensão `unaccent` + função `slugify_campo`.
+Executar **`13-func-schema-ai-settings` + Parte A da `14`** — criar tabela singleton `ai_settings` com RLS admin-only + `status_aprovacao='ATIVO'`.
 
 ---
 
@@ -93,6 +93,17 @@ Executar **`12-func-schema-custom-fields`** — criar tabelas `campos_personaliz
 - RLS permite o próprio responsável editar sua tarefa mesmo sem permissão de `editar` na seção (política pragmática)
 - Seção RBAC 'tarefas' no seed: todos os roles podem criar/editar tarefas (operacional), só admin/proprietário deletam. Assistente e estagiário têm `so_proprio=TRUE`.
 - Tabela `activities` NÃO foi tocada (continua sendo audit log puro)
+
+### Issue 12 — schema campos personalizados
+- Migration: `supabase/migrations/015_merge_custom_fields.sql`
+- Habilitada extensão `unaccent` (antes só tinha pgcrypto e uuid-ossp)
+- Função SQL `slugify_campo(label)` testada: "Cargo Liderança" → "cargo_lideranca", "Nº Dependentes" → "n_dependentes"
+- Enum `campo_personalizado_tipo`: texto, numero, data, booleano, selecao
+- Duas tabelas: `campos_personalizados` (definições, UNIQUE entidade+chave) e `campos_personalizados_valores` (EAV moderado — 5 colunas tipadas em vez de JSONB)
+- Índices parciais por `valor_texto` e `valor_selecao` para acelerar filtros
+- **Campos fixos do contato permanecem intocados** — toda a estrutura é em tabelas à parte, conforme combinado
+- RLS referencia seção `configuracoes` que ainda não existe (será criada na issue 99). Enquanto isso, só admin gerencia — comportamento desejado.
+- Valores (cpv) dependem da permissão `contatos.editar` — quem edita contato edita os campos custom dele
 
 ---
 

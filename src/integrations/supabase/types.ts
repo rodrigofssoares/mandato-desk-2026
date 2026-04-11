@@ -312,6 +312,110 @@ export type Database = {
           },
         ]
       }
+      campos_personalizados: {
+        Row: {
+          chave: string
+          created_at: string
+          created_by: string | null
+          entidade: string
+          filtravel: boolean
+          id: string
+          opcoes: Json | null
+          ordem: number
+          rotulo: string
+          tipo: Database["public"]["Enums"]["campo_personalizado_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          created_by?: string | null
+          entidade?: string
+          filtravel?: boolean
+          id?: string
+          opcoes?: Json | null
+          ordem?: number
+          rotulo: string
+          tipo: Database["public"]["Enums"]["campo_personalizado_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          created_by?: string | null
+          entidade?: string
+          filtravel?: boolean
+          id?: string
+          opcoes?: Json | null
+          ordem?: number
+          rotulo?: string
+          tipo?: Database["public"]["Enums"]["campo_personalizado_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campos_personalizados_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campos_personalizados_valores: {
+        Row: {
+          campo_id: string
+          contact_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor_bool: boolean | null
+          valor_data: string | null
+          valor_numero: number | null
+          valor_selecao: string | null
+          valor_texto: string | null
+        }
+        Insert: {
+          campo_id: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor_bool?: boolean | null
+          valor_data?: string | null
+          valor_numero?: number | null
+          valor_selecao?: string | null
+          valor_texto?: string | null
+        }
+        Update: {
+          campo_id?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor_bool?: boolean | null
+          valor_data?: string | null
+          valor_numero?: number | null
+          valor_selecao?: string | null
+          valor_texto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campos_personalizados_valores_campo_id_fkey"
+            columns: ["campo_id"]
+            isOneToOne: false
+            referencedRelation: "campos_personalizados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campos_personalizados_valores_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cep_coordinates: {
         Row: {
           address: string | null
@@ -1476,6 +1580,8 @@ export type Database = {
       }
       is_user_active: { Args: { user_id: string }; Returns: boolean }
       normalize_phone: { Args: { phone_number: string }; Returns: string }
+      slugify_campo: { Args: { label: string }; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       activity_type:
@@ -1488,6 +1594,12 @@ export type Database = {
         | "merge"
         | "bulk_delete"
       app_role: "admin" | "user"
+      campo_personalizado_tipo:
+        | "texto"
+        | "numero"
+        | "data"
+        | "booleano"
+        | "selecao"
       demand_priority: "low" | "medium" | "high"
       demand_status: "open" | "in_progress" | "resolved"
       sync_direction_type: "crm_to_google" | "google_to_crm" | "bidirectional"
@@ -1640,6 +1752,13 @@ export const Constants = {
         "bulk_delete",
       ],
       app_role: ["admin", "user"],
+      campo_personalizado_tipo: [
+        "texto",
+        "numero",
+        "data",
+        "booleano",
+        "selecao",
+      ],
       demand_priority: ["low", "medium", "high"],
       demand_status: ["open", "in_progress", "resolved"],
       sync_direction_type: ["crm_to_google", "google_to_crm", "bidirectional"],
