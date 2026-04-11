@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SlidersHorizontal } from 'lucide-react';
+import { CustomFieldsManager } from './CustomFieldsManager';
 
 export function GeneralTab() {
   return (
@@ -13,14 +14,12 @@ export function GeneralTab() {
         <CardHeader>
           <CardTitle>Campos Personalizados</CardTitle>
           <CardDescription>
-            Em construção — será preenchida na issue 33 (aba Geral: Campos Personalizados funcional).
+            Adicione campos extras para classificar seus contatos com informações específicas do seu
+            mandato.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Configurações gerais do sistema, preferências de exibição, página inicial default e campos
-            personalizados dos contatos aparecerão aqui.
-          </p>
+          <CustomFieldsManager />
         </CardContent>
       </Card>
     </div>
