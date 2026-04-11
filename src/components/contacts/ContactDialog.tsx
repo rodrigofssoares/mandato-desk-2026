@@ -6,6 +6,10 @@ import { ptBR } from 'date-fns/locale';
 import { Loader2, User, CheckSquare, Tag, Clock } from 'lucide-react';
 import { CampaignFieldsList } from '@/components/contacts/CampaignFieldsList';
 import { CustomFieldsPanel } from '@/components/contacts/CustomFieldsPanel';
+import {
+  ContactTarefasPanel,
+  ContactTarefasPendenteBadge,
+} from '@/components/contacts/ContactTarefasPanel';
 import { useSetContactCampaignValues } from '@/hooks/useCampaignFields';
 import {
   Dialog,
@@ -183,6 +187,10 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
               <TabsList className="w-full mb-4 h-auto flex-wrap gap-1 p-1">
                 <TabsTrigger value="pessoais" className="flex-1 min-w-[72px] text-xs">Pessoais</TabsTrigger>
                 <TabsTrigger value="personalizados" className="flex-1 min-w-[72px] text-xs">Personalizados</TabsTrigger>
+                <TabsTrigger value="tarefas" className="flex-1 min-w-[72px] text-xs">
+                  Tarefas
+                  {contact?.id && <ContactTarefasPendenteBadge contactId={contact.id} />}
+                </TabsTrigger>
                 <TabsTrigger value="campanha" className="flex-1 min-w-[72px] text-xs">Campanha</TabsTrigger>
                 <TabsTrigger value="etiquetas" className="flex-1 min-w-[72px] text-xs">Etiquetas</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 min-w-[72px] text-xs">Endereço</TabsTrigger>
@@ -290,6 +298,11 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
               {/* --- Personalizados (campos custom configurados em Settings) --- */}
               <TabsContent value="personalizados" className="space-y-4 mt-0">
                 <CustomFieldsPanel contactId={contact?.id} />
+              </TabsContent>
+
+              {/* --- Tarefas (tarefas vinculadas ao contato) --- */}
+              <TabsContent value="tarefas" className="space-y-4 mt-0">
+                <ContactTarefasPanel contactId={contact?.id} />
               </TabsContent>
 
               {/* --- Campanha --- */}
