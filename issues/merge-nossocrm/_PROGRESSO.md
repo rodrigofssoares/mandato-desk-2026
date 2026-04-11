@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 22:35 UTC
+**Última atualização:** 2026-04-11 22:50 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 12 (Fase 0 + Fase 1 completas ✅; Fase 2 completa — 32/33/34/35 ok)
+- **Concluídas:** 13 (Fase 0 + 1 + 2 completas ✅; Fase 3 — 30 ok)
 - **Em andamento:** 0
-- **Pendentes:** 11
+- **Pendentes:** 10
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -43,7 +43,7 @@
 - [x] `35-func-tab-ia` — useAISettings + testApiKey + AISettingsTab completo (provider/modelo/chave/enabled/features); aba habilitada em Settings.tsx; máscara da chave + audit log + banner de segurança; build + 12/12 verdes
 
 ### Fase 3 — Board
-- [ ] `30-func-page-board`
+- [x] `30-func-page-board` — rota `/board` com Kanban DnD funcional, BoardSelector, BoardCard com badge "parado há X dias", BoardCardDetailSheet (tarefas pendentes + ações), AddContactToBoardDialog, header com link p/ Settings; protótipo (issue 01) absorvido nessa entrega; bug `telefone_whatsapp` no `useBoardItems` corrigido para `whatsapp/telefone`; build + 12/12 verdes
 - [ ] `30b-func-board-stages-dnd-reorder`
 - [ ] `41-func-contato-aba-personalizados`
 
@@ -68,11 +68,32 @@
 ---
 
 ## Próxima ação
-Issue 35 concluída ✅. Fase 2 completa. Próxima: **`30-func-page-board`** — primeira issue da Fase 3. Criar a página `/board/:boardId?` (ou `/board` usando o board default) com layout Kanban: colunas = `board_stages`, cards = `board_items`, drag-drop entre colunas usando `@dnd-kit` (mesma lib do `BoardStagesManager`). Reusar `useBoards`, `useBoardDetail`, `useDefaultBoard`, `useBoardItems`, `useBoardItemCounts`, `useMoveBoardItem`. Card mostra nome do contato, telefone, indicador "parado há X dias" baseado em `moved_at`. Adicionar rota em `App.tsx`. Lembrar do CRUD completo: criar item (botão "+ adicionar contato" por coluna abrindo seletor), mover (drag-drop), remover do board (menu de contexto no card).
+Issue 30 concluída ✅. Próxima: **`30b-func-board-stages-dnd-reorder`** — drag-drop dos próprios estágios dentro do `/board` (hoje só dá pra mover cards). O `BoardStagesManager` em Settings já faz isso e é o pattern de referência (`useReorderBoardStages` existe). Decidir se vira um modo "editar estágios inline" no header do Board, ou se mantém só em Settings e a issue vira basicamente um link/atalho. Avaliar reusar `BoardStagesManager` direto via dialog "Editar estágios" no header da página Board.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 30 — página Board funcional (Kanban)
+- **Issue 01 (protótipo) absorvida nessa entrega**: o protótipo nunca foi feito (não existia `src/pages/Board.tsx` nem `src/components/board/`), então criei direto a versão funcional. Sem prejuízo, porque os hooks já existiam (issue 20).
+- **Bug crítico no `useBoardItems` corrigido antes de tudo**: o hook fazia JOIN com `contact:contacts(id, nome, telefone_whatsapp, ...)` mas a tabela `contacts` tem `whatsapp` (não `telefone_whatsapp`). Trocado para `whatsapp, telefone` no select e no tipo `BoardItemWithContact`. Sem isso a query falharia em runtime.
+- **Arquivos criados**:
+  - `src/pages/Board.tsx` — página principal. Resolve `activeBoardId` por prioridade: URL `?board=...` > board default > primeiro. Sincroniza URL automaticamente quando cai pra fallback. Empty states para "sem boards" e "board sem estágios" com CTA pra criar/gerenciar.
+  - `src/components/board/BoardSelector.tsx` — Select shadcn com badge "padrão".
+  - `src/components/board/BoardKanban.tsx` — `DndContext` + `useDroppable` por coluna + `useDraggable` no card. Usa estado `optimistic: Record<itemId, stageId>` para mover o card visualmente antes do servidor responder, e limpa quando a invalidação volta. Reverte em onError.
+  - `src/components/board/BoardColumn.tsx` — coluna com header colorido (reusa `stageColors.ts` da issue 34), badge contador, ScrollArea, footer com botão "Adicionar contato".
+  - `src/components/board/BoardCard.tsx` — Card draggable com nome, telefone (whatsapp ou telefone), badge "N tarefas pendentes" via `useTarefasPendentesCount`, badge ⚠ "Xd" se `daysSince(moved_at) >= 5`, dropdown menu com "Remover do board". `e.stopPropagation()` no menu trigger pra não disparar drag.
+  - `src/components/board/BoardCardDetailSheet.tsx` — Sheet lateral com ações: WhatsApp (link `wa.me`), telefone (`tel:`), email (`mailto:`), lista de tarefas pendentes (`useTarefas({contact_id, concluida:false})`), link "Abrir contato completo" → `/contacts?contact={id}`, botão "Remover do board" (vermelho).
+  - `src/components/board/AddContactToBoardDialog.tsx` — busca contatos via `useContacts({search, per_page: 30})`, lista clicável, marca quem já está no board como disabled. Select de estágio (HTML nativo, pra não complicar com SelectContent dentro de Dialog). Reset do state quando fecha.
+- **Reusos**:
+  - `BoardFormDialog` (settings/issue 34) é importado direto pra criar novo board, sem duplicar.
+  - `stageColors.ts` da issue 34 reaproveitado para cores das colunas.
+  - `BoardCard` consome `useTarefasPendentesCount` (issue 21).
+- **Rota** adicionada em `App.tsx`: `/board` protegida por `ProtectedRoute`.
+- **Header da página** tem 2 ações: "Gerenciar funis" → `/settings?tab=funis` (link) e "Novo board" → abre `BoardFormDialog`. Decisão: não duplicar todo o gerenciamento de estágios — quem quiser editar/reordenar estágios vai pro Settings. A issue 30b vai resolver edição inline.
+- **Optimistic update do drag**: usei `useState<Record<itemId, stageId>>` em vez de mexer no cache do react-query — mais simples e cobre o caso de o servidor demorar. Quando `onSuccess` invalida o cache, limpo o override.
+- **Sidebar não tocada**: a issue 50 (Fase 6) é quem reorganiza a sidebar e adiciona o item "Funis". Por enquanto o `/board` é acessível por URL ou pelo link "Funis" em Settings.
+- **Build**: bundle subiu 2537→2557KB / gzip 754→759KB (cards + sheet + dnd handlers). 12/12 testes verdes.
 
 ### Issue 35 — aba IA: Central de configuração de IA
 - Criados 3 arquivos:
