@@ -14,6 +14,8 @@ export interface ContactFilters {
   birthday_filter?: 'today' | '7days' | '30days' | 'month' | null;
   last_contact_filter?: 'today' | '7d' | '30d' | '30d+' | '60d+' | 'never' | null;
   leader_id?: string;
+  /** IDs de campos de campanha — contato precisa ter TODOS marcados */
+  campaign_field_ids?: string[];
   date_from?: string;
   date_to?: string;
   sort_by?: 'name_asc' | 'name_desc' | 'created_desc' | 'created_asc' | 'favorites_first';
@@ -78,6 +80,7 @@ export function useContacts(filters: ContactFilters = {}) {
     birthday_filter,
     last_contact_filter,
     leader_id,
+    campaign_field_ids,
     date_from,
     date_to,
     sort_by = 'created_desc',
@@ -172,6 +175,36 @@ export function useContacts(filters: ContactFilters = {}) {
       // Leader
       if (leader_id) {
         query = query.eq('leader_id', leader_id);
+      }
+
+      // Campos de campanha — contato precisa ter TODOS marcados como true
+      if (campaign_field_ids && campaign_field_ids.length > 0) {
+        const { data: ccvRows } = await supabase
+          .from('contact_campaign_values')
+          .select('contact_id, campaign_field_id')
+          .eq('valor', true)
+          .in('campaign_field_id', campaign_field_ids);
+
+        if (!ccvRows || ccvRows.length === 0) {
+          return { data: [], count: 0 };
+        }
+
+        // Agrupa por contact_id e conta quantos campos distintos cada contato tem
+        const countsByContact = new Map<string, Set<string>>();
+        ccvRows.forEach((r) => {
+          const set = countsByContact.get(r.contact_id) ?? new Set<string>();
+          set.add(r.campaign_field_id);
+          countsByContact.set(r.contact_id, set);
+        });
+
+        const matchingIds = [...countsByContact.entries()]
+          .filter(([, set]) => set.size === campaign_field_ids.length)
+          .map(([id]) => id);
+
+        if (matchingIds.length === 0) {
+          return { data: [], count: 0 };
+        }
+        query = query.in('id', matchingIds);
       }
 
       // Date range

@@ -19,6 +19,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useContactTags, useLeaders, type ContactFilters as Filters } from '@/hooks/useContacts';
+import { useCampaignFields } from '@/hooks/useCampaignFields';
 
 interface ContactFiltersProps {
   filters: Filters;
@@ -29,6 +30,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: allTags = [] } = useContactTags();
   const { data: leaders = [] } = useLeaders();
+  const { data: campaignFields = [] } = useCampaignFields();
 
   // Conta filtros ativos (excluindo page, per_page, sort_by, search)
   const activeCount = [
@@ -38,6 +40,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     filters.birthday_filter,
     filters.last_contact_filter,
     filters.leader_id,
+    filters.campaign_field_ids && filters.campaign_field_ids.length > 0,
     filters.date_from,
     filters.date_to,
   ].filter(Boolean).length;
@@ -61,6 +64,15 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
       update({ tags: current.filter((id) => id !== tagId) });
     } else {
       update({ tags: [...current, tagId] });
+    }
+  };
+
+  const toggleCampaignField = (fieldId: string) => {
+    const current = filters.campaign_field_ids ?? [];
+    if (current.includes(fieldId)) {
+      update({ campaign_field_ids: current.filter((id) => id !== fieldId) });
+    } else {
+      update({ campaign_field_ids: [...current, fieldId] });
     }
   };
 
@@ -218,6 +230,32 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Campos de Campanha */}
+          {campaignFields.length > 0 && (
+            <div className="col-span-full">
+              <Label className="text-xs font-semibold uppercase text-muted-foreground">
+                Campos de Campanha
+              </Label>
+              <div className="border rounded-md p-3 mt-1 flex flex-wrap gap-2">
+                {campaignFields.map((field) => (
+                  <label
+                    key={field.id}
+                    className="flex items-center gap-1.5 text-xs cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={(filters.campaign_field_ids ?? []).includes(field.id)}
+                      onCheckedChange={() => toggleCampaignField(field.id)}
+                    />
+                    <span>{field.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Contatos precisam ter TODOS os campos marcados
+              </p>
+            </div>
+          )}
 
           {/* Data criação range */}
           <div>
