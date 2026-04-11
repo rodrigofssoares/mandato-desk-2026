@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 3
+- **Concluídas:** 4 (Fase 0 completa)
 - **Em andamento:** 0
-- **Pendentes:** 26
+- **Pendentes:** 25
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -27,7 +27,7 @@
 - [x] `10-func-schema-boards` — migration `013_merge_boards.sql`, build ok
 - [x] `11-func-schema-tarefas` — migration `014_merge_tarefas.sql`, build ok
 - [x] `12-func-schema-custom-fields` — migration `015_merge_custom_fields.sql`, slugify testado, build ok
-- [ ] `13-func-schema-ai-settings` + Parte A da `14-func-ai-key-security-upgrade`
+- [x] `13-func-schema-ai-settings` + `14` Parte A — migration `016_merge_ai_settings.sql`, singleton criado, build ok
 
 ### Fase 1 — Infra de testes + Hooks
 - [ ] `15-setup-vitest-infra`
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Executar **`13-func-schema-ai-settings` + Parte A da `14`** — criar tabela singleton `ai_settings` com RLS admin-only + `status_aprovacao='ATIVO'`.
+Fase 0 (migrations) está **completa** ✅. Próximo: **Fase 1 — `15-setup-vitest-infra`** (configurar Vitest + testing-library + escrever 8 testes prioritários).
 
 ---
 
@@ -104,6 +104,17 @@ Executar **`13-func-schema-ai-settings` + Parte A da `14`** — criar tabela sin
 - **Campos fixos do contato permanecem intocados** — toda a estrutura é em tabelas à parte, conforme combinado
 - RLS referencia seção `configuracoes` que ainda não existe (será criada na issue 99). Enquanto isso, só admin gerencia — comportamento desejado.
 - Valores (cpv) dependem da permissão `contatos.editar` — quem edita contato edita os campos custom dele
+
+### Issue 13 + 14 Parte A — schema ai_settings (com reforços de segurança)
+- Migration: `supabase/migrations/016_merge_ai_settings.sql`
+- Tabela singleton (UNIQUE index em `((TRUE))` garante 1 linha máxima)
+- Linha inicial criada com `ai_enabled=false` e features desabilitadas
+- **RLS fortalecida conforme Parte A da issue 14**: além de `role='admin'`, exige `status_aprovacao='ATIVO'` — admin revogado perde acesso imediato
+- Nenhuma policy de INSERT (bloqueia criar novas linhas) nem DELETE (singleton protegido)
+- Check constraint limita provider a anthropic/openai/google
+- `features` jsonb default: `{resumo_demandas, sugestao_acoes, analise_risco}` todos false
+- Documentado no cabeçalho da migration: a chave é texto plano protegida por RLS, uso exclusivamente server-side/Edge Function, frontend sempre mascara
+- Fase 0 concluída: 4 migrations aplicadas (013, 014, 015, 016), tipos regenerados, build verde
 
 ---
 

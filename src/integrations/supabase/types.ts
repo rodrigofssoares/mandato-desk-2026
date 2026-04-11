@@ -83,6 +83,50 @@ export type Database = {
           },
         ]
       }
+      ai_settings: {
+        Row: {
+          ai_enabled: boolean
+          api_key: string | null
+          created_at: string
+          features: Json
+          id: string
+          model: string | null
+          provider: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ai_enabled?: boolean
+          api_key?: string | null
+          created_at?: string
+          features?: Json
+          id?: string
+          model?: string | null
+          provider?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ai_enabled?: boolean
+          api_key?: string | null
+          created_at?: string
+          features?: Json
+          id?: string
+          model?: string | null
+          provider?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_tokens: {
         Row: {
           created_at: string
