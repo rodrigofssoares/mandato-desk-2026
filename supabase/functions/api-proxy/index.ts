@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
 }
 
 // Colunas permitidas por recurso (whitelist de seguranca)
@@ -314,6 +314,7 @@ Deno.serve(async (req) => {
         const body = await req.json().catch(() => ({}))
         return await handlePost(supabase, resource, body as Record<string, unknown>, tokenData.user_id)
       }
+      case 'PUT':
       case 'PATCH': {
         const body = await req.json().catch(() => ({}))
         return await handlePatch(supabase, resource, resourceId, body as Record<string, unknown>, tokenData.user_id)

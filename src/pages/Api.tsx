@@ -32,7 +32,7 @@ const BASE_API_URL = `${SUPABASE_URL}/functions/v1/api-proxy`;
 
 // ---- Tipos ----
 
-type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type Resource = 'contacts' | 'demands' | 'tags';
 
 interface Endpoint {
@@ -65,6 +65,10 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
       phone: '(11) 88888-8888',
       neighborhood: 'Jardim Paulista',
     }, null, 2),
+    PUT: JSON.stringify({
+      phone: '(11) 88888-8888',
+      neighborhood: 'Jardim Paulista',
+    }, null, 2),
   },
   demands: {
     POST: JSON.stringify({
@@ -76,6 +80,9 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
     PATCH: JSON.stringify({
       status: 'in_progress',
     }, null, 2),
+    PUT: JSON.stringify({
+      status: 'in_progress',
+    }, null, 2),
   },
   tags: {
     POST: JSON.stringify({
@@ -84,6 +91,9 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
       color: '#EF4444',
     }, null, 2),
     PATCH: JSON.stringify({
+      color: '#3B82F6',
+    }, null, 2),
+    PUT: JSON.stringify({
       color: '#3B82F6',
     }, null, 2),
   },
@@ -98,13 +108,14 @@ const resourceLabels: Record<Resource, string> = {
 const methodDescriptions: Record<HttpMethod, string> = {
   GET: 'Listar / Buscar',
   POST: 'Criar novo',
-  PATCH: 'Atualizar',
+  PUT: 'Atualizar (PUT)',
+  PATCH: 'Atualizar (PATCH)',
   DELETE: 'Excluir',
 };
 
-const needsId = (method: HttpMethod) => method === 'PATCH' || method === 'DELETE';
+const needsId = (method: HttpMethod) => method === 'PATCH' || method === 'PUT' || method === 'DELETE';
 const canHaveId = (method: HttpMethod) => method === 'GET' || needsId(method);
-const hasBody = (method: HttpMethod) => method === 'POST' || method === 'PATCH';
+const hasBody = (method: HttpMethod) => method === 'POST' || method === 'PATCH' || method === 'PUT';
 
 // ---- Endpoints de documentacao ----
 
@@ -116,6 +127,7 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
       { method: 'GET', path: '/contacts/{id}', description: 'Buscar um contato pelo ID' },
       { method: 'POST', path: '/contacts', description: 'Criar um novo contato', body: exampleBodies.contacts.POST },
       { method: 'PATCH', path: '/contacts/{id}', description: 'Atualizar um contato', body: exampleBodies.contacts.PATCH },
+      { method: 'PUT', path: '/contacts/{id}', description: 'Atualizar um contato (alias de PATCH, para sistemas que so enviam PUT)', body: exampleBodies.contacts.PUT },
       { method: 'DELETE', path: '/contacts/{id}', description: 'Excluir um contato' },
     ],
   },
@@ -126,6 +138,7 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
       { method: 'GET', path: '/demands/{id}', description: 'Buscar uma demanda pelo ID' },
       { method: 'POST', path: '/demands', description: 'Criar uma nova demanda', body: exampleBodies.demands.POST },
       { method: 'PATCH', path: '/demands/{id}', description: 'Atualizar uma demanda', body: exampleBodies.demands.PATCH },
+      { method: 'PUT', path: '/demands/{id}', description: 'Atualizar uma demanda (alias de PATCH, para sistemas que so enviam PUT)', body: exampleBodies.demands.PUT },
       { method: 'DELETE', path: '/demands/{id}', description: 'Excluir uma demanda' },
     ],
   },
@@ -136,6 +149,7 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
       { method: 'GET', path: '/tags/{id}', description: 'Buscar uma etiqueta pelo ID' },
       { method: 'POST', path: '/tags', description: 'Criar uma nova etiqueta', body: exampleBodies.tags.POST },
       { method: 'PATCH', path: '/tags/{id}', description: 'Atualizar uma etiqueta', body: exampleBodies.tags.PATCH },
+      { method: 'PUT', path: '/tags/{id}', description: 'Atualizar uma etiqueta (alias de PATCH, para sistemas que so enviam PUT)', body: exampleBodies.tags.PUT },
       { method: 'DELETE', path: '/tags/{id}', description: 'Excluir uma etiqueta' },
     ],
   },
@@ -144,6 +158,7 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
 const methodColors: Record<string, string> = {
   GET: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   POST: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  PUT: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
   PATCH: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
   DELETE: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
@@ -408,7 +423,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(['GET', 'POST', 'PATCH', 'DELETE'] as HttpMethod[]).map((m) => (
+                {(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as HttpMethod[]).map((m) => (
                   <SelectItem key={m} value={m}>
                     <span className="flex items-center gap-2">
                       <Badge className={`${methodColors[m]} text-[10px] px-1.5 py-0`}>{m}</Badge>
@@ -796,7 +811,7 @@ export default function Api() {
               <div className="space-y-3 text-sm">
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-12 justify-center">200</Badge>
-                  <span className="text-muted-foreground">Sucesso (GET, PATCH, DELETE)</span>
+                  <span className="text-muted-foreground">Sucesso (GET, PUT, PATCH, DELETE)</span>
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 w-12 justify-center">201</Badge>
