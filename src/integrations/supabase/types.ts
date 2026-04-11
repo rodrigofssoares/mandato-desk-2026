@@ -110,6 +110,137 @@ export type Database = {
         }
         Relationships: []
       }
+      board_items: {
+        Row: {
+          board_id: string
+          contact_id: string
+          created_at: string
+          id: string
+          moved_at: string
+          ordem: number
+          stage_id: string
+        }
+        Insert: {
+          board_id: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          moved_at?: string
+          ordem?: number
+          stage_id: string
+        }
+        Update: {
+          board_id?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          moved_at?: string
+          ordem?: number
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_items_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_items_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_items_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_stages: {
+        Row: {
+          board_id: string
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          ordem: number
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_stages_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boards: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          is_default: boolean
+          nome: string
+          tipo_entidade: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          is_default?: boolean
+          nome: string
+          tipo_entidade?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          is_default?: boolean
+          nome?: string
+          tipo_entidade?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boards_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branding_settings: {
         Row: {
           created_at: string
