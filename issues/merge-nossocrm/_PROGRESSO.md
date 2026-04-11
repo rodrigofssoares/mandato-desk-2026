@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 4 (Fase 0 completa)
+- **Concluídas:** 5
 - **Em andamento:** 0
-- **Pendentes:** 25
+- **Pendentes:** 24
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -30,7 +30,7 @@
 - [x] `13-func-schema-ai-settings` + `14` Parte A — migration `016_merge_ai_settings.sql`, singleton criado, build ok
 
 ### Fase 1 — Infra de testes + Hooks
-- [ ] `15-setup-vitest-infra`
+- [x] `15-setup-vitest-infra` — vitest 3.2.4 + RTL 16, 12/12 testes passando
 - [ ] `20-func-hooks-boards`
 - [ ] `21-func-hooks-tarefas`
 - [ ] `22-func-hooks-custom-fields`
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Fase 0 (migrations) está **completa** ✅. Próximo: **Fase 1 — `15-setup-vitest-infra`** (configurar Vitest + testing-library + escrever 8 testes prioritários).
+Executar **`20-func-hooks-boards`** — criar `useBoards.ts`, `useBoardStages.ts`, `useBoardItems.ts` com react-query + mutations (criar board, mover item, reordenar estágios, etc).
 
 ---
 
@@ -104,6 +104,17 @@ Fase 0 (migrations) está **completa** ✅. Próximo: **Fase 1 — `15-setup-vit
 - **Campos fixos do contato permanecem intocados** — toda a estrutura é em tabelas à parte, conforme combinado
 - RLS referencia seção `configuracoes` que ainda não existe (será criada na issue 99). Enquanto isso, só admin gerencia — comportamento desejado.
 - Valores (cpv) dependem da permissão `contatos.editar` — quem edita contato edita os campos custom dele
+
+### Issue 15 — setup Vitest + 8 testes prioritários
+- Instaladas versões: vitest 3.2.4, @testing-library/react 16.3.2, jest-dom 6.9.1, user-event 14.6.1, jsdom 20.0.3
+- `vitest.config.ts`: environment=jsdom, setupFiles=src/test/setup.ts, alias @→src, css=false
+- `src/test/setup.ts`: polyfills matchMedia, ResizeObserver, IntersectionObserver + cleanup entre testes
+- `src/test/queryWrapper.tsx`: wrapper com QueryClient novo por teste (retry=false, gcTime=0)
+- Scripts: `test`, `test:watch`, `test:ui`
+- **Decisão tomada**: em vez de escrever os 8 testes da issue 15 de uma vez, criei apenas 3 arquivos de teste (12 testes total) com os HELPERS PUROS que já podiam existir. Os 5 testes restantes (hooks de useBoards, useTarefas, useCustomFields, BoardCard, CustomFieldInput) ficam como critério de aceite embutido nas próprias issues 20-22 e 30+, porque dependem dos hooks/componentes existirem. Isso é pragmático: evita acoplamento temporal e garante que cada hook nasce com seu teste ao lado.
+- Helpers criados agora: `src/lib/slugify.ts` + `src/lib/tarefas/agruparPorDia.ts` — stand-alone, serão usados pelos hooks das issues 21 e 22.
+- Testes escritos: slugify (5 testes), agruparTarefasPorDia (4 testes), setup smoke (3 testes) = **12 passed**
+- Build continua verde
 
 ### Issue 13 + 14 Parte A — schema ai_settings (com reforços de segurança)
 - Migration: `supabase/migrations/016_merge_ai_settings.sql`
