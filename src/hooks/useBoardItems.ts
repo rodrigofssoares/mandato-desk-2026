@@ -22,7 +22,8 @@ export interface BoardItemWithContact extends BoardItem {
   contact: {
     id: string;
     nome: string;
-    telefone_whatsapp: string | null;
+    whatsapp: string | null;
+    telefone: string | null;
     email: string | null;
     is_favorite: boolean | null;
     leader_id: string | null;
@@ -44,7 +45,7 @@ export function useBoardItems(boardId: string | null | undefined) {
         .select(
           `
           id, board_id, stage_id, contact_id, ordem, moved_at, created_at,
-          contact:contacts(id, nome, telefone_whatsapp, email, is_favorite, leader_id)
+          contact:contacts(id, nome, whatsapp, telefone, email, is_favorite, leader_id)
         `
         )
         .eq('board_id', boardId)

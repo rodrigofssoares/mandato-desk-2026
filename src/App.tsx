@@ -29,6 +29,7 @@ import Webhooks from '@/pages/Webhooks';
 import Branding from '@/pages/Branding';
 import CamposCampanha from '@/pages/CamposCampanha';
 import Settings from '@/pages/Settings';
+import Board from '@/pages/Board';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -212,6 +213,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/board"
+          element={
+            <ProtectedRoute>
+              <Board />
             </ProtectedRoute>
           }
         />
