@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 — issue 31b concluída
+**Última atualização:** 2026-04-11 — issue 42 concluída (Fase 4 fechada ✅)
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 17 (Fase 0 + 1 + 2 + 3 completas ✅, Fase 4 em andamento 2/3)
+- **Concluídas:** 18 (Fases 0 + 1 + 2 + 3 + 4 completas ✅)
 - **Em andamento:** 0
-- **Pendentes:** 6
+- **Pendentes:** 5 (Fase 5: 1 issue, Fase 6: 4 issues)
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -50,7 +50,7 @@
 ### Fase 4 — Tarefas
 - [x] `31-func-page-tarefas` — rota `/tarefas` com `TarefasFilters` (search/período/responsável/concluída + chips de tipo) + `TarefasList` agrupada (Atrasadas/Hoje/Amanhã/Esta semana/Próximas/Sem data via `agruparTarefasPorDia`) + `TarefaFormDialog` (CRUD: título/tipo/data-hora/responsável/vínculo contato|articulador|demanda/descrição) + `TarefasBulkToolbar` (concluir/adiar/excluir em lote, sticky bottom). Reusa `useTarefas`, `useToggleTarefaConcluida`, `useDeleteTarefa`, hooks de bulk e `useContact` para resolver nome do contato selecionado. Protótipo (issue 02) absorvido nessa entrega; build + 12/12 verdes
 - [x] `31b-func-tarefas-calendar-view` — toggle Lista/Calendário em `/tarefas` com estado em URL (`?view=calendar`), `TarefasCalendar` grid mensal próprio (sem libs novas) via `date-fns`, chips de tarefas com cor do tipo/ícone/hora, +N mais via Popover, click em dia vazio abre create pré-preenchido 09:00, vista mobile como lista vertical. `useTarefas` estendido com `rangeStart/rangeEnd`. `TarefaFormDialog` aceita `defaultDataAgendada`. Build + 12/12 verdes
-- [ ] `42-func-contato-aba-tarefas`
+- [x] `42-func-contato-aba-tarefas` — `ContactTarefasPanel` self-contained (molde `CustomFieldsPanel` issue 41) inserido como aba "Tarefas" no `ContactDialog` entre Personalizados e Campanha. Reusa `TarefaRow` e `TarefaFormDialog` (via `defaultContactId`) — zero duplicação. Sub-abas Pendentes/Concluídas com contadores, empty states próprios, toggle concluir/edit/delete direto nas linhas. `ContactTarefasPendenteBadge` no trigger da aba mostra contagem de pendentes (só quando contato salvo). Empty state "Salve o contato primeiro" quando `contact.id` ausente. Build + 12/12 verdes. **Fase 4 fechada ✅**
 
 ### Fase 5 — Visão Geral
 - [ ] `40-func-evoluir-dashboard`
@@ -68,7 +68,7 @@
 ---
 
 ## Próxima ação
-Issue 31b concluída ✅. Próxima: **`42-func-contato-aba-tarefas`** — adicionar aba "Tarefas" dentro do `ContactDialog` reusando `TarefaFormDialog` (já aceita `defaultContactId`). Lista as tarefas filtradas por `contact_id`, permite criar nova direto no contexto do contato, editar e marcar como concluída inline. Mesmo padrão da aba "Personalizados" (issue 41): painel self-contained, depende de `contact?.id`, empty state quando contato ainda não foi salvo.
+Issue 42 concluída ✅ — **Fase 4 (Tarefas) fechada**. Próxima: **`40-func-evoluir-dashboard`** (Fase 5, única issue). Evoluir a página de dashboard/Visão Geral absorvendo os widgets e métricas do Nosso CRM. Ver `issues/merge-nossocrm/40-func-evoluir-dashboard.md` para o spec. Depois disso só restam as 4 issues da Fase 6 (sidebar nova, redirects legacy de settings, RBAC hub, finalização).
 
 ---
 
