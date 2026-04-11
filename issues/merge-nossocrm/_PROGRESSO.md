@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 22:50 UTC
+**Última atualização:** 2026-04-11 23:00 UTC
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 13 (Fase 0 + 1 + 2 completas ✅; Fase 3 — 30 ok)
+- **Concluídas:** 14 (Fase 0 + 1 + 2 completas ✅; Fase 3 — 30/30b ok)
 - **Em andamento:** 0
-- **Pendentes:** 10
+- **Pendentes:** 9
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -44,7 +44,7 @@
 
 ### Fase 3 — Board
 - [x] `30-func-page-board` — rota `/board` com Kanban DnD funcional, BoardSelector, BoardCard com badge "parado há X dias", BoardCardDetailSheet (tarefas pendentes + ações), AddContactToBoardDialog, header com link p/ Settings; protótipo (issue 01) absorvido nessa entrega; bug `telefone_whatsapp` no `useBoardItems` corrigido para `whatsapp/telefone`; build + 12/12 verdes
-- [ ] `30b-func-board-stages-dnd-reorder`
+- [x] `30b-func-board-stages-dnd-reorder` — botão "Editar estágios" no header da página `/board` abre Sheet lateral com `BoardStagesManager` reusado direto da issue 34 (drag-drop vertical, edit nome/cor inline, delete bloqueia se tem items, add stage, batch reorder). Sem duplicar componente; build + 12/12 verdes
 - [ ] `41-func-contato-aba-personalizados`
 
 ### Fase 4 — Tarefas
@@ -68,11 +68,19 @@
 ---
 
 ## Próxima ação
-Issue 30 concluída ✅. Próxima: **`30b-func-board-stages-dnd-reorder`** — drag-drop dos próprios estágios dentro do `/board` (hoje só dá pra mover cards). O `BoardStagesManager` em Settings já faz isso e é o pattern de referência (`useReorderBoardStages` existe). Decidir se vira um modo "editar estágios inline" no header do Board, ou se mantém só em Settings e a issue vira basicamente um link/atalho. Avaliar reusar `BoardStagesManager` direto via dialog "Editar estágios" no header da página Board.
+Issue 30b concluída ✅. Fase 3 ainda tem 1 issue pendente. Próxima: **`41-func-contato-aba-personalizados`** — adicionar uma aba "Personalizados" na tela de detalhe de contato (`/contacts` → modal/sheet de detalhe) que mostra os campos personalizados do contato (`useContactCustomValues`) e permite editá-los em lote (`useSaveContactCustomValues`). Ver como o detalhe de contato é mostrado hoje em `src/pages/Contacts.tsx` ou `src/components/contacts/`. Hooks já existem (issue 22).
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 30b — reorder de estágios via DnD na página Board
+- **Decisão pragmática**: a issue pediu pra criar `src/components/board/BoardStagesManager.tsx` (novo). Mas o `src/components/settings/BoardStagesManager.tsx` já existe (criado na issue 34) e já faz **exatamente** o que a issue 30b pede: drag-drop com `@dnd-kit/sortable`, edit nome/cor inline, delete bloqueado se tem items, add stage, batch reorder via `useReorderBoardStages`. Duplicar seria desperdício e fonte de drift futuro.
+- **Solução**: importei `BoardStagesManager` direto de `@/components/settings/BoardStagesManager` na página `Board.tsx` e coloquei dentro de um `<Sheet>` (lateral, igual ao `BoardCardDetailSheet`) acionado por um botão "Editar estágios" no header (ao lado do `BoardSelector`).
+- **Sortable strategy**: o manager existente usa `verticalListSortingStrategy`. A issue sugeriu `horizontalListSortingStrategy` mas vertical funciona bem dentro de uma sheet lateral e a UX é mais conhecida pelos usuários. Não vale a pena criar uma segunda variante horizontal.
+- **Sidebar settings vs board**: as 2 entradas existem agora — admin pode editar em Settings → Funis OU dentro do próprio Board (atalho). Mesma lógica, mesma persistência.
+- **Bundle**: praticamente sem mudança (2557→2558KB / gzip 759.0→759.3KB), porque o componente já era importado em outro chunk.
+- 12/12 testes verdes, build verde.
 
 ### Issue 30 — página Board funcional (Kanban)
 - **Issue 01 (protótipo) absorvida nessa entrega**: o protótipo nunca foi feito (não existia `src/pages/Board.tsx` nem `src/components/board/`), então criei direto a versão funcional. Sem prejuízo, porque os hooks já existiam (issue 20).
