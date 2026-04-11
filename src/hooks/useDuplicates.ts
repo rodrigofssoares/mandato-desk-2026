@@ -234,6 +234,15 @@ export function useMergeContacts() {
 
   return useMutation({
     mutationFn: async ({ keptId, deletedId, mergedData, selectedTagIds }: MergeContactsParams) => {
+      // 0. Snapshot do contato a ser consumido (antes de qualquer modificacao)
+      const { data: snapshotData, error: snapshotError } = await supabase
+        .from('contacts')
+        .select('*, contact_tags(tag_id, tags(id, nome, cor, categoria))')
+        .eq('id', deletedId)
+        .single();
+      if (snapshotError) throw snapshotError;
+      if (!snapshotData) throw new Error('Contato a ser mesclado nao encontrado');
+
       // 1. Update kept contact with merged data
       const { error: updateError } = await supabase
         .from('contacts')
@@ -276,6 +285,7 @@ export function useMergeContacts() {
       const { error: mergeRecordError } = await supabase.from('contact_merges').insert({
         kept_contact_id: keptId,
         deleted_contact_id: deletedId,
+        deleted_contact_snapshot: snapshotData,
         merged_fields: mergedData,
         merged_by: userId,
       });
