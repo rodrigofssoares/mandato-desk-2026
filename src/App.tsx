@@ -27,6 +27,7 @@ import GoogleIntegration from '@/pages/GoogleIntegration';
 import Api from '@/pages/Api';
 import Webhooks from '@/pages/Webhooks';
 import Branding from '@/pages/Branding';
+import CamposCampanha from '@/pages/CamposCampanha';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -194,6 +195,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Branding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/campos-campanha"
+          element={
+            <ProtectedRoute>
+              <CamposCampanha />
             </ProtectedRoute>
           }
         />

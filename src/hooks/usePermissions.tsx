@@ -48,6 +48,12 @@ export function usePermissions() {
     accessBranding: () => canView('personalizacao'),
     accessGoogle: () => canView('google'),
     accessPermissions: () => canView('permissoes'),
+
+    // Campos de Campanha
+    viewCampaignFields: () => canView('campanha'),
+    createCampaignField: () => canCreate('campanha'),
+    editCampaignField: () => canEdit('campanha'),
+    deleteCampaignField: () => canDelete('campanha'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };

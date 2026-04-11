@@ -13,6 +13,7 @@ import {
   Code,
   Webhook,
   Palette,
+  ClipboardCheck,
   LogOut,
   User,
 } from 'lucide-react';
@@ -51,13 +52,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Demandas', icon: ClipboardList, href: '/demands', secao: 'demandas' },
   { label: 'Etiquetas', icon: Tags, href: '/tags', secao: 'etiquetas' },
   { label: 'Mapa', icon: MapPin, href: '/leads-map', secao: 'mapa' },
-  { label: 'Importacao', icon: Upload, href: '/bulk-import', secao: 'importacao' },
-  { label: 'Usuarios', icon: UserCog, href: '/users', secao: 'usuarios' },
-  { label: 'Permissoes', icon: Shield, href: '/permissoes', secao: 'permissoes' },
+  { label: 'Importação', icon: Upload, href: '/bulk-import', secao: 'importacao' },
+  { label: 'Usuários', icon: UserCog, href: '/users', secao: 'usuarios' },
+  { label: 'Permissões', icon: Shield, href: '/permissoes', secao: 'permissoes' },
   { label: 'Google', icon: Globe, href: '/google-integration', secao: 'google' },
   { label: 'API', icon: Code, href: '/api', secao: 'api' },
   { label: 'Webhooks', icon: Webhook, href: '/webhooks', secao: 'webhooks' },
-  { label: 'Personalizacao', icon: Palette, href: '/branding', secao: 'personalizacao' },
+  { label: 'Personalização', icon: Palette, href: '/branding', secao: 'personalizacao' },
+  { label: 'Campos de Campanha', icon: ClipboardCheck, href: '/campos-campanha', secao: 'campanha' },
 ];
 
 const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>['can']) => boolean> = {
@@ -75,6 +77,7 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   webhooks: (can) => can.accessWebhooks(),
   personalizacao: (can) => can.accessBranding(),
   relatorios: (can) => can.exportData(),
+  campanha: (can) => can.viewCampaignFields(),
 };
 
 export function AppSidebar() {
