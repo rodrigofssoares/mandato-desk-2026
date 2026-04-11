@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 1
+- **Concluídas:** 2
 - **Em andamento:** 0
-- **Pendentes:** 28
+- **Pendentes:** 27
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -25,7 +25,7 @@
 
 ### Fase 0 — Fundação (migrations)
 - [x] `10-func-schema-boards` — migration `013_merge_boards.sql`, build ok
-- [ ] `11-func-schema-tarefas`
+- [x] `11-func-schema-tarefas` — migration `014_merge_tarefas.sql`, build ok
 - [ ] `12-func-schema-custom-fields`
 - [ ] `13-func-schema-ai-settings` + Parte A da `14-func-ai-key-security-upgrade`
 
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Executar **`11-func-schema-tarefas`** — criar migration com tabela `tarefas` (enum `tarefa_tipo`, FKs para contact/leader/demand/board_item) + RLS.
+Executar **`12-func-schema-custom-fields`** — criar tabelas `campos_personalizados` e `campos_personalizados_valores` + habilitar extensão `unaccent` + função `slugify_campo`.
 
 ---
 
@@ -83,6 +83,16 @@ Executar **`11-func-schema-tarefas`** — criar migration com tabela `tarefas` (
 - Seção RBAC 'board' criada no seed de permissoes_perfil: admin/proprietario/assessor têm tudo; assistente só editar; estagiário só ver
 - Reusei helpers existentes: `update_updated_at_column()`, `get_current_user_role()`, `has_permission()`, `is_user_active()`
 - `board_stages.cor` é TEXT simples (nome Tailwind), não um enum — permite flexibilidade no frontend
+
+### Issue 11 — schema tarefas
+- Migration: `supabase/migrations/014_merge_tarefas.sql`
+- Enum `tarefa_tipo`: LIGACAO, REUNIAO, VISITA, WHATSAPP, EMAIL, TAREFA
+- FKs opcionais: contact_id, leader_id, demand_id, board_item_id (ON DELETE SET NULL — tarefa sobrevive à remoção do vínculo)
+- **Trigger `tarefas_set_concluida_em`**: seta `concluida_em = now()` automaticamente quando `concluida` vira TRUE, e reseta para NULL se voltar a FALSE. Mantém integridade sem depender do frontend.
+- Índices parciais `WHERE NOT concluida` para queries comuns (tarefas pendentes por responsavel/data)
+- RLS permite o próprio responsável editar sua tarefa mesmo sem permissão de `editar` na seção (política pragmática)
+- Seção RBAC 'tarefas' no seed: todos os roles podem criar/editar tarefas (operacional), só admin/proprietário deletam. Assistente e estagiário têm `so_proprio=TRUE`.
+- Tabela `activities` NÃO foi tocada (continua sendo audit log puro)
 
 ---
 

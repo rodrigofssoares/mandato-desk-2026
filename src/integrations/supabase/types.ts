@@ -1210,6 +1210,103 @@ export type Database = {
           },
         ]
       }
+      tarefas: {
+        Row: {
+          board_item_id: string | null
+          concluida: boolean
+          concluida_em: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          data_agendada: string | null
+          demand_id: string | null
+          descricao: string | null
+          id: string
+          leader_id: string | null
+          responsavel_id: string | null
+          tipo: Database["public"]["Enums"]["tarefa_tipo"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          board_item_id?: string | null
+          concluida?: boolean
+          concluida_em?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_agendada?: string | null
+          demand_id?: string | null
+          descricao?: string | null
+          id?: string
+          leader_id?: string | null
+          responsavel_id?: string | null
+          tipo?: Database["public"]["Enums"]["tarefa_tipo"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          board_item_id?: string | null
+          concluida?: boolean
+          concluida_em?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_agendada?: string | null
+          demand_id?: string | null
+          descricao?: string | null
+          id?: string
+          leader_id?: string | null
+          responsavel_id?: string | null
+          tipo?: Database["public"]["Enums"]["tarefa_tipo"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_board_item_id_fkey"
+            columns: ["board_item_id"]
+            isOneToOne: false
+            referencedRelation: "board_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           active: boolean
@@ -1395,6 +1492,13 @@ export type Database = {
       demand_status: "open" | "in_progress" | "resolved"
       sync_direction_type: "crm_to_google" | "google_to_crm" | "bidirectional"
       sync_status_type: "pending" | "synced" | "error" | "conflict"
+      tarefa_tipo:
+        | "LIGACAO"
+        | "REUNIAO"
+        | "VISITA"
+        | "WHATSAPP"
+        | "EMAIL"
+        | "TAREFA"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1540,6 +1644,14 @@ export const Constants = {
       demand_status: ["open", "in_progress", "resolved"],
       sync_direction_type: ["crm_to_google", "google_to_crm", "bidirectional"],
       sync_status_type: ["pending", "synced", "error", "conflict"],
+      tarefa_tipo: [
+        "LIGACAO",
+        "REUNIAO",
+        "VISITA",
+        "WHATSAPP",
+        "EMAIL",
+        "TAREFA",
+      ],
     },
   },
 } as const
