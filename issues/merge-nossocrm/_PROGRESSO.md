@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 29 issues (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 6
+- **Concluídas:** 7
 - **Em andamento:** 0
-- **Pendentes:** 23
+- **Pendentes:** 22
 - **Bloqueadas:** 0
 
 ## Bootstrap (setup inicial — concluído)
@@ -32,7 +32,7 @@
 ### Fase 1 — Infra de testes + Hooks
 - [x] `15-setup-vitest-infra` — vitest 3.2.4 + RTL 16, 12/12 testes passando
 - [x] `20-func-hooks-boards` — useBoards, useBoardStages, useBoardItems (9 mutations) — build ok
-- [ ] `21-func-hooks-tarefas`
+- [x] `21-func-hooks-tarefas` — useTarefas com filtros + bulk ops — build ok
 - [ ] `22-func-hooks-custom-fields`
 
 ### Fase 2 — Settings Hub
@@ -67,7 +67,7 @@
 ---
 
 ## Próxima ação
-Executar **`21-func-hooks-tarefas`** — criar `useTarefas.ts` com CRUD, filtros, toggle concluída, bulk operations, integração com `agruparTarefasPorDia`.
+Executar **`22-func-hooks-custom-fields`** — hooks `useCustomFields` (definições) + `useContactCustomValues` (valores por contato) com upsert em lote.
 
 ---
 
@@ -104,6 +104,19 @@ Executar **`21-func-hooks-tarefas`** — criar `useTarefas.ts` com CRUD, filtros
 - **Campos fixos do contato permanecem intocados** — toda a estrutura é em tabelas à parte, conforme combinado
 - RLS referencia seção `configuracoes` que ainda não existe (será criada na issue 99). Enquanto isso, só admin gerencia — comportamento desejado.
 - Valores (cpv) dependem da permissão `contatos.editar` — quem edita contato edita os campos custom dele
+
+### Issue 21 — hooks de tarefas
+- Arquivo: `src/hooks/useTarefas.ts`
+- Queries: `useTarefas(filters)`, `useTarefasHoje(limit=5)`, `useTarefasPendentesCount(contactId)`
+- Mutations: `useCreateTarefa`, `useUpdateTarefa`, `useToggleTarefaConcluida`, `useDeleteTarefa`
+- Bulk: `useBulkConcluirTarefas`, `useBulkAdiarTarefas`, `useBulkDeleteTarefas`
+- **Filtros suportados**: search (ilike em titulo), tipos[] (IN), responsavel, contact, leader, demand, board_item, concluida, periodo (hoje/amanha/semana/atrasadas/todas)
+- Uso de `date-fns` para os ranges de período (startOfDay, endOfDay, addDays, endOfWeek)
+- `useToggleTarefaConcluida`: NÃO seta `concluida_em` manualmente — o trigger SQL `tarefas_set_concluida_em` faz isso automaticamente
+- `useCreateTarefa` usa `user?.id` como responsável default se não for passado
+- Só dispara toast de sucesso no toggle quando está marcando como concluída (não quando desmarca, para evitar barulho)
+- Bulk ops usam `.in('id', ids)` para uma única query
+- Integração com `agruparTarefasPorDia` (helper da issue 15): o hook retorna array cru, o frontend decide agrupar
 
 ### Issue 20 — hooks de boards
 - 3 arquivos: `useBoards.ts`, `useBoardStages.ts`, `useBoardItems.ts`
