@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare } from 'lucide-react';
+import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare, ListOrdered } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -13,6 +13,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
@@ -23,6 +30,7 @@ import { BoardKanban } from '@/components/board/BoardKanban';
 import { BoardCardDetailSheet } from '@/components/board/BoardCardDetailSheet';
 import { AddContactToBoardDialog } from '@/components/board/AddContactToBoardDialog';
 import { BoardFormDialog } from '@/components/settings/BoardFormDialog';
+import { BoardStagesManager } from '@/components/settings/BoardStagesManager';
 
 export default function Board() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,6 +72,7 @@ export default function Board() {
   const [removeTarget, setRemoveTarget] = useState<BoardItemWithContact | null>(null);
   const [addStageId, setAddStageId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [stagesEditorOpen, setStagesEditorOpen] = useState(false);
 
   const existingContactIds = useMemo(
     () => new Set(items.map((i) => i.contact?.id).filter((id): id is string => !!id)),
@@ -136,6 +145,16 @@ export default function Board() {
               value={activeBoardId}
               onChange={handleSelectBoard}
             />
+            {activeBoardId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStagesEditorOpen(true)}
+              >
+                <ListOrdered className="h-4 w-4 mr-2" />
+                Editar estágios
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -169,6 +188,21 @@ export default function Board() {
 
       {/* Dialogs */}
       <BoardFormDialog open={createBoardOpen} onOpenChange={setCreateBoardOpen} />
+
+      <Sheet open={stagesEditorOpen} onOpenChange={setStagesEditorOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Editar estágios</SheetTitle>
+            <SheetDescription>
+              Arraste para reordenar, edite nome ou cor, ou exclua estágios vazios. Mudanças
+              persistem direto no banco.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            {activeBoardId && <BoardStagesManager boardId={activeBoardId} />}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {activeBoardId && (
         <AddContactToBoardDialog
