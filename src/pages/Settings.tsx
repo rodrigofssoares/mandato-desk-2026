@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Settings as SettingsIcon } from 'lucide-react';
 import { GeneralTab } from '@/components/settings/GeneralTab';
 import { FunisTab } from '@/components/settings/FunisTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -8,6 +9,7 @@ import { PermsTab } from '@/components/settings/PermsTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 import { AISettingsTab } from '@/components/settings/AISettingsTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const TABS = [
   'geral',
@@ -30,6 +32,29 @@ export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
   const activeTab: SettingsTab = isValidTab(rawTab) ? rawTab : DEFAULT_TAB;
+
+  const { can, isLoading: isPermLoading } = usePermissions();
+  const canAccess = can.accessSettings();
+
+  if (isPermLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canAccess) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Você não tem permissão para acessar as Configurações.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleTabChange = (value: string) => {
     if (!isValidTab(value)) return;

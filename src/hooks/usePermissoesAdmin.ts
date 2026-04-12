@@ -83,7 +83,7 @@ export function useUpdatePermissao() {
   });
 }
 
-// Seed padrão com as 70 linhas (5 roles x 14 seções)
+// Seed padrão com 5 roles × 18 seções = 90 linhas (inclui board/tarefas/configuracoes)
 function generateDefaultPermissions() {
   const defaults: Array<{
     role: string;
@@ -111,9 +111,12 @@ function generateDefaultPermissions() {
     proprietario: {
       fullAccess: [
         'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
-        'mapa', 'importacao', 'relatorios',
+        'mapa', 'importacao', 'relatorios', 'board', 'tarefas',
       ],
-      viewOnly: ['usuarios', 'google', 'api', 'webhooks', 'personalizacao', 'permissoes'],
+      viewOnly: [
+        'usuarios', 'google', 'api', 'webhooks', 'personalizacao', 'permissoes',
+        'configuracoes',
+      ],
       viewCreate: [],
       viewCreateEdit: [],
     },
@@ -121,17 +124,17 @@ function generateDefaultPermissions() {
       fullAccess: [],
       viewOnly: ['dashboard', 'mapa', 'relatorios'],
       viewCreate: [],
-      viewCreateEdit: ['contatos', 'liderancas', 'demandas', 'etiquetas'],
+      viewCreateEdit: ['contatos', 'liderancas', 'demandas', 'etiquetas', 'board', 'tarefas'],
     },
     assistente: {
       fullAccess: [],
-      viewOnly: ['dashboard'],
+      viewOnly: ['dashboard', 'board'],
       viewCreate: ['contatos', 'liderancas'],
-      viewCreateEdit: [],
+      viewCreateEdit: ['tarefas'],
     },
     estagiario: {
       fullAccess: [],
-      viewOnly: ['dashboard'],
+      viewOnly: ['dashboard', 'board', 'tarefas'],
       viewCreate: [],
       viewCreateEdit: [],
     },

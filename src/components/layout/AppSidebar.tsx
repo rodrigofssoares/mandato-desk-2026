@@ -49,13 +49,13 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/', secao: 'dashboard', alwaysVisible: true },
   { label: 'Contatos', icon: Users, href: '/contacts', secao: 'contatos' },
   { label: 'Articuladores', icon: Crown, href: '/leaders', secao: 'liderancas' },
-  { label: 'Board', icon: KanbanSquare, href: '/board', secao: 'board', alwaysVisible: true },
-  { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', secao: 'tarefas', alwaysVisible: true },
+  { label: 'Board', icon: KanbanSquare, href: '/board', secao: 'board' },
+  { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', secao: 'tarefas' },
   { label: 'Demandas', icon: ClipboardList, href: '/demands', secao: 'demandas' },
   { label: 'Mapa', icon: MapPin, href: '/leads-map', secao: 'mapa' },
   { label: 'Importação', icon: Upload, href: '/bulk-import', secao: 'importacao' },
   { label: 'Campos de Campanha', icon: ClipboardCheck, href: '/campos-campanha', secao: 'campanha' },
-  { label: 'Configurações', icon: Settings, href: '/settings', secao: 'configuracoes', alwaysVisible: true, dividerBefore: true },
+  { label: 'Configurações', icon: Settings, href: '/settings', secao: 'configuracoes', dividerBefore: true },
 ];
 
 const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>['can']) => boolean> = {
@@ -74,11 +74,10 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   personalizacao: (can) => can.accessBranding(),
   relatorios: (can) => can.exportData(),
   campanha: (can) => can.viewCampaignFields(),
-  // Novas seções introduzidas no merge — RBAC formal chega na issue 99.
-  // Até lá os itens ficam sempre visíveis via `alwaysVisible: true`.
-  board: () => true,
-  tarefas: () => true,
-  configuracoes: () => true,
+  // Seções novas do merge-nossocrm com RBAC formal (issue 99).
+  board: (can) => can.viewBoard(),
+  tarefas: (can) => can.viewTarefas(),
+  configuracoes: (can) => can.accessSettings(),
 };
 
 export function AppSidebar() {

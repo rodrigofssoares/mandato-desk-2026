@@ -54,6 +54,21 @@ export function usePermissions() {
     createCampaignField: () => canCreate('campanha'),
     editCampaignField: () => canEdit('campanha'),
     deleteCampaignField: () => canDelete('campanha'),
+
+    // Board (Kanban / funis de contato) — merge-nossocrm issue 99
+    viewBoard: () => canView('board'),
+    createBoardItem: () => canCreate('board'),
+    editBoardItem: () => canEdit('board'),
+    deleteBoardItem: () => canDelete('board'),
+
+    // Tarefas — merge-nossocrm issue 99
+    viewTarefas: () => canView('tarefas'),
+    createTarefa: () => canCreate('tarefas'),
+    editTarefa: () => canEdit('tarefas'),
+    deleteTarefa: () => canDelete('tarefas'),
+
+    // Configurações (hub /settings como bloco único) — merge-nossocrm issue 99
+    accessSettings: () => canView('configuracoes'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };

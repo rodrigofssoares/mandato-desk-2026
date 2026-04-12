@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Loader2, ClipboardList, List, Calendar as CalendarIcon } from 'lucide-react';
 
+import { Card, CardContent } from '@/components/ui/card';
+
 import {
   useTarefas,
   useToggleTarefaConcluida,
@@ -24,6 +26,7 @@ import {
 import { useContacts } from '@/hooks/useContacts';
 import { useLeaders } from '@/hooks/useLeaders';
 import { useDemands } from '@/hooks/useDemands';
+import { usePermissions } from '@/hooks/usePermissions';
 import { agruparTarefasPorDia } from '@/lib/tarefas/agruparPorDia';
 
 import { TarefasFilters } from '@/components/tarefas/TarefasFilters';
@@ -36,6 +39,11 @@ export default function Tarefas() {
   const [searchParams, setSearchParams] = useSearchParams();
   const view: 'list' | 'calendar' =
     searchParams.get('view') === 'calendar' ? 'calendar' : 'list';
+
+  const { can, isLoading: isPermLoading } = usePermissions();
+  const canViewPage = can.viewTarefas();
+  const canCreate = can.createTarefa();
+  const canDelete = can.deleteTarefa();
 
   const setView = (v: 'list' | 'calendar') => {
     const next = new URLSearchParams(searchParams);
@@ -125,6 +133,26 @@ export default function Tarefas() {
     }
   };
 
+  if (isPermLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canViewPage) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Você não tem permissão para acessar esta página.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 pb-24">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -155,10 +183,12 @@ export default function Tarefas() {
               Calendário
             </Button>
           </div>
-          <Button onClick={handleNew} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova tarefa
-          </Button>
+          {canCreate && (
+            <Button onClick={handleNew} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova tarefa
+            </Button>
+          )}
         </div>
       </div>
 
@@ -179,8 +209,14 @@ export default function Tarefas() {
               onToggleConcluida={(t) =>
                 toggleConcluida.mutate({ id: t.id, concluida: !t.concluida })
               }
-              onEdit={handleEdit}
-              onDelete={setDeleting}
+              onEdit={(t) => {
+                if (!can.editTarefa()) return;
+                handleEdit(t);
+              }}
+              onDelete={(t) => {
+                if (!canDelete) return;
+                setDeleting(t);
+              }}
             />
           )}
 
@@ -189,8 +225,14 @@ export default function Tarefas() {
       ) : (
         <TarefasCalendar
           filters={filters}
-          onEditTarefa={handleEdit}
-          onCreateAtDate={handleCreateAtDate}
+          onEditTarefa={(t) => {
+            if (!can.editTarefa()) return;
+            handleEdit(t);
+          }}
+          onCreateAtDate={(date) => {
+            if (!canCreate) return;
+            handleCreateAtDate(date);
+          }}
         />
       )}
 

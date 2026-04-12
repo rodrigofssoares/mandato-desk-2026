@@ -21,9 +21,12 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 
+import { Card, CardContent } from '@/components/ui/card';
+
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
 import { useBoardItems, useRemoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
+import { usePermissions } from '@/hooks/usePermissions';
 
 import { BoardSelector } from '@/components/board/BoardSelector';
 import { BoardKanban } from '@/components/board/BoardKanban';
@@ -35,6 +38,11 @@ import { BoardStagesManager } from '@/components/settings/BoardStagesManager';
 export default function Board() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlBoardId = searchParams.get('board');
+
+  const { can, isLoading: isPermLoading } = usePermissions();
+  const canViewPage = can.viewBoard();
+  const canCreate = can.createBoardItem();
+  const canDelete = can.deleteBoardItem();
 
   const { data: boards = [], isLoading: boardsLoading } = useBoards('contact');
 
@@ -100,6 +108,26 @@ export default function Board() {
 
   const isLoading = boardsLoading || (activeBoardId && (stagesLoading || itemsLoading));
 
+  if (isPermLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canViewPage) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Você não tem permissão para acessar esta página.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -108,16 +136,20 @@ export default function Board() {
           <h1 className="text-2xl font-bold">Funis</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/settings?tab=funis">
-              <SettingsIcon className="h-4 w-4 mr-2" />
-              Gerenciar funis
-            </Link>
-          </Button>
-          <Button onClick={() => setCreateBoardOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo board
-          </Button>
+          {canCreate && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/settings?tab=funis">
+                <SettingsIcon className="h-4 w-4 mr-2" />
+                Gerenciar funis
+              </Link>
+            </Button>
+          )}
+          {canCreate && (
+            <Button onClick={() => setCreateBoardOpen(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo board
+            </Button>
+          )}
         </div>
       </div>
 
@@ -130,12 +162,16 @@ export default function Board() {
           <KanbanSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium">Nenhum board criado ainda</p>
           <p className="text-xs text-muted-foreground mt-1 mb-4">
-            Crie seu primeiro funil para começar a organizar contatos por estágio.
+            {canCreate
+              ? 'Crie seu primeiro funil para começar a organizar contatos por estágio.'
+              : 'Peça ao administrador para criar um funil.'}
           </p>
-          <Button onClick={() => setCreateBoardOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Criar primeiro board
-          </Button>
+          {canCreate && (
+            <Button onClick={() => setCreateBoardOpen(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar primeiro board
+            </Button>
+          )}
         </div>
       ) : (
         <>
@@ -145,7 +181,7 @@ export default function Board() {
               value={activeBoardId}
               onChange={handleSelectBoard}
             />
-            {activeBoardId && (
+            {activeBoardId && canCreate && (
               <Button
                 variant="outline"
                 size="sm"
@@ -176,8 +212,12 @@ export default function Board() {
               stages={stages}
               items={items}
               onCardClick={setDetailItem}
-              onCardRemove={setRemoveTarget}
+              onCardRemove={(item) => {
+                if (!canDelete) return;
+                setRemoveTarget(item);
+              }}
               onAddContact={(stageId) => {
+                if (!canCreate) return;
                 setAddStageId(stageId);
                 setAddOpen(true);
               }}
@@ -220,7 +260,10 @@ export default function Board() {
         onOpenChange={(open) => !open && setDetailItem(null)}
         item={detailItem}
         stageName={detailItem ? stageNameById[detailItem.stage_id] ?? '—' : '—'}
-        onRemove={() => detailItem && setRemoveTarget(detailItem)}
+        onRemove={() => {
+          if (!canDelete) return;
+          if (detailItem) setRemoveTarget(detailItem);
+        }}
         removing={removeMutation.isPending}
       />
 
