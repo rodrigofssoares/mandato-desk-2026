@@ -6,6 +6,17 @@ import { logActivity } from '@/lib/activityLog';
 
 // ---------- Types ----------
 
+/**
+ * Valor de filtro para um campo personalizado. O tipo determina quais
+ * campos são usados na query do Supabase (ver `useContacts`).
+ */
+export type CustomFieldFilterValue =
+  | { tipo: 'texto'; contains: string }
+  | { tipo: 'numero'; min?: number; max?: number }
+  | { tipo: 'data'; from?: string; to?: string }
+  | { tipo: 'booleano'; value: boolean }
+  | { tipo: 'selecao'; values: string[] };
+
 export interface ContactFilters {
   search?: string;
   tags?: string[];
@@ -16,6 +27,8 @@ export interface ContactFilters {
   leader_id?: string;
   /** IDs de campos de campanha — contato precisa ter TODOS marcados */
   campaign_field_ids?: string[];
+  /** Filtros por campos personalizados (chave = campo_id). Contato precisa satisfazer TODOS. */
+  custom_fields?: Record<string, CustomFieldFilterValue>;
   date_from?: string;
   date_to?: string;
   sort_by?: 'name_asc' | 'name_desc' | 'created_desc' | 'created_asc' | 'favorites_first';
@@ -81,6 +94,7 @@ export function useContacts(filters: ContactFilters = {}) {
     last_contact_filter,
     leader_id,
     campaign_field_ids,
+    custom_fields,
     date_from,
     date_to,
     sort_by = 'created_desc',
@@ -205,6 +219,61 @@ export function useContacts(filters: ContactFilters = {}) {
           return { data: [], count: 0 };
         }
         query = query.in('id', matchingIds);
+      }
+
+      // Campos personalizados — interseção de contact_ids por filtro
+      if (custom_fields && Object.keys(custom_fields).length > 0) {
+        // Para cada entrada, resolve quais contact_ids atendem o critério
+        const entries = Object.entries(custom_fields);
+        const idSets: Array<Set<string>> = [];
+
+        for (const [campoId, filtro] of entries) {
+          // Ignora filtros vazios (sem termo preenchido)
+          if (!filtro) continue;
+          if (filtro.tipo === 'texto' && !filtro.contains?.trim()) continue;
+          if (filtro.tipo === 'numero' && filtro.min === undefined && filtro.max === undefined) continue;
+          if (filtro.tipo === 'data' && !filtro.from && !filtro.to) continue;
+          if (filtro.tipo === 'selecao' && (!filtro.values || filtro.values.length === 0)) continue;
+
+          let cpv = supabase
+            .from('campos_personalizados_valores')
+            .select('contact_id')
+            .eq('campo_id', campoId);
+
+          if (filtro.tipo === 'texto') {
+            cpv = cpv.ilike('valor_texto', `%${filtro.contains.trim()}%`);
+          } else if (filtro.tipo === 'numero') {
+            if (filtro.min !== undefined) cpv = cpv.gte('valor_numero', filtro.min);
+            if (filtro.max !== undefined) cpv = cpv.lte('valor_numero', filtro.max);
+          } else if (filtro.tipo === 'data') {
+            if (filtro.from) cpv = cpv.gte('valor_data', filtro.from);
+            if (filtro.to) cpv = cpv.lte('valor_data', filtro.to);
+          } else if (filtro.tipo === 'booleano') {
+            cpv = cpv.eq('valor_bool', filtro.value);
+          } else if (filtro.tipo === 'selecao') {
+            cpv = cpv.in('valor_selecao', filtro.values);
+          }
+
+          const { data: rows, error: cpvError } = await cpv;
+          if (cpvError) throw cpvError;
+
+          const ids = new Set<string>((rows ?? []).map((r) => r.contact_id));
+          if (ids.size === 0) {
+            return { data: [], count: 0 };
+          }
+          idSets.push(ids);
+        }
+
+        if (idSets.length > 0) {
+          // Interseção de todos os conjuntos
+          const intersection = idSets.reduce((acc, set) => {
+            return new Set([...acc].filter((id) => set.has(id)));
+          });
+          if (intersection.size === 0) {
+            return { data: [], count: 0 };
+          }
+          query = query.in('id', [...intersection]);
+        }
       }
 
       // Date range

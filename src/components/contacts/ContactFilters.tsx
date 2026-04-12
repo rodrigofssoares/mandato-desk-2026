@@ -18,8 +18,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { useContactTags, useLeaders, type ContactFilters as Filters } from '@/hooks/useContacts';
+import { useContactTags, useLeaders, type ContactFilters as Filters, type CustomFieldFilterValue } from '@/hooks/useContacts';
 import { useCampaignFields } from '@/hooks/useCampaignFields';
+import { useCustomFields } from '@/hooks/useCustomFields';
+import { CustomFieldFilterInput } from './CustomFieldFilterInput';
 
 interface ContactFiltersProps {
   filters: Filters;
@@ -31,6 +33,9 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   const { data: allTags = [] } = useContactTags();
   const { data: leaders = [] } = useLeaders();
   const { data: campaignFields = [] } = useCampaignFields();
+  const { data: customFields = [] } = useCustomFields({ filtravel: true });
+
+  const customFieldsCount = Object.values(filters.custom_fields ?? {}).filter(Boolean).length;
 
   // Conta filtros ativos (excluindo page, per_page, sort_by, search)
   const activeCount = [
@@ -43,7 +48,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     filters.campaign_field_ids && filters.campaign_field_ids.length > 0,
     filters.date_from,
     filters.date_to,
-  ].filter(Boolean).length;
+  ].filter(Boolean).length + customFieldsCount;
 
   const update = (partial: Partial<Filters>) => {
     onChange({ ...filters, ...partial, page: 1 });
@@ -74,6 +79,16 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     } else {
       update({ campaign_field_ids: [...current, fieldId] });
     }
+  };
+
+  const setCustomFieldFilter = (campoId: string, value: CustomFieldFilterValue | undefined) => {
+    const current = { ...(filters.custom_fields ?? {}) };
+    if (value === undefined) {
+      delete current[campoId];
+    } else {
+      current[campoId] = value;
+    }
+    update({ custom_fields: Object.keys(current).length > 0 ? current : undefined });
   };
 
   // Agrupa tags por grupo
@@ -254,6 +269,25 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               <p className="text-[10px] text-muted-foreground mt-1">
                 Contatos precisam ter TODOS os campos marcados
               </p>
+            </div>
+          )}
+
+          {/* Campos Personalizados (dinâmico — só filtráveis) */}
+          {customFields.length > 0 && (
+            <div className="col-span-full">
+              <Label className="text-xs font-semibold uppercase text-muted-foreground">
+                Campos Personalizados
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 border rounded-md p-3 mt-1">
+                {customFields.map((campo) => (
+                  <CustomFieldFilterInput
+                    key={campo.id}
+                    campo={campo}
+                    value={filters.custom_fields?.[campo.id]}
+                    onChange={(v) => setCustomFieldFilter(campo.id, v)}
+                  />
+                ))}
+              </div>
             </div>
           )}
 
