@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 — issue 40 concluída (Fase 5 fechada ✅)
+**Última atualização:** 2026-04-11 — issue 50 concluída (Fase 6 iniciada)
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 19 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅)
+- **Concluídas:** 20 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅, Fase 6: 50 ✅)
 - **Em andamento:** 0
-- **Pendentes:** 4 (Fase 6: 4 issues)
+- **Pendentes:** 3 (Fase 6: 51, 99, 43)
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -56,7 +56,7 @@
 - [x] `40-func-evoluir-dashboard` — `useDashboardMetrics(period, boardId)` com ranges atuais/anteriores + 6 componentes novos (`StatCardWithDelta`, `PeriodSelector`, `BoardFunnelCard` com Recharts horizontal + seletor de board + link p/ `/board`, `TarefasHojeCard` (reusa `useTarefasHoje`), `AlertsBadge` + `AlertsModal` agrupando por tipo, `SaudeBaseCard` com Progress para ativos/inativos/perdidos). `Dashboard.tsx` recriado: header com `<PeriodSelector>` + `<AlertsBadge>`, 4 StatCards (Base Total, Novos, Voto Declarado, Multiplicadores), grid principal (Funil + Tarefas Hoje + Aniversários), Saúde da Base, linha inferior (GrowthChart + ActivityFeed), card "Mais métricas" com Tag e Vote charts preservados. Estado de period+board sincronizado via URL (`?period=mes&board=<id>`). 3 tipos de alertas: contatos parados 5+ dias no funil, tarefas vencidas, aniversariantes hoje sem tarefa. Build + 12/12 verdes. **Fase 5 fechada ✅**
 
 ### Fase 6 — Fechamento
-- [ ] `50-func-sidebar-nova`
+- [x] `50-func-sidebar-nova` — `AppSidebar.tsx` reorganizado: removidos 7 itens absorvidos em Settings (Etiquetas, Usuários, Permissões, Google, API, Webhooks, Personalização) + adicionados Board, Tarefas e Configurações (com `SidebarSeparator` antes via flag `dividerBefore`). `Secao` type estendido com `board`/`tarefas`/`configuracoes` em `src/types/permissions.ts` + `SECAO_LABELS`. Novas seções ficam `alwaysVisible: true` até issue 99 plugar RBAC formal. Mantido `Campos de Campanha` (não está na lista de remoção e não é absorvido por Settings). Ícones: `KanbanSquare`, `CheckSquare`, `Settings`. Build + 12/12 verdes.
 - [ ] `51-func-redirects-legacy-settings`
 - [ ] `99-func-rbac-novas-secoes`
 - [ ] `43-func-contato-filtro-custom-fields`
@@ -68,11 +68,22 @@
 ---
 
 ## Próxima ação
-Issue 40 concluída ✅ — **Fase 5 (Visão Geral) fechada**. Próxima: **`50-func-sidebar-nova`** (abrir Fase 6). Reorganizar a sidebar adicionando entradas Board/Tarefas/Settings hub e removendo ou redirecionando itens legados. Ver `issues/merge-nossocrm/50-func-sidebar-nova.md`. Fase 6 tem 4 issues: 50 (sidebar), 51 (redirects legacy de settings), 99 (RBAC novas seções), 43 (filtro custom fields na lista de contatos).
+Issue 50 concluída ✅ — Sidebar reorganizada para Fase 6. Próxima: **`51-func-redirects-legacy-settings`**. Adicionar redirects no `App.tsx` (ou equivalente) para que URLs legadas de settings (`/users`, `/permissoes`, `/google-integration`, `/api`, `/webhooks`, `/branding`, `/tags`) redirecionem para as abas correspondentes em `/settings?tab=...`. Ver `issues/merge-nossocrm/51-func-redirects-legacy-settings.md`.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 50 — Sidebar NAV_ITEMS reorganizado
+- **`Campos de Campanha` mantido** fora da lista de remoção: a issue 50 escreveu o diff antes dessa entrada existir no projeto atual. A página é `/campos-campanha` e não corresponde a nenhuma aba de Settings (a aba Geral gerencia Campos Personalizados, que é diferente). Remover cortaria funcionalidade sem substituto. Mantido entre `Importação` e o separador.
+- **`dividerBefore: boolean` em `NavItem`** em vez de um item especial tipo `{ type: 'separator' }`. Motivo: evita discriminated union e mantém o `.filter()` de permissões atual funcionando sem ramo especial. O separador só renderiza se o item visível ficou com `index > 0` — garante que nunca sobra um divider órfão no topo quando, por exemplo, o usuário não tem acesso a quase nada e só vê Configurações.
+- **Novas seções `board`/`tarefas`/`configuracoes`** entram no tipo `Secao` em `types/permissions.ts` (+ `SECAO_LABELS`), mas o `SECAO_TO_PERMISSION` devolve `() => true` para as três — junto com `alwaysVisible: true` nos itens. Motivo: a matriz `permissoes_perfil` ainda não tem rows para essas seções (issue 99 cria), então qualquer check real devolveria `false` e esconderia o item de todo mundo, incluindo admin. A dupla proteção (`alwaysVisible` + permissão permissiva) evita regredir a UX até a 99 chegar.
+- **`SidebarSeparator`** (shadcn — linha 393 de `sidebar.tsx`) reusado em vez de criar separador custom. `className="my-1"` dá a respiração do bloco final.
+- **`Fragment` em `react`** importado só pra embrulhar o par `(Separator, MenuItem)` dentro do `.map` preservando a `key={item.href}`. Alternativa seria `<>...</>` mas `Fragment` explícito deixa a key claramente anexada.
+- **Icons removidos do import**: `Tags`, `UserCog`, `Shield`, `Globe`, `Code`, `Webhook`, `Palette` — não são mais usados em lugar nenhum deste arquivo. Lint não reclamou, tsc passou.
+- **Rotas legadas continuam existindo** (acessíveis por URL direta). A issue 51 vai plantar redirects para elas apontarem pra `/settings?tab=...`. Deixei-as no ar agora para não quebrar bookmarks enquanto o redirect não está implementado.
+- **Permissões atuais do admin `etiquetas` / `usuarios` / etc. continuam no `SECAO_TO_PERMISSION`**: mesmo que não existam mais itens no sidebar referenciando essas entradas, o `Secao` type ainda precisa delas (back-compat com `permissoes_perfil`, `PermsTab`, RBAC existente). Só removo quando a issue 99 limpar.
+- Build 2626→2626KB / gzip 778→778KB (sem delta relevante). 12/12 testes verdes.
 
 ### Issue 40 — Visão Geral (Dashboard evoluído)
 - **Hook único `useDashboardMetrics(period, boardId)`** em `src/hooks/useDashboardMetrics.ts` — concentra todas as agregações numa única query e faz cálculo de delta no frontend em vez de espalhar múltiplos hooks. Trade-off: uma query "gorda" vs. muitas pequenas — escolhi a gorda porque React Query já serializa as `count`s em paralelo via `Promise.all`, e a troca de período invalida tudo de uma vez.
