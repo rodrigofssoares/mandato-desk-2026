@@ -19,14 +19,8 @@ import Demands from '@/pages/Demands';
 import Tags from '@/pages/Tags';
 import Leaders from '@/pages/Leaders';
 import Contacts from '@/pages/Contacts';
-import Users from '@/pages/Users';
-import Permissoes from '@/pages/Permissoes';
 import LeadsMap from '@/pages/LeadsMap';
 import BulkImport from '@/pages/BulkImport';
-import GoogleIntegration from '@/pages/GoogleIntegration';
-import Api from '@/pages/Api';
-import Webhooks from '@/pages/Webhooks';
-import Branding from '@/pages/Branding';
 import CamposCampanha from '@/pages/CamposCampanha';
 import Settings from '@/pages/Settings';
 import Board from '@/pages/Board';
@@ -153,53 +147,25 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-              <Users />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/permissoes"
-          element={
-            <ProtectedRoute>
-              <Permissoes />
-            </ProtectedRoute>
-          }
-        />
+        {/* Legacy redirects → /settings (issue 51 merge-nossocrm).
+            /tags fica como exceção: a aba Geral ainda não absorveu Etiquetas. */}
+        <Route path="/users" element={<Navigate to="/settings?tab=equipe" replace />} />
+        <Route path="/permissoes" element={<Navigate to="/settings?tab=permissoes" replace />} />
         <Route
           path="/google-integration"
-          element={
-            <ProtectedRoute>
-              <GoogleIntegration />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/settings?tab=integracoes&sub=google" replace />}
         />
         <Route
           path="/api"
-          element={
-            <ProtectedRoute>
-              <Api />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/settings?tab=integracoes&sub=api" replace />}
         />
         <Route
           path="/webhooks"
-          element={
-            <ProtectedRoute>
-              <Webhooks />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/settings?tab=integracoes&sub=webhooks" replace />}
         />
         <Route
           path="/branding"
-          element={
-            <ProtectedRoute>
-              <Branding />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/settings?tab=personalizacao" replace />}
         />
         <Route
           path="/campos-campanha"
