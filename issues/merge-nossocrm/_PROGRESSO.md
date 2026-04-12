@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 — issue 50 concluída (Fase 6 iniciada)
+**Última atualização:** 2026-04-11 — issue 51 concluída (Fase 6 em andamento)
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 20 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅, Fase 6: 50 ✅)
+- **Concluídas:** 21 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅, Fase 6: 50 ✅, 51 ✅)
 - **Em andamento:** 0
-- **Pendentes:** 3 (Fase 6: 51, 99, 43)
+- **Pendentes:** 2 (Fase 6: 99, 43)
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -57,7 +57,7 @@
 
 ### Fase 6 — Fechamento
 - [x] `50-func-sidebar-nova` — `AppSidebar.tsx` reorganizado: removidos 7 itens absorvidos em Settings (Etiquetas, Usuários, Permissões, Google, API, Webhooks, Personalização) + adicionados Board, Tarefas e Configurações (com `SidebarSeparator` antes via flag `dividerBefore`). `Secao` type estendido com `board`/`tarefas`/`configuracoes` em `src/types/permissions.ts` + `SECAO_LABELS`. Novas seções ficam `alwaysVisible: true` até issue 99 plugar RBAC formal. Mantido `Campos de Campanha` (não está na lista de remoção e não é absorvido por Settings). Ícones: `KanbanSquare`, `CheckSquare`, `Settings`. Build + 12/12 verdes.
-- [ ] `51-func-redirects-legacy-settings`
+- [x] `51-func-redirects-legacy-settings` — 6 rotas legacy (`/users`, `/permissoes`, `/google-integration`, `/api`, `/webhooks`, `/branding`) convertidas em `<Navigate replace>` apontando para as abas corretas do hub (`equipe`, `permissoes`, `integracoes&sub=google|api|webhooks`, `personalizacao`). Imports dessas páginas removidos do `App.tsx` (continuam importados pelos próprios tabs de `/settings`). **Exceção documentada:** `/tags` mantido ativo sem redirect porque a aba Geral ainda não absorveu `Etiquetas` — redirecionar agora jogaria o usuário em Campos Personalizados, que é outro conteúdo. Corrigido desvio do diff alvo da issue (usava `brand`/`perms`/`integ` — slugs inexistentes; os reais são `personalizacao`/`permissoes`/`integracoes`). Build + 12/12 verdes.
 - [ ] `99-func-rbac-novas-secoes`
 - [ ] `43-func-contato-filtro-custom-fields`
 
@@ -68,11 +68,21 @@
 ---
 
 ## Próxima ação
-Issue 50 concluída ✅ — Sidebar reorganizada para Fase 6. Próxima: **`51-func-redirects-legacy-settings`**. Adicionar redirects no `App.tsx` (ou equivalente) para que URLs legadas de settings (`/users`, `/permissoes`, `/google-integration`, `/api`, `/webhooks`, `/branding`, `/tags`) redirecionem para as abas correspondentes em `/settings?tab=...`. Ver `issues/merge-nossocrm/51-func-redirects-legacy-settings.md`.
+Issue 51 concluída ✅ — 6 redirects legacy plantados, `/tags` mantido como exceção até a aba Geral absorver Etiquetas. Próxima: **`99-func-rbac-novas-secoes`**. Plugar RBAC real para as novas seções `board`, `tarefas`, `configuracoes` (hoje estão `alwaysVisible: true` como stopgap desde a issue 50), criando rows em `permissoes_perfil` e trocando o `SECAO_TO_PERMISSION` dessas 3 chaves do permissivo `() => true` para checagem de verdade. Ver `issues/merge-nossocrm/99-func-rbac-novas-secoes.md`.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 51 — Redirects legacy
+- **`/tags` NÃO foi redirecionado.** O diff alvo da issue sugeria `/tags → /settings?tab=geral#tags`, mas a `GeneralTab` hoje só expõe `CustomFieldsManager` — Etiquetas nunca foi absorvida em nenhuma aba do hub `/settings`. Redirecionar agora mandaria o usuário pra uma página que não contém o que ele procurou. Mantido `/tags` como rota ativa apontando pra `pages/Tags.tsx` como exceção documentada. Resolução definitiva fica bloqueada até alguma issue absorver o `TagsManager` na aba Geral (ou criar uma aba Etiquetas).
+- **Slugs corrigidos em relação ao diff alvo da issue.** A issue 51 usou `brand`/`perms`/`integ` no diff de referência, mas `src/pages/Settings.tsx` define os slugs válidos como `geral | funis | equipe | permissoes | integracoes | ia | personalizacao`. O hub valida via `isValidTab` e cai no default `geral` se receber um slug inválido — usar o diff literal quebraria os deep links. Usei os slugs reais.
+- **Redirects fora do `ProtectedRoute`.** `<Navigate>` dispara antes de renderizar qualquer componente protegido. Se o usuário não estiver logado, o `ProtectedRoute` do `/settings` (destino) é quem vai mandar pro `/auth`. Evita dupla verificação e mantém o elemento do redirect minimalista (sem layout, sem loader).
+- **`replace` em todos os Navigates** pra não poluir o histórico do navegador com um passo intermediário (voltar da aba `equipe` deve voltar pro que o usuário estava antes, não pra `/users`).
+- **Imports legacy removidos do `App.tsx`** (`Users`, `Permissoes`, `GoogleIntegration`, `Api`, `Webhooks`, `Branding`) porque os `<Route>` deles viraram Navigate puro. Os arquivos de página continuam existindo e são consumidos diretamente pelos tabs de `/settings` (`TeamTab.tsx`, `PermsTab.tsx`, `IntegrationsTab.tsx`, `BrandingTab.tsx`) — não podem ser deletados.
+- **`Header.tsx` PAGE_LABELS intocado.** Ainda tem entradas pra `/users`, `/branding`, etc. Elas ficam dead pros paths redirecionados (o router já trocou a URL pra `/settings` antes do Header renderizar) e vivas pro `/tags`. Remover seria scope creep sem ganho.
+- **Zero links internos tocados.** Grep completo em `src/` por `to="/users"`, `href="/branding"`, `navigate('/api')` etc. não encontrou nenhum match fora do próprio `App.tsx` e do `Header.tsx` PAGE_LABELS. Bookmarks e webhooks externos continuam funcionando via redirect.
+- Build 2626KB / gzip 779KB (sem delta, como esperado — os componentes pages legacy continuam no bundle via os tabs). 12/12 testes verdes.
 
 ### Issue 50 — Sidebar NAV_ITEMS reorganizado
 - **`Campos de Campanha` mantido** fora da lista de remoção: a issue 50 escreveu o diff antes dessa entrada existir no projeto atual. A página é `/campos-campanha` e não corresponde a nenhuma aba de Settings (a aba Geral gerencia Campos Personalizados, que é diferente). Remover cortaria funcionalidade sem substituto. Mantido entre `Importação` e o separador.
