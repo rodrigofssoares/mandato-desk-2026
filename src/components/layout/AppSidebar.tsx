@@ -1,19 +1,16 @@
+import { Fragment } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
   Crown,
   ClipboardList,
-  Tags,
+  KanbanSquare,
+  CheckSquare,
   MapPin,
   Upload,
-  UserCog,
-  Shield,
-  Globe,
-  Code,
-  Webhook,
-  Palette,
   ClipboardCheck,
+  Settings,
   LogOut,
   User,
 } from 'lucide-react';
@@ -26,6 +23,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,23 +41,21 @@ interface NavItem {
   href: string;
   secao: Secao;
   alwaysVisible?: boolean;
+  /** Renderiza um separador visual ANTES deste item (quando visível e não for o primeiro). */
+  dividerBefore?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/', secao: 'dashboard', alwaysVisible: true },
   { label: 'Contatos', icon: Users, href: '/contacts', secao: 'contatos' },
   { label: 'Articuladores', icon: Crown, href: '/leaders', secao: 'liderancas' },
+  { label: 'Board', icon: KanbanSquare, href: '/board', secao: 'board', alwaysVisible: true },
+  { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', secao: 'tarefas', alwaysVisible: true },
   { label: 'Demandas', icon: ClipboardList, href: '/demands', secao: 'demandas' },
-  { label: 'Etiquetas', icon: Tags, href: '/tags', secao: 'etiquetas' },
   { label: 'Mapa', icon: MapPin, href: '/leads-map', secao: 'mapa' },
   { label: 'Importação', icon: Upload, href: '/bulk-import', secao: 'importacao' },
-  { label: 'Usuários', icon: UserCog, href: '/users', secao: 'usuarios' },
-  { label: 'Permissões', icon: Shield, href: '/permissoes', secao: 'permissoes' },
-  { label: 'Google', icon: Globe, href: '/google-integration', secao: 'google' },
-  { label: 'API', icon: Code, href: '/api', secao: 'api' },
-  { label: 'Webhooks', icon: Webhook, href: '/webhooks', secao: 'webhooks' },
-  { label: 'Personalização', icon: Palette, href: '/branding', secao: 'personalizacao' },
   { label: 'Campos de Campanha', icon: ClipboardCheck, href: '/campos-campanha', secao: 'campanha' },
+  { label: 'Configurações', icon: Settings, href: '/settings', secao: 'configuracoes', alwaysVisible: true, dividerBefore: true },
 ];
 
 const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>['can']) => boolean> = {
@@ -78,6 +74,11 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   personalizacao: (can) => can.accessBranding(),
   relatorios: (can) => can.exportData(),
   campanha: (can) => can.viewCampaignFields(),
+  // Novas seções introduzidas no merge — RBAC formal chega na issue 99.
+  // Até lá os itens ficam sempre visíveis via `alwaysVisible: true`.
+  board: () => true,
+  tarefas: () => true,
+  configuracoes: () => true,
 };
 
 export function AppSidebar() {
@@ -135,21 +136,26 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {visibleItems.map((item) => {
+            {visibleItems.map((item, index) => {
               const isActive =
                 item.href === '/'
                   ? location.pathname === '/'
                   : location.pathname.startsWith(item.href);
 
+              const showDivider = item.dividerBefore && index > 0;
+
               return (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
-                    <Link to={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <Fragment key={item.href}>
+                  {showDivider && <SidebarSeparator className="my-1" />}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                      <Link to={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </Fragment>
               );
             })}
           </SidebarMenu>

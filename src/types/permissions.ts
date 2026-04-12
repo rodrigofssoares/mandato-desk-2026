@@ -20,7 +20,8 @@ export const ROLE_LEVELS: Record<Role, number> = {
 export const SECOES = [
   'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
   'mapa', 'importacao', 'usuarios', 'google', 'api',
-  'webhooks', 'personalizacao', 'permissoes', 'relatorios', 'campanha'
+  'webhooks', 'personalizacao', 'permissoes', 'relatorios', 'campanha',
+  'board', 'tarefas', 'configuracoes'
 ] as const;
 export type Secao = typeof SECOES[number];
 
@@ -40,4 +41,7 @@ export const SECAO_LABELS: Record<Secao, string> = {
   permissoes: 'Permissões',
   relatorios: 'Relatórios',
   campanha: 'Campos de Campanha',
+  board: 'Board',
+  tarefas: 'Tarefas',
+  configuracoes: 'Configurações',
 };
