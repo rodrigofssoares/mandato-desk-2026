@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 — issue 99 concluída (Fase 6 quase fechada)
+**Última atualização:** 2026-04-11 — issue 43 concluída — **MERGE NOSSO CRM FECHADO ✅**
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 22 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅, Fase 6: 50 ✅, 51 ✅, 99 ✅)
+- **Concluídas:** 23 ✅ (Fases 0 + 1 + 2 + 3 + 4 + 5 + 6 completas)
 - **Em andamento:** 0
-- **Pendentes:** 1 (Fase 6: 43)
+- **Pendentes:** 0
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -59,7 +59,7 @@
 - [x] `50-func-sidebar-nova` — `AppSidebar.tsx` reorganizado: removidos 7 itens absorvidos em Settings (Etiquetas, Usuários, Permissões, Google, API, Webhooks, Personalização) + adicionados Board, Tarefas e Configurações (com `SidebarSeparator` antes via flag `dividerBefore`). `Secao` type estendido com `board`/`tarefas`/`configuracoes` em `src/types/permissions.ts` + `SECAO_LABELS`. Novas seções ficam `alwaysVisible: true` até issue 99 plugar RBAC formal. Mantido `Campos de Campanha` (não está na lista de remoção e não é absorvido por Settings). Ícones: `KanbanSquare`, `CheckSquare`, `Settings`. Build + 12/12 verdes.
 - [x] `51-func-redirects-legacy-settings` — 6 rotas legacy (`/users`, `/permissoes`, `/google-integration`, `/api`, `/webhooks`, `/branding`) convertidas em `<Navigate replace>` apontando para as abas corretas do hub (`equipe`, `permissoes`, `integracoes&sub=google|api|webhooks`, `personalizacao`). Imports dessas páginas removidos do `App.tsx` (continuam importados pelos próprios tabs de `/settings`). **Exceção documentada:** `/tags` mantido ativo sem redirect porque a aba Geral ainda não absorveu `Etiquetas` — redirecionar agora jogaria o usuário em Campos Personalizados, que é outro conteúdo. Corrigido desvio do diff alvo da issue (usava `brand`/`perms`/`integ` — slugs inexistentes; os reais são `personalizacao`/`permissoes`/`integracoes`). Build + 12/12 verdes.
 - [x] `99-func-rbac-novas-secoes` — migration `017_rbac_novas_secoes.sql` completa as 5 linhas de `configuracoes` que faltavam (board/tarefas já existiam no DB por seed anterior) via INSERT + `ON CONFLICT DO NOTHING`. `generateDefaultPermissions` em `usePermissoesAdmin.ts` passa a semear board/tarefas/configuracoes nos 5 roles quando "Restaurar Padrão" rodar (antes cairiam no else e zeravam tudo). `usePermissions.tsx` ganha 9 helpers (`viewBoard`/`createBoardItem`/`editBoardItem`/`deleteBoardItem`, `viewTarefas`/`createTarefa`/`editTarefa`/`deleteTarefa`, `accessSettings`). `AppSidebar` remove `alwaysVisible: true` dos 3 itens e troca o `() => true` por `can.viewBoard()`/`can.viewTarefas()`/`can.accessSettings()`. Páginas `Board`/`Tarefas`/`Settings` ganham guards: loading skeleton + card "sem permissão" quando `canViewPage === false`; CTAs principais (Novo board, Editar estágios, Criar primeiro, Nova tarefa) só renderizam se `canCreate`; callbacks de remove/edit validam permissão no closure antes de abrir dialog (RLS no backend cobre o resto). Build 2628KB / gzip 780KB. 12/12 testes verdes.
-- [ ] `43-func-contato-filtro-custom-fields`
+- [x] `43-func-contato-filtro-custom-fields` — `ContactFilters` (tipo) estendido com `custom_fields?: Record<string, CustomFieldFilterValue>` + union type discriminado por `tipo` (texto/numero/data/booleano/selecao). `useContacts` ganha bloco que itera as entradas, roda query separada em `campos_personalizados_valores` por entrada (`.ilike`/`.gte`/`.lte`/`.eq`/`.in` por coluna de valor conforme tipo) e faz **interseção de Sets de `contact_id`** — contato precisa satisfazer TODOS os filtros simultaneamente. Zero filtros vazios executam ida ao DB (guard por `contains.trim()` / `min===undefined && max===undefined` / etc). Novo componente `CustomFieldFilterInput.tsx` renderiza 5 formas: texto (input contains), número (min/max side-by-side), data (from/to side-by-side), booleano (Select Sim/Não/Qualquer), seleção (checkboxes multi no estilo das tags). `ContactFilters.tsx` consome `useCustomFields({ filtravel: true })` e pluga a seção dinâmica antes do bloco de Data criação, com grid responsivo igual ao container principal. `activeCount` soma `customFieldsCount` — badge do botão reflete o uso real. `clearAll` reseta automaticamente pelo spread (só mantém search/sort/page/per_page). Build 2632.89KB / gzip 781.23KB. 12/12 testes verdes. **Fase 6 fechada ✅ — MERGE NOSSO CRM CONCLUÍDO ✅**
 
 ### Opcionais (fora do escopo desta execução)
 - `14 Parte B` — upgrade Vault/pgsodium (só sob demanda)
@@ -68,11 +68,24 @@
 ---
 
 ## Próxima ação
-Issue 99 concluída ✅ — RBAC formal plugado para board/tarefas/configuracoes (migration 017, defaults atualizados, sidebar real, guards em Board/Tarefas/Settings). Próxima e última da Fase 6: **`43-func-contato-filtro-custom-fields`**. Adicionar filtro por valores de campos personalizados na busca de contatos. Ver `issues/merge-nossocrm/43-func-contato-filtro-custom-fields.md`.
+**Nada.** Merge Nosso CRM → Mandato Desk 2026 **concluído ✅**. 23/23 issues obrigatórias entregues. Issues opcionais (`14 Parte B` upgrade Vault/pgsodium e `98` granularidade RBAC em Settings) ficam para demanda futura — não bloqueiam entrega.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 43 — Filtros por Campos Personalizados na lista de contatos
+- **Filtro executado como "pre-query de IDs", não via `!inner` join.** O diff alvo da issue sugeriu um `.select('*, custom_values:campos_personalizados_valores!inner(...)')` com filtros encadeados via `eq('custom_values.campo_id', ...)`. Descartei porque o padrão `!inner` do PostgREST só funciona bem para filtro por UMA linha aninhada e aplica os filtros no contexto da linha aninhada — combinar múltiplos filtros custom AND via esse esquema fica ambíguo (a query filtraria por linhas de `campos_personalizados_valores` que satisfaçam todos os critérios simultaneamente, mas os critérios estão em linhas diferentes — um por campo). Preferi seguir o padrão já estabelecido por `campaign_field_ids` no mesmo arquivo: roda N queries pequenas em `campos_personalizados_valores`, coleta `contact_id`, faz interseção de Sets em JS, e aplica um único `query.in('id', [...])` no final. Mais linhas de código, mas semântica clara de AND entre filtros.
+- **Union type discriminado por `tipo` em vez de `{ op, value }` genérico.** A issue sugeriu `{ op: 'eq' | 'contains' | 'gt' | 'lt' | 'between', value: any }` com `op` escolhido por tipo. Isso empurra a validação runtime pro hook (precisa bater `op` com `tipo` do campo) e deixa `value: any`. Troquei por discriminated union (`{ tipo: 'texto'; contains }`, `{ tipo: 'numero'; min?; max? }`, etc) — TypeScript força o input do componente a bater com o que o hook espera, sem runtime guards. Trade-off: o tipo precisa ser passado junto no filtro, mas o `CustomFieldFilterInput` já recebe o `campo` e preenche automaticamente o `tipo` no `onChange`.
+- **Interseção com `reduce` + early exit em conjuntos vazios.** Se qualquer filtro retornar 0 `contact_ids`, o hook retorna `{ data: [], count: 0 }` imediatamente sem nem executar a query final. Evita um `query.in('id', [])` que em PostgREST gera `in.()` — sintaxe inválida que jogaria erro 400. Também pula a query completamente quando o filtro está vazio (ex: `min` e `max` ambos undefined, ou input texto só com espaços).
+- **`number.min`/`number.max` ambos opcionais e combinados.** O diff alvo mencionava `gt`/`lt`/`between`, mas na prática min+max combinam `gte`+`lte` no mesmo registro — não precisa do enum. O usuário preenche só `min`, só `max`, ou ambos (range completo). Mesma lógica pra `data.from`/`data.to`.
+- **`seleção` como multi-select (checkboxes), não single `Select`.** O diff alvo pedia multi-select. Ao invés de usar um componente `MultiSelect` novo (o projeto não tem), reusei o estilo da lista de tags (checkbox + label inline) dentro de um container com scroll. Comportamento: contato casa se `valor_selecao` estiver em qualquer uma das opções marcadas (IN query no hook). Zero check = filtro vazio = não envia ao DB.
+- **Só campos marcados `filtravel: true` aparecem no painel.** `useCustomFields({ filtravel: true })` já existia (issue 22) e foi consumido direto. O componente `CustomFieldsManager` permite o usuário togglar `filtravel` na aba Settings → Geral, então o admin controla quais campos aparecem como filtro.
+- **Limpar filtros já reseta `custom_fields` automaticamente.** O `clearAll` só mantém `search`, `sort_by`, `page`, `per_page` — o spread naturalmente joga fora tudo mais, incluindo `custom_fields`. Zero código extra.
+- **`activeCount` soma `customFieldsCount`.** Contei via `Object.values(filters.custom_fields ?? {}).filter(Boolean).length` — cada filtro custom vale 1 no badge do botão "Filtros". Isso torna o filtro custom visível como "ativo" pro usuário sem expandir o painel.
+- **`setCustomFieldFilter` helper.** Ao receber `undefined` do `CustomFieldFilterInput` (significa "sem filtro"), o helper faz `delete current[campoId]` e se sobra objeto vazio, troca por `undefined` no filtro raiz. Assim `filters.custom_fields` nunca fica como `{}` — é sempre `undefined` ou objeto preenchido. Isso simplifica as checagens em `useContacts` (`Object.keys(custom_fields).length > 0`).
+- **Sem mudança de schema, sem migration.** A tabela `campos_personalizados_valores` já tem índices em `(campo_id)` e `(contact_id)` de `015_merge_custom_fields.sql`. As queries do filtro se beneficiam direto disso. Nenhuma RLS nova.
+- Build 2628KB → 2632.89KB (+ ~4.89KB — o componente novo + union type + lógica do filtro + consumo de `useCustomFields`). Gzip 780KB → 781.23KB (+1.23KB). 12/12 testes verdes.
 
 ### Issue 99 — RBAC para novas seções (board, tarefas, configuracoes)
 - **Migration é idempotente via `ON CONFLICT (role, secao) DO NOTHING`.** Ao rodar `SELECT role, secao FROM permissoes_perfil WHERE secao IN ('board','tarefas','configuracoes')` antes de escrever a migration, descobri que **as linhas de `board` e `tarefas` já existiam no DB** para as 5 roles (provavelmente inseridas por seed manual em alguma execução anterior), enquanto `configuracoes` estava zerada. Em vez de dividir a migration em dois arquivos, escrevi uma única que enumera os 15 rows (3 seções × 5 roles) e pula os conflitos — preserva valores customizados existentes e planta só o que falta. Ideal pra retomada em branco de qualquer ambiente.
