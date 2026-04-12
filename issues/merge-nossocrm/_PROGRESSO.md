@@ -1,6 +1,6 @@
 # Progresso — Merge Nosso CRM → Mandato Desk 2026
 
-**Última atualização:** 2026-04-11 — issue 51 concluída (Fase 6 em andamento)
+**Última atualização:** 2026-04-11 — issue 99 concluída (Fase 6 quase fechada)
 **Sessão atual iniciada em:** 2026-04-11 19:10 UTC
 **Sinal de retomada:** digite `continuar merge-nossocrm` em qualquer sessão futura
 
@@ -8,9 +8,9 @@
 
 ## Status geral
 - **Total:** 23 issues obrigatórias (Fase 0–6, incluindo 14A e 15)
-- **Concluídas:** 21 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅, Fase 6: 50 ✅, 51 ✅)
+- **Concluídas:** 22 (Fases 0 + 1 + 2 + 3 + 4 + 5 completas ✅, Fase 6: 50 ✅, 51 ✅, 99 ✅)
 - **Em andamento:** 0
-- **Pendentes:** 2 (Fase 6: 99, 43)
+- **Pendentes:** 1 (Fase 6: 43)
 - **Bloqueadas:** 0
 - **Opcionais (fora da contagem):** 14 Parte B, 98
 
@@ -58,7 +58,7 @@
 ### Fase 6 — Fechamento
 - [x] `50-func-sidebar-nova` — `AppSidebar.tsx` reorganizado: removidos 7 itens absorvidos em Settings (Etiquetas, Usuários, Permissões, Google, API, Webhooks, Personalização) + adicionados Board, Tarefas e Configurações (com `SidebarSeparator` antes via flag `dividerBefore`). `Secao` type estendido com `board`/`tarefas`/`configuracoes` em `src/types/permissions.ts` + `SECAO_LABELS`. Novas seções ficam `alwaysVisible: true` até issue 99 plugar RBAC formal. Mantido `Campos de Campanha` (não está na lista de remoção e não é absorvido por Settings). Ícones: `KanbanSquare`, `CheckSquare`, `Settings`. Build + 12/12 verdes.
 - [x] `51-func-redirects-legacy-settings` — 6 rotas legacy (`/users`, `/permissoes`, `/google-integration`, `/api`, `/webhooks`, `/branding`) convertidas em `<Navigate replace>` apontando para as abas corretas do hub (`equipe`, `permissoes`, `integracoes&sub=google|api|webhooks`, `personalizacao`). Imports dessas páginas removidos do `App.tsx` (continuam importados pelos próprios tabs de `/settings`). **Exceção documentada:** `/tags` mantido ativo sem redirect porque a aba Geral ainda não absorveu `Etiquetas` — redirecionar agora jogaria o usuário em Campos Personalizados, que é outro conteúdo. Corrigido desvio do diff alvo da issue (usava `brand`/`perms`/`integ` — slugs inexistentes; os reais são `personalizacao`/`permissoes`/`integracoes`). Build + 12/12 verdes.
-- [ ] `99-func-rbac-novas-secoes`
+- [x] `99-func-rbac-novas-secoes` — migration `017_rbac_novas_secoes.sql` completa as 5 linhas de `configuracoes` que faltavam (board/tarefas já existiam no DB por seed anterior) via INSERT + `ON CONFLICT DO NOTHING`. `generateDefaultPermissions` em `usePermissoesAdmin.ts` passa a semear board/tarefas/configuracoes nos 5 roles quando "Restaurar Padrão" rodar (antes cairiam no else e zeravam tudo). `usePermissions.tsx` ganha 9 helpers (`viewBoard`/`createBoardItem`/`editBoardItem`/`deleteBoardItem`, `viewTarefas`/`createTarefa`/`editTarefa`/`deleteTarefa`, `accessSettings`). `AppSidebar` remove `alwaysVisible: true` dos 3 itens e troca o `() => true` por `can.viewBoard()`/`can.viewTarefas()`/`can.accessSettings()`. Páginas `Board`/`Tarefas`/`Settings` ganham guards: loading skeleton + card "sem permissão" quando `canViewPage === false`; CTAs principais (Novo board, Editar estágios, Criar primeiro, Nova tarefa) só renderizam se `canCreate`; callbacks de remove/edit validam permissão no closure antes de abrir dialog (RLS no backend cobre o resto). Build 2628KB / gzip 780KB. 12/12 testes verdes.
 - [ ] `43-func-contato-filtro-custom-fields`
 
 ### Opcionais (fora do escopo desta execução)
@@ -68,11 +68,24 @@
 ---
 
 ## Próxima ação
-Issue 51 concluída ✅ — 6 redirects legacy plantados, `/tags` mantido como exceção até a aba Geral absorver Etiquetas. Próxima: **`99-func-rbac-novas-secoes`**. Plugar RBAC real para as novas seções `board`, `tarefas`, `configuracoes` (hoje estão `alwaysVisible: true` como stopgap desde a issue 50), criando rows em `permissoes_perfil` e trocando o `SECAO_TO_PERMISSION` dessas 3 chaves do permissivo `() => true` para checagem de verdade. Ver `issues/merge-nossocrm/99-func-rbac-novas-secoes.md`.
+Issue 99 concluída ✅ — RBAC formal plugado para board/tarefas/configuracoes (migration 017, defaults atualizados, sidebar real, guards em Board/Tarefas/Settings). Próxima e última da Fase 6: **`43-func-contato-filtro-custom-fields`**. Adicionar filtro por valores de campos personalizados na busca de contatos. Ver `issues/merge-nossocrm/43-func-contato-filtro-custom-fields.md`.
 
 ---
 
 ## Decisões tomadas durante execução
+
+### Issue 99 — RBAC para novas seções (board, tarefas, configuracoes)
+- **Migration é idempotente via `ON CONFLICT (role, secao) DO NOTHING`.** Ao rodar `SELECT role, secao FROM permissoes_perfil WHERE secao IN ('board','tarefas','configuracoes')` antes de escrever a migration, descobri que **as linhas de `board` e `tarefas` já existiam no DB** para as 5 roles (provavelmente inseridas por seed manual em alguma execução anterior), enquanto `configuracoes` estava zerada. Em vez de dividir a migration em dois arquivos, escrevi uma única que enumera os 15 rows (3 seções × 5 roles) e pula os conflitos — preserva valores customizados existentes e planta só o que falta. Ideal pra retomada em branco de qualquer ambiente.
+- **`generateDefaultPermissions` atualizado apesar do DB já ter board/tarefas.** A função é o que "Restaurar Padrão" roda, e ela itera `SECOES` (que hoje inclui as 3 novas via issue 50) mas o `roleDefaults` não tinha entradas pra board/tarefas/configuracoes. Resultado: antes da correção, clicar "Restaurar Padrão" teria caído no branch `else` pros 3 × 5 = 15 rows e zerado TUDO (view=false, criar=false, etc). Isso seria uma regressão silenciosa e catastrófica: admin perderia acesso a Settings na hora. Agora os 5 roles têm defaults explícitos pra as 3 seções.
+- **`configuracoes` como bloco único (não granular por aba).** O MVP trata `configuracoes` como on/off. Granularidade por aba (`configuracoes.geral`, `configuracoes.funis`, `configuracoes.ia` etc.) está documentada como follow-up opcional na issue 98 e fora de escopo desta execução. Os 5 roles: admin=full, proprietario=view-only (consistente com padrão de `usuarios`/`google`/etc), assessor/assistente/estagiario=sem acesso.
+- **Defaults por role nos 3 novos slots**: inspirados nos existentes. `proprietario`→fullAccess board+tarefas, viewOnly configuracoes. `assessor`→viewCreateEdit board+tarefas (sem delete, consistente com contatos/liderancas). `assistente`→viewOnly board (só leitura) + viewCreateEdit tarefas (pra poder criar tarefas próprias — `so_proprio: true` herdado do branch não-assessor). `estagiario`→viewOnly board+tarefas. `admin` via `fullAccess: [...SECOES]` já pega tudo automaticamente.
+- **9 helpers novos em `usePermissions.tsx`, não 1.** O padrão existente do hook é expor helpers semânticos (`viewContacts`, `createContact`, `editContact`, `deleteContact`) em vez de um só `can.access('contatos', 'read')`. Segui a mesma convenção: `viewBoard`/`createBoardItem`/`editBoardItem`/`deleteBoardItem`, `viewTarefas`/`createTarefa`/`editTarefa`/`deleteTarefa`, mais `accessSettings` (único pra configuracoes, bloco monolítico). Nomes pluralizados ("BoardItem", "Tarefa") casam com o vocabulário dos hooks (`useBoardItems`, `useTarefas`).
+- **`AppSidebar`: `alwaysVisible: true` removido dos 3 itens.** Era stopgap da issue 50. Agora `board`/`tarefas`/`configuracoes` usam `SECAO_TO_PERMISSION` normal. `Dashboard` continua `alwaysVisible: true` porque é home — usuário sem dashboard vira um usuário sem landing page.
+- **Guards nas páginas seguem o padrão de `CamposCampanha.tsx`.** Early return com `Loader2` enquanto `isPermLoading`, depois `Card` com "Você não tem permissão" quando `!canViewPage`. Zero duplicação de layout — é o mesmo padrão já usado no projeto, então o usuário vê UX consistente entre páginas bloqueadas.
+- **Delete/edit per-item gate via closure, não via props.** Para não refatorar as props de `BoardKanban`, `BoardCardDetailSheet`, `TarefasList` e `TarefasCalendar` (que hoje exigem callbacks `onCardRemove`/`onRemove`/`onDelete`/`onEditTarefa` como required), envolvi cada callback num wrapper que checa `canDelete`/`canEdit` e faz early return. O botão continua visível (não fica perfeito em termos de UX pra usuário sem permissão), mas o click é no-op. Backstop: RLS do Supabase no row-level bloqueia o DELETE/UPDATE se o RBAC escalar. Alternativa mais limpa seria tornar os callbacks opcionais e esconder os botões nos componentes filhos — essa refatoração fica pra uma issue futura. Critério de aceite da issue 99 ("botões respeitam permissões") é atendido nos CTAs principais (Novo board, Editar estágios, Criar primeiro board, Nova tarefa) que foram gated com `{canCreate && ...}`.
+- **`Gerenciar funis` gated por `canCreate`** (não por `accessSettings`). Faria sentido esconder o link se o usuário não tem acesso a settings, mas o link só aparece se tem permissão de criar board — e quem tem criar-board provavelmente tem configuracoes (ou o link leva a uma página bloqueada, o que é aceitável). Evita dupla checagem.
+- **Migration 017 não cria coluna nova, não adiciona índice, não toca RLS.** Só faz INSERT idempotente. Safe em produção: é só linhas de permissão e a tabela já é pequena.
+- Build 2628KB → 2628KB / gzip 780KB → 780KB (sem delta). 12/12 testes verdes.
 
 ### Issue 51 — Redirects legacy
 - **`/tags` NÃO foi redirecionado.** O diff alvo da issue sugeria `/tags → /settings?tab=geral#tags`, mas a `GeneralTab` hoje só expõe `CustomFieldsManager` — Etiquetas nunca foi absorvida em nenhuma aba do hub `/settings`. Redirecionar agora mandaria o usuário pra uma página que não contém o que ele procurou. Mantido `/tags` como rota ativa apontando pra `pages/Tags.tsx` como exceção documentada. Resolução definitiva fica bloqueada até alguma issue absorver o `TagsManager` na aba Geral (ou criar uma aba Etiquetas).
