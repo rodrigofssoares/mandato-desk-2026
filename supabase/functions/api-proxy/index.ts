@@ -361,6 +361,75 @@ async function handleDelete(
   return json(200, { message: 'Registro excluido com sucesso', id: resourceId })
 }
 
+// Normaliza telefone: remove (, ), -, espaços e prefixo +55
+function normalizePhone(phone: string): string {
+  return phone.replace(/[\s\(\)\-\+]/g, '').replace(/^55/, '')
+}
+
+async function handlePatchByPhone(
+  supabase: SupabaseClient,
+  rawPhone: string,
+  body: Record<string, unknown>,
+  userId: string,
+): Promise<Response> {
+  const normalized = normalizePhone(rawPhone)
+  if (!normalized) return json(400, { error: 'Telefone invalido na URL' })
+
+  // Extrair parâmetros de board antes de filtrar
+  const boardId = typeof body.board_id === 'string' ? body.board_id : null
+  const stageId = typeof body.stage_id === 'string' ? body.stage_id : null
+  delete body.board_id
+  delete body.stage_id
+
+  // Buscar contato pelo telefone normalizado
+  const { data: contacts, error: searchErr } = await supabase
+    .from('contacts')
+    .select('id, phone')
+    .eq('created_by', userId)
+    .ilike('phone', `%${normalized}%`)
+    .limit(1)
+
+  if (searchErr) return json(500, { error: searchErr.message })
+  if (!contacts || contacts.length === 0) {
+    return json(404, { error: `Contato nao encontrado para o telefone: ${rawPhone}` })
+  }
+
+  const contact = contacts[0]
+
+  // Atualizar campos do contato (se houver)
+  const filtered = filterBody(body, 'contacts')
+  let updatedContact = contact
+
+  if (Object.keys(filtered).length > 0) {
+    const { data: updated, error: updateErr } = await supabase
+      .from('contacts')
+      .update(filtered)
+      .eq('id', contact.id)
+      .eq('created_by', userId)
+      .select()
+      .single()
+
+    if (updateErr) return json(500, { error: updateErr.message })
+    updatedContact = updated
+  } else {
+    // Buscar dados completos do contato para retornar
+    const { data: full } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('id', contact.id)
+      .single()
+    if (full) updatedContact = full
+  }
+
+  // Vincular ao board se informado
+  if (boardId) {
+    const boardLink = await linkContactToBoard(supabase, contact.id, boardId, stageId, userId)
+    return json(200, { ...updatedContact, board_link: boardLink })
+  }
+
+  return json(200, updatedContact)
+}
+
 // ---- Main Handler ----
 
 Deno.serve(async (req) => {
@@ -400,6 +469,18 @@ Deno.serve(async (req) => {
     const funcIndex = pathParts.indexOf('api-proxy')
     const resource = pathParts[funcIndex + 1]
     const resourceId = pathParts[funcIndex + 2]
+
+    // Rota especial: PATCH|PUT /contacts/by-phone/{tel}
+    if (
+      resource === 'contacts' &&
+      resourceId === 'by-phone' &&
+      (req.method === 'PATCH' || req.method === 'PUT')
+    ) {
+      const rawPhone = pathParts[funcIndex + 3]
+      if (!rawPhone) return json(400, { error: 'Telefone obrigatorio na URL. Ex: /contacts/by-phone/11999999999' })
+      const body = await req.json().catch(() => ({}))
+      return await handlePatchByPhone(supabase, decodeURIComponent(rawPhone), body as Record<string, unknown>, tokenData.user_id)
+    }
 
     if (!resource || !['contacts', 'demands', 'tags'].includes(resource)) {
       return json(400, {
