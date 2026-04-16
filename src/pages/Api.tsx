@@ -60,6 +60,8 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
       city: 'Sao Paulo',
       state: 'SP',
       neighborhood: 'Centro',
+      board_id: '(opcional) uuid-do-board',
+      stage_id: '(opcional) uuid-da-etapa',
     }, null, 2),
     PATCH: JSON.stringify({
       phone: '(11) 88888-8888',
@@ -99,6 +101,15 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
   },
 };
 
+const byPhoneBodies = {
+  PATCH: JSON.stringify({
+    notes: 'ja convertido',
+    source: 'instagram',
+    board_id: 'uuid-do-board',
+    stage_id: 'uuid-da-etapa',
+  }, null, 2),
+}
+
 const resourceLabels: Record<Resource, string> = {
   contacts: 'Contatos',
   demands: 'Demandas',
@@ -129,6 +140,23 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
       { method: 'PATCH', path: '/contacts/{id}', description: 'Atualizar um contato', body: exampleBodies.contacts.PATCH },
       { method: 'PUT', path: '/contacts/{id}', description: 'Atualizar um contato (alias de PATCH, para sistemas que so enviam PUT)', body: exampleBodies.contacts.PUT },
       { method: 'DELETE', path: '/contacts/{id}', description: 'Excluir um contato' },
+    ],
+  },
+  {
+    title: 'Contatos por Telefone',
+    endpoints: [
+      {
+        method: 'PATCH' as HttpMethod,
+        path: '/contacts/by-phone/{telefone}',
+        description: 'Atualizar contato pelo telefone e/ou mover para board/etapa. Telefone normalizado automaticamente.',
+        body: byPhoneBodies.PATCH,
+      },
+      {
+        method: 'PUT' as HttpMethod,
+        path: '/contacts/by-phone/{telefone}',
+        description: 'Alias de PATCH para sistemas que só enviam PUT.',
+        body: byPhoneBodies.PATCH,
+      },
     ],
   },
   {
@@ -194,6 +222,8 @@ const contactFields = [
   { campo: 'occupation', tipo: 'string', obrigatorio: false, descricao: 'Profissão' },
   { campo: 'em_canal_whatsapp', tipo: 'boolean', obrigatorio: false, descricao: 'Está no canal do WhatsApp' },
   { campo: 'e_multiplicador', tipo: 'boolean', obrigatorio: false, descricao: 'É multiplicador' },
+  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'ID do board para vincular automaticamente o contato (apenas POST)' },
+  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'ID da etapa do board. Se ausente, usa a primeira etapa do board' },
 ];
 
 // ---- Componentes auxiliares ----
