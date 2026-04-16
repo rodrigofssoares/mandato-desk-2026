@@ -272,6 +272,12 @@ async function handlePost(
   body: Record<string, unknown>,
   userId: string,
 ) {
+  // Extrair parâmetros de board antes de filtrar (não são colunas do contato)
+  const boardId = typeof body.board_id === 'string' ? body.board_id : null
+  const stageId = typeof body.stage_id === 'string' ? body.stage_id : null
+  delete body.board_id
+  delete body.stage_id
+
   const filtered = filterBody(body, resource)
   const requiredError = validateRequired(filtered, resource)
   if (requiredError) return json(400, { error: requiredError })
@@ -290,6 +296,12 @@ async function handlePost(
       return json(409, { error: 'Registro duplicado: ' + error.message })
     }
     return json(500, { error: error.message })
+  }
+
+  // Vincular ao board se informado (apenas para contacts)
+  if (resource === 'contacts' && boardId) {
+    const boardLink = await linkContactToBoard(supabase, data.id, boardId, stageId, userId)
+    return json(201, { ...data, board_link: boardLink })
   }
 
   return json(201, data)
