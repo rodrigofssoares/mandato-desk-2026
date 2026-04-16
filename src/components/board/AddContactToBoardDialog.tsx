@@ -49,8 +49,8 @@ export function AddContactToBoardDialog({
   const contacts = useMemo(() => {
     if (!contactsResult) return [];
     if (Array.isArray(contactsResult)) return contactsResult;
-    const maybe = contactsResult as { contacts?: unknown[] };
-    if (Array.isArray(maybe.contacts)) return maybe.contacts as Array<{ id: string; nome: string }>;
+    const maybe = contactsResult as { data?: unknown[] };
+    if (Array.isArray(maybe.data)) return maybe.data as Array<{ id: string; nome: string }>;
     return [];
   }, [contactsResult]);
 
