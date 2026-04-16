@@ -87,6 +87,97 @@ function validateRequired(body: Record<string, unknown>, resource: string): stri
   return null
 }
 
+// Resultado do vínculo com board
+interface BoardLinkResult {
+  status: 'ok' | 'warning'
+  action?: 'linked' | 'moved'
+  board_item_id?: string
+  message?: string
+}
+
+// Vincula ou move um contato para um board/etapa
+async function linkContactToBoard(
+  supabase: SupabaseClient,
+  contactId: string,
+  boardId: string,
+  stageId: string | null,
+  userId: string,
+): Promise<BoardLinkResult> {
+  // Validar que o board pertence ao user
+  const { data: board, error: boardErr } = await supabase
+    .from('boards')
+    .select('id')
+    .eq('id', boardId)
+    .eq('created_by', userId)
+    .maybeSingle()
+
+  if (boardErr || !board) {
+    return { status: 'warning', message: 'board_id not found or not accessible' }
+  }
+
+  // Resolver stage_id: se ausente, buscar estágio com menor ordem
+  let resolvedStageId = stageId
+  if (!resolvedStageId) {
+    const { data: firstStage, error: stageErr } = await supabase
+      .from('board_stages')
+      .select('id')
+      .eq('board_id', boardId)
+      .order('ordem', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (stageErr || !firstStage) {
+      return { status: 'warning', message: 'Nenhuma etapa encontrada no board informado' }
+    }
+    resolvedStageId = firstStage.id
+  }
+
+  // Verificar se já existe board_item para (contact_id, board_id)
+  const { data: existing } = await supabase
+    .from('board_items')
+    .select('id')
+    .eq('contact_id', contactId)
+    .eq('board_id', boardId)
+    .maybeSingle()
+
+  if (existing) {
+    // Já está no board — mover de etapa
+    const { error: moveErr } = await supabase
+      .from('board_items')
+      .update({ stage_id: resolvedStageId, moved_at: new Date().toISOString() })
+      .eq('id', existing.id)
+
+    if (moveErr) return { status: 'warning', message: moveErr.message }
+    return { status: 'ok', action: 'moved', board_item_id: existing.id }
+  }
+
+  // Calcular próxima ordem dentro do estágio
+  const { count } = await supabase
+    .from('board_items')
+    .select('id', { count: 'exact', head: true })
+    .eq('stage_id', resolvedStageId)
+
+  const nextOrdem = (count ?? 0) + 1
+
+  // Criar novo board_item
+  const { data: newItem, error: insertErr } = await supabase
+    .from('board_items')
+    .insert({
+      board_id: boardId,
+      contact_id: contactId,
+      stage_id: resolvedStageId,
+      ordem: nextOrdem,
+    })
+    .select('id')
+    .single()
+
+  if (insertErr || !newItem) {
+    return { status: 'warning', message: insertErr?.message ?? 'Erro ao criar board_item' }
+  }
+
+  return { status: 'ok', action: 'linked', board_item_id: newItem.id }
+}
+
 // ---- Handlers ----
 
 async function handleGet(
