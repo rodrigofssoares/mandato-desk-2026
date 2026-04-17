@@ -868,6 +868,29 @@ export default function Api() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <BuildVersionFooter />
+    </div>
+  );
+}
+
+function BuildVersionFooter() {
+  const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
+  const buildDate = typeof __APP_BUILD_DATE__ !== 'undefined' ? __APP_BUILD_DATE__ : new Date().toISOString();
+  const formatted = new Date(buildDate).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return (
+    <div className="flex items-center justify-center gap-2 pt-4 border-t text-xs text-muted-foreground">
+      <span>Versão do build:</span>
+      <Badge variant="outline" className="font-mono">{version}</Badge>
+      <span>·</span>
+      <span>{formatted}</span>
     </div>
   );
 }
