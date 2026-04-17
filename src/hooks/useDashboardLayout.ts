@@ -3,9 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import {
-  DEFAULT_LAYOUTS,
-  normalizeLayouts,
+  DEFAULT_CONFIG,
+  normalizeConfig,
+  type ChartViewType,
+  type DashboardConfig,
   type DashboardLayouts,
+  type DashboardWidgetId,
+  type WidgetPref,
 } from '@/lib/dashboardLayout';
 
 interface UserDashboardLayoutRow {
@@ -22,8 +26,8 @@ export function useDashboardLayout() {
 
   const query = useQuery({
     queryKey: ['user_dashboard_layout', userId],
-    queryFn: async (): Promise<DashboardLayouts> => {
-      if (!userId) return DEFAULT_LAYOUTS;
+    queryFn: async (): Promise<DashboardConfig> => {
+      if (!userId) return DEFAULT_CONFIG;
       const { data, error } = await supabase
         .from('user_dashboard_layouts' as never)
         .select('*')
@@ -32,29 +36,28 @@ export function useDashboardLayout() {
 
       if (error) {
         console.error('[useDashboardLayout] erro ao buscar layout:', error);
-        return DEFAULT_LAYOUTS;
+        return DEFAULT_CONFIG;
       }
-      if (!data) return DEFAULT_LAYOUTS;
-      return normalizeLayouts((data as UserDashboardLayoutRow).layout);
+      if (!data) return DEFAULT_CONFIG;
+      return normalizeConfig((data as UserDashboardLayoutRow).layout);
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
   });
 
-  const persisted = query.data ?? DEFAULT_LAYOUTS;
+  const persisted = query.data ?? DEFAULT_CONFIG;
 
-  // Estado local "em edição" — só é persistido quando o usuário clica Salvar.
-  const [draft, setDraft] = useState<DashboardLayouts | null>(null);
+  // Draft só é persistido quando o usuário clica Salvar.
+  const [draft, setDraft] = useState<DashboardConfig | null>(null);
 
   useEffect(() => {
-    // Descarta o draft quando o layout persistido muda (ex.: reset).
     setDraft(null);
   }, [persisted]);
 
-  const layouts = draft ?? persisted;
+  const config = draft ?? persisted;
 
   const saveMutation = useMutation({
-    mutationFn: async (next: DashboardLayouts) => {
+    mutationFn: async (next: DashboardConfig) => {
       if (!userId) throw new Error('Usuário não autenticado.');
       const { error } = await supabase
         .from('user_dashboard_layouts' as never)
@@ -81,14 +84,56 @@ export function useDashboardLayout() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.setQueryData(['user_dashboard_layout', userId], DEFAULT_LAYOUTS);
+      queryClient.setQueryData(['user_dashboard_layout', userId], DEFAULT_CONFIG);
       setDraft(null);
     },
   });
 
-  const updateDraft = useCallback((next: DashboardLayouts) => {
-    setDraft(next);
-  }, []);
+  const updateLayouts = useCallback(
+    (nextLayouts: DashboardLayouts) => {
+      setDraft({ ...config, layouts: nextLayouts });
+    },
+    [config]
+  );
+
+  const updateWidgetPref = useCallback(
+    (widgetId: DashboardWidgetId, patch: Partial<WidgetPref>) => {
+      const current = config.widgetPrefs[widgetId] ?? {};
+      const merged: WidgetPref = { ...current, ...patch };
+      const cleaned: WidgetPref = {};
+      if (merged.hidden) cleaned.hidden = true;
+      if (merged.chartType) cleaned.chartType = merged.chartType;
+
+      const nextPrefs = { ...config.widgetPrefs };
+      if (Object.keys(cleaned).length === 0) {
+        delete nextPrefs[widgetId];
+      } else {
+        nextPrefs[widgetId] = cleaned;
+      }
+      setDraft({ ...config, widgetPrefs: nextPrefs });
+    },
+    [config]
+  );
+
+  const setChartType = useCallback(
+    async (widgetId: DashboardWidgetId, chartType: ChartViewType) => {
+      const current = config.widgetPrefs[widgetId] ?? {};
+      const nextPrefs = {
+        ...config.widgetPrefs,
+        [widgetId]: { ...current, chartType },
+      };
+      const next: DashboardConfig = { ...config, widgetPrefs: nextPrefs };
+      await saveMutation.mutateAsync(next);
+    },
+    [config, saveMutation]
+  );
+
+  const setHidden = useCallback(
+    (widgetId: DashboardWidgetId, hidden: boolean) => {
+      updateWidgetPref(widgetId, { hidden });
+    },
+    [updateWidgetPref]
+  );
 
   const cancelDraft = useCallback(() => {
     setDraft(null);
@@ -98,21 +143,30 @@ export function useDashboardLayout() {
 
   return useMemo(
     () => ({
-      layouts,
+      config,
+      layouts: config.layouts,
+      widgetPrefs: config.widgetPrefs,
       isLoading: query.isLoading,
       hasDraft,
-      updateDraft,
+      updateLayouts,
+      updateWidgetPref,
+      setHidden,
+      setChartType,
       cancelDraft,
-      save: (next: DashboardLayouts) => saveMutation.mutateAsync(next),
+      save: (next?: DashboardConfig) =>
+        saveMutation.mutateAsync(next ?? config),
       reset: () => resetMutation.mutateAsync(),
       isSaving: saveMutation.isPending,
       isResetting: resetMutation.isPending,
     }),
     [
-      layouts,
+      config,
       query.isLoading,
       hasDraft,
-      updateDraft,
+      updateLayouts,
+      updateWidgetPref,
+      setHidden,
+      setChartType,
       cancelDraft,
       saveMutation,
       resetMutation,

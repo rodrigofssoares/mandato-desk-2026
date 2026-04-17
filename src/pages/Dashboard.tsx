@@ -22,7 +22,12 @@ import {
   type DashboardPeriod,
 } from '@/hooks/useDashboardMetrics';
 import { usePermissions } from '@/hooks/usePermissions';
-import type { DashboardWidgetId } from '@/lib/dashboardLayout';
+import { useDashboardLayout } from '@/hooks/useDashboardLayout';
+import {
+  resolveChartType,
+  type ChartViewType,
+  type DashboardWidgetId,
+} from '@/lib/dashboardLayout';
 
 const PERIOD_LABELS: Record<DashboardPeriod, string> = {
   hoje: 'hoje',
@@ -40,6 +45,9 @@ export default function Dashboard() {
 
   const { data: boards = [] } = useBoards('contact');
   const { can } = usePermissions();
+  const canEdit = can.editDashboardLayout();
+
+  const { widgetPrefs, setChartType } = useDashboardLayout();
 
   const activeBoardId = useMemo(() => {
     if (boardParam && boards.some((b) => b.id === boardParam)) return boardParam;
@@ -62,6 +70,15 @@ export default function Dashboard() {
     setSearchParams(next, { replace: true });
   };
 
+  const handleChartTypeChange = (widgetId: DashboardWidgetId) =>
+    canEdit
+      ? (type: ChartViewType) => {
+          setChartType(widgetId, type).catch((err) => {
+            console.error(err);
+          });
+        }
+      : undefined;
+
   const novosHint = `${PERIOD_LABELS[period]}`;
   const votoHint = metrics
     ? `${metrics.votoDeclarado.taxa.toFixed(1)}% taxa`
@@ -75,6 +92,8 @@ export default function Dashboard() {
         onChangeBoard={setBoard}
         stages={metrics?.funilStages ?? []}
         isLoading={isLoading}
+        viewType={resolveChartType('funnel', widgetPrefs)}
+        onChangeViewType={handleChartTypeChange('funnel')}
       />
     ),
     tarefas: <TarefasHojeCard />,
@@ -82,8 +101,18 @@ export default function Dashboard() {
     'saude-base': <SaudeBaseCard data={metrics?.saudeBase} isLoading={isLoading} />,
     crescimento: <GrowthChart />,
     atividades: <ActivityFeed />,
-    tags: <TagDistributionChart />,
-    voto: <VoteDeclarationChart />,
+    tags: (
+      <TagDistributionChart
+        viewType={resolveChartType('tags', widgetPrefs)}
+        onChangeViewType={handleChartTypeChange('tags')}
+      />
+    ),
+    voto: (
+      <VoteDeclarationChart
+        viewType={resolveChartType('voto', widgetPrefs)}
+        onChangeViewType={handleChartTypeChange('voto')}
+      />
+    ),
   };
 
   return (
@@ -143,7 +172,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Grid editável com os demais widgets ────────────────── */}
-      <EditableDashboard widgets={widgets} canEdit={can.editDashboardLayout()} />
+      <EditableDashboard widgets={widgets} canEdit={canEdit} />
 
       {/* ── Modal de alertas ──────────────────────────────────── */}
       <AlertsModal
