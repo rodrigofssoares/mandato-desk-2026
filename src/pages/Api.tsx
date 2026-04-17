@@ -1,10 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -226,6 +229,69 @@ const contactFields = [
   { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'ID da etapa do board. Se ausente, usa a primeira etapa do board' },
 ];
 
+// ---- Metadados do builder de payload ----
+
+type FieldType = 'string' | 'number' | 'boolean' | 'date' | 'uuid';
+
+interface FieldMeta {
+  key: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  postOnly?: boolean;
+  placeholder?: string;
+}
+
+const contactFieldsMeta: FieldMeta[] = contactFields.map((f) => ({
+  key: f.campo,
+  label: f.descricao,
+  type: f.tipo as FieldType,
+  required: f.obrigatorio,
+  postOnly: f.campo === 'board_id' || f.campo === 'stage_id',
+  placeholder:
+    f.tipo === 'uuid'
+      ? '550e8400-e29b-41d4-a716-446655440000'
+      : f.tipo === 'date'
+        ? 'YYYY-MM-DD'
+        : f.campo === 'phone'
+          ? '(11) 99999-9999'
+          : f.campo === 'email'
+            ? 'nome@exemplo.com'
+            : f.campo === 'latitude' || f.campo === 'longitude'
+              ? '0.000000'
+              : '',
+}));
+
+const fieldTypeBadgeClass: Record<FieldType, string> = {
+  string: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+  number: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+  boolean: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  date: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+  uuid: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+};
+
+function defaultValueFor(type: FieldType): string | number | boolean {
+  switch (type) {
+    case 'boolean':
+      return false;
+    case 'number':
+      return '';
+    default:
+      return '';
+  }
+}
+
+function fieldValueToJson(type: FieldType, raw: unknown): unknown {
+  if (type === 'boolean') return Boolean(raw);
+  if (type === 'number') {
+    if (raw === '' || raw === null || raw === undefined) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : raw;
+  }
+  if (raw === undefined || raw === null) return '';
+  return raw;
+}
+
 // ---- Componentes auxiliares ----
 
 function CopyButton({ text }: { text: string }) {
@@ -273,6 +339,154 @@ function StatusBadge({ status }: { status: number }) {
   );
 }
 
+// ---- Payload Builder ----
+
+interface PayloadBuilderProps {
+  fields: FieldMeta[];
+  method: HttpMethod;
+  selection: Record<string, boolean>;
+  values: Record<string, unknown>;
+  onToggle: (key: string, checked: boolean) => void;
+  onValueChange: (key: string, value: unknown) => void;
+  onSelectAll: () => void;
+  onClear: () => void;
+}
+
+function PayloadBuilder({
+  fields,
+  method,
+  selection,
+  values,
+  onToggle,
+  onValueChange,
+  onSelectAll,
+  onClear,
+}: PayloadBuilderProps) {
+  const visibleFields = fields.filter((f) => !f.postOnly || method === 'POST');
+  const selectedCount = visibleFields.filter((f) => f.required || selection[f.key]).length;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Marque os campos que você vai enviar:</span>
+          <Badge variant="secondary" className="text-[10px]">
+            {selectedCount} de {visibleFields.length}
+          </Badge>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onSelectAll} className="h-7 text-xs">
+            Marcar todos
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClear} className="h-7 text-xs">
+            Limpar
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="h-[360px] border rounded-md">
+        <div className="p-2 space-y-1.5">
+          {visibleFields.map((f) => {
+            const isSelected = f.required || !!selection[f.key];
+            return (
+              <div
+                key={f.key}
+                className={`flex items-start gap-3 p-2 rounded-md transition-colors ${
+                  isSelected ? 'bg-muted/60' : 'hover:bg-muted/30'
+                }`}
+              >
+                <Checkbox
+                  id={`fb-${f.key}`}
+                  checked={isSelected}
+                  disabled={f.required}
+                  onCheckedChange={(c) => onToggle(f.key, c === true)}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Label
+                    htmlFor={`fb-${f.key}`}
+                    className={`flex items-center gap-2 flex-wrap ${f.required ? '' : 'cursor-pointer'}`}
+                  >
+                    <span className="font-mono text-xs">{f.key}</span>
+                    {f.required && <span className="text-red-500 text-xs">*</span>}
+                    <Badge className={`${fieldTypeBadgeClass[f.type]} text-[10px] px-1.5 py-0 font-normal`}>
+                      {f.type}
+                    </Badge>
+                    {f.postOnly && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
+                        só POST
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground truncate">{f.label}</span>
+                  </Label>
+                  {isSelected && (
+                    <FieldValueInput
+                      field={f}
+                      value={values[f.key]}
+                      onChange={(v) => onValueChange(f.key, v)}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+function FieldValueInput({
+  field,
+  value,
+  onChange,
+}: {
+  field: FieldMeta;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  if (field.type === 'boolean') {
+    const checked = Boolean(value);
+    return (
+      <div className="flex items-center gap-2">
+        <Switch checked={checked} onCheckedChange={onChange} />
+        <span className="text-xs text-muted-foreground font-mono">
+          {checked ? 'true' : 'false'}
+        </span>
+      </div>
+    );
+  }
+  if (field.type === 'number') {
+    return (
+      <Input
+        type="number"
+        value={(value as string | number | undefined) ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={field.placeholder}
+        className="font-mono text-sm h-8"
+      />
+    );
+  }
+  if (field.type === 'date') {
+    return (
+      <Input
+        type="date"
+        value={(value as string | undefined) ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="font-mono text-sm h-8"
+      />
+    );
+  }
+  return (
+    <Input
+      value={(value as string | undefined) ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={field.placeholder}
+      className="font-mono text-sm h-8"
+    />
+  );
+}
+
 // ---- Playground ----
 
 function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
@@ -285,11 +499,17 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
   const [response, setResponse] = useState<PlaygroundResponse | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
 
+  // Estado do builder de payload (contacts)
+  const [contactsSelection, setContactsSelection] = useState<Record<string, boolean>>({});
+  const [contactsValues, setContactsValues] = useState<Record<string, unknown>>({});
+
+  const useBuilder = resource === 'contacts' && hasBody(method);
+
   // Atualizar body de exemplo ao trocar recurso/metodo
   const handleResourceChange = (val: Resource) => {
     setResource(val);
     setResponse(null);
-    if (hasBody(method)) {
+    if (hasBody(method) && val !== 'contacts') {
       setBody(exampleBodies[val]?.[method] || '{}');
     }
   };
@@ -298,15 +518,53 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
     setMethod(val);
     setResponse(null);
     setJsonError(null);
-    if (hasBody(val)) {
+    if (hasBody(val) && resource !== 'contacts') {
       setBody(exampleBodies[resource]?.[val] || '{}');
-    } else {
+    } else if (!hasBody(val)) {
       setBody('');
     }
     if (!canHaveId(val)) {
       setResourceId('');
     }
   };
+
+  const toggleContactField = useCallback((key: string, checked: boolean) => {
+    setContactsSelection((prev) => ({ ...prev, [key]: checked }));
+    setContactsValues((prev) => {
+      if (!checked) return prev;
+      if (prev[key] !== undefined) return prev;
+      const meta = contactFieldsMeta.find((m) => m.key === key);
+      if (!meta) return prev;
+      return { ...prev, [key]: defaultValueFor(meta.type) };
+    });
+  }, []);
+
+  const setContactFieldValue = useCallback((key: string, value: unknown) => {
+    setContactsValues((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const selectAllContactFields = useCallback(() => {
+    setContactsSelection(() => {
+      const all: Record<string, boolean> = {};
+      for (const meta of contactFieldsMeta) {
+        if (meta.postOnly && method !== 'POST') continue;
+        all[meta.key] = true;
+      }
+      return all;
+    });
+    setContactsValues((prev) => {
+      const next = { ...prev };
+      for (const meta of contactFieldsMeta) {
+        if (meta.postOnly && method !== 'POST') continue;
+        if (next[meta.key] === undefined) next[meta.key] = defaultValueFor(meta.type);
+      }
+      return next;
+    });
+  }, [method]);
+
+  const clearContactFields = useCallback(() => {
+    setContactsSelection({});
+  }, []);
 
   // Validar JSON em tempo real
   const handleBodyChange = (val: string) => {
@@ -322,6 +580,21 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
       setJsonError('JSON inválido');
     }
   };
+
+  // Body derivado do builder (para contacts)
+  const builderBody = useMemo(() => {
+    if (!useBuilder) return null;
+    const obj: Record<string, unknown> = {};
+    for (const meta of contactFieldsMeta) {
+      if (meta.postOnly && method !== 'POST') continue;
+      const selected = meta.required || !!contactsSelection[meta.key];
+      if (!selected) continue;
+      obj[meta.key] = fieldValueToJson(meta.type, contactsValues[meta.key]);
+    }
+    return JSON.stringify(obj, null, 2);
+  }, [useBuilder, method, contactsSelection, contactsValues]);
+
+  const effectiveBody = useBuilder ? (builderBody ?? '') : body;
 
   // Construir URL final
   const fullUrl = useMemo(() => {
@@ -345,13 +618,13 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
       parts.push(`  -H "Authorization: Bearer SEU_TOKEN"`);
     }
     parts.push(`  -H "Content-Type: application/json"`);
-    if (hasBody(method) && body.trim()) {
+    if (hasBody(method) && effectiveBody.trim()) {
       // Escapar aspas simples no body para o curl
-      const escapedBody = body.replace(/'/g, "'\\''");
+      const escapedBody = effectiveBody.replace(/'/g, "'\\''");
       parts.push(`  -d '${escapedBody}'`);
     }
     return parts.join(' \\\n');
-  }, [method, fullUrl, tokenValue, body]);
+  }, [method, fullUrl, tokenValue, effectiveBody]);
 
   // Enviar requisicao real
   const handleSend = async () => {
@@ -360,9 +633,9 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
       return;
     }
 
-    if (hasBody(method) && body.trim()) {
+    if (hasBody(method) && effectiveBody.trim()) {
       try {
-        JSON.parse(body);
+        JSON.parse(effectiveBody);
       } catch {
         toast.error('Corrija o JSON antes de enviar');
         return;
@@ -388,8 +661,8 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
         },
       };
 
-      if (hasBody(method) && body.trim()) {
-        fetchOptions.body = body;
+      if (hasBody(method) && effectiveBody.trim()) {
+        fetchOptions.body = effectiveBody;
       }
 
       const res = await fetch(fullUrl, fetchOptions);
@@ -499,8 +772,35 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
           </div>
         )}
 
-        {/* Body JSON */}
-        {hasBody(method) && (
+        {/* Body — builder (contacts) ou textarea (demais recursos) */}
+        {hasBody(method) && useBuilder && (
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <FileJson className="h-4 w-4" />
+              Montagem do payload
+            </Label>
+            <PayloadBuilder
+              fields={contactFieldsMeta}
+              method={method}
+              selection={contactsSelection}
+              values={contactsValues}
+              onToggle={toggleContactField}
+              onValueChange={setContactFieldValue}
+              onSelectAll={selectAllContactFields}
+              onClear={clearContactFields}
+            />
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Pré-visualização do corpo (JSON gerado)
+              </Label>
+              <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border font-mono leading-relaxed max-h-[200px] overflow-y-auto">
+                {effectiveBody || '{}'}
+              </pre>
+            </div>
+          </div>
+        )}
+
+        {hasBody(method) && !useBuilder && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
