@@ -9,19 +9,20 @@ import { TarefasHojeCard } from '@/components/dashboard/TarefasHojeCard';
 import { AlertsBadge } from '@/components/dashboard/AlertsBadge';
 import { AlertsModal } from '@/components/dashboard/AlertsModal';
 import { SaudeBaseCard } from '@/components/dashboard/SaudeBaseCard';
-
 import { GrowthChart } from '@/components/dashboard/GrowthChart';
 import { TagDistributionChart } from '@/components/dashboard/TagDistributionChart';
 import { VoteDeclarationChart } from '@/components/dashboard/VoteDeclarationChart';
 import { BirthdaySection } from '@/components/dashboard/BirthdaySection';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { EditableDashboard } from '@/components/dashboard/EditableDashboard';
 
 import { useBoards } from '@/hooks/useBoards';
 import {
   useDashboardMetrics,
   type DashboardPeriod,
 } from '@/hooks/useDashboardMetrics';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/usePermissions';
+import type { DashboardWidgetId } from '@/lib/dashboardLayout';
 
 const PERIOD_LABELS: Record<DashboardPeriod, string> = {
   hoje: 'hoje',
@@ -38,8 +39,8 @@ export default function Dashboard() {
   const boardParam = searchParams.get('board');
 
   const { data: boards = [] } = useBoards('contact');
+  const { can } = usePermissions();
 
-  // Resolução do boardId ativo: URL > default > primeiro
   const activeBoardId = useMemo(() => {
     if (boardParam && boards.some((b) => b.id === boardParam)) return boardParam;
     const def = boards.find((b) => b.is_default);
@@ -66,6 +67,25 @@ export default function Dashboard() {
     ? `${metrics.votoDeclarado.taxa.toFixed(1)}% taxa`
     : undefined;
 
+  const widgets: Record<DashboardWidgetId, React.ReactNode> = {
+    funnel: (
+      <BoardFunnelCard
+        boards={boards}
+        activeBoardId={activeBoardId}
+        onChangeBoard={setBoard}
+        stages={metrics?.funilStages ?? []}
+        isLoading={isLoading}
+      />
+    ),
+    tarefas: <TarefasHojeCard />,
+    aniversarios: <BirthdaySection />,
+    'saude-base': <SaudeBaseCard data={metrics?.saudeBase} isLoading={isLoading} />,
+    crescimento: <GrowthChart />,
+    atividades: <ActivityFeed />,
+    tags: <TagDistributionChart />,
+    voto: <VoteDeclarationChart />,
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* ── Header ─────────────────────────────────────────────── */}
@@ -80,7 +100,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── 4 StatCards com delta ──────────────────────────────── */}
+      {/* ── 4 StatCards fixos no topo (não editáveis) ──────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCardWithDelta
           label="Base Total"
@@ -122,46 +142,8 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* ── Grid principal: Funil + Tarefas/Aniversários ──────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <BoardFunnelCard
-            boards={boards}
-            activeBoardId={activeBoardId}
-            onChangeBoard={setBoard}
-            stages={metrics?.funilStages ?? []}
-            isLoading={isLoading}
-          />
-        </div>
-        <div className="space-y-6">
-          <TarefasHojeCard />
-          <BirthdaySection />
-        </div>
-      </div>
-
-      {/* ── Saúde da Base ───────────────────────────────────── */}
-      <SaudeBaseCard data={metrics?.saudeBase} isLoading={isLoading} />
-
-      {/* ── Linha inferior: Crescimento + Activity Feed ───────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <GrowthChart />
-        </div>
-        <div>
-          <ActivityFeed />
-        </div>
-      </div>
-
-      {/* ── Mais: charts secundários ─────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Mais métricas</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TagDistributionChart />
-          <VoteDeclarationChart />
-        </CardContent>
-      </Card>
+      {/* ── Grid editável com os demais widgets ────────────────── */}
+      <EditableDashboard widgets={widgets} canEdit={can.editDashboardLayout()} />
 
       {/* ── Modal de alertas ──────────────────────────────────── */}
       <AlertsModal

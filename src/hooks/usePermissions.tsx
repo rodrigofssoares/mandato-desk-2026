@@ -38,6 +38,7 @@ export function usePermissions() {
 
     // Secoes individuais
     viewDashboard: () => canView('dashboard'),
+    editDashboardLayout: () => canEdit('dashboard'),
     viewMap: () => canView('mapa'),
     importContacts: () => canView('importacao'),
     exportData: () => canView('relatorios'),
