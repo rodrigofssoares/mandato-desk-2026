@@ -80,6 +80,16 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   configuracoes: (can) => can.accessSettings(),
 };
 
+const buildVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
+const buildDateRaw = typeof __APP_BUILD_DATE__ !== 'undefined' ? __APP_BUILD_DATE__ : new Date().toISOString();
+const buildDateLabel = new Date(buildDateRaw).toLocaleString('pt-BR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
@@ -186,6 +196,12 @@ export function AppSidebar() {
             <LogOut className="h-4 w-4" />
             <span className="group-data-[collapsible=icon]:hidden">Sair</span>
           </Button>
+          <div
+            className="text-[10px] text-muted-foreground text-center font-mono leading-tight pt-1 group-data-[collapsible=icon]:hidden"
+            title={`Build ${buildVersion} em ${buildDateRaw}`}
+          >
+            build {buildVersion} · {buildDateLabel}
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
