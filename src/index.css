@@ -249,3 +249,56 @@
 .leaflet-bottom {
   z-index: 2 !important;
 }
+
+/* ── Dashboard grid editável (react-grid-layout) ─────────────────────── */
+.dashboard-widget {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-widget > div:not(.widget-drag-handle) {
+  height: 100%;
+}
+
+.dashboard-widget > div:not(.widget-drag-handle) > * {
+  height: 100%;
+}
+
+/* Cards dentro do grid precisam preencher o slot e permitir scroll interno */
+.dashboard-widget [data-slot="card"],
+.dashboard-widget .rounded-lg.border {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Placeholder visível enquanto o usuário arrasta/redimensiona */
+.react-grid-item.react-grid-placeholder {
+  background: hsl(var(--primary) / 0.18) !important;
+  border: 2px dashed hsl(var(--primary)) !important;
+  border-radius: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Handle de resize mais visível em modo edição */
+.layout.is-editing .react-resizable-handle {
+  background-image: none;
+  width: 18px;
+  height: 18px;
+  right: 4px;
+  bottom: 4px;
+}
+
+.layout.is-editing .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid hsl(var(--primary));
+  border-bottom: 2px solid hsl(var(--primary));
+  border-bottom-right-radius: 2px;
+}
