@@ -92,32 +92,130 @@ interface BoardLinkResult {
   status: 'ok' | 'warning'
   action?: 'linked' | 'moved'
   board_item_id?: string
+  resolved_board_id?: string
+  resolved_stage_id?: string
+  ambiguous?: boolean
   message?: string
 }
 
-// Vincula ou move um contato para um board/etapa
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isUuid(value: string): boolean {
+  return UUID_REGEX.test(value.trim())
+}
+
+interface ResolveResult {
+  id: string | null
+  ambiguous: boolean
+  count: number
+}
+
+// Resolve um board do usuário por UUID ou por nome (case-insensitive, exato)
+async function resolveBoardId(
+  supabase: SupabaseClient,
+  value: string,
+  userId: string,
+): Promise<ResolveResult> {
+  if (isUuid(value)) {
+    const { data } = await supabase
+      .from('boards')
+      .select('id')
+      .eq('id', value)
+      .eq('created_by', userId)
+      .maybeSingle()
+    return { id: data?.id ?? null, ambiguous: false, count: data ? 1 : 0 }
+  }
+
+  const { data } = await supabase
+    .from('boards')
+    .select('id')
+    .eq('created_by', userId)
+    .ilike('nome', value)
+
+  const count = data?.length ?? 0
+  if (count === 1) return { id: data![0].id, ambiguous: false, count }
+  if (count > 1) return { id: null, ambiguous: true, count }
+  return { id: null, ambiguous: false, count: 0 }
+}
+
+// Resolve uma etapa por UUID ou por nome, escopado ao board
+async function resolveStageId(
+  supabase: SupabaseClient,
+  value: string,
+  boardId: string,
+): Promise<ResolveResult> {
+  if (isUuid(value)) {
+    const { data } = await supabase
+      .from('board_stages')
+      .select('id')
+      .eq('id', value)
+      .eq('board_id', boardId)
+      .maybeSingle()
+    return { id: data?.id ?? null, ambiguous: false, count: data ? 1 : 0 }
+  }
+
+  const { data } = await supabase
+    .from('board_stages')
+    .select('id')
+    .eq('board_id', boardId)
+    .ilike('nome', value)
+
+  const count = data?.length ?? 0
+  if (count === 1) return { id: data![0].id, ambiguous: false, count }
+  if (count > 1) return { id: null, ambiguous: true, count }
+  return { id: null, ambiguous: false, count: 0 }
+}
+
+// Vincula ou move um contato para um board/etapa (aceita UUID ou nome)
 async function linkContactToBoard(
   supabase: SupabaseClient,
   contactId: string,
-  boardId: string,
-  stageId: string | null,
+  boardIdOrName: string,
+  stageIdOrName: string | null,
   userId: string,
 ): Promise<BoardLinkResult> {
-  // Validar que o board pertence ao user
-  const { data: board, error: boardErr } = await supabase
-    .from('boards')
-    .select('id')
-    .eq('id', boardId)
-    .eq('created_by', userId)
-    .maybeSingle()
-
-  if (boardErr || !board) {
-    return { status: 'warning', message: 'board_id not found or not accessible' }
+  // Resolver board (UUID ou nome)
+  const boardResolved = await resolveBoardId(supabase, boardIdOrName, userId)
+  if (boardResolved.ambiguous) {
+    return {
+      status: 'warning',
+      ambiguous: true,
+      message: `nome de board ambíguo (${boardResolved.count} encontrados com o mesmo nome) — informe o UUID em board_id para desambiguar`,
+    }
   }
+  if (!boardResolved.id) {
+    return {
+      status: 'warning',
+      message: isUuid(boardIdOrName)
+        ? 'board_id not found or not accessible'
+        : `board não encontrado pelo nome: "${boardIdOrName}"`,
+    }
+  }
+  const boardId = boardResolved.id
 
   // Resolver stage_id: se ausente, buscar estágio com menor ordem
-  let resolvedStageId = stageId
-  if (!resolvedStageId) {
+  let resolvedStageId: string | null = null
+  if (stageIdOrName) {
+    const stageResolved = await resolveStageId(supabase, stageIdOrName, boardId)
+    if (stageResolved.ambiguous) {
+      return {
+        status: 'warning',
+        resolved_board_id: boardId,
+        ambiguous: true,
+        message: `nome de etapa ambíguo (${stageResolved.count} encontrados no board) — informe o UUID em stage_id para desambiguar`,
+      }
+    }
+    if (!stageResolved.id) {
+      return {
+        status: 'warning',
+        resolved_board_id: boardId,
+        message: isUuid(stageIdOrName)
+          ? 'stage_id não encontrado neste board'
+          : `etapa não encontrada pelo nome: "${stageIdOrName}"`,
+      }
+    }
+    resolvedStageId = stageResolved.id
+  } else {
     const { data: firstStage, error: stageErr } = await supabase
       .from('board_stages')
       .select('id')
@@ -127,7 +225,11 @@ async function linkContactToBoard(
       .maybeSingle()
 
     if (stageErr || !firstStage) {
-      return { status: 'warning', message: 'Nenhuma etapa encontrada no board informado' }
+      return {
+        status: 'warning',
+        resolved_board_id: boardId,
+        message: 'Nenhuma etapa encontrada no board informado',
+      }
     }
     resolvedStageId = firstStage.id
   }
@@ -148,7 +250,13 @@ async function linkContactToBoard(
       .eq('id', existing.id)
 
     if (moveErr) return { status: 'warning', message: moveErr.message }
-    return { status: 'ok', action: 'moved', board_item_id: existing.id }
+    return {
+      status: 'ok',
+      action: 'moved',
+      board_item_id: existing.id,
+      resolved_board_id: boardId,
+      resolved_stage_id: resolvedStageId,
+    }
   }
 
   // Calcular próxima ordem dentro do estágio
@@ -175,7 +283,13 @@ async function linkContactToBoard(
     return { status: 'warning', message: insertErr?.message ?? 'Erro ao criar board_item' }
   }
 
-  return { status: 'ok', action: 'linked', board_item_id: newItem.id }
+  return {
+    status: 'ok',
+    action: 'linked',
+    board_item_id: newItem.id,
+    resolved_board_id: boardId,
+    resolved_stage_id: resolvedStageId,
+  }
 }
 
 // ---- Handlers ----

@@ -63,8 +63,8 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
       city: 'Sao Paulo',
       state: 'SP',
       neighborhood: 'Centro',
-      board_id: '(opcional) uuid-do-board',
-      stage_id: '(opcional) uuid-da-etapa',
+      board_id: '(opcional) UUID ou nome do board — ex: Prospecção',
+      stage_id: '(opcional) UUID ou nome da etapa — ex: Em andamento',
     }, null, 2),
     PATCH: JSON.stringify({
       phone: '(11) 88888-8888',
@@ -108,8 +108,8 @@ const byPhoneBodies = {
   PATCH: JSON.stringify({
     notes: 'ja convertido',
     source: 'instagram',
-    board_id: 'uuid-do-board',
-    stage_id: 'uuid-da-etapa',
+    board_id: 'Prospecção',
+    stage_id: 'Em andamento',
   }, null, 2),
 }
 
@@ -225,8 +225,8 @@ const contactFields = [
   { campo: 'occupation', tipo: 'string', obrigatorio: false, descricao: 'Profissão' },
   { campo: 'em_canal_whatsapp', tipo: 'boolean', obrigatorio: false, descricao: 'Está no canal do WhatsApp' },
   { campo: 'e_multiplicador', tipo: 'boolean', obrigatorio: false, descricao: 'É multiplicador' },
-  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'ID do board para vincular automaticamente o contato (apenas POST)' },
-  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'ID da etapa do board. Se ausente, usa a primeira etapa do board' },
+  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome do board — vincula o contato automaticamente (apenas POST)' },
+  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome da etapa do board. Se ausente, usa a primeira etapa' },
 ];
 
 // ---- Metadados do builder de payload ----
@@ -249,17 +249,21 @@ const contactFieldsMeta: FieldMeta[] = contactFields.map((f) => ({
   required: f.obrigatorio,
   postOnly: f.campo === 'board_id' || f.campo === 'stage_id',
   placeholder:
-    f.tipo === 'uuid'
-      ? '550e8400-e29b-41d4-a716-446655440000'
-      : f.tipo === 'date'
-        ? 'YYYY-MM-DD'
-        : f.campo === 'phone'
-          ? '(11) 99999-9999'
-          : f.campo === 'email'
-            ? 'nome@exemplo.com'
-            : f.campo === 'latitude' || f.campo === 'longitude'
-              ? '0.000000'
-              : '',
+    f.campo === 'board_id'
+      ? 'UUID ou nome do board (ex: Prospecção)'
+      : f.campo === 'stage_id'
+        ? 'UUID ou nome da etapa (ex: Em andamento)'
+        : f.tipo === 'uuid'
+          ? '550e8400-e29b-41d4-a716-446655440000'
+          : f.tipo === 'date'
+            ? 'YYYY-MM-DD'
+            : f.campo === 'phone'
+              ? '(11) 99999-9999'
+              : f.campo === 'email'
+                ? 'nome@exemplo.com'
+                : f.campo === 'latitude' || f.campo === 'longitude'
+                  ? '0.000000'
+                  : '',
 }));
 
 const fieldTypeBadgeClass: Record<FieldType, string> = {
