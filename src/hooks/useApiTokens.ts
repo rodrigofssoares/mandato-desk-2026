@@ -30,6 +30,24 @@ export function useApiToken() {
   });
 }
 
+function generateSecureToken(): string {
+  const g = globalThis as typeof globalThis & { crypto?: Crypto };
+  const c = g.crypto;
+
+  if (c?.randomUUID) {
+    return `${c.randomUUID()}-${c.randomUUID()}`;
+  }
+
+  if (c?.getRandomValues) {
+    const bytes = new Uint8Array(32);
+    c.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  const rand = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return `${rand()}-${rand()}-${rand()}-${rand()}`;
+}
+
 export function useGenerateToken() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -41,8 +59,7 @@ export function useGenerateToken() {
       // Delete existing token
       await supabase.from('api_tokens').delete().eq('user_id', user.id);
 
-      // Generate new token using DB function or crypto
-      const token = crypto.randomUUID() + '-' + crypto.randomUUID();
+      const token = generateSecureToken();
 
       const { data, error } = await supabase
         .from('api_tokens')
