@@ -6,32 +6,60 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
 }
 
-// Colunas permitidas por recurso (whitelist de seguranca)
-const ALLOWED_COLUMNS: Record<string, string[]> = {
-  contacts: [
-    'name', 'phone', 'email', 'cpf', 'birth_date', 'gender',
-    'zip_code', 'address', 'number', 'complement', 'neighborhood', 'city', 'state',
-    'latitude', 'longitude',
-    'instagram', 'facebook', 'twitter',
-    'declarou_voto', 'is_favorite', 'voter_registration', 'electoral_zone',
-    'electoral_section', 'political_group', 'notes',
-    'leader_id', 'last_contact', 'source', 'occupation',
-    'em_canal_whatsapp', 'e_multiplicador',
-  ],
-  demands: [
-    'title', 'description', 'contact_id', 'responsible_id',
-    'status', 'priority', 'neighborhood',
-  ],
-  tags: [
-    'name', 'category', 'color',
-  ],
+// Mapeamento campo_API -> coluna_banco (API em ingles, DB em portugues para contacts/tags)
+const FIELD_MAP: Record<string, Record<string, string>> = {
+  contacts: {
+    name: 'nome',
+    phone: 'telefone',
+    email: 'email',
+    cpf: 'cpf',
+    birth_date: 'data_nascimento',
+    gender: 'genero',
+    zip_code: 'cep',
+    address: 'logradouro',
+    number: 'numero',
+    complement: 'complemento',
+    neighborhood: 'bairro',
+    city: 'cidade',
+    state: 'estado',
+    latitude: 'lat',
+    longitude: 'lng',
+    instagram: 'instagram',
+    facebook: 'facebook',
+    twitter: 'twitter',
+    declarou_voto: 'declarou_voto',
+    is_favorite: 'is_favorite',
+    voter_registration: 'titulo_eleitor',
+    electoral_zone: 'zona_eleitoral',
+    electoral_section: 'secao_eleitoral',
+    political_group: 'grupo_politico',
+    notes: 'observacoes',
+    leader_id: 'leader_id',
+    last_contact: 'ultimo_contato',
+    source: 'origem',
+    occupation: 'profissao',
+    em_canal_whatsapp: 'em_canal_whatsapp',
+    e_multiplicador: 'e_multiplicador',
+  },
+  demands: {
+    title: 'title',
+    description: 'description',
+    contact_id: 'contact_id',
+    responsible_id: 'responsible_id',
+    status: 'status',
+    priority: 'priority',
+    neighborhood: 'neighborhood',
+  },
+  tags: {
+    name: 'nome',
+    color: 'cor',
+  },
 }
 
-// Campos obrigatorios por recurso (para POST)
-const REQUIRED_COLUMNS: Record<string, string[]> = {
+const REQUIRED_FIELDS: Record<string, string[]> = {
   contacts: ['name'],
   demands: ['title'],
-  tags: ['name', 'category'],
+  tags: ['name'],
 }
 
 function json(status: number, body: unknown) {
@@ -41,255 +69,42 @@ function json(status: number, body: unknown) {
   })
 }
 
-// Valida o token customizado contra a tabela api_tokens
+// Valida o token via RPC SECURITY DEFINER (bypass de RLS)
 async function validateToken(supabase: SupabaseClient, authHeader: string) {
   const token = authHeader.replace('Bearer ', '').trim()
   if (!token) return null
 
-  const { data, error } = await supabase
-    .from('api_tokens')
-    .select('id, user_id, token')
-    .eq('token', token)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc('validate_api_token', { p_token: token })
+  if (error || !data || (Array.isArray(data) && data.length === 0)) return null
 
-  if (error || !data) return null
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row?.user_id) return null
 
-  // Atualizar last_used_at (fire-and-forget)
-  supabase
-    .from('api_tokens')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('id', data.id)
-    .then(() => {})
-
-  return { id: data.id, user_id: data.user_id }
+  return { id: row.token_id, user_id: row.user_id }
 }
 
-// Filtra o body para conter apenas colunas permitidas
+// Filtra e traduz o body: aceita nomes da API e retorna com colunas do DB
 function filterBody(body: Record<string, unknown>, resource: string): Record<string, unknown> {
-  const allowed = ALLOWED_COLUMNS[resource] || []
+  const fieldMap = FIELD_MAP[resource] || {}
   const filtered: Record<string, unknown> = {}
   for (const key of Object.keys(body)) {
-    if (allowed.includes(key)) {
-      filtered[key] = body[key]
+    const dbColumn = fieldMap[key]
+    if (dbColumn) {
+      filtered[dbColumn] = body[key]
     }
   }
   return filtered
 }
 
-// Valida campos obrigatorios
+// Valida campos obrigatorios — checa nomes da API
 function validateRequired(body: Record<string, unknown>, resource: string): string | null {
-  const required = REQUIRED_COLUMNS[resource] || []
+  const required = REQUIRED_FIELDS[resource] || []
   for (const field of required) {
     if (!body[field] && body[field] !== false && body[field] !== 0) {
       return `Campo obrigatorio ausente: ${field}`
     }
   }
   return null
-}
-
-// Resultado do vínculo com board
-interface BoardLinkResult {
-  status: 'ok' | 'warning'
-  action?: 'linked' | 'moved'
-  board_item_id?: string
-  resolved_board_id?: string
-  resolved_stage_id?: string
-  ambiguous?: boolean
-  message?: string
-}
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-function isUuid(value: string): boolean {
-  return UUID_REGEX.test(value.trim())
-}
-
-interface ResolveResult {
-  id: string | null
-  ambiguous: boolean
-  count: number
-}
-
-// Resolve um board do usuário por UUID ou por nome (case-insensitive, exato)
-async function resolveBoardId(
-  supabase: SupabaseClient,
-  value: string,
-  userId: string,
-): Promise<ResolveResult> {
-  if (isUuid(value)) {
-    const { data } = await supabase
-      .from('boards')
-      .select('id')
-      .eq('id', value)
-      .eq('created_by', userId)
-      .maybeSingle()
-    return { id: data?.id ?? null, ambiguous: false, count: data ? 1 : 0 }
-  }
-
-  const { data } = await supabase
-    .from('boards')
-    .select('id')
-    .eq('created_by', userId)
-    .ilike('nome', value)
-
-  const count = data?.length ?? 0
-  if (count === 1) return { id: data![0].id, ambiguous: false, count }
-  if (count > 1) return { id: null, ambiguous: true, count }
-  return { id: null, ambiguous: false, count: 0 }
-}
-
-// Resolve uma etapa por UUID ou por nome, escopado ao board
-async function resolveStageId(
-  supabase: SupabaseClient,
-  value: string,
-  boardId: string,
-): Promise<ResolveResult> {
-  if (isUuid(value)) {
-    const { data } = await supabase
-      .from('board_stages')
-      .select('id')
-      .eq('id', value)
-      .eq('board_id', boardId)
-      .maybeSingle()
-    return { id: data?.id ?? null, ambiguous: false, count: data ? 1 : 0 }
-  }
-
-  const { data } = await supabase
-    .from('board_stages')
-    .select('id')
-    .eq('board_id', boardId)
-    .ilike('nome', value)
-
-  const count = data?.length ?? 0
-  if (count === 1) return { id: data![0].id, ambiguous: false, count }
-  if (count > 1) return { id: null, ambiguous: true, count }
-  return { id: null, ambiguous: false, count: 0 }
-}
-
-// Vincula ou move um contato para um board/etapa (aceita UUID ou nome)
-async function linkContactToBoard(
-  supabase: SupabaseClient,
-  contactId: string,
-  boardIdOrName: string,
-  stageIdOrName: string | null,
-  userId: string,
-): Promise<BoardLinkResult> {
-  // Resolver board (UUID ou nome)
-  const boardResolved = await resolveBoardId(supabase, boardIdOrName, userId)
-  if (boardResolved.ambiguous) {
-    return {
-      status: 'warning',
-      ambiguous: true,
-      message: `nome de board ambíguo (${boardResolved.count} encontrados com o mesmo nome) — informe o UUID em board_id para desambiguar`,
-    }
-  }
-  if (!boardResolved.id) {
-    return {
-      status: 'warning',
-      message: isUuid(boardIdOrName)
-        ? 'board_id not found or not accessible'
-        : `board não encontrado pelo nome: "${boardIdOrName}"`,
-    }
-  }
-  const boardId = boardResolved.id
-
-  // Resolver stage_id: se ausente, buscar estágio com menor ordem
-  let resolvedStageId: string | null = null
-  if (stageIdOrName) {
-    const stageResolved = await resolveStageId(supabase, stageIdOrName, boardId)
-    if (stageResolved.ambiguous) {
-      return {
-        status: 'warning',
-        resolved_board_id: boardId,
-        ambiguous: true,
-        message: `nome de etapa ambíguo (${stageResolved.count} encontrados no board) — informe o UUID em stage_id para desambiguar`,
-      }
-    }
-    if (!stageResolved.id) {
-      return {
-        status: 'warning',
-        resolved_board_id: boardId,
-        message: isUuid(stageIdOrName)
-          ? 'stage_id não encontrado neste board'
-          : `etapa não encontrada pelo nome: "${stageIdOrName}"`,
-      }
-    }
-    resolvedStageId = stageResolved.id
-  } else {
-    const { data: firstStage, error: stageErr } = await supabase
-      .from('board_stages')
-      .select('id')
-      .eq('board_id', boardId)
-      .order('ordem', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-
-    if (stageErr || !firstStage) {
-      return {
-        status: 'warning',
-        resolved_board_id: boardId,
-        message: 'Nenhuma etapa encontrada no board informado',
-      }
-    }
-    resolvedStageId = firstStage.id
-  }
-
-  // Verificar se já existe board_item para (contact_id, board_id)
-  const { data: existing } = await supabase
-    .from('board_items')
-    .select('id')
-    .eq('contact_id', contactId)
-    .eq('board_id', boardId)
-    .maybeSingle()
-
-  if (existing) {
-    // Já está no board — mover de etapa
-    const { error: moveErr } = await supabase
-      .from('board_items')
-      .update({ stage_id: resolvedStageId, moved_at: new Date().toISOString() })
-      .eq('id', existing.id)
-
-    if (moveErr) return { status: 'warning', message: moveErr.message }
-    return {
-      status: 'ok',
-      action: 'moved',
-      board_item_id: existing.id,
-      resolved_board_id: boardId,
-      resolved_stage_id: resolvedStageId,
-    }
-  }
-
-  // Calcular próxima ordem dentro do estágio
-  const { count } = await supabase
-    .from('board_items')
-    .select('id', { count: 'exact', head: true })
-    .eq('stage_id', resolvedStageId)
-
-  const nextOrdem = (count ?? 0) + 1
-
-  // Criar novo board_item
-  const { data: newItem, error: insertErr } = await supabase
-    .from('board_items')
-    .insert({
-      board_id: boardId,
-      contact_id: contactId,
-      stage_id: resolvedStageId,
-      ordem: nextOrdem,
-    })
-    .select('id')
-    .single()
-
-  if (insertErr || !newItem) {
-    return { status: 'warning', message: insertErr?.message ?? 'Erro ao criar board_item' }
-  }
-
-  return {
-    status: 'ok',
-    action: 'linked',
-    board_item_id: newItem.id,
-    resolved_board_id: boardId,
-    resolved_stage_id: resolvedStageId,
-  }
 }
 
 // ---- Handlers ----
@@ -302,78 +117,34 @@ async function handleGet(
   userId: string,
 ) {
   if (resourceId) {
-    // GET single
-    const { data, error } = await supabase
-      .from(resource)
-      .select('*')
-      .eq('id', resourceId)
-      .eq('created_by', userId)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('api_get_one', {
+      p_user_id: userId,
+      p_resource: resource,
+      p_id: resourceId,
+    })
     if (error) return json(500, { error: error.message })
     if (!data) return json(404, { error: 'Registro nao encontrado' })
     return json(200, data)
   }
 
-  // GET list
-  const limit = Math.min(parseInt(params.get('limit') || '100'), 1000)
+  const limit = Math.min(parseInt(params.get('limit') || '50'), 200)
   const offset = parseInt(params.get('offset') || '0')
-  const search = params.get('search')
-  const order = params.get('order') || 'created_at.desc'
+  const search = params.get('search') || null
 
-  let query = supabase
-    .from(resource)
-    .select('*', { count: 'exact' })
-    .eq('created_by', userId)
-
-  // Busca textual
-  if (search) {
-    if (resource === 'contacts') {
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`)
-    } else if (resource === 'demands') {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
-    } else if (resource === 'tags') {
-      query = query.ilike('name', `%${search}%`)
-    }
-  }
-
-  // Filtros de coluna (ex: ?city=eq.Sao Paulo)
-  const allowed = ALLOWED_COLUMNS[resource] || []
-  for (const [key, value] of params.entries()) {
-    if (allowed.includes(key) && value.includes('.')) {
-      const dotIdx = value.indexOf('.')
-      const op = value.substring(0, dotIdx)
-      const val = value.substring(dotIdx + 1)
-      if (op === 'eq') query = query.eq(key, val)
-      else if (op === 'neq') query = query.neq(key, val)
-      else if (op === 'gt') query = query.gt(key, val)
-      else if (op === 'gte') query = query.gte(key, val)
-      else if (op === 'lt') query = query.lt(key, val)
-      else if (op === 'lte') query = query.lte(key, val)
-      else if (op === 'like') query = query.like(key, val)
-      else if (op === 'ilike') query = query.ilike(key, val)
-      else if (op === 'is') query = query.is(key, val === 'null' ? null : val === 'true')
-    }
-  }
-
-  // Ordenacao
-  const [orderCol, orderDir] = order.split('.')
-  if (allowed.includes(orderCol) || ['created_at', 'updated_at', 'id'].includes(orderCol)) {
-    query = query.order(orderCol, { ascending: orderDir === 'asc' })
-  } else {
-    query = query.order('created_at', { ascending: false })
-  }
-
-  query = query.range(offset, offset + limit - 1)
-
-  const { data, error, count } = await query
-
+  const { data, error } = await supabase.rpc('api_list', {
+    p_user_id: userId,
+    p_resource: resource,
+    p_limit: limit,
+    p_offset: offset,
+    p_search: search,
+  })
   if (error) return json(500, { error: error.message })
 
+  const payload = data as { data: unknown[]; total: number } | null
   return json(200, {
-    data,
+    data: payload?.data ?? [],
     pagination: {
-      total: count,
+      total: payload?.total ?? 0,
       limit,
       offset,
     },
@@ -386,24 +157,20 @@ async function handlePost(
   body: Record<string, unknown>,
   userId: string,
 ) {
-  // Extrair parâmetros de board antes de filtrar (não são colunas do contato)
-  const boardId = typeof body.board_id === 'string' ? body.board_id : null
-  const stageId = typeof body.stage_id === 'string' ? body.stage_id : null
+  const boardRef = typeof body.board_id === 'string' ? body.board_id : null
+  const stageRef = typeof body.stage_id === 'string' ? body.stage_id : null
   delete body.board_id
   delete body.stage_id
 
-  const filtered = filterBody(body, resource)
-  const requiredError = validateRequired(filtered, resource)
+  const requiredError = validateRequired(body, resource)
   if (requiredError) return json(400, { error: requiredError })
 
-  // Setar created_by automaticamente
-  filtered.created_by = userId
-
-  const { data, error } = await supabase
-    .from(resource)
-    .insert(filtered)
-    .select()
-    .single()
+  const filtered = filterBody(body, resource)
+  const { data, error } = await supabase.rpc('api_insert', {
+    p_user_id: userId,
+    p_resource: resource,
+    p_data: filtered,
+  })
 
   if (error) {
     if (error.message.includes('duplicate') || error.message.includes('unique')) {
@@ -412,13 +179,25 @@ async function handlePost(
     return json(500, { error: error.message })
   }
 
-  // Vincular ao board se informado (apenas para contacts)
-  if (resource === 'contacts' && boardId) {
-    const boardLink = await linkContactToBoard(supabase, data.id, boardId, stageId, userId)
-    return json(201, { ...data, board_link: boardLink })
+  const inserted = data as { id?: string } | null
+  if (!inserted?.id) {
+    return json(500, { error: 'Erro ao inserir registro' })
   }
 
-  return json(201, data)
+  if (resource === 'contacts' && boardRef) {
+    const { data: linkData, error: linkError } = await supabase.rpc('api_link_contact_to_board', {
+      p_user_id: userId,
+      p_contact_id: inserted.id,
+      p_board_ref: boardRef,
+      p_stage_ref: stageRef,
+    })
+    const boardLink = linkError
+      ? { status: 'warning', message: linkError.message }
+      : linkData
+    return json(201, { ...inserted, board_link: boardLink })
+  }
+
+  return json(201, inserted)
 }
 
 async function handlePatch(
@@ -435,19 +214,15 @@ async function handlePatch(
     return json(400, { error: 'Nenhum campo valido para atualizar' })
   }
 
-  const { data, error } = await supabase
-    .from(resource)
-    .update(filtered)
-    .eq('id', resourceId)
-    .eq('created_by', userId)
-    .select()
-    .single()
+  const { data, error } = await supabase.rpc('api_update', {
+    p_user_id: userId,
+    p_resource: resource,
+    p_id: resourceId,
+    p_data: filtered,
+  })
 
-  if (error) {
-    if (error.code === 'PGRST116') return json(404, { error: 'Registro nao encontrado' })
-    return json(500, { error: error.message })
-  }
-
+  if (error) return json(500, { error: error.message })
+  if (!data) return json(404, { error: 'Registro nao encontrado' })
   return json(200, data)
 }
 
@@ -459,23 +234,17 @@ async function handleDelete(
 ) {
   if (!resourceId) return json(400, { error: 'ID do registro e obrigatorio para exclusao' })
 
-  const { data, error } = await supabase
-    .from(resource)
-    .delete()
-    .eq('id', resourceId)
-    .eq('created_by', userId)
-    .select()
-    .single()
+  const { data, error } = await supabase.rpc('api_delete', {
+    p_user_id: userId,
+    p_resource: resource,
+    p_id: resourceId,
+  })
 
-  if (error) {
-    if (error.code === 'PGRST116') return json(404, { error: 'Registro nao encontrado' })
-    return json(500, { error: error.message })
-  }
-
+  if (error) return json(500, { error: error.message })
+  if (!data) return json(404, { error: 'Registro nao encontrado' })
   return json(200, { message: 'Registro excluido com sucesso', id: resourceId })
 }
 
-// Normaliza telefone: remove (, ), -, espaços e prefixo +55
 function normalizePhone(phone: string): string {
   return phone.replace(/[\s\(\)\-\+]/g, '').replace(/^55/, '')
 }
@@ -489,56 +258,47 @@ async function handlePatchByPhone(
   const normalized = normalizePhone(rawPhone)
   if (!normalized) return json(400, { error: 'Telefone invalido na URL' })
 
-  // Extrair parâmetros de board antes de filtrar
-  const boardId = typeof body.board_id === 'string' ? body.board_id : null
-  const stageId = typeof body.stage_id === 'string' ? body.stage_id : null
+  const boardRef = typeof body.board_id === 'string' ? body.board_id : null
+  const stageRef = typeof body.stage_id === 'string' ? body.stage_id : null
   delete body.board_id
   delete body.stage_id
 
-  // Buscar contato pelo telefone normalizado
-  const { data: contacts, error: searchErr } = await supabase
-    .from('contacts')
-    .select('id, phone')
-    .eq('created_by', userId)
-    .ilike('phone', `%${normalized}%`)
-    .limit(1)
-
+  const { data: contact, error: searchErr } = await supabase.rpc('api_find_contact_by_phone', {
+    p_user_id: userId,
+    p_phone_normalized: normalized,
+  })
   if (searchErr) return json(500, { error: searchErr.message })
-  if (!contacts || contacts.length === 0) {
+
+  const found = contact as { id?: string } | null
+  if (!found?.id) {
     return json(404, { error: `Contato nao encontrado para o telefone: ${rawPhone}` })
   }
 
-  const contact = contacts[0]
-
-  // Atualizar campos do contato (se houver)
   const filtered = filterBody(body, 'contacts')
-  let updatedContact = contact
+  let updatedContact: unknown = found
 
   if (Object.keys(filtered).length > 0) {
-    const { data: updated, error: updateErr } = await supabase
-      .from('contacts')
-      .update(filtered)
-      .eq('id', contact.id)
-      .eq('created_by', userId)
-      .select()
-      .single()
-
+    const { data: updated, error: updateErr } = await supabase.rpc('api_update', {
+      p_user_id: userId,
+      p_resource: 'contacts',
+      p_id: found.id,
+      p_data: filtered,
+    })
     if (updateErr) return json(500, { error: updateErr.message })
-    updatedContact = updated
-  } else {
-    // Buscar dados completos do contato para retornar
-    const { data: full } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('id', contact.id)
-      .single()
-    if (full) updatedContact = full
+    if (updated) updatedContact = updated
   }
 
-  // Vincular ao board se informado
-  if (boardId) {
-    const boardLink = await linkContactToBoard(supabase, contact.id, boardId, stageId, userId)
-    return json(200, { ...updatedContact, board_link: boardLink })
+  if (boardRef) {
+    const { data: linkData, error: linkError } = await supabase.rpc('api_link_contact_to_board', {
+      p_user_id: userId,
+      p_contact_id: found.id,
+      p_board_ref: boardRef,
+      p_stage_ref: stageRef,
+    })
+    const boardLink = linkError
+      ? { status: 'warning', message: linkError.message }
+      : linkData
+    return json(200, { ...(updatedContact as Record<string, unknown>), board_link: boardLink })
   }
 
   return json(200, updatedContact)
@@ -547,19 +307,16 @@ async function handlePatchByPhone(
 // ---- Main Handler ----
 
 Deno.serve(async (req) => {
-  // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })
   }
 
   try {
-    // Criar cliente com service role (bypass RLS)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY')!,
     )
 
-    // Validar token
     const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
       return json(401, {
@@ -576,10 +333,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Parsear rota: /api-proxy/{resource}/{id?}
     const url = new URL(req.url)
     const pathParts = url.pathname.split('/').filter(Boolean)
-    // pathParts pode ser: ['api-proxy', 'contacts'] ou ['api-proxy', 'contacts', 'uuid']
     const funcIndex = pathParts.indexOf('api-proxy')
     const resource = pathParts[funcIndex + 1]
     const resourceId = pathParts[funcIndex + 2]
@@ -604,7 +359,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Rotear por metodo HTTP
     switch (req.method) {
       case 'GET':
         return await handleGet(supabase, resource, resourceId, url.searchParams, tokenData.user_id)
@@ -623,6 +377,6 @@ Deno.serve(async (req) => {
         return json(405, { error: 'Metodo nao permitido' })
     }
   } catch (err) {
-    return json(500, { error: 'Erro interno do servidor' })
+    return json(500, { error: 'Erro interno do servidor', detail: err instanceof Error ? err.message : String(err) })
   }
 })
