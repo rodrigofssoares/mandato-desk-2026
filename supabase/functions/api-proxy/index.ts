@@ -165,39 +165,61 @@ async function handlePost(
   const requiredError = validateRequired(body, resource)
   if (requiredError) return json(400, { error: requiredError })
 
-  const filtered = filterBody(body, resource)
-  const { data, error } = await supabase.rpc('api_insert', {
-    p_user_id: userId,
-    p_resource: resource,
-    p_data: filtered,
-  })
+  // Para contatos: se ja existe um contato com o mesmo telefone, reusa em vez
+  // de duplicar. Permite API como upsert quando vinculado a um board.
+  let contact: Record<string, unknown> | null = null
+  let reused = false
 
-  if (error) {
-    if (error.message.includes('duplicate') || error.message.includes('unique')) {
-      return json(409, { error: 'Registro duplicado: ' + error.message })
+  if (resource === 'contacts' && typeof body.phone === 'string' && body.phone.trim()) {
+    const normalized = normalizePhone(body.phone)
+    if (normalized) {
+      const { data: existing } = await supabase.rpc('api_find_contact_by_phone', {
+        p_user_id: userId,
+        p_phone_normalized: normalized,
+      })
+      if (existing && (existing as { id?: string }).id) {
+        contact = existing as Record<string, unknown>
+        reused = true
+      }
     }
-    return json(500, { error: error.message })
   }
 
-  const inserted = data as { id?: string } | null
-  if (!inserted?.id) {
+  if (!contact) {
+    const filtered = filterBody(body, resource)
+    const { data, error } = await supabase.rpc('api_insert', {
+      p_user_id: userId,
+      p_resource: resource,
+      p_data: filtered,
+    })
+
+    if (error) {
+      if (error.message.includes('duplicate') || error.message.includes('unique')) {
+        return json(409, { error: 'Registro duplicado: ' + error.message })
+      }
+      return json(500, { error: error.message })
+    }
+
+    contact = data as Record<string, unknown>
+  }
+
+  if (!contact?.id) {
     return json(500, { error: 'Erro ao inserir registro' })
   }
 
   if (resource === 'contacts' && boardRef) {
     const { data: linkData, error: linkError } = await supabase.rpc('api_link_contact_to_board', {
       p_user_id: userId,
-      p_contact_id: inserted.id,
+      p_contact_id: contact.id,
       p_board_ref: boardRef,
       p_stage_ref: stageRef,
     })
     const boardLink = linkError
       ? { status: 'warning', message: linkError.message }
       : linkData
-    return json(201, { ...inserted, board_link: boardLink })
+    return json(reused ? 200 : 201, { ...contact, board_link: boardLink, reused })
   }
 
-  return json(201, inserted)
+  return json(reused ? 200 : 201, reused ? { ...contact, reused: true } : contact)
 }
 
 async function handlePatch(
