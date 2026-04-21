@@ -108,42 +108,28 @@ export function useContacts(filters: ContactFilters = {}) {
       const from = (page - 1) * per_page;
       const to = from + per_page - 1;
 
+      // Tags filter (OR): contato tem QUALQUER uma das etiquetas selecionadas.
+      // Usa embed !inner para empurrar o filtro pro server-side. Isso evita
+      // o bug anterior: listar centenas de contact_ids em .in('id', [...])
+      // estourava a URL (>16KB) e o PostgREST retornava 400, fazendo
+      // "sumirem" todos os contatos da tela.
+      const usingTagFilter = tags && tags.length > 0;
+      const selectClause = usingTagFilter
+        ? '*, contact_tags!inner(tag_id)'
+        : '*, contact_tags(tag_id, tags(id, nome, cor))';
+
       let query = supabase
         .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor))', { count: 'exact' });
+        .select(selectClause, { count: 'exact' });
+
+      if (usingTagFilter) {
+        query = query.in('contact_tags.tag_id', tags as string[]);
+      }
 
       // Search
       if (search && search.trim()) {
         const term = `%${search.trim()}%`;
         query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
-      }
-
-      // Tags filter (OR): contato tem QUALQUER uma das etiquetas selecionadas.
-      // Busca paginada em contact_tags para nao ser truncada pelo limite default
-      // de 1000 linhas do supabase-js quando as tags sao populares.
-      if (tags && tags.length > 0) {
-        const allIds = new Set<string>();
-        const PAGE_SIZE = 1000;
-        let cursor = 0;
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { data: ctRows, error: ctError } = await supabase
-            .from('contact_tags')
-            .select('contact_id')
-            .in('tag_id', tags)
-            .range(cursor, cursor + PAGE_SIZE - 1);
-
-          if (ctError) throw ctError;
-          if (!ctRows || ctRows.length === 0) break;
-          ctRows.forEach((r) => allIds.add(r.contact_id));
-          if (ctRows.length < PAGE_SIZE) break;
-          cursor += PAGE_SIZE;
-        }
-
-        if (allIds.size === 0) {
-          return { data: [], count: 0 };
-        }
-        query = query.in('id', [...allIds]);
       }
 
       // Favorite
@@ -323,8 +309,32 @@ export function useContacts(filters: ContactFilters = {}) {
 
       if (error) throw error;
 
-      // Client-side birthday filtering for 7days/30days/month
+      // Quando usamos !inner para o filtro de tags, o embed vem reduzido
+      // (so as tags que bateram no filtro, sem nome/cor). Hidratamos a lista
+      // completa das tags de cada contato exibido numa segunda query pequena
+      // (no maximo per_page UUIDs, URL minuscula).
       let filtered = data as Contact[];
+      if (usingTagFilter && filtered.length > 0) {
+        const contactIds = filtered.map((c) => c.id);
+        const { data: tagRows, error: tagError } = await supabase
+          .from('contact_tags')
+          .select('contact_id, tag_id, tags(id, nome, cor)')
+          .in('contact_id', contactIds);
+        if (tagError) throw tagError;
+
+        const byContact = new Map<string, { tag_id: string; tags: Tag }[]>();
+        (tagRows ?? []).forEach((r: any) => {
+          const arr = byContact.get(r.contact_id) ?? [];
+          arr.push({ tag_id: r.tag_id, tags: r.tags });
+          byContact.set(r.contact_id, arr);
+        });
+
+        filtered = filtered.map((c) => ({
+          ...c,
+          contact_tags: byContact.get(c.id) ?? [],
+        }));
+      }
+
       if (birthday_filter && birthday_filter !== 'today') {
         const now = new Date();
         const month = now.getMonth();
