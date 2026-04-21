@@ -113,6 +113,12 @@ const byPhoneBodies = {
   }, null, 2),
 }
 
+// Body exemplo para os outros lookups — so com board/stage (movimentar card)
+const byLookupBodyMove = JSON.stringify({
+  board_id: 'Seguidores',
+  stage_id: 'Preencheu Formulário',
+}, null, 2)
+
 const resourceLabels: Record<Resource, string> = {
   contacts: 'Contatos',
   demands: 'Demandas',
@@ -146,12 +152,12 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
     ],
   },
   {
-    title: 'Contatos por Telefone',
+    title: 'Contatos — lookup alternativo (sem precisar do UUID)',
     endpoints: [
       {
         method: 'PATCH' as HttpMethod,
         path: '/contacts/by-phone/{telefone}',
-        description: 'Atualizar contato pelo telefone e/ou mover para board/etapa. Telefone normalizado automaticamente.',
+        description: 'Atualizar contato pelo telefone e/ou mover o card no Kanban. Telefone normalizado automaticamente (+55, espaços, parênteses e hífens removidos).',
         body: byPhoneBodies.PATCH,
       },
       {
@@ -159,6 +165,30 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
         path: '/contacts/by-phone/{telefone}',
         description: 'Alias de PATCH para sistemas que só enviam PUT.',
         body: byPhoneBodies.PATCH,
+      },
+      {
+        method: 'PATCH' as HttpMethod,
+        path: '/contacts/by-instagram/{handle}',
+        description: 'Atualizar contato pelo @ do Instagram. O @ inicial é removido automaticamente. Match exato.',
+        body: byLookupBodyMove,
+      },
+      {
+        method: 'PUT' as HttpMethod,
+        path: '/contacts/by-instagram/{handle}',
+        description: 'Alias de PATCH para sistemas que só enviam PUT.',
+        body: byLookupBodyMove,
+      },
+      {
+        method: 'PATCH' as HttpMethod,
+        path: '/contacts/by-name/{nome}',
+        description: 'Atualizar contato pelo nome completo (match exato, case-insensitive). Se mais de um contato tiver o mesmo nome, retorna 409 pedindo pra identificar por telefone, Instagram ou UUID.',
+        body: byLookupBodyMove,
+      },
+      {
+        method: 'PUT' as HttpMethod,
+        path: '/contacts/by-name/{nome}',
+        description: 'Alias de PATCH para sistemas que só enviam PUT.',
+        body: byLookupBodyMove,
       },
     ],
   },

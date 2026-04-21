@@ -312,35 +312,68 @@ function normalizePhone(phone: string): string {
   return phone.replace(/[\s\(\)\-\+]/g, '').replace(/^55/, '')
 }
 
-async function handlePatchByPhone(
+// Campos suportados para identificar um contato alem do UUID na URL.
+// Uso: PUT /contacts/by-phone/{valor}, /contacts/by-instagram/{valor}, /contacts/by-name/{valor}
+const LOOKUP_FIELDS = ['phone', 'instagram', 'name'] as const
+type LookupField = typeof LOOKUP_FIELDS[number]
+
+function isLookupField(value: string): value is LookupField {
+  return (LOOKUP_FIELDS as readonly string[]).includes(value)
+}
+
+async function handlePatchByLookup(
   supabase: SupabaseClient,
-  rawPhone: string,
+  field: LookupField,
+  rawValue: string,
   body: Record<string, unknown>,
   userId: string,
 ): Promise<Response> {
-  const normalized = normalizePhone(rawPhone)
-  if (!normalized) return json(400, { error: 'Telefone invalido na URL' })
+  if (!rawValue || !rawValue.trim()) {
+    return json(400, { error: `Valor obrigatorio na URL para /contacts/by-${field}/{valor}` })
+  }
 
   const boardRef = typeof body.board_id === 'string' ? body.board_id : null
   const stageRef = typeof body.stage_id === 'string' ? body.stage_id : null
   delete body.board_id
   delete body.stage_id
 
-  const { data: contact, error: searchErr } = await supabase.rpc('api_find_contact_by_phone', {
+  const { data: contact, error: searchErr } = await supabase.rpc('api_find_contact_by_lookup', {
     p_user_id: userId,
-    p_phone_normalized: normalized,
+    p_field: field,
+    p_value: rawValue,
   })
   if (searchErr) return json(500, { error: searchErr.message })
 
-  const found = contact as { id?: string } | null
+  const result = contact as Record<string, unknown> | null
+
+  if (result?.status === 'ambiguous') {
+    return json(409, {
+      error: result.message,
+      ambiguous: true,
+      count: result.count,
+      hint: 'Use o UUID, telefone ou Instagram (unicos) para identificar o contato sem ambiguidade.',
+    })
+  }
+
+  if (result?.status === 'error') {
+    return json(400, { error: result.message })
+  }
+
+  const found = result as { id?: string } | null
   if (!found?.id) {
-    return json(404, { error: `Contato nao encontrado para o telefone: ${rawPhone}` })
+    return json(404, { error: `Contato nao encontrado para ${field}: ${rawValue}` })
   }
 
   const filtered = filterBody(body, 'contacts')
-  let updatedContact: unknown = found
+  const hasFieldsToUpdate = Object.keys(filtered).length > 0
 
-  if (Object.keys(filtered).length > 0) {
+  if (!hasFieldsToUpdate && !boardRef) {
+    return json(400, { error: 'Nenhum campo valido para atualizar' })
+  }
+
+  let updatedContact: Record<string, unknown> = found
+
+  if (hasFieldsToUpdate) {
     const { data: updated, error: updateErr } = await supabase.rpc('api_update', {
       p_user_id: userId,
       p_resource: 'contacts',
@@ -348,7 +381,7 @@ async function handlePatchByPhone(
       p_data: filtered,
     })
     if (updateErr) return json(500, { error: updateErr.message })
-    if (updated) updatedContact = updated
+    if (updated) updatedContact = updated as Record<string, unknown>
   }
 
   if (boardRef) {
@@ -361,7 +394,7 @@ async function handlePatchByPhone(
     const boardLink = linkError
       ? { status: 'warning', message: linkError.message }
       : linkData
-    return json(200, { ...(updatedContact as Record<string, unknown>), board_link: boardLink })
+    return json(200, { ...updatedContact, board_link: boardLink })
   }
 
   return json(200, updatedContact)
@@ -402,16 +435,33 @@ Deno.serve(async (req) => {
     const resource = pathParts[funcIndex + 1]
     const resourceId = pathParts[funcIndex + 2]
 
-    // Rota especial: PATCH|PUT /contacts/by-phone/{tel}
+    // Rotas especiais: PATCH|PUT /contacts/by-{phone|instagram|name}/{valor}
     if (
       resource === 'contacts' &&
-      resourceId === 'by-phone' &&
+      typeof resourceId === 'string' &&
+      resourceId.startsWith('by-') &&
       (req.method === 'PATCH' || req.method === 'PUT')
     ) {
-      const rawPhone = pathParts[funcIndex + 3]
-      if (!rawPhone) return json(400, { error: 'Telefone obrigatorio na URL. Ex: /contacts/by-phone/11999999999' })
+      const field = resourceId.slice('by-'.length)
+      if (!isLookupField(field)) {
+        return json(400, {
+          error: `Campo de busca invalido: ${resourceId}. Use: by-phone, by-instagram, by-name.`,
+        })
+      }
+      const rawValue = pathParts[funcIndex + 3]
+      if (!rawValue) {
+        return json(400, {
+          error: `Valor obrigatorio na URL. Ex: /contacts/${resourceId}/{valor}`,
+        })
+      }
       const body = await req.json().catch(() => ({}))
-      return await handlePatchByPhone(supabase, decodeURIComponent(rawPhone), body as Record<string, unknown>, tokenData.user_id)
+      return await handlePatchByLookup(
+        supabase,
+        field,
+        decodeURIComponent(rawValue),
+        body as Record<string, unknown>,
+        tokenData.user_id,
+      )
     }
 
     if (!resource || !['contacts', 'demands', 'tags'].includes(resource)) {
