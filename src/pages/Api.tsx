@@ -742,6 +742,98 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Guia de uso — como identificar contato, exemplos prontos */}
+        <Accordion type="single" collapsible defaultValue="guide" className="border rounded-lg bg-muted/30">
+          <AccordionItem value="guide" className="border-0">
+            <AccordionTrigger className="px-4 hover:no-underline">
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                Como usar este Playground
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-4 text-sm">
+              <div className="space-y-1">
+                <p className="font-medium">Fluxo básico</p>
+                <ol className="list-decimal ml-5 space-y-0.5 text-muted-foreground">
+                  <li>Escolha o <b>Recurso</b> (Contatos, Demandas ou Etiquetas) e a <b>Operação</b> (GET, POST, PUT, PATCH, DELETE).</li>
+                  <li>Para PUT, PATCH, DELETE ou GET por registro: preencha o <b>ID do registro</b> (veja os 4 formatos aceitos abaixo).</li>
+                  <li>Para POST, PUT e PATCH: marque os campos que quer enviar no <b>Montagem do payload</b> (ou cole um JSON).</li>
+                  <li>Clique em <b>Enviar Requisição</b>. A resposta aparece abaixo, colorida (verde = sucesso, vermelho = erro).</li>
+                </ol>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-medium">4 jeitos de identificar um contato no campo "ID do registro"</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                  <div className="border rounded p-2 bg-background">
+                    <div className="font-semibold text-foreground mb-1">Por UUID</div>
+                    <code className="text-[11px] break-all">9af643bc-03f6-425f-9078-682553cd8fee</code>
+                    <p className="text-muted-foreground mt-1">O jeito tradicional, quando você já tem o ID do contato.</p>
+                  </div>
+                  <div className="border rounded p-2 bg-background">
+                    <div className="font-semibold text-foreground mb-1">Por Instagram</div>
+                    <code className="text-[11px] break-all">by-instagram/rodrigosoares.rothaia</code>
+                    <p className="text-muted-foreground mt-1">Aceita com ou sem <code>@</code> na frente.</p>
+                  </div>
+                  <div className="border rounded p-2 bg-background">
+                    <div className="font-semibold text-foreground mb-1">Por Telefone</div>
+                    <code className="text-[11px] break-all">by-phone/5521999887766</code>
+                    <p className="text-muted-foreground mt-1">Qualquer formato: <code>+55</code>, espaços, <code>()-</code> são removidos automaticamente.</p>
+                  </div>
+                  <div className="border rounded p-2 bg-background">
+                    <div className="font-semibold text-foreground mb-1">Por Nome</div>
+                    <code className="text-[11px] break-all">by-name/Rodrigo Sôares</code>
+                    <p className="text-muted-foreground mt-1">Match exato. ⚠️ Se o nome se repete, retorna <b>409</b> pedindo pra usar telefone/Instagram.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-medium">Exemplo: mover Rodrigo Sôares no Kanban "Seguidores"</p>
+                <p className="text-muted-foreground text-xs">Selecione <b>Contatos</b> + <b>PUT</b>, preencha os campos e clique em Enviar:</p>
+                <div className="rounded border bg-background p-3 space-y-1 text-xs font-mono">
+                  <div><span className="text-muted-foreground">ID do registro:</span> by-instagram/rodrigosoares.rothaia</div>
+                  <div><span className="text-muted-foreground">Body (Montagem do payload):</span></div>
+                  <pre className="bg-muted rounded p-2 text-[11px] leading-relaxed">{`{
+  "board_id": "Seguidores",
+  "stage_id": "Preencheu Formulário"
+}`}</pre>
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Pra também atualizar campos do contato na mesma chamada, inclua no body: <code>notes</code>, <code>em_canal_whatsapp</code>, <code>neighborhood</code>, etc.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-medium">Resposta esperada (sucesso)</p>
+                <pre className="bg-background border rounded p-2 text-[11px] leading-relaxed overflow-x-auto">{`{
+  "id": "9af643bc-03f6-425f-9078-682553cd8fee",
+  "nome": "Rodrigo Sôares | Rotha IA Soluções",
+  ...
+  "board_link": {
+    "action": "moved",   // ou "linked" (criou) ou status:"warning" (board/etapa nao encontrado)
+    "status": "ok",
+    "resolved_board_id": "...",
+    "resolved_stage_id": "..."
+  }
+}`}</pre>
+              </div>
+
+              <div className="space-y-1">
+                <p className="font-medium">Códigos HTTP mais comuns</p>
+                <ul className="list-disc ml-5 space-y-0.5 text-xs text-muted-foreground">
+                  <li><b>200</b> — atualizou e/ou moveu o card com sucesso</li>
+                  <li><b>201</b> — POST criou novo contato</li>
+                  <li><b>400</b> — payload vazio, campo inválido ou valor faltando na URL</li>
+                  <li><b>404</b> — contato não encontrado com aquele lookup</li>
+                  <li><b>409</b> — nome ambíguo (mais de 1 contato com mesmo nome) ou duplicata</li>
+                  <li><b>401</b> — token inválido ou revogado</li>
+                </ul>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
         {/* Seletores de recurso e metodo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -786,11 +878,41 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
               {method === 'GET' && <span className="text-muted-foreground text-xs ml-2">(opcional — deixe vazio para listar todos)</span>}
             </Label>
             <Input
-              placeholder="ex: 550e8400-e29b-41d4-a716-446655440000"
+              placeholder={
+                resource === 'contacts' && needsId(method)
+                  ? 'UUID  ·  by-phone/5521999887766  ·  by-instagram/rodrigosoares.rothaia  ·  by-name/Nome Completo'
+                  : 'ex: 550e8400-e29b-41d4-a716-446655440000'
+              }
               value={resourceId}
               onChange={(e) => setResourceId(e.target.value)}
               className="font-mono text-sm"
             />
+            {resource === 'contacts' && needsId(method) && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="text-xs text-muted-foreground mr-1">Exemplos rápidos (clique para usar):</span>
+                <button
+                  type="button"
+                  onClick={() => setResourceId('by-instagram/rodrigosoares.rothaia')}
+                  className="text-[11px] px-2 py-0.5 rounded-full border bg-background hover:bg-accent font-mono"
+                >
+                  by-instagram/rodrigosoares.rothaia
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResourceId('by-phone/5521999887766')}
+                  className="text-[11px] px-2 py-0.5 rounded-full border bg-background hover:bg-accent font-mono"
+                >
+                  by-phone/5521999887766
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResourceId('by-name/Rodrigo Sôares | Rotha IA Soluções')}
+                  className="text-[11px] px-2 py-0.5 rounded-full border bg-background hover:bg-accent font-mono"
+                >
+                  by-name/Rodrigo Sôares ...
+                </button>
+              </div>
+            )}
           </div>
         )}
 
