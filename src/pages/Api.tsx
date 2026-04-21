@@ -69,10 +69,14 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
     PATCH: JSON.stringify({
       phone: '(11) 88888-8888',
       neighborhood: 'Jardim Paulista',
+      board_id: '(opcional) UUID ou nome do board — ex: Seguidores',
+      stage_id: '(opcional) UUID ou nome da etapa — ex: Preencheu Formulário',
     }, null, 2),
     PUT: JSON.stringify({
       phone: '(11) 88888-8888',
       neighborhood: 'Jardim Paulista',
+      board_id: '(opcional) UUID ou nome do board — ex: Seguidores',
+      stage_id: '(opcional) UUID ou nome da etapa — ex: Preencheu Formulário',
     }, null, 2),
   },
   demands: {
@@ -146,8 +150,8 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
       { method: 'GET', path: '/contacts', description: 'Listar todos os contatos (aceita ?limit, ?offset, ?search)' },
       { method: 'GET', path: '/contacts/{id}', description: 'Buscar um contato pelo ID' },
       { method: 'POST', path: '/contacts', description: 'Criar um novo contato', body: exampleBodies.contacts.POST },
-      { method: 'PATCH', path: '/contacts/{id}', description: 'Atualizar um contato', body: exampleBodies.contacts.PATCH },
-      { method: 'PUT', path: '/contacts/{id}', description: 'Atualizar um contato (alias de PATCH, para sistemas que so enviam PUT)', body: exampleBodies.contacts.PUT },
+      { method: 'PATCH', path: '/contacts/{id}', description: 'Atualizar um contato e/ou mover o card no Kanban (board_id + stage_id opcionais)', body: exampleBodies.contacts.PATCH },
+      { method: 'PUT', path: '/contacts/{id}', description: 'Atualizar um contato e/ou mover o card no Kanban (alias de PATCH)', body: exampleBodies.contacts.PUT },
       { method: 'DELETE', path: '/contacts/{id}', description: 'Excluir um contato' },
     ],
   },
