@@ -231,21 +231,62 @@ async function handlePatch(
 ) {
   if (!resourceId) return json(400, { error: 'ID do registro e obrigatorio para atualizacao' })
 
+  // Para contatos: board_id/stage_id nao sao colunas da tabela contacts —
+  // sao resolvidos por api_link_contact_to_board (move ou cria board_item).
+  const boardRef =
+    resource === 'contacts' && typeof body.board_id === 'string' ? body.board_id : null
+  const stageRef =
+    resource === 'contacts' && typeof body.stage_id === 'string' ? body.stage_id : null
+  if (resource === 'contacts') {
+    delete body.board_id
+    delete body.stage_id
+  }
+
   const filtered = filterBody(body, resource)
-  if (Object.keys(filtered).length === 0) {
+  const hasFieldsToUpdate = Object.keys(filtered).length > 0
+
+  if (!hasFieldsToUpdate && !boardRef) {
     return json(400, { error: 'Nenhum campo valido para atualizar' })
   }
 
-  const { data, error } = await supabase.rpc('api_update', {
-    p_user_id: userId,
-    p_resource: resource,
-    p_id: resourceId,
-    p_data: filtered,
-  })
+  let updated: Record<string, unknown> | null = null
 
-  if (error) return json(500, { error: error.message })
-  if (!data) return json(404, { error: 'Registro nao encontrado' })
-  return json(200, data)
+  if (hasFieldsToUpdate) {
+    const { data, error } = await supabase.rpc('api_update', {
+      p_user_id: userId,
+      p_resource: resource,
+      p_id: resourceId,
+      p_data: filtered,
+    })
+
+    if (error) return json(500, { error: error.message })
+    if (!data) return json(404, { error: 'Registro nao encontrado' })
+    updated = data as Record<string, unknown>
+  } else {
+    const { data, error } = await supabase.rpc('api_get_one', {
+      p_user_id: userId,
+      p_resource: resource,
+      p_id: resourceId,
+    })
+    if (error) return json(500, { error: error.message })
+    if (!data) return json(404, { error: 'Registro nao encontrado' })
+    updated = data as Record<string, unknown>
+  }
+
+  if (boardRef) {
+    const { data: linkData, error: linkError } = await supabase.rpc('api_link_contact_to_board', {
+      p_user_id: userId,
+      p_contact_id: resourceId,
+      p_board_ref: boardRef,
+      p_stage_ref: stageRef,
+    })
+    const boardLink = linkError
+      ? { status: 'warning', message: linkError.message }
+      : linkData
+    return json(200, { ...updated, board_link: boardLink })
+  }
+
+  return json(200, updated)
 }
 
 async function handleDelete(
