@@ -259,8 +259,8 @@ const contactFields = [
   { campo: 'occupation', tipo: 'string', obrigatorio: false, descricao: 'Profissão' },
   { campo: 'em_canal_whatsapp', tipo: 'boolean', obrigatorio: false, descricao: 'Está no canal do WhatsApp' },
   { campo: 'e_multiplicador', tipo: 'boolean', obrigatorio: false, descricao: 'É multiplicador' },
-  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome do board — vincula o contato automaticamente (apenas POST)' },
-  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome da etapa do board. Se ausente, usa a primeira etapa' },
+  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome do board — POST vincula ao board; PUT/PATCH movem o card' },
+  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome da etapa do board. No POST, se ausente, usa a primeira etapa' },
 ];
 
 // ---- Metadados do builder de payload ----
@@ -281,7 +281,6 @@ const contactFieldsMeta: FieldMeta[] = contactFields.map((f) => ({
   label: f.descricao,
   type: f.tipo as FieldType,
   required: f.obrigatorio,
-  postOnly: f.campo === 'board_id' || f.campo === 'stage_id',
   placeholder:
     f.campo === 'board_id'
       ? 'UUID ou nome do board (ex: Prospecção)'
