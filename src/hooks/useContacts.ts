@@ -118,20 +118,32 @@ export function useContacts(filters: ContactFilters = {}) {
         query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
       }
 
-      // Tags filter — contacts that have ALL specified tags
+      // Tags filter (OR): contato tem QUALQUER uma das etiquetas selecionadas.
+      // Busca paginada em contact_tags para nao ser truncada pelo limite default
+      // de 1000 linhas do supabase-js quando as tags sao populares.
       if (tags && tags.length > 0) {
-        // Busca IDs de contatos com as tags selecionadas
-        const { data: taggedIds } = await supabase
-          .from('contact_tags')
-          .select('contact_id')
-          .in('tag_id', tags);
+        const allIds = new Set<string>();
+        const PAGE_SIZE = 1000;
+        let cursor = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data: ctRows, error: ctError } = await supabase
+            .from('contact_tags')
+            .select('contact_id')
+            .in('tag_id', tags)
+            .range(cursor, cursor + PAGE_SIZE - 1);
 
-        if (taggedIds && taggedIds.length > 0) {
-          const uniqueIds = [...new Set(taggedIds.map((t) => t.contact_id))];
-          query = query.in('id', uniqueIds);
-        } else {
+          if (ctError) throw ctError;
+          if (!ctRows || ctRows.length === 0) break;
+          ctRows.forEach((r) => allIds.add(r.contact_id));
+          if (ctRows.length < PAGE_SIZE) break;
+          cursor += PAGE_SIZE;
+        }
+
+        if (allIds.size === 0) {
           return { data: [], count: 0 };
         }
+        query = query.in('id', [...allIds]);
       }
 
       // Favorite

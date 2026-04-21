@@ -44,19 +44,28 @@ export function useMapContacts(filters: MapFilters = {}) {
         .not('lat', 'is', null)
         .not('lng', 'is', null);
 
-      // Tag filter
+      // Tag filter (OR) — busca paginada para nao truncar em 1000 linhas
       if (filters.tags && filters.tags.length > 0) {
-        const { data: taggedIds } = await supabase
-          .from('contact_tags')
-          .select('contact_id')
-          .in('tag_id', filters.tags);
+        const allIds = new Set<string>();
+        const PAGE_SIZE = 1000;
+        let cursor = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data: ctRows, error: ctError } = await supabase
+            .from('contact_tags')
+            .select('contact_id')
+            .in('tag_id', filters.tags)
+            .range(cursor, cursor + PAGE_SIZE - 1);
 
-        if (taggedIds && taggedIds.length > 0) {
-          const uniqueIds = [...new Set(taggedIds.map((t) => t.contact_id))];
-          query = query.in('id', uniqueIds);
-        } else {
-          return [];
+          if (ctError) throw ctError;
+          if (!ctRows || ctRows.length === 0) break;
+          ctRows.forEach((r) => allIds.add(r.contact_id));
+          if (ctRows.length < PAGE_SIZE) break;
+          cursor += PAGE_SIZE;
         }
+
+        if (allIds.size === 0) return [];
+        query = query.in('id', [...allIds]);
       }
 
       // Bairro filter
