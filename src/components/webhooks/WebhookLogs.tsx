@@ -75,7 +75,7 @@ export function WebhookLogs({ webhookId, webhookName, open, onOpenChange }: Webh
                     </TableCell>
                     <TableCell className="max-w-[200px]">
                       <p className="text-xs text-muted-foreground truncate">
-                        {log.response_body ?? '-'}
+                        {log.response ?? '-'}
                       </p>
                     </TableCell>
                   </TableRow>

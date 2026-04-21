@@ -27,11 +27,27 @@ import Settings from '@/pages/Settings';
 import Board from '@/pages/Board';
 import Tarefas from '@/pages/Tarefas';
 
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object') {
+    const err = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    if (typeof err.message === 'string' && err.message.trim()) return err.message;
+    if (typeof err.details === 'string' && err.details.trim()) return err.details;
+    if (typeof err.hint === 'string' && err.hint.trim()) return err.hint;
+    if (typeof err.code === 'string' && err.code.trim()) return err.code;
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return 'Erro desconhecido';
+    }
+  }
+  return String(error);
+}
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error(`Erro ao carregar dados: ${message}`);
+      toast.error(`Erro ao carregar dados: ${extractErrorMessage(error)}`);
     },
   }),
   defaultOptions: {

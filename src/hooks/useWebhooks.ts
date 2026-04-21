@@ -53,7 +53,7 @@ export interface WebhookLog {
   webhook_id: string;
   event_type: string;
   status_code: number | null;
-  response_body?: string | null;
+  response?: string | null;
   created_at: string;
 }
 
@@ -68,7 +68,7 @@ export function useWebhooks() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('webhooks')
-        .select('*, webhook_logs(id, webhook_id, event_type, status_code, response_body, created_at)')
+        .select('*, webhook_logs(id, webhook_id, event_type, status_code, response, created_at)')
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false });
 
