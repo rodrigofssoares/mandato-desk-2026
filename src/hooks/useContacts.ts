@@ -108,30 +108,28 @@ export function useContacts(filters: ContactFilters = {}) {
       const from = (page - 1) * per_page;
       const to = from + per_page - 1;
 
+      // Tags filter (OR): contato tem QUALQUER uma das etiquetas selecionadas.
+      // Usa embed !inner para empurrar o filtro pro server-side. Isso evita
+      // o bug anterior: listar centenas de contact_ids em .in('id', [...])
+      // estourava a URL (>16KB) e o PostgREST retornava 400, fazendo
+      // "sumirem" todos os contatos da tela.
+      const usingTagFilter = tags && tags.length > 0;
+      const selectClause = usingTagFilter
+        ? '*, contact_tags!inner(tag_id)'
+        : '*, contact_tags(tag_id, tags(id, nome, cor))';
+
       let query = supabase
         .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor))', { count: 'exact' });
+        .select(selectClause, { count: 'exact' });
+
+      if (usingTagFilter) {
+        query = query.in('contact_tags.tag_id', tags as string[]);
+      }
 
       // Search
       if (search && search.trim()) {
         const term = `%${search.trim()}%`;
         query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
-      }
-
-      // Tags filter — contacts that have ALL specified tags
-      if (tags && tags.length > 0) {
-        // Busca IDs de contatos com as tags selecionadas
-        const { data: taggedIds } = await supabase
-          .from('contact_tags')
-          .select('contact_id')
-          .in('tag_id', tags);
-
-        if (taggedIds && taggedIds.length > 0) {
-          const uniqueIds = [...new Set(taggedIds.map((t) => t.contact_id))];
-          query = query.in('id', uniqueIds);
-        } else {
-          return { data: [], count: 0 };
-        }
       }
 
       // Favorite
@@ -311,8 +309,32 @@ export function useContacts(filters: ContactFilters = {}) {
 
       if (error) throw error;
 
-      // Client-side birthday filtering for 7days/30days/month
+      // Quando usamos !inner para o filtro de tags, o embed vem reduzido
+      // (so as tags que bateram no filtro, sem nome/cor). Hidratamos a lista
+      // completa das tags de cada contato exibido numa segunda query pequena
+      // (no maximo per_page UUIDs, URL minuscula).
       let filtered = data as Contact[];
+      if (usingTagFilter && filtered.length > 0) {
+        const contactIds = filtered.map((c) => c.id);
+        const { data: tagRows, error: tagError } = await supabase
+          .from('contact_tags')
+          .select('contact_id, tag_id, tags(id, nome, cor)')
+          .in('contact_id', contactIds);
+        if (tagError) throw tagError;
+
+        const byContact = new Map<string, { tag_id: string; tags: Tag }[]>();
+        (tagRows ?? []).forEach((r: any) => {
+          const arr = byContact.get(r.contact_id) ?? [];
+          arr.push({ tag_id: r.tag_id, tags: r.tags });
+          byContact.set(r.contact_id, arr);
+        });
+
+        filtered = filtered.map((c) => ({
+          ...c,
+          contact_tags: byContact.get(c.id) ?? [],
+        }));
+      }
+
       if (birthday_filter && birthday_filter !== 'today') {
         const now = new Date();
         const month = now.getMonth();

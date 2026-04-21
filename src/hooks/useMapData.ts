@@ -38,25 +38,21 @@ export function useMapContacts(filters: MapFilters = {}) {
   return useQuery<MapContact[]>({
     queryKey: ['map-contacts', filters],
     queryFn: async () => {
+      // Tag filter (OR) via embed !inner — filtra no server-side sem estourar
+      // URL com lista de contact_ids.
+      const usingTagFilter = filters.tags && filters.tags.length > 0;
+      const selectClause = usingTagFilter
+        ? 'id, nome, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags!inner(tag_id)'
+        : 'id, nome, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags(tag_id, tags(id, nome, cor))';
+
       let query = supabase
         .from('contacts')
-        .select('id, nome, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags(tag_id, tags(id, nome, cor))')
+        .select(selectClause)
         .not('lat', 'is', null)
         .not('lng', 'is', null);
 
-      // Tag filter
-      if (filters.tags && filters.tags.length > 0) {
-        const { data: taggedIds } = await supabase
-          .from('contact_tags')
-          .select('contact_id')
-          .in('tag_id', filters.tags);
-
-        if (taggedIds && taggedIds.length > 0) {
-          const uniqueIds = [...new Set(taggedIds.map((t) => t.contact_id))];
-          query = query.in('id', uniqueIds);
-        } else {
-          return [];
-        }
+      if (usingTagFilter) {
+        query = query.in('contact_tags.tag_id', filters.tags as string[]);
       }
 
       // Bairro filter
@@ -82,7 +78,27 @@ export function useMapContacts(filters: MapFilters = {}) {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data ?? []) as unknown as MapContact[];
+      let rows = (data ?? []) as unknown as MapContact[];
+
+      // Hidrata tags completas (nome/cor) quando o filtro reduziu o embed.
+      if (usingTagFilter && rows.length > 0) {
+        const ids = rows.map((r) => r.id);
+        const { data: tagRows, error: tagError } = await supabase
+          .from('contact_tags')
+          .select('contact_id, tag_id, tags(id, nome, cor)')
+          .in('contact_id', ids);
+        if (tagError) throw tagError;
+
+        const byContact = new Map<string, MapContact['contact_tags']>();
+        (tagRows ?? []).forEach((r: any) => {
+          const arr = byContact.get(r.contact_id) ?? [];
+          arr!.push({ tag_id: r.tag_id, tags: r.tags });
+          byContact.set(r.contact_id, arr);
+        });
+        rows = rows.map((r) => ({ ...r, contact_tags: byContact.get(r.id) ?? [] }));
+      }
+
+      return rows;
     },
   });
 }
