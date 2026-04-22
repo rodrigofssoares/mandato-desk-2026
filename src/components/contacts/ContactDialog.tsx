@@ -10,6 +10,7 @@ import {
   ContactTarefasPanel,
   ContactTarefasPendenteBadge,
 } from '@/components/contacts/ContactTarefasPanel';
+import { ContactBoardsPanel } from '@/components/contacts/ContactBoardsPanel';
 import { useSetContactCampaignValues } from '@/hooks/useCampaignFields';
 import {
   Dialog,
@@ -191,6 +192,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   Tarefas
                   {contact?.id && <ContactTarefasPendenteBadge contactId={contact.id} />}
                 </TabsTrigger>
+                <TabsTrigger value="boards" className="flex-1 min-w-[72px] text-xs">Boards</TabsTrigger>
                 <TabsTrigger value="campanha" className="flex-1 min-w-[72px] text-xs">Campanha</TabsTrigger>
                 <TabsTrigger value="etiquetas" className="flex-1 min-w-[72px] text-xs">Etiquetas</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 min-w-[72px] text-xs">Endereço</TabsTrigger>
@@ -303,6 +305,11 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
               {/* --- Tarefas (tarefas vinculadas ao contato) --- */}
               <TabsContent value="tarefas" className="space-y-4 mt-0">
                 <ContactTarefasPanel contactId={contact?.id} />
+              </TabsContent>
+
+              {/* --- Boards (participação em funis kanban) --- */}
+              <TabsContent value="boards" className="space-y-4 mt-0">
+                <ContactBoardsPanel contactId={contact?.id} />
               </TabsContent>
 
               {/* --- Campanha --- */}
