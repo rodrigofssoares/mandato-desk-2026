@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy, Printer, KanbanSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQueryClient } from '@tanstack/react-query';
-import { useContacts, useDeleteContact, type ContactFilters as Filters, type Contact } from '@/hooks/useContacts';
+import { useContacts, useDeleteContact, useContact, type ContactFilters as Filters, type Contact } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ContactCard } from '@/components/contacts/ContactCard';
 import { ContactListItem } from '@/components/contacts/ContactListItem';
@@ -45,6 +46,8 @@ type ViewMode = 'grid' | 'list';
 export default function Contacts() {
   const { can } = usePermissions();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const contactIdFromUrl = searchParams.get('contact');
 
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -143,6 +146,23 @@ export default function Contacts() {
   }, [allOnPageSelected, contacts]);
 
   const deleteMutation = useDeleteContact();
+
+  // Abertura automatica via ?contact=<id> — usado pelo BoardCardDetailSheet
+  // ("Abrir contato completo") e outras integracoes que linkam pro contato.
+  const { data: linkedContact } = useContact(contactIdFromUrl ?? undefined);
+  useEffect(() => {
+    if (linkedContact) {
+      setEditingContact(linkedContact);
+      setDialogOpen(true);
+    }
+  }, [linkedContact]);
+
+  const clearContactParam = useCallback(() => {
+    if (!searchParams.has('contact')) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('contact');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Handlers
   const openCreate = () => {
@@ -418,7 +438,10 @@ export default function Contacts() {
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) setEditingContact(null);
+          if (!open) {
+            setEditingContact(null);
+            clearContactParam();
+          }
         }}
         contact={editingContact}
       />
