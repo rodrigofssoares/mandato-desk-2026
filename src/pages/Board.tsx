@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare, ListOrdered } from 'lucide-react';
+import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -32,6 +32,7 @@ import { BoardSelector } from '@/components/board/BoardSelector';
 import { BoardKanban } from '@/components/board/BoardKanban';
 import { BoardCardDetailSheet } from '@/components/board/BoardCardDetailSheet';
 import { AddContactToBoardDialog } from '@/components/board/AddContactToBoardDialog';
+import { BulkMoveByTagDrawer } from '@/components/board/BulkMoveByTagDrawer';
 import { BoardFormDialog } from '@/components/settings/BoardFormDialog';
 import { BoardStagesManager } from '@/components/settings/BoardStagesManager';
 
@@ -81,6 +82,35 @@ export default function Board() {
   const [addStageId, setAddStageId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [stagesEditorOpen, setStagesEditorOpen] = useState(false);
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+
+  // Modo selecao — usuario marca N cards com checkbox e move todos juntos
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [bulkMoveSelectedOpen, setBulkMoveSelectedOpen] = useState(false);
+
+  // Sai do modo selecao se trocar de board (itens viram invalidos)
+  useEffect(() => {
+    setSelectionMode(false);
+    setSelectedItemIds(new Set());
+  }, [activeBoardId]);
+
+  const handleToggleSelect = (item: BoardItemWithContact) => {
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
+      return next;
+    });
+  };
+
+  const selectedContactsForDrawer = useMemo(
+    () =>
+      items
+        .filter((i) => selectedItemIds.has(i.id) && i.contact)
+        .map((i) => ({ id: i.contact!.id, nome: i.contact!.nome })),
+    [items, selectedItemIds],
+  );
 
   const existingContactIds = useMemo(
     () => new Set(items.map((i) => i.contact?.id).filter((id): id is string => !!id)),
@@ -189,6 +219,52 @@ export default function Board() {
                 Editar estágios
               </Button>
             )}
+            {activeBoardId && canCreate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkMoveOpen(true)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Mover em massa
+              </Button>
+            )}
+            {activeBoardId && canCreate && (
+              <Button
+                variant={selectionMode ? 'destructive' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  if (selectionMode) {
+                    setSelectionMode(false);
+                    setSelectedItemIds(new Set());
+                  } else {
+                    setSelectionMode(true);
+                  }
+                }}
+              >
+                {selectionMode ? (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar seleção
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Selecionar contatos
+                  </>
+                )}
+              </Button>
+            )}
+            {selectionMode && selectedItemIds.size > 0 && (
+              <Button
+                size="sm"
+                onClick={() => setBulkMoveSelectedOpen(true)}
+                className="shadow-lg shadow-primary/30"
+              >
+                <ChevronRight className="h-4 w-4 mr-1" />
+                Mover {selectedItemIds.size} selecionado{selectedItemIds.size > 1 ? 's' : ''}
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -219,6 +295,9 @@ export default function Board() {
                 setAddStageId(stageId);
                 setAddOpen(true);
               }}
+              selectionMode={selectionMode}
+              selectedIds={selectedItemIds}
+              onToggleSelect={handleToggleSelect}
             />
           )}
         </>
@@ -252,6 +331,23 @@ export default function Board() {
           existingContactIds={existingContactIds}
         />
       )}
+
+      <BulkMoveByTagDrawer
+        open={bulkMoveOpen}
+        onOpenChange={setBulkMoveOpen}
+        initialBoardId={activeBoardId}
+      />
+
+      {/* Drawer para mover cards selecionados dentro do board atual.
+          Nao limpa selecao no close — usuario pode ter cancelado e quer
+          reabrir. Sair do modo selecao via botao "Cancelar selecao". */}
+      <BulkMoveByTagDrawer
+        open={bulkMoveSelectedOpen}
+        onOpenChange={setBulkMoveSelectedOpen}
+        initialBoardId={activeBoardId}
+        initialContacts={selectedContactsForDrawer}
+      />
+
 
       <BoardCardDetailSheet
         open={!!detailItem}

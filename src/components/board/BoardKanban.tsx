@@ -17,6 +17,9 @@ interface BoardKanbanProps {
   onCardClick: (item: BoardItemWithContact) => void;
   onCardRemove: (item: BoardItemWithContact) => void;
   onAddContact: (stageId: string) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (item: BoardItemWithContact) => void;
 }
 
 export function BoardKanban({
@@ -25,6 +28,9 @@ export function BoardKanban({
   onCardClick,
   onCardRemove,
   onAddContact,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
 }: BoardKanbanProps) {
   const moveItem = useMoveBoardItem();
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
@@ -36,6 +42,8 @@ export function BoardKanban({
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    // Em modo selecao, ignora qualquer drag (tambem ja estao disabled nos cards)
+    if (selectionMode) return;
     const { active, over } = event;
     if (!over) return;
 
@@ -89,6 +97,9 @@ export function BoardKanban({
             onCardClick={onCardClick}
             onCardRemove={onCardRemove}
             onAddContact={() => onAddContact(stage.id)}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
           />
         ))}
       </div>

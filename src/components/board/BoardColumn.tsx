@@ -14,6 +14,9 @@ interface BoardColumnProps {
   onCardClick: (item: BoardItemWithContact) => void;
   onCardRemove: (item: BoardItemWithContact) => void;
   onAddContact: () => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (item: BoardItemWithContact) => void;
 }
 
 export function BoardColumn({
@@ -22,6 +25,9 @@ export function BoardColumn({
   onCardClick,
   onCardRemove,
   onAddContact,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
 }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
@@ -57,6 +63,9 @@ export function BoardColumn({
                 item={item}
                 onClick={() => onCardClick(item)}
                 onRemove={() => onCardRemove(item)}
+                selectionMode={selectionMode}
+                selected={selectedIds?.has(item.id)}
+                onToggleSelect={onToggleSelect ? () => onToggleSelect(item) : undefined}
               />
             ))
           )}

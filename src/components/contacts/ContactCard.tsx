@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { Contact } from '@/hooks/useContacts';
 import { useToggleFavorite } from '@/hooks/useContacts';
@@ -16,9 +17,18 @@ interface ContactCardProps {
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
   onClick: (contact: Contact) => void;
+  selected?: boolean;
+  onSelectToggle?: (contact: Contact, checked: boolean) => void;
 }
 
-export function ContactCard({ contact, onEdit, onDelete, onClick }: ContactCardProps) {
+export function ContactCard({
+  contact,
+  onEdit,
+  onDelete,
+  onClick,
+  selected,
+  onSelectToggle,
+}: ContactCardProps) {
   const { can } = usePermissions();
   const toggleFav = useToggleFavorite();
 
@@ -33,11 +43,29 @@ export function ContactCard({ contact, onEdit, onDelete, onClick }: ContactCardP
 
   return (
     <Card
-      className="group cursor-pointer hover:shadow-md transition-shadow relative"
+      className={cn(
+        'group cursor-pointer hover:shadow-md transition-shadow relative',
+        selected && 'ring-2 ring-primary/60 bg-primary/[0.02]',
+      )}
       onClick={() => onClick(contact)}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
+          {onSelectToggle && (
+            <div
+              className={cn(
+                'shrink-0 pt-1 transition-opacity',
+                selected ? 'opacity-100' : 'opacity-60 group-hover:opacity-100',
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Checkbox
+                checked={selected}
+                onCheckedChange={(c) => onSelectToggle(contact, !!c)}
+                aria-label={`Selecionar ${contact.nome}`}
+              />
+            </div>
+          )}
           <Avatar className="h-10 w-10 shrink-0">
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
               {initials}
