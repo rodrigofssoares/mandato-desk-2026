@@ -1,6 +1,7 @@
 import { Star, Pencil, Trash2, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { Contact } from '@/hooks/useContacts';
 import { useToggleFavorite } from '@/hooks/useContacts';
@@ -13,9 +14,18 @@ interface ContactListItemProps {
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
   onClick: (contact: Contact) => void;
+  selected?: boolean;
+  onSelectToggle?: (contact: Contact, checked: boolean) => void;
 }
 
-export function ContactListItem({ contact, onEdit, onDelete, onClick }: ContactListItemProps) {
+export function ContactListItem({
+  contact,
+  onEdit,
+  onDelete,
+  onClick,
+  selected,
+  onSelectToggle,
+}: ContactListItemProps) {
   const { can } = usePermissions();
   const toggleFav = useToggleFavorite();
 
@@ -23,9 +33,28 @@ export function ContactListItem({ contact, onEdit, onDelete, onClick }: ContactL
 
   return (
     <div
-      className="group flex items-center gap-4 px-4 py-3 border-b hover:bg-muted/50 cursor-pointer transition-colors"
+      className={cn(
+        'group flex items-center gap-4 px-4 py-3 border-b hover:bg-muted/50 cursor-pointer transition-colors',
+        selected && 'bg-primary/[0.05] hover:bg-primary/[0.08]',
+      )}
       onClick={() => onClick(contact)}
     >
+      {onSelectToggle && (
+        <div
+          className={cn(
+            'shrink-0 transition-opacity',
+            selected ? 'opacity-100' : 'opacity-60 group-hover:opacity-100',
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(c) => onSelectToggle(contact, !!c)}
+            aria-label={`Selecionar ${contact.nome}`}
+          />
+        </div>
+      )}
+
       {/* Favorite */}
       <Button
         variant="ghost"

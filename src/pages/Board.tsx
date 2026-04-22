@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare, ListOrdered } from 'lucide-react';
+import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -32,6 +32,7 @@ import { BoardSelector } from '@/components/board/BoardSelector';
 import { BoardKanban } from '@/components/board/BoardKanban';
 import { BoardCardDetailSheet } from '@/components/board/BoardCardDetailSheet';
 import { AddContactToBoardDialog } from '@/components/board/AddContactToBoardDialog';
+import { BulkMoveByTagDrawer } from '@/components/board/BulkMoveByTagDrawer';
 import { BoardFormDialog } from '@/components/settings/BoardFormDialog';
 import { BoardStagesManager } from '@/components/settings/BoardStagesManager';
 
@@ -81,6 +82,7 @@ export default function Board() {
   const [addStageId, setAddStageId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [stagesEditorOpen, setStagesEditorOpen] = useState(false);
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
 
   const existingContactIds = useMemo(
     () => new Set(items.map((i) => i.contact?.id).filter((id): id is string => !!id)),
@@ -189,6 +191,16 @@ export default function Board() {
                 Editar estágios
               </Button>
             )}
+            {activeBoardId && canCreate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkMoveOpen(true)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Mover em massa
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -252,6 +264,13 @@ export default function Board() {
           existingContactIds={existingContactIds}
         />
       )}
+
+      <BulkMoveByTagDrawer
+        open={bulkMoveOpen}
+        onOpenChange={setBulkMoveOpen}
+        initialBoardId={activeBoardId}
+      />
+
 
       <BoardCardDetailSheet
         open={!!detailItem}

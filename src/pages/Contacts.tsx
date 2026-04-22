@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
-import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy, Printer } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy, Printer, KanbanSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ import { ExportMenu } from '@/components/contacts/ExportMenu';
 import { ContactImportDialog } from '@/components/contacts/ContactImportDialog';
 import { PrintLabelsModal } from '@/components/contacts/PrintLabelsModal';
 import { DuplicatesDialog } from '@/components/contacts/DuplicatesDialog';
+import { BulkMoveByTagDrawer } from '@/components/board/BulkMoveByTagDrawer';
 import { useDuplicateCount } from '@/hooks/useDuplicates';
 import { useFiltrosFavoritos } from '@/hooks/useFiltrosFavoritos';
 import { FiltrosFavoritosBar } from '@/components/contacts/FiltrosFavoritosBar';
@@ -59,6 +61,8 @@ export default function Contacts() {
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { data: duplicateCount = 0 } = useDuplicateCount();
   const { favoritos, salvarFavorito, removerFavorito } = useFiltrosFavoritos();
@@ -103,6 +107,40 @@ export default function Contacts() {
   const { data: result, isLoading } = useContacts(queryFilters);
   const contacts = result?.data ?? [];
   const totalCount = result?.count ?? 0;
+
+  // Limpa seleção quando filtros/pagina mudam — itens podem sumir da vista
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [debouncedSearch, filters.page, filters.tags, filters.is_favorite, filters.declarou_voto, filters.leader_id]);
+
+  const toggleSelection = useCallback((contact: Contact, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(contact.id);
+      else next.delete(contact.id);
+      return next;
+    });
+  }, []);
+
+  const selectedContacts = useMemo(
+    () => contacts.filter((c) => selectedIds.has(c.id)),
+    [contacts, selectedIds],
+  );
+
+  const allOnPageSelected =
+    contacts.length > 0 && contacts.every((c) => selectedIds.has(c.id));
+
+  const togglePageSelection = useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        contacts.forEach((c) => next.delete(c.id));
+      } else {
+        contacts.forEach((c) => next.add(c.id));
+      }
+      return next;
+    });
+  }, [allOnPageSelected, contacts]);
 
   const deleteMutation = useDeleteContact();
 
@@ -298,40 +336,70 @@ export default function Contacts() {
             </Button>
           )}
         </div>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {contacts.map((contact) => (
-            <ContactCard
-              key={contact.id}
-              contact={contact}
-              onEdit={openEdit}
-              onDelete={setDeletingContact}
-              onClick={openEdit}
-            />
-          ))}
-        </div>
       ) : (
-        <Card className="overflow-hidden">
-          {/* List header */}
-          <div className="flex items-center gap-4 px-4 py-2 border-b bg-muted/50 text-xs font-medium text-muted-foreground">
-            <span className="w-7" />
-            <span className="flex-1">Nome</span>
-            <span className="w-36 hidden md:block">WhatsApp</span>
-            <span className="w-48 hidden lg:block">E-mail</span>
-            <span className="w-48 hidden xl:block">Etiquetas</span>
-            <span className="w-24 text-right hidden sm:block">Criado em</span>
-            <span className="w-16" />
-          </div>
-          {contacts.map((contact) => (
-            <ContactListItem
-              key={contact.id}
-              contact={contact}
-              onEdit={openEdit}
-              onDelete={setDeletingContact}
-              onClick={openEdit}
-            />
-          ))}
-        </Card>
+        <>
+          {/* Barra de seleção (seleciona todos da página atual) */}
+          {can.createBoardItem() && contacts.length > 0 && (
+            <div className="flex items-center gap-3 px-1 py-1.5 text-xs">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={allOnPageSelected}
+                  onCheckedChange={togglePageSelection}
+                  aria-label="Selecionar todos da página"
+                />
+                <span className="font-medium">
+                  Selecionar todos ({contacts.length})
+                </span>
+              </label>
+              {selectedIds.size > 0 && (
+                <span className="text-primary font-semibold">
+                  · {selectedIds.size} selecionado(s)
+                </span>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {contacts.map((contact) => (
+                <ContactCard
+                  key={contact.id}
+                  contact={contact}
+                  onEdit={openEdit}
+                  onDelete={setDeletingContact}
+                  onClick={openEdit}
+                  selected={selectedIds.has(contact.id)}
+                  onSelectToggle={can.createBoardItem() ? toggleSelection : undefined}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card className="overflow-hidden">
+              {/* List header */}
+              <div className="flex items-center gap-4 px-4 py-2 border-b bg-muted/50 text-xs font-medium text-muted-foreground">
+                {can.createBoardItem() && <span className="w-4" />}
+                <span className="w-7" />
+                <span className="flex-1">Nome</span>
+                <span className="w-36 hidden md:block">WhatsApp</span>
+                <span className="w-48 hidden lg:block">E-mail</span>
+                <span className="w-48 hidden xl:block">Etiquetas</span>
+                <span className="w-24 text-right hidden sm:block">Criado em</span>
+                <span className="w-16" />
+              </div>
+              {contacts.map((contact) => (
+                <ContactListItem
+                  key={contact.id}
+                  contact={contact}
+                  onEdit={openEdit}
+                  onDelete={setDeletingContact}
+                  onClick={openEdit}
+                  selected={selectedIds.has(contact.id)}
+                  onSelectToggle={can.createBoardItem() ? toggleSelection : undefined}
+                />
+              ))}
+            </Card>
+          )}
+        </>
       )}
 
       {/* Pagination */}
@@ -403,6 +471,45 @@ export default function Contacts() {
           queryClient.invalidateQueries({ queryKey: ['contacts'] });
         }}
       />
+
+      {/* Bulk Move Drawer (shared com Board.tsx) */}
+      <BulkMoveByTagDrawer
+        open={bulkMoveOpen}
+        onOpenChange={setBulkMoveOpen}
+        initialContacts={selectedContacts.map((c) => ({ id: c.id, nome: c.nome }))}
+      />
+
+      {/* Sticky Bulk Actions Bar — aparece quando há seleção */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground rounded-full shadow-2xl border border-primary-foreground/10 flex items-center gap-2 pl-4 pr-2 py-2 max-w-[calc(100vw-2rem)]">
+          <div className="flex items-center gap-2">
+            <span className="h-6 min-w-6 px-1.5 rounded-full bg-primary-foreground/20 text-xs font-bold flex items-center justify-center">
+              {selectedIds.size}
+            </span>
+            <span className="text-sm font-medium">contato(s) selecionado(s)</span>
+          </div>
+          {can.createBoardItem() && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="ml-2 gap-1.5 rounded-full h-8"
+              onClick={() => setBulkMoveOpen(true)}
+            >
+              <KanbanSquare className="h-4 w-4" />
+              Mover p/ board
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+            onClick={() => setSelectedIds(new Set())}
+            aria-label="Limpar seleção"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
