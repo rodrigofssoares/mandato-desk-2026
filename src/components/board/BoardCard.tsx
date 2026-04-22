@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useTarefasPendentesCount } from '@/hooks/useTarefas';
 import type { BoardItemWithContact } from '@/hooks/useBoardItems';
 import { cn } from '@/lib/utils';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 interface BoardCardProps {
   item: BoardItemWithContact;
@@ -88,7 +89,7 @@ export function BoardCard({
             <Checkbox
               checked={!!selected}
               onCheckedChange={() => onToggleSelect?.()}
-              aria-label={`Selecionar ${item.contact?.nome ?? 'contato'}`}
+              aria-label={`Selecionar ${item.contact ? getContactDisplayName(item.contact) : 'contato'}`}
             />
           </div>
         )}
@@ -98,7 +99,7 @@ export function BoardCard({
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500 shrink-0" />
             )}
             <p className="text-sm font-medium truncate">
-              {item.contact?.nome ?? '(sem nome)'}
+              {item.contact ? getContactDisplayName(item.contact) : '(sem nome)'}
             </p>
           </div>
 

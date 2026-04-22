@@ -8,6 +8,7 @@ import type { MapFilters as MapFiltersType } from '@/hooks/useMapData';
 import { LeafletMap } from '@/components/map/LeafletMap';
 import { MapFilters } from '@/components/map/MapFilters';
 import { GeocodeProgress } from '@/components/map/GeocodeProgress';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 type ViewMode = 'standard' | 'temporal';
 
@@ -153,7 +154,7 @@ export default function LeadsMap() {
                 onMouseEnter={() => setHighlightedId(contact.id)}
                 onMouseLeave={() => setHighlightedId(null)}
               >
-                <p className="font-medium text-sm truncate">{contact.nome}</p>
+                <p className="font-medium text-sm truncate">{getContactDisplayName(contact)}</p>
                 <p className="text-xs text-muted-foreground truncate">
                   {[contact.bairro, contact.cidade].filter(Boolean).join(', ') || 'Sem endereco'}
                 </p>

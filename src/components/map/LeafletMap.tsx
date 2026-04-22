@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaf
 import type { LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { MapContact } from '@/hooks/useMapData';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 interface LeafletMapProps {
   contacts: MapContact[];
@@ -80,7 +81,7 @@ export function LeafletMap({ contacts, viewMode, highlightedId, onHover }: Leafl
           >
             <Popup>
               <div className="space-y-1 text-sm">
-                <p className="font-semibold">{contact.nome}</p>
+                <p className="font-semibold">{getContactDisplayName(contact)}</p>
                 {contact.whatsapp && <p>WhatsApp: {contact.whatsapp}</p>}
                 {(contact.logradouro || contact.bairro) && (
                   <p>

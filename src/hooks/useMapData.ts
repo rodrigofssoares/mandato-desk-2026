@@ -8,6 +8,7 @@ import { useRef, useState } from 'react';
 export interface MapContact {
   id: string;
   nome: string;
+  instagram?: string | null;
   whatsapp?: string | null;
   email?: string | null;
   bairro?: string | null;
@@ -42,8 +43,8 @@ export function useMapContacts(filters: MapFilters = {}) {
       // URL com lista de contact_ids.
       const usingTagFilter = filters.tags && filters.tags.length > 0;
       const selectClause = usingTagFilter
-        ? 'id, nome, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags!inner(tag_id)'
-        : 'id, nome, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags(tag_id, tags(id, nome, cor))';
+        ? 'id, nome, instagram, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags!inner(tag_id)'
+        : 'id, nome, instagram, whatsapp, email, bairro, cidade, estado, cep, logradouro, numero, lat, lng, pin_color, declarou_voto, created_at, contact_tags(tag_id, tags(id, nome, cor))';
 
       let query = supabase
         .from('contacts')

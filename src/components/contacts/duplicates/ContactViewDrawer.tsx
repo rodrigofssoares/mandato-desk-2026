@@ -11,6 +11,7 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { getContactDisplayName } from "@/lib/contactDisplay";
 
 interface ContactViewDrawerProps {
   open: boolean;
@@ -93,7 +94,7 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
               </Badge>
             )}
           </div>
-          <SheetTitle className="text-left leading-snug mt-1">{contact.nome}</SheetTitle>
+          <SheetTitle className="text-left leading-snug mt-1">{getContactDisplayName(contact)}</SheetTitle>
         </SheetHeader>
 
         <ScrollArea className="flex-1 px-6 py-4">
@@ -104,7 +105,7 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
               <SectionHeader title="Dados Pessoais" open={pessoal.open} onToggle={pessoal.toggle} />
               <CollapsibleContent>
                 <div className="pb-2 space-y-0.5">
-                  <FieldRow label="Nome" value={val(contact.nome)} />
+                  <FieldRow label="Nome" value={val(getContactDisplayName(contact))} />
                   <FieldRow
                     label="WhatsApp"
                     value={

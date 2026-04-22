@@ -10,6 +10,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { downloadFile, rowsToCSV, downloadXLSX, dateForFilename } from '@/lib/exportUtils';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'Aberta',
@@ -45,7 +46,7 @@ function demandsToRows(demands: any[]) {
     status: STATUS_LABELS[d.status] ?? d.status ?? '',
     prioridade: PRIORITY_LABELS[d.priority] ?? d.priority ?? '',
     bairro: d.neighborhood ?? '',
-    contato_nome: d.contact?.nome ?? '',
+    contato_nome: d.contact ? getContactDisplayName(d.contact) : '',
     contato_id: d.contact_id ?? '',
     criado_em: d.created_at ? new Date(d.created_at).toLocaleDateString('pt-BR') : '',
     atualizado_em: d.updated_at ? new Date(d.updated_at).toLocaleDateString('pt-BR') : '',
@@ -61,7 +62,7 @@ export function DemandsExportMenu() {
   const fetchDemands = async () => {
     const { data, error } = await supabase
       .from('demands')
-      .select('*, contact:contacts(nome), demand_tags(tag_id, tags(nome))')
+      .select('*, contact:contacts(nome, instagram), demand_tags(tag_id, tags(nome))')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data ?? [];

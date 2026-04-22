@@ -6,6 +6,7 @@ import { Loader2, Phone, Mail, MessageCircle, ExternalLink, Trash2, AlertTriangl
 import { Link } from 'react-router-dom';
 import { useTarefas } from '@/hooks/useTarefas';
 import type { BoardItemWithContact } from '@/hooks/useBoardItems';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 interface BoardCardDetailSheetProps {
   open: boolean;
@@ -42,7 +43,7 @@ export function BoardCardDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{contact?.nome ?? '(sem nome)'}</SheetTitle>
+          <SheetTitle>{contact ? getContactDisplayName(contact) : '(sem nome)'}</SheetTitle>
           <SheetDescription>
             Estágio atual: <span className="font-medium">{stageName}</span> · há {stale}{' '}
             dia{stale !== 1 ? 's' : ''}

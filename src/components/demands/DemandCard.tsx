@@ -6,6 +6,7 @@ import { User, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Demand } from '@/hooks/useDemands';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 interface DemandCardProps {
   demand: Demand;
@@ -55,7 +56,7 @@ export function DemandCard({ demand, onClick }: DemandCardProps) {
           {demand.contact && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <User className="h-3 w-3" />
-              <span className="truncate">{demand.contact.nome}</span>
+              <span className="truncate">{getContactDisplayName(demand.contact)}</span>
             </div>
           )}
 

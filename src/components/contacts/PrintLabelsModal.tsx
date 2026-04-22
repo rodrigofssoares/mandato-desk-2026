@@ -26,6 +26,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { generateAddressLabels, validateAddress, type LabelContact } from '@/lib/addressLabels';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 import type { ContactFilters } from '@/hooks/useContacts';
 
 interface PrintLabelsModalProps {
@@ -62,7 +63,7 @@ export function PrintLabelsModal({ open, onOpenChange, filters }: PrintLabelsMod
       while (true) {
         let query = supabase
           .from('contacts')
-          .select('nome, logradouro, numero, complemento, bairro, cidade, estado, cep, origem');
+          .select('nome, instagram, logradouro, numero, complemento, bairro, cidade, estado, cep, origem');
 
         if (filters.search?.trim()) {
           const term = `%${filters.search.trim()}%`;
@@ -89,7 +90,7 @@ export function PrintLabelsModal({ open, onOpenChange, filters }: PrintLabelsMod
       for (const c of allData) {
         const err = validateAddress(c);
         if (err) {
-          invalid.push({ nome: c.nome ?? '(sem nome)', motivo: err });
+          invalid.push({ nome: getContactDisplayName(c) || '(sem nome)', motivo: err });
         } else {
           valid.push(c as LabelContact);
         }

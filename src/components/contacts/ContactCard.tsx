@@ -11,6 +11,7 @@ import type { Contact } from '@/hooks/useContacts';
 import { useToggleFavorite } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 interface ContactCardProps {
   contact: Contact;
@@ -32,8 +33,11 @@ export function ContactCard({
   const { can } = usePermissions();
   const toggleFav = useToggleFavorite();
 
-  const initials = contact.nome
-    .split(' ')
+  const displayName = getContactDisplayName(contact);
+  const initials = displayName
+    .replace(/^@/, '')
+    .split(/\s+/)
+    .filter(Boolean)
     .slice(0, 2)
     .map((w) => w[0])
     .join('')
@@ -62,7 +66,7 @@ export function ContactCard({
               <Checkbox
                 checked={selected}
                 onCheckedChange={(c) => onSelectToggle(contact, !!c)}
-                aria-label={`Selecionar ${contact.nome}`}
+                aria-label={`Selecionar ${displayName}`}
               />
             </div>
           )}
@@ -74,7 +78,7 @@ export function ContactCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm truncate">{contact.nome}</h3>
+              <h3 className="font-semibold text-sm truncate">{displayName}</h3>
               {contact.declarou_voto && (
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -1,7 +1,9 @@
 import jsPDF from 'jspdf';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 export interface LabelContact {
   nome: string;
+  instagram?: string | null;
   logradouro: string;
   numero: string;
   complemento?: string;
@@ -28,7 +30,8 @@ function formatCEP(cep: string): string {
  * Retorna mensagem de erro ou null se válido.
  */
 export function validateAddress(contact: Partial<LabelContact>): string | null {
-  if (!contact.nome) return 'Falta nome';
+  const displayName = getContactDisplayName(contact);
+  if (!displayName || displayName === '(sem nome)') return 'Falta nome';
   if (!contact.logradouro) return 'Falta logradouro';
   if (!contact.numero) return 'Falta número';
   if (!contact.bairro) return 'Falta bairro';
@@ -67,7 +70,7 @@ export function generateAddressLabels({ contacts, includeOrigin }: GenerateLabel
     // Linha 1: Nome (16pt bold)
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(contact.nome, centerX, y, { align: 'center' });
+    doc.text(getContactDisplayName(contact), centerX, y, { align: 'center' });
     y += 8;
 
     // Linha 2: Origem/Instituição (14pt, opcional)
