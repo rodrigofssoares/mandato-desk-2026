@@ -23,6 +23,7 @@ import {
 import { ContactCompareModal } from "./duplicates/ContactCompareModal";
 import { ContactMergeModal } from "./duplicates/ContactMergeModal";
 import { ContactViewDrawer } from "./duplicates/ContactViewDrawer";
+import { getContactDisplayName } from "@/lib/contactDisplay";
 import {
   Dialog,
   DialogContent,
@@ -399,7 +400,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
 
                                   {/* Contact info */}
                                   <div className="flex-1 min-w-0 space-y-0.5">
-                                    <p className="text-sm font-medium truncate">{contact.nome}</p>
+                                    <p className="text-sm font-medium truncate">{getContactDisplayName(contact)}</p>
                                     <p className="text-xs text-muted-foreground truncate">
                                       {contact.whatsapp
                                         ? contact.whatsapp

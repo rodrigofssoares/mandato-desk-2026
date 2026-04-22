@@ -27,6 +27,7 @@ import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
 import { useBoardItems, useRemoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
 import { usePermissions } from '@/hooks/usePermissions';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 import { BoardSelector } from '@/components/board/BoardSelector';
 import { BoardKanban } from '@/components/board/BoardKanban';
@@ -365,7 +366,7 @@ export default function Board() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remover {removeTarget?.contact?.nome ?? 'contato'} do board?
+              Remover {removeTarget?.contact ? getContactDisplayName(removeTarget.contact) : 'contato'} do board?
             </AlertDialogTitle>
             <AlertDialogDescription>
               O contato continua existindo no sistema — apenas o vínculo com este board é

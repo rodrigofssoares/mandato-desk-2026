@@ -7,6 +7,7 @@ import type { Contact } from '@/hooks/useContacts';
 import { useToggleFavorite } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 import { format } from 'date-fns';
 
 interface ContactListItemProps {
@@ -30,6 +31,7 @@ export function ContactListItem({
   const toggleFav = useToggleFavorite();
 
   const tags = contact.contact_tags?.map((ct) => ct.tags).filter(Boolean) ?? [];
+  const displayName = getContactDisplayName(contact);
 
   return (
     <div
@@ -50,7 +52,7 @@ export function ContactListItem({
           <Checkbox
             checked={selected}
             onCheckedChange={(c) => onSelectToggle(contact, !!c)}
-            aria-label={`Selecionar ${contact.nome}`}
+            aria-label={`Selecionar ${displayName}`}
           />
         </div>
       )}
@@ -76,7 +78,7 @@ export function ContactListItem({
       {/* Nome + WhatsApp mobile */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-sm truncate">{contact.nome}</span>
+          <span className="font-medium text-sm truncate">{displayName}</span>
           {contact.declarou_voto && (
             <Tooltip>
               <TooltipTrigger asChild>

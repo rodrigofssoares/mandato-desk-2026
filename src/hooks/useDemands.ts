@@ -25,7 +25,7 @@ export interface Demand {
   neighborhood: string | null;
   created_at: string;
   updated_at: string;
-  contact: { nome: string } | null;
+  contact: { nome: string; instagram: string | null } | null;
   responsible: { nome: string } | null;
   demand_tags: DemandTag[];
 }
@@ -59,7 +59,7 @@ export function useDemands(filters?: DemandFilters) {
         .from('demands')
         .select(`
           *,
-          contact:contacts!contact_id(nome),
+          contact:contacts!contact_id(nome, instagram),
           responsible:profiles!responsible_id(nome),
           demand_tags(tag_id, tags(id, nome, cor))
         `)

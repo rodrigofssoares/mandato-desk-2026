@@ -15,6 +15,7 @@ import { Loader2, Search, UserPlus } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useAddContactToBoard } from '@/hooks/useBoardItems';
 import type { BoardStage } from '@/hooks/useBoardStages';
+import { getContactDisplayName } from '@/lib/contactDisplay';
 
 interface AddContactToBoardDialogProps {
   open: boolean;
@@ -146,7 +147,7 @@ export function AddContactToBoardDialog({
                           : 'hover:bg-muted'
                       } ${already ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      <span className="truncate">{contact.nome}</span>
+                      <span className="truncate">{getContactDisplayName(contact)}</span>
                       {already && (
                         <span className="text-[10px] uppercase text-muted-foreground ml-2">
                           já no board
