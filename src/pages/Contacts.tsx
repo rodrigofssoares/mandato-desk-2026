@@ -111,10 +111,15 @@ export default function Contacts() {
   const contacts = result?.data ?? [];
   const totalCount = result?.count ?? 0;
 
-  // Limpa seleção quando filtros/pagina mudam — itens podem sumir da vista
+  // Habilita seleção em massa apenas quando houver algum filtro ativo —
+  // evita poluir a lista com checkboxes no uso cotidiano.
+  const bulkSelectionEnabled = filtrosAtivosCount > 0;
+
+  // Limpa seleção quando filtros/pagina mudam — itens podem sumir da vista.
+  // Se o usuario remover todos os filtros, sair do modo de selecao tambem limpa.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [debouncedSearch, filters.page, filters.tags, filters.is_favorite, filters.declarou_voto, filters.leader_id]);
+  }, [debouncedSearch, filters.page, filters.tags, filters.is_favorite, filters.declarou_voto, filters.leader_id, bulkSelectionEnabled]);
 
   const toggleSelection = useCallback((contact: Contact, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -358,8 +363,9 @@ export default function Contacts() {
         </div>
       ) : (
         <>
-          {/* Barra de seleção (seleciona todos da página atual) */}
-          {can.createBoardItem() && contacts.length > 0 && (
+          {/* Barra de selecao — aparece apenas quando ha filtro ativo,
+              evitando poluir a lista no uso cotidiano sem filtros. */}
+          {bulkSelectionEnabled && can.createBoardItem() && contacts.length > 0 && (
             <div className="flex items-center gap-3 px-1 py-1.5 text-xs">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
@@ -389,7 +395,11 @@ export default function Contacts() {
                   onDelete={setDeletingContact}
                   onClick={openEdit}
                   selected={selectedIds.has(contact.id)}
-                  onSelectToggle={can.createBoardItem() ? toggleSelection : undefined}
+                  onSelectToggle={
+                    bulkSelectionEnabled && can.createBoardItem()
+                      ? toggleSelection
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -397,7 +407,7 @@ export default function Contacts() {
             <Card className="overflow-hidden">
               {/* List header */}
               <div className="flex items-center gap-4 px-4 py-2 border-b bg-muted/50 text-xs font-medium text-muted-foreground">
-                {can.createBoardItem() && <span className="w-4" />}
+                {bulkSelectionEnabled && can.createBoardItem() && <span className="w-4" />}
                 <span className="w-7" />
                 <span className="flex-1">Nome</span>
                 <span className="w-36 hidden md:block">WhatsApp</span>
@@ -414,7 +424,11 @@ export default function Contacts() {
                   onDelete={setDeletingContact}
                   onClick={openEdit}
                   selected={selectedIds.has(contact.id)}
-                  onSelectToggle={can.createBoardItem() ? toggleSelection : undefined}
+                  onSelectToggle={
+                    bulkSelectionEnabled && can.createBoardItem()
+                      ? toggleSelection
+                      : undefined
+                  }
                 />
               ))}
             </Card>
