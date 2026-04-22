@@ -30,11 +30,21 @@ type LinkRpcResponse = {
   message?: string;
 };
 
-// api_link_contact_to_board ainda nao esta no types.ts gerado. Cast local.
-const linkRpc = supabase.rpc as unknown as (
-  fn: 'api_link_contact_to_board',
-  args: { p_user_id: string; p_contact_id: string; p_board_ref: string; p_stage_ref: string },
-) => Promise<{ data: LinkRpcResponse | null; error: { message: string } | null }>;
+// api_link_contact_to_board ainda nao esta no types.ts gerado.
+// IMPORTANTE: nao alias-a o metodo (const rpc = supabase.rpc) — perde o `this`
+// do client e quebra com "Cannot read properties of undefined (reading 'rest')".
+// Cast apenas o client e chame .rpc direto nele.
+const rpcClient = supabase as unknown as {
+  rpc: (
+    fn: 'api_link_contact_to_board',
+    args: {
+      p_user_id: string;
+      p_contact_id: string;
+      p_board_ref: string;
+      p_stage_ref: string;
+    },
+  ) => Promise<{ data: LinkRpcResponse | null; error: { message: string } | null }>;
+};
 
 async function callLinkRpc(
   userId: string,
@@ -42,7 +52,7 @@ async function callLinkRpc(
   boardId: string,
   stageId: string,
 ): Promise<LinkRpcResponse> {
-  const { data, error } = await linkRpc('api_link_contact_to_board', {
+  const { data, error } = await rpcClient.rpc('api_link_contact_to_board', {
     p_user_id: userId,
     p_contact_id: contactId,
     p_board_ref: boardId,
