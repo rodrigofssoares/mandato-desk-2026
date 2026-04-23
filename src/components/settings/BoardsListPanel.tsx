@@ -89,12 +89,12 @@ export function BoardsListPanel() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
-          Crie funis de jornada para os seus contatos. Cada board tem seus próprios estágios
-          configuráveis e pode ser usado na página Board.
+          Crie funis de jornada para os seus contatos. Cada funil tem seus próprios estágios
+          configuráveis e pode ser usado na página Funil.
         </p>
         <Button onClick={handleNew} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" />
-          Novo board
+          Novo funil
         </Button>
       </div>
 
@@ -103,7 +103,7 @@ export function BoardsListPanel() {
           <Flag className="h-8 w-8 text-muted-foreground mb-3" />
           <p className="text-sm font-medium">Nenhum funil criado</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Crie o primeiro clicando em "Novo board" acima.
+            Crie o primeiro clicando em "Novo funil" acima.
           </p>
         </div>
       ) : (
@@ -129,9 +129,9 @@ export function BoardsListPanel() {
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir board "{deleting?.nome}"?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir funil "{deleting?.nome}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              Isso apagará o board, todos os seus estágios e os posicionamentos de contatos nele. Os
+              Isso apagará o funil, todos os seus estágios e os posicionamentos de contatos nele. Os
               contatos em si NÃO serão removidos, apenas tirados deste funil.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -143,7 +143,7 @@ export function BoardsListPanel() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteBoard.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Excluir board
+              Excluir funil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -224,10 +224,10 @@ function BoardCard({
                   className={`h-4 w-4 ${board.is_default ? 'fill-amber-500 text-amber-500' : ''}`}
                 />
               </Button>
-              <Button variant="ghost" size="icon" onClick={onEdit} title="Editar board">
+              <Button variant="ghost" size="icon" onClick={onEdit} title="Editar funil">
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={onDelete} title="Excluir board">
+              <Button variant="ghost" size="icon" onClick={onDelete} title="Excluir funil">
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>

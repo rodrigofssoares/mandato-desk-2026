@@ -34,7 +34,7 @@ export function BoardColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-shrink-0 w-72 rounded-lg border flex flex-col ${stageBgClass(
+      className={`flex-shrink-0 w-72 max-w-72 overflow-hidden rounded-lg border flex flex-col ${stageBgClass(
         stage.cor,
       )} ${isOver ? 'ring-2 ring-primary/60' : ''}`}
     >

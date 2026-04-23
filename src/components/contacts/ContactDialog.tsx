@@ -192,7 +192,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   Tarefas
                   {contact?.id && <ContactTarefasPendenteBadge contactId={contact.id} />}
                 </TabsTrigger>
-                <TabsTrigger value="boards" className="flex-1 min-w-[72px] text-xs">Boards</TabsTrigger>
+                <TabsTrigger value="boards" className="flex-1 min-w-[72px] text-xs">Funis</TabsTrigger>
                 <TabsTrigger value="campanha" className="flex-1 min-w-[72px] text-xs">Campanha</TabsTrigger>
                 <TabsTrigger value="etiquetas" className="flex-1 min-w-[72px] text-xs">Etiquetas</TabsTrigger>
                 <TabsTrigger value="endereco" className="flex-1 min-w-[72px] text-xs">Endereço</TabsTrigger>

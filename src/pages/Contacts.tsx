@@ -533,7 +533,7 @@ export default function Contacts() {
               onClick={() => setBulkMoveOpen(true)}
             >
               <KanbanSquare className="h-4 w-4" />
-              Mover p/ board
+              Mover p/ funil
             </Button>
           )}
           <Button

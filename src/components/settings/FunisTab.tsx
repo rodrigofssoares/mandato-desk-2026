@@ -12,10 +12,10 @@ export function FunisTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Boards de contatos</CardTitle>
+          <CardTitle>Funis de contatos</CardTitle>
           <CardDescription>
-            Configure os funis usados na aba Board. Cada board tem seus próprios estágios e pode ser
-            marcado como padrão para aparecer ao abrir a página Board.
+            Configure os funis usados na aba Funil. Cada funil tem seus próprios estágios e pode ser
+            marcado como padrão para aparecer ao abrir a página Funil.
           </CardDescription>
         </CardHeader>
         <CardContent>
