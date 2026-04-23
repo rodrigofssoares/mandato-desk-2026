@@ -26,16 +26,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
 import { useBoardItems, useRemoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
+import { useContact } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { getContactDisplayName } from '@/lib/contactDisplay';
 
 import { BoardSelector } from '@/components/board/BoardSelector';
 import { BoardKanban } from '@/components/board/BoardKanban';
-import { BoardCardDetailSheet } from '@/components/board/BoardCardDetailSheet';
 import { AddContactToBoardDialog } from '@/components/board/AddContactToBoardDialog';
 import { BulkMoveByTagDrawer } from '@/components/board/BulkMoveByTagDrawer';
 import { BoardFormDialog } from '@/components/settings/BoardFormDialog';
 import { BoardStagesManager } from '@/components/settings/BoardStagesManager';
+import { ContactDialog } from '@/components/contacts/ContactDialog';
 
 export default function Board() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -78,7 +79,8 @@ export default function Board() {
 
   // UI state
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
-  const [detailItem, setDetailItem] = useState<BoardItemWithContact | null>(null);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const { data: editingContact } = useContact(editingContactId ?? undefined);
   const [removeTarget, setRemoveTarget] = useState<BoardItemWithContact | null>(null);
   const [addStageId, setAddStageId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -118,18 +120,10 @@ export default function Board() {
     [items],
   );
 
-  const stageNameById = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const s of stages) map[s.id] = s.nome;
-    return map;
-  }, [stages]);
-
   const handleConfirmRemove = async () => {
     if (!removeTarget) return;
     try {
       await removeMutation.mutateAsync(removeTarget.id);
-      // Se removeu o item que estava aberto no sheet, fecha
-      if (detailItem?.id === removeTarget.id) setDetailItem(null);
     } catch {
       // toast no hook
     } finally {
@@ -286,7 +280,9 @@ export default function Board() {
             <BoardKanban
               stages={stages}
               items={items}
-              onCardClick={setDetailItem}
+              onCardClick={(item) => {
+                if (item.contact?.id) setEditingContactId(item.contact.id);
+              }}
               onCardRemove={(item) => {
                 if (!canDelete) return;
                 setRemoveTarget(item);
@@ -350,16 +346,12 @@ export default function Board() {
       />
 
 
-      <BoardCardDetailSheet
-        open={!!detailItem}
-        onOpenChange={(open) => !open && setDetailItem(null)}
-        item={detailItem}
-        stageName={detailItem ? stageNameById[detailItem.stage_id] ?? '—' : '—'}
-        onRemove={() => {
-          if (!canDelete) return;
-          if (detailItem) setRemoveTarget(detailItem);
+      <ContactDialog
+        open={!!editingContactId && !!editingContact}
+        onOpenChange={(open) => {
+          if (!open) setEditingContactId(null);
         }}
-        removing={removeMutation.isPending}
+        contact={editingContact ?? null}
       />
 
       <AlertDialog open={!!removeTarget} onOpenChange={(open) => !open && setRemoveTarget(null)}>
