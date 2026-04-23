@@ -24,7 +24,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
   SidebarSeparator,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -114,7 +116,15 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex flex-col items-center gap-1.5 px-2 py-3 group-data-[collapsible=icon]:py-2">
+        {/* Botao de recolher/expandir dentro da propria coluna do sidebar */}
+        <div className="flex justify-end px-1 pt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <SidebarTrigger
+            className="size-7"
+            title="Recolher/expandir menu (Ctrl+B)"
+            aria-label="Recolher ou expandir o menu lateral"
+          />
+        </div>
+        <div className="flex flex-col items-center gap-1.5 px-2 pb-3 group-data-[collapsible=icon]:pb-2">
           {/* Avatar do político ou ícone padrão */}
           {hasPoliticianPhoto ? (
             <div className="w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden flex-shrink-0 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
@@ -206,6 +216,7 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

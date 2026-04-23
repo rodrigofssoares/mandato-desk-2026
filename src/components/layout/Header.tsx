@@ -40,8 +40,13 @@ export function Header() {
     <>
       {isImpersonating && <ImpersonationBanner />}
       <header className="flex h-14 items-center gap-3 border-b bg-background px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="h-5" />
+        {/* Em mobile a sidebar vira Sheet e precisa de trigger externo pra abrir. Em md+ o trigger vive dentro da propria coluna do sidebar. */}
+        <SidebarTrigger
+          className="md:hidden size-9 border border-border/70 hover:bg-accent hover:border-border"
+          title="Abrir menu"
+          aria-label="Abrir menu lateral"
+        />
+        <Separator orientation="vertical" className="h-5 md:hidden" />
         <nav className="flex items-center gap-1 text-sm">
           <span className="text-muted-foreground">Mandato Desk</span>
           <span className="text-muted-foreground">/</span>
