@@ -2,3 +2,11 @@ project_id = "nevgnvrwqaoztefnyqdj"
 
 [functions.api-proxy]
 verify_jwt = false
+
+# Funções administrativas: o guard `_shared/admin-guard.ts` valida o JWT
+# do chamador e checa role. Mantemos verify_jwt = true como defesa adicional.
+[functions.create-user]
+verify_jwt = true
+
+[functions.reset-user-password]
+verify_jwt = true

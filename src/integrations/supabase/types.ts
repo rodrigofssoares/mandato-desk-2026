@@ -1247,6 +1247,7 @@ export type Database = {
           id: string
           nome: string | null
           role: string
+          senha_temporaria: boolean
           status_aprovacao: string
           telefone: string | null
         }
@@ -1257,6 +1258,7 @@ export type Database = {
           id: string
           nome?: string | null
           role?: string
+          senha_temporaria?: boolean
           status_aprovacao?: string
           telefone?: string | null
         }
@@ -1267,6 +1269,7 @@ export type Database = {
           id?: string
           nome?: string | null
           role?: string
+          senha_temporaria?: boolean
           status_aprovacao?: string
           telefone?: string | null
         }
