@@ -116,10 +116,22 @@ export function ChangePasswordDialog({
       );
 
       if (error) {
-        const detail =
+        // Tenta extrair a mensagem de erro real do body retornado pela
+        // edge function (supabase-js embrulha o body em `error.context`
+        // quando o status é não-2xx).
+        let detail =
           (resp as { error?: string } | null)?.error ??
           (error as { message?: string }).message ??
           'Erro ao redefinir senha';
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) detail = body.error;
+          } catch {
+            /* body não é JSON — mantém detail original */
+          }
+        }
         toast.error(detail);
         return;
       }

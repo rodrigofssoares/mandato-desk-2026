@@ -18,13 +18,24 @@ export function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-// Roles com poder administrativo sobre usuários.
-const ADMIN_ROLES = new Set(['admin', 'proprietario']);
+// Níveis de role — espelha src/types/permissions.ts (frontend).
+export const ROLE_LEVELS: Record<string, number> = {
+  admin: 100,
+  proprietario: 80,
+  assessor: 50,
+  assistente: 30,
+  estagiario: 20,
+};
+
+// Nível mínimo para operações administrativas (gerenciar usuários).
+// Assessor e acima (admin/proprietario) podem criar e resetar senhas.
+const MIN_ADMIN_LEVEL = ROLE_LEVELS.assessor;
 
 export interface AdminContext {
   admin: SupabaseClient;
   callerId: string;
   callerRole: string;
+  callerLevel: number;
 }
 
 export async function requireAdmin(req: Request): Promise<AdminContext | Response> {
@@ -33,7 +44,7 @@ export async function requireAdmin(req: Request): Promise<AdminContext | Respons
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
   if (!url || !serviceRoleKey || !anonKey) {
-    return jsonResponse(500, { error: 'Configuração do servidor incompleta' });
+    return jsonResponse(500, { error: 'Configuração do servidor incompleta (env)' });
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -67,9 +78,38 @@ export async function requireAdmin(req: Request): Promise<AdminContext | Respons
     return jsonResponse(403, { error: 'Perfil do chamador não encontrado' });
   }
 
-  if (!ADMIN_ROLES.has(profile.role)) {
-    return jsonResponse(403, { error: 'Sem permissão para esta operação' });
+  const callerLevel = ROLE_LEVELS[profile.role] ?? 0;
+  if (callerLevel < MIN_ADMIN_LEVEL) {
+    return jsonResponse(403, {
+      error: `Sem permissão — role "${profile.role}" (nível ${callerLevel}) é menor que o mínimo ${MIN_ADMIN_LEVEL}`,
+    });
   }
 
-  return { admin, callerId: userData.user.id, callerRole: profile.role };
+  return { admin, callerId: userData.user.id, callerRole: profile.role, callerLevel };
+}
+
+// Verifica se o chamador tem nível estritamente maior que o do alvo.
+// Espelha a regra `canManage` do frontend (UserCard.tsx).
+export async function assertCanManage(
+  ctx: AdminContext,
+  targetUserId: string,
+): Promise<Response | null> {
+  if (ctx.callerId === targetUserId) {
+    return jsonResponse(400, { error: 'Use o fluxo de troca da própria senha' });
+  }
+  const { data: target, error } = await ctx.admin
+    .from('profiles')
+    .select('role')
+    .eq('id', targetUserId)
+    .maybeSingle();
+  if (error || !target) {
+    return jsonResponse(404, { error: 'Usuário alvo não encontrado' });
+  }
+  const targetLevel = ROLE_LEVELS[target.role] ?? 0;
+  if (ctx.callerLevel <= targetLevel) {
+    return jsonResponse(403, {
+      error: 'Sem permissão sobre este usuário (nível igual ou superior)',
+    });
+  }
+  return null;
 }
