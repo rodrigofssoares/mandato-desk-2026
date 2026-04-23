@@ -147,21 +147,27 @@ export function useCreateUser() {
 
       if (error) {
         // Quando a edge function retorna non-2xx, supabase-js embrulha a
-        // Response original em `error.context` — precisamos ler o body
-        // pra expor a mensagem real.
+        // Response original em `error.context`.
         let detail =
           (data as { error?: string } | null)?.error ??
           (error as { message?: string }).message ??
           'Erro ao criar usuário';
         const ctx = (error as { context?: Response }).context;
-        if (ctx && typeof ctx.json === 'function') {
+        if (ctx && typeof ctx.text === 'function') {
           try {
-            const body = await ctx.json();
-            if (body?.error) detail = body.error;
+            const raw = await ctx.text();
+            try {
+              const body = JSON.parse(raw);
+              if (body?.error) detail = body.error;
+              else detail = `${ctx.status} — ${raw.slice(0, 500)}`;
+            } catch {
+              detail = `${ctx.status} — ${raw.slice(0, 500) || 'sem body'}`;
+            }
           } catch {
-            /* body não é JSON */
+            /* sem body disponivel */
           }
         }
+        console.error('create-user error:', detail, error);
         throw new Error(detail);
       }
 

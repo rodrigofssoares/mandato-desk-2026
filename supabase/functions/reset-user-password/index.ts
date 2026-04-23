@@ -9,12 +9,13 @@
 import { corsHeaders, jsonResponse, requireAdmin } from '../_shared/admin-guard.ts';
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return jsonResponse(405, { error: 'Método não permitido' });
+  try {
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+    if (req.method !== 'POST') return jsonResponse(405, { error: 'Método não permitido' });
 
-  const guard = await requireAdmin(req);
-  if (guard instanceof Response) return guard;
-  const { admin } = guard;
+    const guard = await requireAdmin(req);
+    if (guard instanceof Response) return guard;
+    const { admin } = guard;
 
   let body: { userId?: string; password?: string };
   try {
@@ -53,5 +54,10 @@ Deno.serve(async (req) => {
     });
   }
 
-  return jsonResponse(200, { ok: true });
+    return jsonResponse(200, { ok: true });
+  } catch (err) {
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    console.error('reset-user-password crash:', err);
+    return jsonResponse(500, { error: `reset-user-password crash: ${msg}` });
+  }
 });
