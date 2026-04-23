@@ -74,8 +74,15 @@ export async function requireAdmin(req: Request): Promise<AdminContext | Respons
     .eq('id', userData.user.id)
     .maybeSingle();
 
-  if (profileError || !profile) {
-    return jsonResponse(403, { error: 'Perfil do chamador não encontrado' });
+  if (profileError) {
+    return jsonResponse(500, {
+      error: `Erro ao buscar perfil (id=${userData.user.id}): ${profileError.message} [code=${profileError.code ?? 'n/a'}]`,
+    });
+  }
+  if (!profile) {
+    return jsonResponse(403, {
+      error: `Perfil do chamador não encontrado (id=${userData.user.id}, email=${userData.user.email})`,
+    });
   }
 
   const callerLevel = ROLE_LEVELS[profile.role] ?? 0;
