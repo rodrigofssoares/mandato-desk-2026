@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,9 +120,9 @@ export function ChangePasswordDialog({
           <form onSubmit={ownForm.handleSubmit(handleOwnPasswordSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Senha Atual</Label>
-              <Input
+              <PasswordInput
                 id="currentPassword"
-                type="password"
+                autoComplete="current-password"
                 {...ownForm.register('currentPassword')}
               />
               {ownForm.formState.errors.currentPassword && (
@@ -134,10 +134,10 @@ export function ChangePasswordDialog({
 
             <div className="space-y-2">
               <Label htmlFor="newPassword">Nova Senha</Label>
-              <Input
+              <PasswordInput
                 id="newPassword"
-                type="password"
                 placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
                 {...ownForm.register('newPassword')}
               />
               {ownForm.formState.errors.newPassword && (
@@ -149,9 +149,9 @@ export function ChangePasswordDialog({
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
+                autoComplete="new-password"
                 {...ownForm.register('confirmPassword')}
               />
               {ownForm.formState.errors.confirmPassword && (
@@ -189,10 +189,10 @@ export function ChangePasswordDialog({
         <form onSubmit={otherForm.handleSubmit(handleOtherPasswordSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="otherNewPassword">Nova Senha</Label>
-            <Input
+            <PasswordInput
               id="otherNewPassword"
-              type="password"
               placeholder="Mínimo 6 caracteres"
+              autoComplete="new-password"
               {...otherForm.register('newPassword')}
             />
             {otherForm.formState.errors.newPassword && (
@@ -204,9 +204,9 @@ export function ChangePasswordDialog({
 
           <div className="space-y-2">
             <Label htmlFor="otherConfirmPassword">Confirmar Nova Senha</Label>
-            <Input
+            <PasswordInput
               id="otherConfirmPassword"
-              type="password"
+              autoComplete="new-password"
               {...otherForm.register('confirmPassword')}
             />
             {otherForm.formState.errors.confirmPassword && (
