@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -8,6 +8,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { BoardColumn } from './BoardColumn';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useMoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
 import type { BoardStage } from '@/hooks/useBoardStages';
 
@@ -35,9 +36,63 @@ export function BoardKanban({
   const moveItem = useMoveBoardItem();
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
 
+  // Refs pra sincronizar scroll horizontal entre a scrollbar do topo e a de baixo
+  const topScrollAreaRef = useRef<HTMLDivElement>(null);
+  const bottomScrollAreaRef = useRef<HTMLDivElement>(null);
+  const [contentWidth, setContentWidth] = useState(0);
+
+  useEffect(() => {
+    const topViewport = topScrollAreaRef.current?.querySelector<HTMLDivElement>(
+      '[data-radix-scroll-area-viewport]',
+    );
+    const bottomViewport = bottomScrollAreaRef.current?.querySelector<HTMLDivElement>(
+      '[data-radix-scroll-area-viewport]',
+    );
+    if (!topViewport || !bottomViewport) return;
+
+    let syncing = false;
+    const syncFromBottom = () => {
+      if (syncing) return;
+      syncing = true;
+      topViewport.scrollLeft = bottomViewport.scrollLeft;
+      requestAnimationFrame(() => {
+        syncing = false;
+      });
+    };
+    const syncFromTop = () => {
+      if (syncing) return;
+      syncing = true;
+      bottomViewport.scrollLeft = topViewport.scrollLeft;
+      requestAnimationFrame(() => {
+        syncing = false;
+      });
+    };
+    bottomViewport.addEventListener('scroll', syncFromBottom, { passive: true });
+    topViewport.addEventListener('scroll', syncFromTop, { passive: true });
+
+    const measure = () => {
+      const inner = bottomViewport.firstElementChild as HTMLElement | null;
+      if (inner) setContentWidth(inner.scrollWidth);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(bottomViewport);
+    if (bottomViewport.firstElementChild) {
+      ro.observe(bottomViewport.firstElementChild as Element);
+    }
+
+    return () => {
+      bottomViewport.removeEventListener('scroll', syncFromBottom);
+      topViewport.removeEventListener('scroll', syncFromTop);
+      ro.disconnect();
+    };
+  }, [stages.length, items.length]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+      // delay + tolerance (em vez de distance) deixa o drag iniciar somente apos segurar ~150ms.
+      // Swipes rapidos passam como scroll horizontal nativo sem serem sequestrados pelo DnD.
+      activationConstraint: { delay: 150, tolerance: 8 },
     }),
   );
 
@@ -88,21 +143,29 @@ export function BoardKanban({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {stages.map((stage) => (
-          <BoardColumn
-            key={stage.id}
-            stage={stage}
-            items={itemsForStage(stage.id)}
-            onCardClick={onCardClick}
-            onCardRemove={onCardRemove}
-            onAddContact={() => onAddContact(stage.id)}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        ))}
-      </div>
+      {/* Scrollbar horizontal espelhada no TOPO — type="always" deixa a barra sempre visivel (sem hover) */}
+      <ScrollArea ref={topScrollAreaRef} type="always" className="w-full h-3 mb-2">
+        <div style={{ width: contentWidth || '100%', height: 1 }} />
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+      <ScrollArea ref={bottomScrollAreaRef} type="always" className="w-full pb-2">
+        <div className="flex gap-3 pb-4 touch-pan-x">
+          {stages.map((stage) => (
+            <BoardColumn
+              key={stage.id}
+              stage={stage}
+              items={itemsForStage(stage.id)}
+              onCardClick={onCardClick}
+              onCardRemove={onCardRemove}
+              onAddContact={() => onAddContact(stage.id)}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </DndContext>
   );
 }
