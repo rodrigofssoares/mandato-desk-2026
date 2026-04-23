@@ -471,6 +471,7 @@ export function useUpdateContact() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['contact', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['board_items'] });
       toast.success('Contato atualizado com sucesso');
       logActivity({ type: 'update', entity_type: 'contact', entity_id: variables.id, description: `Atualizou o contato` });
     },
