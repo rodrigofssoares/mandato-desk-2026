@@ -94,20 +94,20 @@ export function BoardCard({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             {item.contact?.is_favorite && (
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500 shrink-0" />
             )}
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium truncate min-w-0 flex-1">
               {item.contact ? getContactDisplayName(item.contact) : '(sem nome)'}
             </p>
           </div>
 
           {phone && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 min-w-0">
               <Phone className="h-3 w-3 shrink-0" />
-              <span className="truncate">{phone}</span>
-            </p>
+              <span className="truncate min-w-0 flex-1">{phone}</span>
+            </div>
           )}
         </div>
 
@@ -116,7 +116,7 @@ export function BoardCard({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="text-muted-foreground hover:text-foreground p-0.5 -mr-1"
+                className="shrink-0 text-muted-foreground hover:text-foreground p-0.5 -mr-1"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
