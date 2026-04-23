@@ -146,12 +146,22 @@ export function useCreateUser() {
       });
 
       if (error) {
-        // A edge function retorna `{ error: "..." }` no body em caso de
-        // falha; supabase-js coloca esse body em `error.context` às vezes.
-        const detail =
+        // Quando a edge function retorna non-2xx, supabase-js embrulha a
+        // Response original em `error.context` — precisamos ler o body
+        // pra expor a mensagem real.
+        let detail =
           (data as { error?: string } | null)?.error ??
           (error as { message?: string }).message ??
           'Erro ao criar usuário';
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) detail = body.error;
+          } catch {
+            /* body não é JSON */
+          }
+        }
         throw new Error(detail);
       }
 
