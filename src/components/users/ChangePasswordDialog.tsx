@@ -91,6 +91,12 @@ export function ChangePasswordDialog({
         return;
       }
 
+      // Se o perfil estava marcado como senha temporária, limpa a flag.
+      await supabase
+        .from('profiles')
+        .update({ senha_temporaria: false })
+        .eq('id', userId);
+
       toast.success('Senha alterada com sucesso');
       ownForm.reset();
       onOpenChange(false);
@@ -101,12 +107,33 @@ export function ChangePasswordDialog({
     }
   };
 
-  const handleOtherPasswordSubmit = async (_data: OtherPasswordForm) => {
-    // TODO: Implementar alteração de senha de outro usuário via Edge Function
-    // (manage-user-password). Requer Supabase Admin API no server-side.
-    toast.error(
-      'Alteração de senha de outro usuário requer configuração server-side (Edge Function). Entre em contato com o desenvolvedor.'
-    );
+  const handleOtherPasswordSubmit = async (data: OtherPasswordForm) => {
+    setIsSubmitting(true);
+    try {
+      const { data: resp, error } = await supabase.functions.invoke(
+        'reset-user-password',
+        { body: { userId, password: data.newPassword } },
+      );
+
+      if (error) {
+        const detail =
+          (resp as { error?: string } | null)?.error ??
+          (error as { message?: string }).message ??
+          'Erro ao redefinir senha';
+        toast.error(detail);
+        return;
+      }
+
+      toast.success(
+        'Senha redefinida. O usuário será obrigado a criar uma nova senha no próximo login.',
+      );
+      otherForm.reset();
+      onOpenChange(false);
+    } catch {
+      toast.error('Erro ao redefinir senha');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isOwnPassword) {

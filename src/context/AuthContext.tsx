@@ -9,6 +9,7 @@ export interface Profile {
   email: string;
   role: string;
   status_aprovacao: 'ATIVO' | 'PENDENTE' | 'INATIVO';
+  senha_temporaria?: boolean;
   avatar_url?: string;
   telefone?: string;
   created_at?: string;

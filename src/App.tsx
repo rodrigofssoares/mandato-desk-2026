@@ -14,6 +14,7 @@ import { setActivityLogQueryClient } from '@/lib/activityLog';
 // Pages
 import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
+import PrimeiroAcesso from '@/pages/PrimeiroAcesso';
 import NotFound from '@/pages/NotFound';
 import Dashboard from '@/pages/Dashboard';
 import Demands from '@/pages/Demands';
@@ -63,6 +64,11 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Senha temporária: força troca antes de qualquer outra tela
+  if (profile?.senha_temporaria) {
+    return <Navigate to="/primeiro-acesso" replace />;
+  }
+
   if (profile && profile.status_aprovacao === 'PENDENTE') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
@@ -96,6 +102,7 @@ function AppRoutes() {
         {/* Rotas públicas */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/primeiro-acesso" element={<PrimeiroAcesso />} />
 
         {/* Rotas protegidas */}
         <Route

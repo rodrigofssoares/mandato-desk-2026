@@ -118,9 +118,9 @@ export function useDeleteUser() {
 export function useCreateUser() {
   const queryClient = useQueryClient();
 
-  // TODO: Substituir supabase.auth.signUp() por chamada à Edge Function
-  // quando a função 'create-user' estiver deployada no Supabase.
-  // A Edge Function permite criar usuários sem afetar a sessão atual.
+  // Chama a edge function `create-user` (admin API) que cria o usuário
+  // já com email_confirmed_at, senha_temporaria=true em profiles, e sem
+  // afetar a sessão do admin chamador.
   return useMutation({
     mutationFn: async ({
       email,
@@ -135,39 +135,31 @@ export function useCreateUser() {
       role: Role;
       telefone?: string;
     }) => {
-      // 1. Cria o usuário via auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { nome },
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email,
+          password,
+          nome,
+          role,
+          telefone: telefone || null,
         },
       });
 
-      if (signUpError) throw signUpError;
-      if (!signUpData.user) throw new Error('Erro ao criar usuário');
-
-      // 2. Atualiza o perfil com role e status ativo
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          role,
-          status_aprovacao: 'ATIVO',
-          nome,
-          telefone: telefone || null,
-        })
-        .eq('id', signUpData.user.id);
-
-      if (profileError) {
-        console.error('Erro ao atualizar perfil:', profileError);
-        // Não faz rollback do auth user pois não temos admin API no client
+      if (error) {
+        // A edge function retorna `{ error: "..." }` no body em caso de
+        // falha; supabase-js coloca esse body em `error.context` às vezes.
+        const detail =
+          (data as { error?: string } | null)?.error ??
+          (error as { message?: string }).message ??
+          'Erro ao criar usuário';
+        throw new Error(detail);
       }
 
-      return signUpData.user;
+      return (data as { user: { id: string; email: string; nome: string; role: string } }).user;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Usuário criado com sucesso');
+      toast.success('Usuário criado com sucesso. Senha temporária ativada.');
       logActivity({ type: 'create', entity_type: 'user', description: 'Criou um usuário' });
     },
     onError: (error) => {
