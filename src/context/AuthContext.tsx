@@ -23,6 +23,7 @@ interface AuthContextType {
   isLoading: boolean;
   isProfileLoading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,6 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/auth');
   }, [navigate]);
 
+  const refreshProfile = useCallback(async () => {
+    if (user?.id) await fetchProfile(user.id);
+  }, [user, fetchProfile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -110,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: isLoading || isProfileLoading,
         isProfileLoading,
         signOut,
+        refreshProfile,
       }}
     >
       {children}

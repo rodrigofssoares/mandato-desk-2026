@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 const ownPasswordSchema = z
   .object({
@@ -57,6 +58,7 @@ export function ChangePasswordDialog({
   isOwnPassword,
 }: ChangePasswordDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { refreshProfile } = useAuth();
 
   const ownForm = useForm<OwnPasswordForm>({
     resolver: zodResolver(ownPasswordSchema),
@@ -96,6 +98,10 @@ export function ChangePasswordDialog({
         .from('profiles')
         .update({ senha_temporaria: false })
         .eq('id', userId);
+
+      // Sincroniza profile no contexto (senão o ProtectedRoute ainda
+      // enxerga senha_temporaria=true e reboca pra /primeiro-acesso).
+      await refreshProfile();
 
       toast.success('Senha alterada com sucesso');
       ownForm.reset();

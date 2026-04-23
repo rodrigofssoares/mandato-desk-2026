@@ -32,7 +32,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function PrimeiroAcesso() {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -65,6 +65,10 @@ export default function PrimeiroAcesso() {
         return;
       }
 
+      // Recarrega o profile no contexto ANTES de navegar, senão o
+      // ProtectedRoute ainda enxerga senha_temporaria=true e devolve
+      // o usuário pra esta tela.
+      await refreshProfile();
       toast.success('Senha definida com sucesso. Bem-vindo!');
       navigate('/', { replace: true });
     } catch {
