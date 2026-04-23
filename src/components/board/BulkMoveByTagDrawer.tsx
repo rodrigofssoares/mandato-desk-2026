@@ -161,7 +161,7 @@ export function BulkMoveByTagDrawer({
           <SheetTitle>Mover contatos em massa</SheetTitle>
           <SheetDescription>
             {preSelectedMode
-              ? `Selecione board e etapa para ${impactedContacts.length} contato(s) escolhido(s).`
+              ? `Selecione funil e etapa para ${impactedContacts.length} contato(s) escolhido(s).`
               : 'Filtre por etiqueta e envie todos os contatos para uma etapa.'}
           </SheetDescription>
         </SheetHeader>
@@ -246,22 +246,22 @@ export function BulkMoveByTagDrawer({
             </div>
           )}
 
-          {/* Board */}
+          {/* Funil */}
           <div>
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              Board de destino
+              Funil de destino
             </label>
             <Select
               value={boardId ?? undefined}
               onValueChange={(v) => setBoardId(v)}
             >
               <SelectTrigger className="mt-1.5">
-                <SelectValue placeholder="Escolha um board" />
+                <SelectValue placeholder="Escolha um funil" />
               </SelectTrigger>
               <SelectContent>
                 {boards.length === 0 && (
                   <div className="px-2 py-3 text-xs text-muted-foreground">
-                    Nenhum board de contatos disponível.
+                    Nenhum funil de contatos disponível.
                   </div>
                 )}
                 {boards.map((b) => (
@@ -281,11 +281,11 @@ export function BulkMoveByTagDrawer({
             </label>
             {!boardId ? (
               <p className="mt-1.5 text-xs text-muted-foreground px-2 py-3 border border-dashed rounded-lg">
-                Escolha um board primeiro.
+                Escolha um funil primeiro.
               </p>
             ) : stages.length === 0 ? (
               <p className="mt-1.5 text-xs text-muted-foreground px-2 py-3 border border-dashed rounded-lg">
-                Este board não tem etapas.
+                Este funil não tem etapas.
               </p>
             ) : (
               <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -346,7 +346,7 @@ export function BulkMoveByTagDrawer({
                       <span className="flex-1 truncate">{c.nome}</span>
                       {already && (
                         <Badge variant="secondary" className="text-[10px] h-5">
-                          já no board
+                          já no funil
                         </Badge>
                       )}
                     </li>
@@ -362,7 +362,7 @@ export function BulkMoveByTagDrawer({
                 <div className="mt-2 p-2.5 rounded-md bg-amber-500/10 border border-amber-500/20 flex gap-2 text-xs">
                   <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-amber-700 dark:text-amber-400">
-                    Os {updatedCount} contato(s) já presentes neste board terão a
+                    Os {updatedCount} contato(s) já presentes neste funil terão a
                     etapa <b>atualizada</b> — nenhum será duplicado.
                   </p>
                 </div>

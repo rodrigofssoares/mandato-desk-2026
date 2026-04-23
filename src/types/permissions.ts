@@ -41,7 +41,7 @@ export const SECAO_LABELS: Record<Secao, string> = {
   permissoes: 'Permissões',
   relatorios: 'Relatórios',
   campanha: 'Campos de Campanha',
-  board: 'Board',
+  board: 'Funil',
   tarefas: 'Tarefas',
   configuracoes: 'Configurações',
 };

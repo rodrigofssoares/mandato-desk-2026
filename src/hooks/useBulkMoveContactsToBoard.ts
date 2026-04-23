@@ -122,7 +122,7 @@ export function useBulkMoveContactsToBoard() {
       logActivity({
         type: 'update',
         entity_type: 'board_item',
-        description: `Movimentação em massa: ${successCount} contatos movidos para o board`,
+        description: `Movimentação em massa: ${successCount} contatos movidos para o funil`,
       });
     },
     onError: (error) => {

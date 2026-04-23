@@ -21,7 +21,7 @@ export const DASHBOARD_WIDGET_IDS = [
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
 
 export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetId, string> = {
-  funnel: 'Funil do Board',
+  funnel: 'Funil',
   tarefas: 'Tarefas de Hoje',
   aniversarios: 'Aniversariantes',
   'saude-base': 'Saúde da Base',

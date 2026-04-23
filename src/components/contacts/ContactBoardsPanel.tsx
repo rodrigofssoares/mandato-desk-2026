@@ -207,7 +207,7 @@ function MembershipCard({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            title="Abrir board"
+            title="Abrir funil"
             onClick={onOpen}
           >
             <ExternalLink className="h-4 w-4" />
@@ -216,7 +216,7 @@ function MembershipCard({
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-destructive hover:text-destructive"
-            title="Remover deste board"
+            title="Remover deste funil"
             onClick={onRemove}
           >
             <Trash2 className="h-4 w-4" />
@@ -236,7 +236,7 @@ export function ContactBoardsPanel({ contactId }: ContactBoardsPanelProps) {
   if (!contactId) {
     return (
       <div className="rounded-lg border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-        Salve o contato para visualizar os boards em que ele participa.
+        Salve o contato para visualizar os funis em que ele participa.
       </div>
     );
   }
@@ -263,7 +263,7 @@ export function ContactBoardsPanel({ contactId }: ContactBoardsPanelProps) {
       {memberships.length === 0 ? (
         <div className="rounded-lg border border-dashed py-10 text-center">
           <KanbanSquare className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-          <p className="text-sm font-medium">Este contato não está em nenhum board</p>
+          <p className="text-sm font-medium">Este contato não está em nenhum funil</p>
           <p className="text-xs text-muted-foreground mt-1">
             Adicione-o em um funil pela página de Funis ou via movimentação em massa.
           </p>
@@ -286,10 +286,10 @@ export function ContactBoardsPanel({ contactId }: ContactBoardsPanelProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remover do board "{removeTarget?.boardNome}"?
+              Remover do funil "{removeTarget?.boardNome}"?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              O contato continua existindo — apenas o vínculo com este board é removido.
+              O contato continua existindo — apenas o vínculo com este funil é removido.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

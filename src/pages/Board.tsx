@@ -170,7 +170,7 @@ export default function Board() {
             </Button>
             <Button onClick={() => setCreateBoardOpen(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Novo board
+              Novo funil
             </Button>
           </div>
         )}
@@ -183,7 +183,7 @@ export default function Board() {
       ) : boards.length === 0 ? (
         <div className="rounded-lg border border-dashed py-16 text-center">
           <KanbanSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm font-medium">Nenhum board criado ainda</p>
+          <p className="text-sm font-medium">Nenhum funil criado ainda</p>
           <p className="text-xs text-muted-foreground mt-1 mb-4">
             {canCreate
               ? 'Crie seu primeiro funil para começar a organizar contatos por estágio.'
@@ -192,7 +192,7 @@ export default function Board() {
           {canCreate && (
             <Button onClick={() => setCreateBoardOpen(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Criar primeiro board
+              Criar primeiro funil
             </Button>
           )}
         </div>
@@ -268,7 +268,7 @@ export default function Board() {
             </div>
           ) : stages.length === 0 ? (
             <div className="rounded-lg border border-dashed py-16 text-center">
-              <p className="text-sm font-medium">Este board não tem estágios</p>
+              <p className="text-sm font-medium">Este funil não tem estágios</p>
               <p className="text-xs text-muted-foreground mt-1 mb-4">
                 Adicione estágios em Configurações → Funis para começar.
               </p>
@@ -358,10 +358,10 @@ export default function Board() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remover {removeTarget?.contact ? getContactDisplayName(removeTarget.contact) : 'contato'} do board?
+              Remover {removeTarget?.contact ? getContactDisplayName(removeTarget.contact) : 'contato'} do funil?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              O contato continua existindo no sistema — apenas o vínculo com este board é
+              O contato continua existindo no sistema — apenas o vínculo com este funil é
               removido.
             </AlertDialogDescription>
           </AlertDialogHeader>

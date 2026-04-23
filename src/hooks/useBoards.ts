@@ -98,7 +98,7 @@ export function useCreateBoard() {
   return useMutation({
     mutationFn: async (input: BoardInsert) => {
       const nome = input.nome.trim();
-      if (!nome) throw new Error('Nome do board é obrigatório');
+      if (!nome) throw new Error('Nome do funil é obrigatório');
 
       // Se marcado como default, desmarcar os outros do mesmo tipo
       if (input.is_default) {
@@ -126,17 +126,17 @@ export function useCreateBoard() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
-      toast.success(`Board "${data.nome}" criado`);
+      toast.success(`Funil "${data.nome}" criado`);
       logActivity({
         type: 'create',
         entity_type: 'board',
         entity_id: data.id,
         entity_name: data.nome,
-        description: `Criou o board "${data.nome}"`,
+        description: `Criou o funil "${data.nome}"`,
       });
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao criar board: ${error.message}`);
+      toast.error(`Erro ao criar funil: ${error.message}`);
     },
   });
 }
@@ -176,17 +176,17 @@ export function useUpdateBoard() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
-      toast.success('Board atualizado');
+      toast.success('Funil atualizado');
       logActivity({
         type: 'update',
         entity_type: 'board',
         entity_id: data.id,
         entity_name: data.nome,
-        description: `Atualizou o board "${data.nome}"`,
+        description: `Atualizou o funil "${data.nome}"`,
       });
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao atualizar board: ${error.message}`);
+      toast.error(`Erro ao atualizar funil: ${error.message}`);
     },
   });
 }
@@ -212,17 +212,17 @@ export function useDeleteBoard() {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
       queryClient.invalidateQueries({ queryKey: ['board_stages'] });
       queryClient.invalidateQueries({ queryKey: ['board_items'] });
-      toast.success(`Board "${nome}" excluído`);
+      toast.success(`Funil "${nome}" excluído`);
       logActivity({
         type: 'delete',
         entity_type: 'board',
         entity_id: id,
         entity_name: nome,
-        description: `Excluiu o board "${nome}"`,
+        description: `Excluiu o funil "${nome}"`,
       });
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao excluir board: ${error.message}`);
+      toast.error(`Erro ao excluir funil: ${error.message}`);
     },
   });
 }

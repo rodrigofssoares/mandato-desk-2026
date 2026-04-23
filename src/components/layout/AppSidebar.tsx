@@ -50,7 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/', secao: 'dashboard', alwaysVisible: true },
   { label: 'Contatos', icon: Users, href: '/contacts', secao: 'contatos' },
   { label: 'Articuladores', icon: Crown, href: '/leaders', secao: 'liderancas' },
-  { label: 'Board', icon: KanbanSquare, href: '/board', secao: 'board' },
+  { label: 'Funil', icon: KanbanSquare, href: '/board', secao: 'board' },
   { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', secao: 'tarefas' },
   { label: 'Demandas', icon: ClipboardList, href: '/demands', secao: 'demandas' },
   { label: 'Etiquetas', icon: Tags, href: '/tags', secao: 'etiquetas' },

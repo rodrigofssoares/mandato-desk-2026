@@ -63,19 +63,19 @@ const exampleBodies: Record<Resource, Record<string, string>> = {
       city: 'Sao Paulo',
       state: 'SP',
       neighborhood: 'Centro',
-      board_id: '(opcional) UUID ou nome do board — ex: Prospecção',
+      board_id: '(opcional) UUID ou nome do funil — ex: Prospecção',
       stage_id: '(opcional) UUID ou nome da etapa — ex: Em andamento',
     }, null, 2),
     PATCH: JSON.stringify({
       phone: '(11) 88888-8888',
       neighborhood: 'Jardim Paulista',
-      board_id: '(opcional) UUID ou nome do board — ex: Seguidores',
+      board_id: '(opcional) UUID ou nome do funil — ex: Seguidores',
       stage_id: '(opcional) UUID ou nome da etapa — ex: Preencheu Formulário',
     }, null, 2),
     PUT: JSON.stringify({
       phone: '(11) 88888-8888',
       neighborhood: 'Jardim Paulista',
-      board_id: '(opcional) UUID ou nome do board — ex: Seguidores',
+      board_id: '(opcional) UUID ou nome do funil — ex: Seguidores',
       stage_id: '(opcional) UUID ou nome da etapa — ex: Preencheu Formulário',
     }, null, 2),
   },
@@ -259,8 +259,8 @@ const contactFields = [
   { campo: 'occupation', tipo: 'string', obrigatorio: false, descricao: 'Profissão' },
   { campo: 'em_canal_whatsapp', tipo: 'boolean', obrigatorio: false, descricao: 'Está no canal do WhatsApp' },
   { campo: 'e_multiplicador', tipo: 'boolean', obrigatorio: false, descricao: 'É multiplicador' },
-  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome do board — POST vincula ao board; PUT/PATCH movem o card' },
-  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome da etapa do board. No POST, se ausente, usa a primeira etapa' },
+  { campo: 'board_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome do funil — POST vincula ao funil; PUT/PATCH movem o card' },
+  { campo: 'stage_id', tipo: 'uuid', obrigatorio: false, descricao: 'UUID ou nome da etapa do funil. No POST, se ausente, usa a primeira etapa' },
 ];
 
 // ---- Metadados do builder de payload ----
@@ -283,7 +283,7 @@ const contactFieldsMeta: FieldMeta[] = contactFields.map((f) => ({
   required: f.obrigatorio,
   placeholder:
     f.campo === 'board_id'
-      ? 'UUID ou nome do board (ex: Prospecção)'
+      ? 'UUID ou nome do funil (ex: Prospecção)'
       : f.campo === 'stage_id'
         ? 'UUID ou nome da etapa (ex: Em andamento)'
         : f.tipo === 'uuid'
@@ -810,7 +810,7 @@ function ApiPlayground({ tokenValue }: { tokenValue: string | null }) {
   "nome": "Rodrigo Sôares | Rotha IA Soluções",
   ...
   "board_link": {
-    "action": "moved",   // ou "linked" (criou) ou status:"warning" (board/etapa nao encontrado)
+    "action": "moved",   // ou "linked" (criou) ou status:"warning" (funil/etapa nao encontrado)
     "status": "ok",
     "resolved_board_id": "...",
     "resolved_stage_id": "..."

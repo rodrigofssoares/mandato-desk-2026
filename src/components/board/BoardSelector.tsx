@@ -11,7 +11,7 @@ export function BoardSelector({ boards, value, onChange }: BoardSelectorProps) {
   return (
     <Select value={value ?? undefined} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-64">
-        <SelectValue placeholder="Selecionar board..." />
+        <SelectValue placeholder="Selecionar funil..." />
       </SelectTrigger>
       <SelectContent>
         {boards.map((board) => (

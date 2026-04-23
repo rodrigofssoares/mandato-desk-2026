@@ -139,10 +139,10 @@ export function BoardFormDialog({ open, onOpenChange, board }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar board' : 'Novo board'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Editar funil' : 'Novo funil'}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Atualize nome, descrição e padrão do board. Estágios são gerenciados depois no painel.'
+              ? 'Atualize nome, descrição e padrão do funil. Estágios são gerenciados depois no painel.'
               : 'Crie um novo funil de contatos com estágios iniciais. Você poderá reordenar e editar cada estágio depois.'}
           </DialogDescription>
         </DialogHeader>
@@ -177,7 +177,7 @@ export function BoardFormDialog({ open, onOpenChange, board }: Props) {
                 Marcar como padrão
               </Label>
               <p className="text-xs text-muted-foreground">
-                O board padrão é o que aparece na página Board por default. Apenas um pode ser padrão
+                O funil padrão é o que aparece na página Funil por default. Apenas um pode ser padrão
                 por vez.
               </p>
             </div>
@@ -240,7 +240,7 @@ export function BoardFormDialog({ open, onOpenChange, board }: Props) {
           </Button>
           <Button onClick={handleSave} disabled={!podeSalvar}>
             {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEdit ? 'Salvar alterações' : 'Criar board'}
+            {isEdit ? 'Salvar alterações' : 'Criar funil'}
           </Button>
         </DialogFooter>
       </DialogContent>

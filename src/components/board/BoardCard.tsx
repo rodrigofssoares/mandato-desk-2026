@@ -132,7 +132,7 @@ export function BoardCard({
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Remover do board
+                Remover do funil
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

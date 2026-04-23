@@ -84,7 +84,7 @@ export function AddContactToBoardDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Adicionar contato ao board</DialogTitle>
+          <DialogTitle>Adicionar contato ao funil</DialogTitle>
           <DialogDescription>
             Busque um contato existente para adicionar a este funil.
           </DialogDescription>
@@ -150,7 +150,7 @@ export function AddContactToBoardDialog({
                       <span className="truncate">{getContactDisplayName(contact)}</span>
                       {already && (
                         <span className="text-[10px] uppercase text-muted-foreground ml-2">
-                          já no board
+                          já no funil
                         </span>
                       )}
                     </button>

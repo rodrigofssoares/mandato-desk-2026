@@ -121,17 +121,17 @@ export function useAddContactToBoard() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['board_items', data.board_id] });
-      toast.success('Contato adicionado ao board');
+      toast.success('Contato adicionado ao funil');
       logActivity({
         type: 'create',
         entity_type: 'board_item',
         entity_id: data.id,
-        description: 'Adicionou contato ao board',
+        description: 'Adicionou contato ao funil',
       });
     },
     onError: (error: Error) => {
       const msg = error.message.includes('duplicate key')
-        ? 'Esse contato já está neste board'
+        ? 'Esse contato já está neste funil'
         : error.message;
       toast.error(`Erro ao adicionar contato: ${msg}`);
     },
@@ -201,11 +201,11 @@ export function useRemoveBoardItem() {
       if (data) {
         queryClient.invalidateQueries({ queryKey: ['board_items', data.board_id] });
       }
-      toast.success('Contato removido do board');
+      toast.success('Contato removido do funil');
       logActivity({
         type: 'delete',
         entity_type: 'board_item',
-        description: 'Removeu contato do board',
+        description: 'Removeu contato do funil',
       });
     },
     onError: (error: Error) => {
