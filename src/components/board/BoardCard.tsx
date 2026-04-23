@@ -39,12 +39,6 @@ export function BoardCard({
   selected,
   onToggleSelect,
 }: BoardCardProps) {
-  // DEBUG — remover depois
-  console.log('[BoardCard render]', {
-    contactName: item.contact?.nome,
-    selectionMode,
-    itemId: item.id,
-  });
   const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({
     id: item.id,
     disabled: selectionMode,
@@ -68,7 +62,7 @@ export function BoardCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'mb-2 p-3 transition-all',
+        'mb-2 p-3 pr-10 transition-all relative',
         selectionMode
           ? 'cursor-pointer hover:border-primary/50'
           : 'cursor-grab active:cursor-grabbing hover:shadow-md',
@@ -86,7 +80,7 @@ export function BoardCard({
         onClick();
       }}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start gap-2">
         {selectionMode && (
           <div
             className="shrink-0 mt-0.5"
@@ -116,17 +110,18 @@ export function BoardCard({
             </div>
           )}
         </div>
+      </div>
 
-        {!selectionMode && (
+      {!selectionMode && (
+        <div className="absolute top-2 right-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="shrink-0 bg-orange-500 text-white hover:bg-orange-600 rounded p-1 -mr-1 border-2 border-red-700"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded p-1"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Mais acoes"
-                data-testid="card-3dot-debug"
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
@@ -144,8 +139,8 @@ export function BoardCard({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mt-2 flex-wrap">
         {pendentes > 0 && (
