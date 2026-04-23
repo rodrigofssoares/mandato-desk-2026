@@ -116,9 +116,10 @@ export function BoardCard({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="shrink-0 text-muted-foreground hover:text-foreground p-0.5 -mr-1"
+                className="shrink-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded p-1 -mr-1"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
+                aria-label="Mais acoes"
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
