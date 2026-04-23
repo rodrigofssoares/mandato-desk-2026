@@ -39,6 +39,12 @@ export function BoardCard({
   selected,
   onToggleSelect,
 }: BoardCardProps) {
+  // DEBUG — remover depois
+  console.log('[BoardCard render]', {
+    contactName: item.contact?.nome,
+    selectionMode,
+    itemId: item.id,
+  });
   const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({
     id: item.id,
     disabled: selectionMode,
