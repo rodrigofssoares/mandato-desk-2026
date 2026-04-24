@@ -201,7 +201,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   const [phase, setPhase] = useState<Phase>('idle');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [stats, setStats] = useState<ImportStats>({ created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 });
-  const [errors, setErrors] = useState<{ line: number; message: string }[]>([]);
+  const [errors, setErrors] = useState<{ line: number; message: string; raw?: Record<string, string> }[]>([]);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -393,7 +393,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   // --- Import ---
   const handleImport = async () => {
     if (parsedRows.length === 0) return;
-    const importErrors: { line: number; message: string }[] = [];
+    const importErrors: { line: number; message: string; raw?: Record<string, string> }[] = [];
     const importStats: ImportStats = { created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 };
 
     // Phase 1: Prepare
@@ -466,7 +466,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       const result = importContactSchema.safeParse(row.normalized);
       if (!result.success) {
         const msg = result.error.issues.map((i) => i.message).join(', ');
-        importErrors.push({ line: row.lineNumber, message: msg });
+        importErrors.push({ line: row.lineNumber, message: msg, raw: row.raw });
         importStats.errors++;
         row.action = 'skip';
         continue;
@@ -610,7 +610,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       const { data: created, error } = await supabase.from('contacts').insert(inserts).select('id, whatsapp');
       if (error) {
         batch.forEach((r) => {
-          importErrors.push({ line: r.lineNumber, message: error.message });
+          importErrors.push({ line: r.lineNumber, message: error.message, raw: r.raw });
           importStats.errors++;
         });
       } else {
@@ -639,7 +639,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
 
           const { error } = await supabase.from('contacts').update(payload).eq('id', contactId);
           if (error) {
-            importErrors.push({ line: row.lineNumber, message: error.message });
+            importErrors.push({ line: row.lineNumber, message: error.message, raw: row.raw });
             importStats.errors++;
             importStats.updated--; // reverte o incremento feito na decisão
           }
@@ -735,6 +735,77 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     const text = errors.map((e) => `Linha ${e.line}: ${e.message}`).join('\n');
     navigator.clipboard.writeText(text);
     toast.success('Erros copiados para a área de transferência');
+  };
+
+  /**
+   * Baixa um XLSX contendo TODOS os erros com os dados originais de cada
+   * linha + uma coluna "erro" com o motivo + uma coluna "linha_original"
+   * pra referência. O arquivo segue o mesmo layout do template, então
+   * depois de corrigir os erros você pode reimportar direto.
+   */
+  const downloadErrors = async () => {
+    if (errors.length === 0) {
+      toast.error('Nenhum erro para baixar');
+      return;
+    }
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+
+    const headers = [
+      'erro', 'linha_original',
+      'nome_completo', 'nome_whatsapp', 'whatsapp', 'canal_whatsapp', 'receber_whatsapp',
+      'multiplicador', 'email', 'telefone', 'genero', 'data_nascimento',
+      'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
+      'instagram', 'twitter', 'tiktok', 'youtube',
+      'declarou_voto', 'ranking', 'leader_id', 'favorito',
+      'origem', 'observacoes', 'notas_assessor', 'ultimo_contato', 'etiquetas',
+    ];
+
+    const rows = errors.map((e) => {
+      const raw = e.raw ?? {};
+      return [
+        e.message,
+        e.line,
+        raw.nome_completo ?? '',
+        raw.nome_whatsapp ?? '',
+        raw.whatsapp ?? '',
+        raw.canal_whatsapp ?? '',
+        raw.receber_whatsapp ?? '',
+        raw.multiplicador ?? '',
+        raw.email ?? '',
+        raw.telefone ?? '',
+        raw.genero ?? '',
+        raw.data_nascimento ?? '',
+        raw.endereco ?? '',
+        raw.numero ?? '',
+        raw.complemento ?? '',
+        raw.bairro ?? '',
+        raw.cidade ?? '',
+        raw.uf ?? '',
+        raw.cep ?? '',
+        raw.instagram ?? '',
+        raw.twitter ?? '',
+        raw.tiktok ?? '',
+        raw.youtube ?? '',
+        raw.declarou_voto ?? '',
+        raw.ranking ?? '',
+        raw.leader_id ?? '',
+        raw.is_favorite ?? '',
+        raw.origem ?? '',
+        raw.observacoes ?? '',
+        raw.notas_assessor ?? '',
+        raw.ultimo_contato ?? '',
+        raw.etiquetas ?? '',
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = headers.map((h) => ({ wch: h === 'erro' ? 40 : 18 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Erros');
+
+    const baseName = fileName.replace(/\.(xlsx|xls|csv)$/i, '') || 'importacao';
+    XLSX.writeFile(wb, `${baseName}_erros.xlsx`);
+    toast.success(`${errors.length} erros exportados em ${baseName}_erros.xlsx`);
   };
 
   const totalValid = parsedRows.length;
@@ -956,25 +1027,47 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
             {/* Errors list */}
             {errors.length > 0 && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2 text-red-600">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm font-medium">{errors.length} erros</span>
                   </div>
-                  <Button variant="outline" size="sm" onClick={copyErrors} className="gap-2">
-                    <ClipboardCopy className="h-3 w-3" />
-                    Copiar erros
-                  </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="default" size="sm" onClick={downloadErrors} className="gap-2">
+                      <Download className="h-3 w-3" />
+                      Baixar planilha com erros
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={copyErrors} className="gap-2">
+                      <ClipboardCopy className="h-3 w-3" />
+                      Copiar
+                    </Button>
+                  </div>
                 </div>
-                <div className="max-h-32 overflow-auto border rounded-lg">
+                <p className="text-xs text-muted-foreground">
+                  A planilha baixada tem todas as {errors.length} linhas com uma coluna "erro" + os dados originais.
+                  Depois de corrigir, você pode reimportar esse mesmo arquivo direto.
+                </p>
+                <div className="max-h-40 overflow-auto border rounded-lg">
                   <Table>
                     <TableBody>
-                      {errors.slice(0, 50).map((e, i) => (
+                      {errors.slice(0, 100).map((e, i) => (
                         <TableRow key={i}>
-                          <TableCell className="text-xs w-16">Linha {e.line}</TableCell>
-                          <TableCell className="text-xs text-red-600">{e.message}</TableCell>
+                          <TableCell className="text-xs w-16">{e.line > 0 ? `Linha ${e.line}` : '—'}</TableCell>
+                          <TableCell className="text-xs">
+                            {e.raw?.nome_completo ? (
+                              <span className="text-muted-foreground mr-2">{e.raw.nome_completo}</span>
+                            ) : null}
+                            <span className="text-red-600">{e.message}</span>
+                          </TableCell>
                         </TableRow>
                       ))}
+                      {errors.length > 100 && (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-xs text-center text-muted-foreground py-2">
+                            ...e mais {errors.length - 100} erros — baixe a planilha para ver todos
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
