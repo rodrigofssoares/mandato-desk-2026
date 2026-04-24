@@ -487,6 +487,8 @@ export function useCreateContact() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato criado com sucesso');
       logActivity({ type: 'create', entity_type: 'contact', entity_name: data.nome, entity_id: data.id, description: `Criou o contato "${data.nome}"` });
     },
@@ -551,6 +553,8 @@ export function useUpdateContact() {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['contact', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['board_items'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato atualizado com sucesso');
       logActivity({ type: 'update', entity_type: 'contact', entity_id: variables.id, description: `Atualizou o contato` });
     },
@@ -573,6 +577,8 @@ export function useDeleteContact() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato excluído com sucesso');
       logActivity({ type: 'delete', entity_type: 'contact', description: 'Excluiu um contato' });
     },

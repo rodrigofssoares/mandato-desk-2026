@@ -120,17 +120,29 @@ export function useDuplicateCount() {
     queryKey: ['duplicate-count'],
     staleTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('id, nome, whatsapp, email, telefone, created_at')
-        .is('merged_into', null);
-
-      if (error) throw error;
-
-      const contacts = (data ?? []) as Pick<
+      // PostgREST corta em 1000 linhas por request; com bases grandes precisamos
+      // paginar ou duplicatas entre registros "antigos" e "recentes" ficam
+      // invisíveis (cada lote só enxerga o próprio intervalo).
+      type CountRow = Pick<
         DuplicateContact,
         'id' | 'nome' | 'whatsapp' | 'email' | 'telefone' | 'created_at'
-      >[];
+      >;
+      const contacts: CountRow[] = [];
+      const PAGE = 1000;
+      let offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('id, nome, whatsapp, email, telefone, created_at')
+          .is('merged_into', null)
+          .order('created_at', { ascending: true })
+          .range(offset, offset + PAGE - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as CountRow[];
+        contacts.push(...batch);
+        if (batch.length < PAGE) break;
+        offset += PAGE;
+      }
 
       let duplicateCount = 0;
       const seenIds = new Set<string>();
@@ -196,16 +208,24 @@ export function useDuplicateGroups(enabled: boolean) {
     queryKey: ['duplicate-groups'],
     enabled,
     queryFn: async (): Promise<DuplicateGroup[]> => {
-      // Client-side detection with full contact data
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*, contact_tags(tag_id, tags(id, nome, cor))')
-        .is('merged_into', null)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      const contacts = (data ?? []) as DuplicateContact[];
+      // Pagina p/ pegar toda a base (senão só os 1000 primeiros entram no
+      // cálculo — duplicatas entre registros antigos e recentes ficavam fora).
+      const contacts: DuplicateContact[] = [];
+      const PAGE = 1000;
+      let offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('*, contact_tags(tag_id, tags(id, nome, cor))')
+          .is('merged_into', null)
+          .order('created_at', { ascending: true })
+          .range(offset, offset + PAGE - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as DuplicateContact[];
+        contacts.push(...batch);
+        if (batch.length < PAGE) break;
+        offset += PAGE;
+      }
       return buildGroupsClientSide(contacts);
     },
   });
