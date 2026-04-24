@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -173,6 +174,24 @@ export default function Board() {
       return false;
     });
   }, [items, debouncedSearch]);
+
+  // Toast com contagem de resultados quando a busca muda. Usa ref pra ler a
+  // contagem mais recente sem disparar toast a cada mudanca de `items` (drag,
+  // refetch etc). `id` fixo faz o sonner substituir o toast anterior.
+  const filteredCountRef = useRef(0);
+  filteredCountRef.current = filteredItems.length;
+  useEffect(() => {
+    if (!debouncedSearch) return;
+    const count = filteredCountRef.current;
+    const id = 'board-search-result';
+    if (count === 0) {
+      toast.info(`Nenhum lead encontrado para "${debouncedSearch}"`, { id });
+    } else if (count === 1) {
+      toast.success('1 lead localizado no funil', { id });
+    } else {
+      toast.success(`${count} leads localizados no funil`, { id });
+    }
+  }, [debouncedSearch]);
 
   const handleConfirmRemove = async () => {
     if (!removeTarget) return;
