@@ -11,9 +11,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <Header />
-        <div className="flex-1 p-4 md:p-6">
+        <div className="flex-1 min-w-0 p-4 md:p-6">
           {children}
         </div>
       </SidebarInset>
