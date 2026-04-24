@@ -187,9 +187,9 @@ export default function Board() {
     if (count === 0) {
       toast.info(`Nenhum lead encontrado para "${debouncedSearch}"`, { id });
     } else if (count === 1) {
-      toast.success('1 lead localizado no funil', { id });
+      toast.info('1 lead localizado no funil', { id });
     } else {
-      toast.success(`${count} leads localizados no funil`, { id });
+      toast.info(`${count} leads localizados no funil`, { id });
     }
   }, [debouncedSearch]);
 
