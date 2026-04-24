@@ -50,23 +50,30 @@ export function BoardKanban({
     );
     if (!topViewport || !bottomViewport) return;
 
+    // Sincroniza scrollLeft entre os dois viewports. Nos extremos (primeiros 2px
+    // de max-left ou max-right), faz "snap" pro extremo oposto usar o PROPRIO
+    // maximo — assim os dois bars ficam grudados nas pontas mesmo que tenham
+    // scrollWidth/clientWidth levemente diferentes.
+    const SNAP_THRESHOLD = 2;
     let syncing = false;
-    const syncFromBottom = () => {
+    const syncTo = (source: HTMLDivElement, target: HTMLDivElement) => {
       if (syncing) return;
       syncing = true;
-      topViewport.scrollLeft = bottomViewport.scrollLeft;
+      const sourceMax = source.scrollWidth - source.clientWidth;
+      const targetMax = target.scrollWidth - target.clientWidth;
+      if (source.scrollLeft <= SNAP_THRESHOLD) {
+        target.scrollLeft = 0;
+      } else if (source.scrollLeft >= sourceMax - SNAP_THRESHOLD) {
+        target.scrollLeft = targetMax;
+      } else {
+        target.scrollLeft = source.scrollLeft;
+      }
       requestAnimationFrame(() => {
         syncing = false;
       });
     };
-    const syncFromTop = () => {
-      if (syncing) return;
-      syncing = true;
-      bottomViewport.scrollLeft = topViewport.scrollLeft;
-      requestAnimationFrame(() => {
-        syncing = false;
-      });
-    };
+    const syncFromBottom = () => syncTo(bottomViewport, topViewport);
+    const syncFromTop = () => syncTo(topViewport, bottomViewport);
     bottomViewport.addEventListener('scroll', syncFromBottom, { passive: true });
     topViewport.addEventListener('scroll', syncFromTop, { passive: true });
 
