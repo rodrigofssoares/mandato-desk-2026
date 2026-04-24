@@ -178,19 +178,28 @@ export default function Board() {
   // Toast com contagem de resultados quando a busca muda. Usa ref pra ler a
   // contagem mais recente sem disparar toast a cada mudanca de `items` (drag,
   // refetch etc). `id` fixo faz o sonner substituir o toast anterior.
+  // Usa a cor primaria do design system (navy institucional) pra destacar.
   const filteredCountRef = useRef(0);
   filteredCountRef.current = filteredItems.length;
   useEffect(() => {
     if (!debouncedSearch) return;
     const count = filteredCountRef.current;
     const id = 'board-search-result';
-    if (count === 0) {
-      toast.info(`Nenhum lead encontrado para "${debouncedSearch}"`, { id });
-    } else if (count === 1) {
-      toast.info('1 lead localizado no funil', { id });
-    } else {
-      toast.info(`${count} leads localizados no funil`, { id });
-    }
+    const msg =
+      count === 0
+        ? `Nenhum lead encontrado para "${debouncedSearch}"`
+        : count === 1
+          ? '1 lead localizado no funil'
+          : `${count} leads localizados no funil`;
+    toast(msg, {
+      id,
+      icon: <Search className="h-4 w-4" />,
+      style: {
+        background: 'hsl(var(--primary))',
+        color: 'hsl(var(--primary-foreground))',
+        border: '1px solid hsl(var(--primary))',
+      },
+    });
   }, [debouncedSearch]);
 
   const handleConfirmRemove = async () => {
