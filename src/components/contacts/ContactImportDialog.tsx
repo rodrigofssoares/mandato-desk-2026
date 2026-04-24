@@ -44,6 +44,8 @@ interface ParsedRow {
   newTagNames?: string[];
   /** Resumo amigável do que mudou (ex: "Instagram, 1 etiqueta nova") */
   changeSummary?: string;
+  /** Contato do banco com o qual esta linha bateu (update/duplicate) */
+  matchedContact?: { id: string; nome: string; whatsapp: string | null };
 }
 
 interface ImportStats {
@@ -527,6 +529,12 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       const rowTagNames = parseTagNames(row.normalized.etiquetas);
       const newTagNames = rowTagNames.filter((n) => !currentTags.has(n.toLowerCase()));
 
+      row.matchedContact = {
+        id: existingId,
+        nome: String(existing.nome ?? ''),
+        whatsapp: (existing.whatsapp as string | null) ?? null,
+      };
+
       if (Object.keys(payload).length === 0 && newTagNames.length === 0) {
         row.action = 'duplicate';
         importStats.duplicates++;
@@ -877,14 +885,24 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
                 </div>
                 <div className="max-h-40 overflow-auto border border-blue-200 rounded-lg">
                   <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs w-14">Linha</TableHead>
+                        <TableHead className="text-xs">Contato (banco)</TableHead>
+                        <TableHead className="text-xs">O que mudou</TableHead>
+                      </TableRow>
+                    </TableHeader>
                     <TableBody>
                       {parsedRows
                         .filter((r) => r.action === 'update')
                         .slice(0, 50)
                         .map((r, i) => (
                           <TableRow key={i}>
-                            <TableCell className="text-xs w-16">Linha {r.lineNumber}</TableCell>
-                            <TableCell className="text-sm">{String(r.normalized.nome_completo ?? '')}</TableCell>
+                            <TableCell className="text-xs w-14">{r.lineNumber}</TableCell>
+                            <TableCell className="text-sm">
+                              <div className="font-medium">{r.matchedContact?.nome ?? String(r.normalized.nome_completo ?? '')}</div>
+                              <div className="text-xs text-muted-foreground">{r.matchedContact?.whatsapp ?? '—'}</div>
+                            </TableCell>
                             <TableCell className="text-xs text-blue-700">{r.changeSummary ?? '—'}</TableCell>
                           </TableRow>
                         ))}
@@ -900,20 +918,33 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
                 <div className="flex items-center gap-2 text-orange-700">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm font-medium">
-                    {parsedRows.filter((r) => r.action === 'duplicate').length} duplicados ignorados (nada novo)
+                    {parsedRows.filter((r) => r.action === 'duplicate').length} duplicados ignorados — todos os campos da planilha já estavam idênticos no banco
                   </span>
                 </div>
-                <div className="max-h-32 overflow-auto border border-orange-200 rounded-lg">
+                <div className="max-h-40 overflow-auto border border-orange-200 rounded-lg">
                   <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs w-14">Linha</TableHead>
+                        <TableHead className="text-xs">Da planilha</TableHead>
+                        <TableHead className="text-xs">Já existia no banco</TableHead>
+                      </TableRow>
+                    </TableHeader>
                     <TableBody>
                       {parsedRows
                         .filter((r) => r.action === 'duplicate')
                         .slice(0, 50)
                         .map((r, i) => (
                           <TableRow key={i}>
-                            <TableCell className="text-xs w-16">Linha {r.lineNumber}</TableCell>
-                            <TableCell className="text-sm">{String(r.normalized.nome_completo ?? '')}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{String(r.normalized.whatsapp ?? '')}</TableCell>
+                            <TableCell className="text-xs w-14">{r.lineNumber}</TableCell>
+                            <TableCell className="text-sm">
+                              <div>{String(r.normalized.nome_completo ?? '')}</div>
+                              <div className="text-xs text-muted-foreground">{String(r.normalized.whatsapp ?? '')}</div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div className="font-medium">{r.matchedContact?.nome ?? '—'}</div>
+                              <div className="text-xs text-muted-foreground">{r.matchedContact?.whatsapp ?? '—'}</div>
+                            </TableCell>
                           </TableRow>
                         ))}
                     </TableBody>
