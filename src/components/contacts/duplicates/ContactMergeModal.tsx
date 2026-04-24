@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { formatPhoneDisplay } from "@/lib/normalization";
 
 // ---------- Props ----------
 
@@ -254,7 +255,7 @@ export function ContactMergeModal({
                 </div>
                 <p className="font-semibold text-sm leading-snug">{contactA.nome}</p>
                 <p className="text-xs text-muted-foreground">
-                  {contactA.whatsapp || contactA.email || "(sem contato)"}
+                  {contactA.whatsapp ? formatPhoneDisplay(contactA.whatsapp) : (contactA.email || "(sem contato)")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Criado em {formatDate(contactA.created_at)}
@@ -292,7 +293,7 @@ export function ContactMergeModal({
                 </div>
                 <p className="font-semibold text-sm leading-snug">{contactB.nome}</p>
                 <p className="text-xs text-muted-foreground">
-                  {contactB.whatsapp || contactB.email || "(sem contato)"}
+                  {contactB.whatsapp ? formatPhoneDisplay(contactB.whatsapp) : (contactB.email || "(sem contato)")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Criado em {formatDate(contactB.created_at)}

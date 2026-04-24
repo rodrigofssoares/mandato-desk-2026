@@ -37,6 +37,33 @@ export function phoneComparisonKey(phone: string | null | undefined): string {
 }
 
 /**
+ * Formata telefone p/ exibição visual: remove o DDI 55 e aplica máscara
+ * brasileira. Storage no banco fica intocado.
+ *   "5511930423594"  -> "(11) 93042-3594"
+ *   "+5511930423594" -> "(11) 93042-3594"
+ *   "11930423594"    -> "(11) 93042-3594"
+ *   "554130001234"   -> "(41) 3000-1234"
+ *   "1140001234"     -> "(11) 4000-1234"
+ * Para entradas que não batem com formato BR, retorna o valor original.
+ */
+export function formatPhoneDisplay(phone: string | null | undefined): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  // Tira 55 se for BR (12 ou 13 dígitos com prefixo 55)
+  const local = (digits.length === 12 || digits.length === 13) && digits.startsWith('55')
+    ? digits.slice(2)
+    : digits;
+  if (local.length === 11) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
+  }
+  if (local.length === 10) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
+  }
+  return phone; // formato inesperado — devolve original
+}
+
+/**
  * Normaliza nome: remove emojis, aplica Title Case respeitando preposições pt-BR.
  * Primeira palavra sempre capitalizada.
  */

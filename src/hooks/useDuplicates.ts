@@ -400,3 +400,212 @@ export function useBulkDeleteDuplicates() {
     },
   });
 }
+
+// ---------- useAutoMergeDuplicates ----------
+
+// Campos que comparamos para detectar conflito real entre contatos do mesmo
+// grupo. Telefones usam phoneComparisonKey (ignoram +55/55/sem DDI). E-mail
+// é case-insensitive. Outros campos viram lower+trim.
+const COMPARABLE_FIELDS: { key: keyof DuplicateContact; type: 'text' | 'phone' | 'email' }[] = [
+  { key: 'nome', type: 'text' },
+  { key: 'nome_whatsapp', type: 'text' },
+  { key: 'whatsapp', type: 'phone' },
+  { key: 'telefone', type: 'phone' },
+  { key: 'email', type: 'email' },
+  { key: 'genero', type: 'text' },
+  { key: 'data_nascimento', type: 'text' },
+  { key: 'logradouro', type: 'text' },
+  { key: 'numero', type: 'text' },
+  { key: 'complemento', type: 'text' },
+  { key: 'bairro', type: 'text' },
+  { key: 'cidade', type: 'text' },
+  { key: 'estado', type: 'text' },
+  { key: 'cep', type: 'text' },
+  { key: 'instagram', type: 'text' },
+  { key: 'twitter', type: 'text' },
+  { key: 'tiktok', type: 'text' },
+  { key: 'youtube', type: 'text' },
+  { key: 'leader_id', type: 'text' },
+  { key: 'origem', type: 'text' },
+  { key: 'observacoes', type: 'text' },
+  { key: 'notas_assessor', type: 'text' },
+];
+
+function normalizeFieldValue(val: unknown, type: 'text' | 'phone' | 'email'): string {
+  if (val === null || val === undefined || val === '') return '';
+  if (type === 'phone') return phoneComparisonKey(String(val));
+  const s = String(val).trim();
+  if (type === 'email') return s.toLowerCase();
+  return s.toLowerCase();
+}
+
+/**
+ * Detecta conflito de campo dentro de um grupo de duplicados.
+ * Retorna a lista de chaves que têm 2+ valores não-vazios distintos.
+ * Tags NÃO contam como conflito — sempre são unidas.
+ */
+function detectConflictingFields(contacts: DuplicateContact[]): string[] {
+  const conflicting: string[] = [];
+  for (const { key, type } of COMPARABLE_FIELDS) {
+    const distinct = new Set<string>();
+    for (const c of contacts) {
+      const norm = normalizeFieldValue((c as unknown as Record<string, unknown>)[key as string], type);
+      if (norm) distinct.add(norm);
+    }
+    if (distinct.size > 1) conflicting.push(String(key));
+  }
+  return conflicting;
+}
+
+/**
+ * Escolhe qual contato do grupo mantém. Critério (em ordem):
+ *   1. Tem whatsapp com prefixo 55 (formato canônico do banco)
+ *   2. Mais campos preenchidos
+ *   3. Mais recente (updated_at, fallback created_at)
+ */
+function pickWinner(contacts: DuplicateContact[]): DuplicateContact {
+  const score = (c: DuplicateContact) => {
+    const digits = String(c.whatsapp ?? '').replace(/\D/g, '');
+    const has55 = (digits.length === 12 || digits.length === 13) && digits.startsWith('55') ? 1 : 0;
+    let filled = 0;
+    for (const v of Object.values(c)) {
+      if (v !== null && v !== undefined && v !== '' && !Array.isArray(v)) filled++;
+    }
+    const time = new Date(c.updated_at ?? c.created_at).getTime();
+    return { has55, filled, time };
+  };
+  return [...contacts].sort((a, b) => {
+    const sa = score(a);
+    const sb = score(b);
+    if (sa.has55 !== sb.has55) return sb.has55 - sa.has55;
+    if (sa.filled !== sb.filled) return sb.filled - sa.filled;
+    return sb.time - sa.time;
+  })[0];
+}
+
+/**
+ * Para cada campo do schema do contato, pega o valor não-vazio do GRUPO
+ * quando o winner está vazio. (Sem conflito é pré-condição: só há um valor
+ * possível por campo no grupo.)
+ */
+function computeMergedFields(group: DuplicateContact[], winner: DuplicateContact): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  const wRec = winner as unknown as Record<string, unknown>;
+  for (const { key } of COMPARABLE_FIELDS) {
+    const winnerVal = wRec[key as string];
+    if (winnerVal !== null && winnerVal !== undefined && winnerVal !== '') continue;
+    for (const c of group) {
+      if (c.id === winner.id) continue;
+      const v = (c as unknown as Record<string, unknown>)[key as string];
+      if (v !== null && v !== undefined && v !== '') {
+        merged[key as string] = v;
+        break;
+      }
+    }
+  }
+  return merged;
+}
+
+export interface AutoMergeResult {
+  autoResolved: number;
+  conflictsRemaining: number;
+  errors: number;
+  conflictingFields: Map<string, string[]>; // groupValue -> fields
+}
+
+export function useAutoMergeDuplicates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (groups: DuplicateGroup[]): Promise<AutoMergeResult> => {
+      const result: AutoMergeResult = {
+        autoResolved: 0,
+        conflictsRemaining: 0,
+        errors: 0,
+        conflictingFields: new Map(),
+      };
+
+      // Filtra só grupos por whatsapp/telefone (foco do pedido). Email/nome
+      // ficam pra revisão manual — tem mais risco de falso-positivo.
+      const phoneGroups = groups.filter((g) => g.match_field === 'whatsapp' && g.contacts.length >= 2);
+
+      // Processa em paralelo em lotes pequenos p/ não estourar o cliente
+      const BATCH = 5;
+      for (let i = 0; i < phoneGroups.length; i += BATCH) {
+        const slice = phoneGroups.slice(i, i + BATCH);
+        await Promise.all(
+          slice.map(async (group) => {
+            const conflictingFields = detectConflictingFields(group.contacts);
+            if (conflictingFields.length > 0) {
+              result.conflictsRemaining++;
+              result.conflictingFields.set(group.match_value, conflictingFields);
+              return;
+            }
+
+            try {
+              const winner = pickWinner(group.contacts);
+              const losers = group.contacts.filter((c) => c.id !== winner.id);
+              const loserIds = losers.map((l) => l.id);
+
+              // 1. Preenche campos vazios do winner com valores dos losers
+              const mergedFields = computeMergedFields(group.contacts, winner);
+              if (Object.keys(mergedFields).length > 0) {
+                const { error } = await supabase
+                  .from('contacts')
+                  .update({ ...mergedFields, updated_at: new Date().toISOString() })
+                  .eq('id', winner.id);
+                if (error) throw error;
+              }
+
+              // 2. União das etiquetas: pega tags dos losers que o winner não tem
+              const winnerTagIds = new Set((winner.contact_tags ?? []).map((t) => t.tag_id));
+              const newTagIds = new Set<string>();
+              for (const loser of losers) {
+                for (const t of loser.contact_tags ?? []) {
+                  if (!winnerTagIds.has(t.tag_id)) newTagIds.add(t.tag_id);
+                }
+              }
+              if (newTagIds.size > 0) {
+                const tagRows = [...newTagIds].map((tag_id) => ({ contact_id: winner.id, tag_id }));
+                await supabase.from('contact_tags').upsert(tagRows, { onConflict: 'contact_id,tag_id' });
+              }
+
+              // 3. Transfere demandas dos losers para o winner
+              await supabase.from('demands').update({ contact_id: winner.id }).in('contact_id', loserIds);
+
+              // 4. Apaga as ligações de tags dos losers (já estão no winner)
+              await supabase.from('contact_tags').delete().in('contact_id', loserIds);
+
+              // 5. Marca os losers como mesclados (soft-delete via merged_into)
+              await supabase
+                .from('contacts')
+                .update({ merged_into: winner.id })
+                .in('id', loserIds);
+
+              result.autoResolved++;
+            } catch {
+              result.errors++;
+            }
+          })
+        );
+      }
+
+      return result;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
+      const msg = `${result.autoResolved} grupos resolvidos automaticamente${result.conflictsRemaining > 0 ? `, ${result.conflictsRemaining} com conflito real para revisar` : ''}${result.errors > 0 ? ` (${result.errors} erros)` : ''}`;
+      toast.success(msg);
+      logActivity({
+        type: 'merge',
+        entity_type: 'contact',
+        description: `Auto-mesclou ${result.autoResolved} grupos de duplicados (sem conflito)`,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro no auto-merge: ${error.message}`);
+    },
+  });
+}

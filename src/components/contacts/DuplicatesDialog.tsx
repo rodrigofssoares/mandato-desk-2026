@@ -12,11 +12,13 @@ import {
   User,
   AlertTriangle,
   Check,
+  Sparkles,
 } from "lucide-react";
 import {
   useDuplicateGroups,
   useBulkDeleteDuplicates,
   useDeleteSingleDuplicate,
+  useAutoMergeDuplicates,
   type DuplicateContact,
   type DuplicateGroup,
 } from "@/hooks/useDuplicates";
@@ -24,6 +26,7 @@ import { ContactCompareModal } from "./duplicates/ContactCompareModal";
 import { ContactMergeModal } from "./duplicates/ContactMergeModal";
 import { ContactViewDrawer } from "./duplicates/ContactViewDrawer";
 import { getContactDisplayName } from "@/lib/contactDisplay";
+import { formatPhoneDisplay } from "@/lib/normalization";
 import {
   Dialog,
   DialogContent,
@@ -119,6 +122,8 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
   const { data: groups, isLoading, refetch } = useDuplicateGroups(open);
   const bulkDelete = useBulkDeleteDuplicates();
   const deleteSingle = useDeleteSingleDuplicate();
+  const autoMerge = useAutoMergeDuplicates();
+  const [confirmAutoMerge, setConfirmAutoMerge] = useState(false);
 
   const safeGroups: DuplicateGroup[] = groups ?? [];
   const totalGroups = safeGroups.length;
@@ -152,6 +157,18 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
     refetch();
     onSuccess?.();
   }
+
+  async function handleAutoMerge() {
+    setConfirmAutoMerge(false);
+    await autoMerge.mutateAsync(safeGroups);
+    refetch();
+    onSuccess?.();
+  }
+
+  // Quantos grupos (de telefone) podem ser auto-resolvidos sem precisar
+  // do usuário (sem conflito de campo)? Exibido no botão para o usuário
+  // saber o que esperar antes de clicar.
+  const phoneGroupsCount = safeGroups.filter((g) => g.match_field === 'whatsapp' && g.contacts.length >= 2).length;
 
   async function handleDeleteSingle() {
     if (!deletingContact) return;
@@ -247,6 +264,36 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                   ? "Removendo..."
                   : `Remover ${totalDuplicates} Duplicado${totalDuplicates !== 1 ? "s" : ""}`}
               </Button>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setConfirmAutoMerge(true)}
+                    disabled={autoMerge.isPending || phoneGroupsCount === 0}
+                    className="gap-2"
+                  >
+                    {autoMerge.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    {autoMerge.isPending ? 'Mesclando...' : 'Auto-mesclar sem conflito'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-xs">
+                    Mescla automaticamente todos os grupos onde a única diferença é o formato do telefone
+                    (ex: <code>+55…</code> vs <code>55…</code> vs sem DDI) <strong>e</strong> não há
+                    conflito em nenhum outro campo. Mantém o registro com prefixo 55 e absorve
+                    etiquetas + dados vazios dos demais.
+                  </p>
+                  <p className="text-xs mt-2">
+                    Grupos com conflito real (ex: nomes ou Instagram diferentes) ficam para revisão manual.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
 
               <p className="text-xs text-muted-foreground ml-auto">
                 Selecione 2 contatos em um grupo para comparar ou mesclar
@@ -403,7 +450,7 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                                     <p className="text-sm font-medium truncate">{getContactDisplayName(contact)}</p>
                                     <p className="text-xs text-muted-foreground truncate">
                                       {contact.whatsapp
-                                        ? contact.whatsapp
+                                        ? formatPhoneDisplay(contact.whatsapp)
                                         : contact.email
                                         ? contact.email
                                         : "(sem contato)"}
@@ -525,6 +572,39 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Excluir {deletingGroupKey ? (selectedByGroup[deletingGroupKey]?.length ?? 0) : 0} contatos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmação do Auto-merge */}
+      <AlertDialog open={confirmAutoMerge} onOpenChange={setConfirmAutoMerge}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Auto-mesclar grupos sem conflito
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Vou analisar os <strong>{phoneGroupsCount} grupos</strong> de duplicados por telefone:
+              </span>
+              <span className="block">
+                • <strong>Sem conflito</strong> (mesmo número em formatos diferentes ou um campo vazio em um lado): <strong>mesclo automaticamente</strong>, mantendo o registro com prefixo <code>55</code> e absorvendo etiquetas + dados dos outros.
+              </span>
+              <span className="block">
+                • <strong>Com conflito real</strong> (ex: nomes ou Instagram diferentes): <strong>deixo na lista</strong> para você decidir manualmente.
+              </span>
+              <span className="block text-amber-700 mt-2">
+                Esta ação é irreversível em massa — cria <code>merged_into</code> nos contatos absorvidos. Pode levar alguns minutos para grupos volumosos.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={autoMerge.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAutoMerge} disabled={autoMerge.isPending} className="gap-2">
+              {autoMerge.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Confirmar e mesclar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

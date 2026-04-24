@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAQ-MAND-EM034 · Escolha o mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans:['Inter'], display:['Space Grotesk'] }, colors: { primary:{50:'#EBF1F7',500:'#1A4480',600:'#153A6A',700:'#102E54'} } } } }
+</script>
+<style>body{font-family:Inter,sans-serif}.font-display{font-family:'Space Grotesk',sans-serif}</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+<div class="max-w-5xl mx-auto p-8">
+  <div class="mb-8">
+    <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">RAQ-MAND-EM034</p>
+    <h1 class="font-display font-bold text-3xl mt-1">Escolha o protótipo</h1>
+    <p class="text-slate-600 mt-2">Três abordagens visuais para a feature de <b>movimentação em massa por etiqueta</b> + <b>Boards no card do lead</b>. Abra cada um em uma aba separada e volte aqui pra comparar.</p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    <!-- Mockup 1 -->
+    <a href="mockup-1-wizard.html" class="block bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-primary-500 transition-all p-6 group">
+      <div class="flex items-center justify-between mb-3">
+        <div class="h-10 w-10 rounded-lg bg-primary-50 text-primary-700 font-bold text-lg flex items-center justify-center">1</div>
+        <span class="text-xs font-semibold px-2 py-0.5 bg-slate-100 rounded-full text-slate-600">Didático</span>
+      </div>
+      <h2 class="font-display font-bold text-lg mb-1">Wizard em 4 passos</h2>
+      <p class="text-sm text-slate-600 mb-4">Modal passo-a-passo (Etiquetas → Board → Etapa → Confirmar). Card do lead: <b>tabela compacta</b>.</p>
+      <div class="text-xs text-slate-500 space-y-1">
+        <p><b class="text-green-600">+</b> Ideal pra primeiro uso, baixa chance de erro</p>
+        <p><b class="text-green-600">+</b> Mostra o impacto em cada passo</p>
+        <p><b class="text-amber-600">−</b> Mais cliques pra operador experiente</p>
+      </div>
+      <div class="mt-4 text-primary-600 group-hover:text-primary-700 font-semibold text-sm flex items-center gap-1">Ver mockup →</div>
+    </a>
+
+    <!-- Mockup 2 -->
+    <a href="mockup-2-drawer.html" class="block bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-primary-500 transition-all p-6 group">
+      <div class="flex items-center justify-between mb-3">
+        <div class="h-10 w-10 rounded-lg bg-primary-50 text-primary-700 font-bold text-lg flex items-center justify-center">2</div>
+        <span class="text-xs font-semibold px-2 py-0.5 bg-slate-100 rounded-full text-slate-600">Denso</span>
+      </div>
+      <h2 class="font-display font-bold text-lg mb-1">Drawer lateral</h2>
+      <p class="text-sm text-slate-600 mb-4">Painel à direita com tudo visível: etiquetas + board + etapa + preview da lista. Card do lead: <b>cards coloridos</b> com barra de progresso.</p>
+      <div class="text-xs text-slate-500 space-y-1">
+        <p><b class="text-green-600">+</b> Rápido para uso recorrente</p>
+        <p><b class="text-green-600">+</b> Mantém o kanban visível atrás</p>
+        <p><b class="text-amber-600">−</b> Mais informação na tela ao mesmo tempo</p>
+      </div>
+      <div class="mt-4 text-primary-600 group-hover:text-primary-700 font-semibold text-sm flex items-center gap-1">Ver mockup →</div>
+    </a>
+
+    <!-- Mockup 3 -->
+    <a href="mockup-3-inline-filter.html" class="block bg-white rounded-2xl border-2 border-primary-500 shadow-lg hover:shadow-xl transition-all p-6 group relative">
+      <span class="absolute -top-2.5 right-4 text-[10px] font-bold px-2 py-0.5 bg-primary-500 text-white rounded-full">RECOMENDADO</span>
+      <div class="flex items-center justify-between mb-3">
+        <div class="h-10 w-10 rounded-lg bg-primary-500 text-white font-bold text-lg flex items-center justify-center">3</div>
+        <span class="text-xs font-semibold px-2 py-0.5 bg-primary-50 rounded-full text-primary-700">Contextual</span>
+      </div>
+      <h2 class="font-display font-bold text-lg mb-1">Inline no filtro + bulk bar</h2>
+      <p class="text-sm text-slate-600 mb-4">Usa os filtros de etiqueta que já existem em Contatos + barra flutuante com popover. Card do lead: <b>timeline</b>.</p>
+      <div class="text-xs text-slate-500 space-y-1">
+        <p><b class="text-green-600">+</b> Zero curva de aprendizado</p>
+        <p><b class="text-green-600">+</b> Consistente com Tarefas e Tags</p>
+        <p><b class="text-green-600">+</b> Permite seleção manual além do filtro</p>
+      </div>
+      <div class="mt-4 text-primary-600 group-hover:text-primary-700 font-semibold text-sm flex items-center gap-1">Ver mockup →</div>
+    </a>
+  </div>
+
+  <div class="mt-8 p-5 bg-white rounded-2xl border border-slate-200">
+    <h3 class="font-display font-bold text-base mb-2">Próximo passo</h3>
+    <p class="text-sm text-slate-600">Depois de escolher (ou pedir combinação híbrida), implemento na ordem: (1) hook <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">useBulkMoveContactsToBoard</code>, (2) UI escolhida aqui, (3) aba <i>Boards</i> no <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">ContactDialog</code>. Backend e DB já estão prontos — nada a migrar.</p>
+  </div>
+</div>
+</body>
+</html>
