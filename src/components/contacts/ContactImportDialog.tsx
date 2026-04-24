@@ -36,15 +36,91 @@ interface ParsedRow {
   lineNumber: number;
   raw: Record<string, string>;
   normalized: Record<string, unknown>;
-  action?: 'create' | 'update' | 'skip';
+  action?: 'create' | 'update' | 'duplicate' | 'skip';
   error?: string;
+  /** Campos que de fato mudaram (só usado quando action === 'update') */
+  updatePayload?: Record<string, unknown>;
+  /** Nomes de etiquetas que ainda NÃO estavam no contato (só para update) */
+  newTagNames?: string[];
+  /** Resumo amigável do que mudou (ex: "Instagram, 1 etiqueta nova") */
+  changeSummary?: string;
 }
 
 interface ImportStats {
   created: number;
   updated: number;
+  duplicates: number;
   skipped: number;
   errors: number;
+}
+
+// Mapeamento campo-da-planilha → coluna-do-banco, com tipo p/ comparar.
+const FIELD_MAP: { row: string; db: string; type: 'text' | 'bool' | 'number'; label: string }[] = [
+  { row: 'nome_completo', db: 'nome', type: 'text', label: 'Nome' },
+  { row: 'nome_whatsapp', db: 'nome_whatsapp', type: 'text', label: 'Nome WhatsApp' },
+  { row: 'email', db: 'email', type: 'text', label: 'E-mail' },
+  { row: 'telefone', db: 'telefone', type: 'text', label: 'Telefone' },
+  { row: 'genero', db: 'genero', type: 'text', label: 'Gênero' },
+  { row: 'endereco', db: 'logradouro', type: 'text', label: 'Endereço' },
+  { row: 'numero', db: 'numero', type: 'text', label: 'Número' },
+  { row: 'complemento', db: 'complemento', type: 'text', label: 'Complemento' },
+  { row: 'bairro', db: 'bairro', type: 'text', label: 'Bairro' },
+  { row: 'cidade', db: 'cidade', type: 'text', label: 'Cidade' },
+  { row: 'uf', db: 'estado', type: 'text', label: 'UF' },
+  { row: 'cep', db: 'cep', type: 'text', label: 'CEP' },
+  { row: 'origem', db: 'origem', type: 'text', label: 'Origem' },
+  { row: 'observacoes', db: 'observacoes', type: 'text', label: 'Observações' },
+  { row: 'notas_assessor', db: 'notas_assessor', type: 'text', label: 'Notas' },
+  { row: 'declarou_voto', db: 'declarou_voto', type: 'bool', label: 'Declarou voto' },
+  { row: 'canal_whatsapp', db: 'em_canal_whatsapp', type: 'bool', label: 'Canal WhatsApp' },
+  { row: 'receber_whatsapp', db: 'aceita_whatsapp', type: 'bool', label: 'Aceita WhatsApp' },
+  { row: 'multiplicador', db: 'e_multiplicador', type: 'bool', label: 'Multiplicador' },
+  { row: 'data_nascimento', db: 'data_nascimento', type: 'text', label: 'Nascimento' },
+  { row: 'instagram', db: 'instagram', type: 'text', label: 'Instagram' },
+  { row: 'twitter', db: 'twitter', type: 'text', label: 'Twitter' },
+  { row: 'tiktok', db: 'tiktok', type: 'text', label: 'TikTok' },
+  { row: 'youtube', db: 'youtube', type: 'text', label: 'YouTube' },
+  { row: 'ranking', db: 'ranking', type: 'number', label: 'Ranking' },
+  { row: 'leader_id', db: 'leader_id', type: 'text', label: 'Liderança' },
+  { row: 'is_favorite', db: 'is_favorite', type: 'bool', label: 'Favorito' },
+  { row: 'ultimo_contato', db: 'ultimo_contato', type: 'text', label: 'Último contato' },
+];
+
+function computeRowDiff(
+  existing: Record<string, unknown>,
+  normalized: Record<string, unknown>
+): { payload: Record<string, unknown>; changedLabels: string[] } {
+  const payload: Record<string, unknown> = {};
+  const changedLabels: string[] = [];
+  for (const { row, db, type, label } of FIELD_MAP) {
+    const newVal = normalized[row];
+    // Só consideramos campos com valor não-vazio na planilha —
+    // planilha vazia NUNCA sobrescreve o banco.
+    if (newVal === undefined || newVal === null || newVal === '') continue;
+
+    const oldVal = existing[db];
+    let changed = false;
+    if (type === 'bool') {
+      changed = Boolean(newVal) !== Boolean(oldVal);
+    } else if (type === 'number') {
+      changed = Number(newVal) !== Number(oldVal ?? NaN);
+    } else {
+      const nStr = String(newVal).trim();
+      const oStr = String(oldVal ?? '').trim();
+      changed = nStr !== oStr;
+    }
+    if (changed) {
+      payload[db] = newVal;
+      changedLabels.push(label);
+    }
+  }
+  return { payload, changedLabels };
+}
+
+function parseTagNames(raw: unknown): string[] {
+  const s = String(raw ?? '').trim();
+  if (!s) return [];
+  return s.split(',').map((t) => t.trim()).filter(Boolean);
 }
 
 const HEADER_MAP: Record<string, string> = {
@@ -122,7 +198,7 @@ const PHASE_PROGRESS: Record<Phase, number> = {
 export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactImportDialogProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [stats, setStats] = useState<ImportStats>({ created: 0, updated: 0, skipped: 0, errors: 0 });
+  const [stats, setStats] = useState<ImportStats>({ created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 });
   const [errors, setErrors] = useState<{ line: number; message: string }[]>([]);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,7 +206,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   const reset = () => {
     setPhase('idle');
     setParsedRows([]);
-    setStats({ created: 0, updated: 0, skipped: 0, errors: 0 });
+    setStats({ created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 });
     setErrors([]);
     setFileName('');
   };
@@ -316,74 +392,169 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   const handleImport = async () => {
     if (parsedRows.length === 0) return;
     const importErrors: { line: number; message: string }[] = [];
-    const importStats: ImportStats = { created: 0, updated: 0, skipped: 0, errors: 0 };
+    const importStats: ImportStats = { created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 };
 
     // Phase 1: Prepare
     setPhase('preparing');
-    // Chave p/ dedup/lookup = phoneComparisonKey(whatsapp). Qualquer formato
-    // (+55, 55, sem DDI) colapsa na mesma chave — evita duplicata e achata o
-    // match "atualizar existente".
-    const existingByKey = new Map<string, string>(); // key -> contact id
-    const existingTags = new Map<string, string>(); // tag name -> tag id
+    const existingById = new Map<string, Record<string, unknown>>(); // id -> contato completo
+    const existingByKey = new Map<string, string>(); // phoneKey -> id
+    const existingTags = new Map<string, string>(); // tag name (lower) -> tag id
+    const tagsByContact = new Map<string, Set<string>>(); // contact id -> set de tag names (lower)
 
     try {
-      // Fetch existing contacts
+      // 1. Contatos existentes — dados completos, paginado p/ atravessar bases grandes
       let offset = 0;
       while (true) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('contacts')
-          .select('id, whatsapp, telefone')
+          .select('*')
           .range(offset, offset + 999);
+        if (error) throw error;
         if (!data || data.length === 0) break;
-        data.forEach((c) => {
+        for (const c of data) {
+          existingById.set(c.id, c as Record<string, unknown>);
           const wk = phoneComparisonKey(c.whatsapp);
           const tk = phoneComparisonKey(c.telefone);
           if (wk && !existingByKey.has(wk)) existingByKey.set(wk, c.id);
           if (tk && !existingByKey.has(tk)) existingByKey.set(tk, c.id);
-        });
+        }
         if (data.length < 1000) break;
         offset += 1000;
       }
 
-      // Fetch existing tags
+      // 2. Tags já existentes (catálogo)
       const { data: tags } = await supabase.from('tags').select('id, nome');
       (tags ?? []).forEach((t) => existingTags.set(t.nome.toLowerCase(), t.id));
-    } catch {
-      toast.error('Erro ao preparar importação');
+
+      // 3. Tags ligadas a cada contato — usado p/ detectar se a etiqueta da
+      //    planilha é realmente nova ou já está no contato.
+      offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('contact_tags')
+          .select('contact_id, tags!inner(nome)')
+          .range(offset, offset + 999);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const row of data as Array<{ contact_id: string; tags: { nome: string } | { nome: string }[] }>) {
+          const tagObj = Array.isArray(row.tags) ? row.tags[0] : row.tags;
+          const tagName = tagObj?.nome?.toLowerCase();
+          if (!tagName) continue;
+          const set = tagsByContact.get(row.contact_id) ?? new Set<string>();
+          set.add(tagName);
+          tagsByContact.set(row.contact_id, set);
+        }
+        if (data.length < 1000) break;
+        offset += 1000;
+      }
+    } catch (err: any) {
+      toast.error(`Erro ao preparar importação: ${err.message ?? 'desconhecido'}`);
       setPhase('idle');
       return;
     }
 
-    // Validate all rows
-    const validRows: ParsedRow[] = [];
-    // Dedup por chave dentro do próprio arquivo: se a mesma pessoa aparece em
-    // 2 formatos na planilha, o 1º vira create/update e o 2º é pulado.
-    const batchKeys = new Set<string>();
+    // 1ª passada: valida schema por linha e descobre grupos de linhas que
+    // apontam p/ o mesmo contato (mesma chave normalizada dentro da planilha).
+    // Linhas duplicadas dentro do arquivo precisam ser MESCLADAS (e não
+    // simplesmente puladas), senão perdemos dados novos que aparecem só na
+    // 2ª/3ª ocorrência.
+    type PreparedRow = { row: ParsedRow; key: string };
+    const prepared: PreparedRow[] = [];
     for (const row of parsedRows) {
       const result = importContactSchema.safeParse(row.normalized);
       if (!result.success) {
         const msg = result.error.issues.map((i) => i.message).join(', ');
         importErrors.push({ line: row.lineNumber, message: msg });
         importStats.errors++;
-        continue;
-      }
-
-      const key = phoneComparisonKey(String(row.normalized.whatsapp ?? ''));
-
-      if (key && batchKeys.has(key)) {
-        // Mesma pessoa repetida na planilha em outro formato: pula
         row.action = 'skip';
-        importStats.skipped++;
         continue;
       }
-      if (key) batchKeys.add(key);
+      const key = phoneComparisonKey(String(row.normalized.whatsapp ?? ''));
+      prepared.push({ row, key });
+    }
 
-      if (key && existingByKey.has(key)) {
-        row.action = 'update';
-      } else {
-        row.action = 'create';
+    // Agrupa por chave de telefone. Linhas sem whatsapp cada uma vira um grupo
+    // próprio (não dá pra mesclar sem identificador único).
+    const groupsByKey = new Map<string, PreparedRow[]>();
+    const lonely: PreparedRow[] = [];
+    for (const p of prepared) {
+      if (!p.key) { lonely.push(p); continue; }
+      const arr = groupsByKey.get(p.key) ?? [];
+      arr.push(p);
+      groupsByKey.set(p.key, arr);
+    }
+
+    // Mescla um grupo de linhas em um único row consolidado: último valor
+    // não-vazio ganha; etiquetas são a união.
+    const mergeGroup = (group: PreparedRow[]): ParsedRow => {
+      if (group.length === 1) return group[0].row;
+      const head = group[0].row;
+      const merged: Record<string, unknown> = { ...head.normalized };
+      const tagSet = new Set<string>(parseTagNames(head.normalized.etiquetas));
+      for (let i = 1; i < group.length; i++) {
+        const r = group[i].row;
+        for (const [k, v] of Object.entries(r.normalized)) {
+          if (k === 'etiquetas') continue;
+          if (v === undefined || v === null || v === '') continue;
+          merged[k] = v;
+        }
+        parseTagNames(r.normalized.etiquetas).forEach((t) => tagSet.add(t));
+        // Marca as linhas subsequentes como 'skip' (duplicadas do arquivo);
+        // os dados delas já foram absorvidos pelo row consolidado.
+        r.action = 'skip';
+        importStats.skipped++;
       }
-      validRows.push(row);
+      if (tagSet.size > 0) merged.etiquetas = [...tagSet].join(',');
+      return { ...head, normalized: merged };
+    };
+
+    const validRows: ParsedRow[] = [];
+
+    // Decide ação de cada linha consolidada
+    const processRow = (row: ParsedRow, key: string) => {
+      const existingId = key ? existingByKey.get(key) : undefined;
+      if (!existingId) {
+        row.action = 'create';
+        validRows.push(row);
+        return;
+      }
+
+      // Já existe: compara campos + etiquetas p/ decidir "duplicate" x "update"
+      const existing = existingById.get(existingId) ?? {};
+      const { payload, changedLabels } = computeRowDiff(existing, row.normalized);
+
+      const currentTags = tagsByContact.get(existingId) ?? new Set<string>();
+      const rowTagNames = parseTagNames(row.normalized.etiquetas);
+      const newTagNames = rowTagNames.filter((n) => !currentTags.has(n.toLowerCase()));
+
+      if (Object.keys(payload).length === 0 && newTagNames.length === 0) {
+        row.action = 'duplicate';
+        importStats.duplicates++;
+      } else {
+        row.action = 'update';
+        row.updatePayload = payload;
+        row.newTagNames = newTagNames;
+        const bits: string[] = [];
+        if (changedLabels.length > 0) bits.push(changedLabels.join(', '));
+        if (newTagNames.length > 0) {
+          bits.push(`${newTagNames.length} etiqueta${newTagNames.length > 1 ? 's' : ''} nova${newTagNames.length > 1 ? 's' : ''}`);
+        }
+        row.changeSummary = bits.join(' · ');
+        importStats.updated++;
+        validRows.push(row);
+      }
+    };
+
+    // Grupos com whatsapp
+    for (const [key, group] of groupsByKey.entries()) {
+      const consolidated = mergeGroup(group);
+      processRow(consolidated, key);
+    }
+
+    // Linhas sem whatsapp: sem chave = sempre create (schema já exige whatsapp,
+    // então na prática isso vira erro de validação; defensivo).
+    for (const p of lonely) {
+      processRow(p.row, '');
     }
 
     // Phase 2: Create new contacts
@@ -444,67 +615,37 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       }
     }
 
-    // Phase 3: Update existing contacts
+    // Phase 3: Update existing contacts — aplica SÓ o delta já calculado.
+    // (updated foi incrementado na decisão; aqui só aplica e coleta erros.)
     setPhase('updating');
-    const toUpdate = validRows.filter((r) => r.action === 'update');
-    for (const row of toUpdate) {
-      const n = row.normalized;
-      const key = phoneComparisonKey(String(n.whatsapp ?? ''));
-      const contactId = key ? existingByKey.get(key) : undefined;
-      if (!contactId) {
-        importStats.skipped++;
-        continue;
-      }
+    const toUpdate = validRows.filter((r) => r.action === 'update' && Object.keys(r.updatePayload ?? {}).length > 0);
+    const UPDATE_PARALLEL = 20;
+    for (let i = 0; i < toUpdate.length; i += UPDATE_PARALLEL) {
+      const group = toUpdate.slice(i, i + UPDATE_PARALLEL);
+      await Promise.all(
+        group.map(async (row) => {
+          const key = phoneComparisonKey(String(row.normalized.whatsapp ?? ''));
+          const contactId = key ? existingByKey.get(key) : undefined;
+          const payload = row.updatePayload ?? {};
+          if (!contactId || Object.keys(payload).length === 0) return;
 
-      // Only update non-empty fields
-      const updates: Record<string, unknown> = {};
-      if (n.nome_completo) updates.nome = n.nome_completo;
-      if (n.email) updates.email = n.email;
-      if (n.telefone) updates.telefone = n.telefone;
-      if (n.genero) updates.genero = n.genero;
-      if (n.endereco) updates.logradouro = n.endereco;
-      if (n.numero) updates.numero = n.numero;
-      if (n.complemento) updates.complemento = n.complemento;
-      if (n.bairro) updates.bairro = n.bairro;
-      if (n.cidade) updates.cidade = n.cidade;
-      if (n.uf) updates.estado = n.uf;
-      if (n.cep) updates.cep = n.cep;
-      if (n.origem) updates.origem = n.origem;
-      if (n.observacoes) updates.observacoes = n.observacoes;
-      if (n.notas_assessor) updates.notas_assessor = n.notas_assessor;
-      if (n.declarou_voto !== undefined) updates.declarou_voto = n.declarou_voto;
-      if (n.canal_whatsapp !== undefined) updates.em_canal_whatsapp = n.canal_whatsapp;
-      if (n.nome_whatsapp) updates.nome_whatsapp = n.nome_whatsapp;
-      if (n.receber_whatsapp !== undefined) updates.aceita_whatsapp = n.receber_whatsapp;
-      if (n.multiplicador !== undefined) updates.e_multiplicador = n.multiplicador;
-      if (n.data_nascimento) updates.data_nascimento = n.data_nascimento;
-      if (n.instagram) updates.instagram = n.instagram;
-      if (n.twitter) updates.twitter = n.twitter;
-      if (n.tiktok) updates.tiktok = n.tiktok;
-      if (n.youtube) updates.youtube = n.youtube;
-      if (n.ranking !== undefined) updates.ranking = n.ranking;
-      if (n.leader_id) updates.leader_id = n.leader_id;
-      if (n.is_favorite !== undefined) updates.is_favorite = n.is_favorite;
-      if (n.ultimo_contato) updates.ultimo_contato = n.ultimo_contato;
-
-      if (Object.keys(updates).length === 0) {
-        importStats.skipped++;
-        continue;
-      }
-
-      const { error } = await supabase.from('contacts').update(updates).eq('id', contactId);
-      if (error) {
-        importErrors.push({ line: row.lineNumber, message: error.message });
-        importStats.errors++;
-      } else {
-        importStats.updated++;
-      }
+          const { error } = await supabase.from('contacts').update(payload).eq('id', contactId);
+          if (error) {
+            importErrors.push({ line: row.lineNumber, message: error.message });
+            importStats.errors++;
+            importStats.updated--; // reverte o incremento feito na decisão
+          }
+        })
+      );
     }
 
-    // Phase 4: Tags
+    // Phase 4: Tags — batch em 2 passos
+    //   (a) cria todas as tags ausentes de uma só vez;
+    //   (b) upsert das ligações contact_tags em lotes.
+    // Criamos tags para qualquer row não-skippada que tenha etiquetas na
+    // planilha (create/update/duplicate — upsert pula links já existentes).
     setPhase('tags');
 
-    // Busca o grupo padrao "Geral" (obrigatorio para novas tags apos migration 009)
     const { data: geralGroup } = await supabase
       .from('tag_groups')
       .select('id')
@@ -512,37 +653,59 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       .single();
     const geralGroupId = geralGroup?.id;
 
+    // (a) descobre nomes de tags que ainda não existem no catálogo
+    const allRequestedTagNames = new Set<string>();
     for (const row of validRows) {
-      const tagStr = String(row.normalized.etiquetas ?? '');
-      if (!tagStr.trim()) continue;
+      if (row.action === 'skip') continue;
+      parseTagNames(row.normalized.etiquetas).forEach((n) => allRequestedTagNames.add(n));
+    }
+    // Também precisamos considerar rows 'duplicate' — elas não viraram validRows,
+    // então re-iteramos parsedRows para pegar suas etiquetas (se algum dia a
+    // planilha tiver tags "novas" em contatos duplicados, isso cobre).
+    for (const row of parsedRows) {
+      if (row.action !== 'duplicate') continue;
+      parseTagNames(row.normalized.etiquetas).forEach((n) => allRequestedTagNames.add(n));
+    }
 
+    const missingTagNames = [...allRequestedTagNames].filter(
+      (n) => !existingTags.has(n.toLowerCase())
+    );
+    if (missingTagNames.length > 0) {
+      const newTagRows = missingTagNames.map((nome) => ({ nome, group_id: geralGroupId }));
+      const { data: newTags, error: createTagsErr } = await supabase
+        .from('tags')
+        .insert(newTagRows)
+        .select('id, nome');
+      if (createTagsErr) {
+        importErrors.push({ line: 0, message: `Erro ao criar etiquetas novas: ${createTagsErr.message}` });
+      } else {
+        (newTags ?? []).forEach((t) => existingTags.set(t.nome.toLowerCase(), t.id));
+      }
+    }
+
+    // (b) monta lista de pares (contact_id, tag_id) e faz upsert em lotes
+    const linkPairs: { contact_id: string; tag_id: string }[] = [];
+    for (const row of parsedRows) {
+      if (row.action !== 'create' && row.action !== 'update') continue;
       const key = phoneComparisonKey(String(row.normalized.whatsapp ?? ''));
       const contactId = key ? existingByKey.get(key) : undefined;
       if (!contactId) continue;
 
-      const tagNames = tagStr.split(',').map((t) => t.trim()).filter(Boolean);
-      for (const tagName of tagNames) {
-        let tagId = existingTags.get(tagName.toLowerCase());
+      const tagNames = parseTagNames(row.normalized.etiquetas);
+      for (const name of tagNames) {
+        const tagId = existingTags.get(name.toLowerCase());
+        if (tagId) linkPairs.push({ contact_id: contactId, tag_id: tagId });
+      }
+    }
 
-        // Create tag if not exists
-        if (!tagId) {
-          const { data: newTag, error } = await supabase
-            .from('tags')
-            .insert({ nome: tagName, group_id: geralGroupId })
-            .select('id')
-            .single();
-          if (error) {
-            importErrors.push({ line: row.lineNumber, message: `Erro ao criar etiqueta "${tagName}": ${error.message}` });
-            continue;
-          }
-          tagId = newTag.id;
-          existingTags.set(tagName.toLowerCase(), tagId);
-        }
-
-        // Link
-        await supabase
-          .from('contact_tags')
-          .upsert({ contact_id: contactId, tag_id: tagId }, { onConflict: 'contact_id,tag_id' });
+    const TAG_BATCH = 1000;
+    for (let i = 0; i < linkPairs.length; i += TAG_BATCH) {
+      const batch = linkPairs.slice(i, i + TAG_BATCH);
+      const { error } = await supabase
+        .from('contact_tags')
+        .upsert(batch, { onConflict: 'contact_id,tag_id' });
+      if (error) {
+        importErrors.push({ line: 0, message: `Erro ao vincular etiquetas (lote ${i}): ${error.message}` });
       }
     }
 
@@ -680,7 +843,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
               <span className="font-medium">Importação concluída!</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div className="text-center p-3 bg-green-50 rounded-lg">
                 <p className="text-2xl font-bold text-green-700">{stats.created}</p>
                 <p className="text-xs text-green-600">Criados</p>
@@ -688,6 +851,10 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-700">{stats.updated}</p>
                 <p className="text-xs text-blue-600">Atualizados</p>
+              </div>
+              <div className="text-center p-3 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-700">{stats.duplicates}</p>
+                <p className="text-xs text-orange-600">Duplicados</p>
               </div>
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
                 <p className="text-2xl font-bold text-yellow-700">{stats.skipped}</p>
@@ -698,6 +865,62 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
                 <p className="text-xs text-red-600">Erros</p>
               </div>
             </div>
+
+            {/* Updated rows (o que mudou) */}
+            {parsedRows.some((r) => r.action === 'update') && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {parsedRows.filter((r) => r.action === 'update').length} contatos atualizados
+                  </span>
+                </div>
+                <div className="max-h-40 overflow-auto border border-blue-200 rounded-lg">
+                  <Table>
+                    <TableBody>
+                      {parsedRows
+                        .filter((r) => r.action === 'update')
+                        .slice(0, 50)
+                        .map((r, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-xs w-16">Linha {r.lineNumber}</TableCell>
+                            <TableCell className="text-sm">{String(r.normalized.nome_completo ?? '')}</TableCell>
+                            <TableCell className="text-xs text-blue-700">{r.changeSummary ?? '—'}</TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {/* Duplicados */}
+            {parsedRows.some((r) => r.action === 'duplicate') && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-orange-700">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {parsedRows.filter((r) => r.action === 'duplicate').length} duplicados ignorados (nada novo)
+                  </span>
+                </div>
+                <div className="max-h-32 overflow-auto border border-orange-200 rounded-lg">
+                  <Table>
+                    <TableBody>
+                      {parsedRows
+                        .filter((r) => r.action === 'duplicate')
+                        .slice(0, 50)
+                        .map((r, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-xs w-16">Linha {r.lineNumber}</TableCell>
+                            <TableCell className="text-sm">{String(r.normalized.nome_completo ?? '')}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{String(r.normalized.whatsapp ?? '')}</TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
 
             {/* Errors list */}
             {errors.length > 0 && (
