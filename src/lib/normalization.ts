@@ -17,6 +17,26 @@ export function normalizePhone(phone: string): string {
 }
 
 /**
+ * Chave canônica p/ comparar telefones. Elimina diferenças entre `+55`, `55` e
+ * "sem DDI": retorna só os dígitos, sem o DDI 55 quando presente em números
+ * BR (12 ou 13 dígitos). Ex.:
+ *   "+5511930423594" -> "11930423594"
+ *   "5511930423594"  -> "11930423594"
+ *   "11930423594"    -> "11930423594"
+ *   "(11) 93042-3594"-> "11930423594"
+ * Retorna string vazia quando não há dígitos suficientes.
+ */
+export function phoneComparisonKey(phone: string | null | undefined): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) {
+    return digits.slice(2);
+  }
+  return digits;
+}
+
+/**
  * Normaliza nome: remove emojis, aplica Title Case respeitando preposições pt-BR.
  * Primeira palavra sempre capitalizada.
  */

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLog';
+import { phoneComparisonKey } from '@/lib/normalization';
 
 // ---------- Types ----------
 
@@ -52,24 +53,14 @@ export interface DuplicateGroup {
 
 // ---------- Helpers ----------
 
-function normalizePhone(phone: string | null | undefined): string {
-  if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
-  // Remove country code 55 (Brazil)
-  if (digits.length >= 12 && digits.startsWith('55')) {
-    return digits.slice(2);
-  }
-  return digits;
-}
-
 function buildGroupsClientSide(contacts: DuplicateContact[]): DuplicateGroup[] {
   const groups: DuplicateGroup[] = [];
   const seenIds = new Set<string>();
 
-  // Group by normalized whatsapp
+  // Group by normalized whatsapp OR telefone (qualquer um bate)
   const byWhatsapp = new Map<string, DuplicateContact[]>();
   for (const c of contacts) {
-    const normalized = normalizePhone(c.whatsapp);
+    const normalized = phoneComparisonKey(c.whatsapp) || phoneComparisonKey(c.telefone);
     if (!normalized) continue;
     const bucket = byWhatsapp.get(normalized) ?? [];
     bucket.push(c);
@@ -144,10 +135,10 @@ export function useDuplicateCount() {
       let duplicateCount = 0;
       const seenIds = new Set<string>();
 
-      // By whatsapp
+      // By whatsapp OR telefone (qualquer um bate, normalizados)
       const byWhatsapp = new Map<string, string[]>();
       for (const c of contacts) {
-        const normalized = normalizePhone(c.whatsapp);
+        const normalized = phoneComparisonKey(c.whatsapp) || phoneComparisonKey(c.telefone);
         if (!normalized) continue;
         const bucket = byWhatsapp.get(normalized) ?? [];
         bucket.push(c.id);

@@ -3,6 +3,57 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ContactFormData } from '@/lib/contactValidation';
 import { logActivity } from '@/lib/activityLog';
+import { phoneComparisonKey } from '@/lib/normalization';
+
+// ---------- Phone duplicity check ----------
+
+interface DuplicatePhoneMatch {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  whatsapp: string | null;
+  matchedField: 'telefone' | 'whatsapp';
+}
+
+/**
+ * Busca um contato existente cujo telefone/whatsapp tenha a mesma chave
+ * normalizada de qualquer um dos números informados. Se `excludeId` for
+ * passado, ignora esse contato na comparação (útil no update).
+ */
+async function findDuplicatePhoneContact(
+  phones: { telefone?: string | null; whatsapp?: string | null },
+  excludeId?: string
+): Promise<DuplicatePhoneMatch | null> {
+  const keys = new Set<string>();
+  const tel = phoneComparisonKey(phones.telefone);
+  const wa = phoneComparisonKey(phones.whatsapp);
+  if (tel) keys.add(tel);
+  if (wa) keys.add(wa);
+  if (keys.size === 0) return null;
+
+  // Busca somente contatos que tenham algum telefone preenchido
+  let query = supabase
+    .from('contacts')
+    .select('id, nome, telefone, whatsapp')
+    .is('merged_into', null)
+    .or('telefone.not.is.null,whatsapp.not.is.null');
+  if (excludeId) query = query.neq('id', excludeId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  for (const c of data ?? []) {
+    const ck = phoneComparisonKey(c.telefone);
+    const wk = phoneComparisonKey(c.whatsapp);
+    if (ck && keys.has(ck)) {
+      return { id: c.id, nome: c.nome, telefone: c.telefone, whatsapp: c.whatsapp, matchedField: 'telefone' };
+    }
+    if (wk && keys.has(wk)) {
+      return { id: c.id, nome: c.nome, telefone: c.telefone, whatsapp: c.whatsapp, matchedField: 'whatsapp' };
+    }
+  }
+  return null;
+}
 
 // ---------- Types ----------
 
@@ -396,6 +447,19 @@ export function useCreateContact() {
     mutationFn: async (formData: ContactFormData) => {
       const { tag_ids, ...contactData } = formData;
 
+      // Bloqueia antes do insert se já existe contato com o mesmo telefone/whatsapp
+      // em qualquer formato (+55, 55, sem DDI — todos caem na mesma chave).
+      const dup = await findDuplicatePhoneContact({
+        telefone: contactData.telefone as string | undefined,
+        whatsapp: contactData.whatsapp as string | undefined,
+      });
+      if (dup) {
+        const numero = dup.matchedField === 'telefone' ? dup.telefone : dup.whatsapp;
+        throw new Error(
+          `Já existe um contato com esse telefone: "${dup.nome}" (${numero ?? '-'}).`
+        );
+      }
+
       // Limpa strings vazias para null
       const cleaned = Object.fromEntries(
         Object.entries(contactData).map(([k, v]) => [k, v === '' ? null : v])
@@ -440,6 +504,21 @@ export function useUpdateContact() {
   return useMutation({
     mutationFn: async ({ id, data: formData }: { id: string; data: ContactFormData }) => {
       const { tag_ids, ...contactData } = formData;
+
+      // Bloqueia se outro contato já usa esse telefone em qualquer formato.
+      const dup = await findDuplicatePhoneContact(
+        {
+          telefone: contactData.telefone as string | undefined,
+          whatsapp: contactData.whatsapp as string | undefined,
+        },
+        id
+      );
+      if (dup) {
+        const numero = dup.matchedField === 'telefone' ? dup.telefone : dup.whatsapp;
+        throw new Error(
+          `Outro contato já usa esse telefone: "${dup.nome}" (${numero ?? '-'}).`
+        );
+      }
 
       const cleaned = Object.fromEntries(
         Object.entries(contactData).map(([k, v]) => [k, v === '' ? null : v])

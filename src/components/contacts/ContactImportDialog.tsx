@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { normalizePhone, normalizeName, normalizeEmail } from '@/lib/normalization';
+import { normalizePhone, normalizeName, normalizeEmail, phoneComparisonKey } from '@/lib/normalization';
 import { importContactSchema, parseBoolean } from '@/lib/contactValidation';
 import { logActivity } from '@/lib/activityLog';
 
@@ -320,8 +320,11 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
 
     // Phase 1: Prepare
     setPhase('preparing');
-    let existingWhatsapps = new Map<string, string>(); // whatsapp -> contact id
-    let existingTags = new Map<string, string>(); // tag name -> tag id
+    // Chave p/ dedup/lookup = phoneComparisonKey(whatsapp). Qualquer formato
+    // (+55, 55, sem DDI) colapsa na mesma chave — evita duplicata e achata o
+    // match "atualizar existente".
+    const existingByKey = new Map<string, string>(); // key -> contact id
+    const existingTags = new Map<string, string>(); // tag name -> tag id
 
     try {
       // Fetch existing contacts
@@ -329,12 +332,14 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       while (true) {
         const { data } = await supabase
           .from('contacts')
-          .select('id, whatsapp')
-          .not('whatsapp', 'is', null)
+          .select('id, whatsapp, telefone')
           .range(offset, offset + 999);
         if (!data || data.length === 0) break;
         data.forEach((c) => {
-          if (c.whatsapp) existingWhatsapps.set(c.whatsapp, c.id);
+          const wk = phoneComparisonKey(c.whatsapp);
+          const tk = phoneComparisonKey(c.telefone);
+          if (wk && !existingByKey.has(wk)) existingByKey.set(wk, c.id);
+          if (tk && !existingByKey.has(tk)) existingByKey.set(tk, c.id);
         });
         if (data.length < 1000) break;
         offset += 1000;
@@ -351,6 +356,9 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
 
     // Validate all rows
     const validRows: ParsedRow[] = [];
+    // Dedup por chave dentro do próprio arquivo: se a mesma pessoa aparece em
+    // 2 formatos na planilha, o 1º vira create/update e o 2º é pulado.
+    const batchKeys = new Set<string>();
     for (const row of parsedRows) {
       const result = importContactSchema.safeParse(row.normalized);
       if (!result.success) {
@@ -360,8 +368,17 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         continue;
       }
 
-      const whatsapp = String(row.normalized.whatsapp ?? '');
-      if (existingWhatsapps.has(whatsapp)) {
+      const key = phoneComparisonKey(String(row.normalized.whatsapp ?? ''));
+
+      if (key && batchKeys.has(key)) {
+        // Mesma pessoa repetida na planilha em outro formato: pula
+        row.action = 'skip';
+        importStats.skipped++;
+        continue;
+      }
+      if (key) batchKeys.add(key);
+
+      if (key && existingByKey.has(key)) {
         row.action = 'update';
       } else {
         row.action = 'create';
@@ -419,9 +436,10 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         });
       } else {
         importStats.created += (created?.length ?? 0);
-        // Track new IDs for tag linking
+        // Track new IDs for tag linking (keyed pela chave normalizada)
         (created ?? []).forEach((c) => {
-          if (c.whatsapp) existingWhatsapps.set(c.whatsapp, c.id);
+          const key = phoneComparisonKey(c.whatsapp);
+          if (key) existingByKey.set(key, c.id);
         });
       }
     }
@@ -431,8 +449,8 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     const toUpdate = validRows.filter((r) => r.action === 'update');
     for (const row of toUpdate) {
       const n = row.normalized;
-      const whatsapp = String(n.whatsapp ?? '');
-      const contactId = existingWhatsapps.get(whatsapp);
+      const key = phoneComparisonKey(String(n.whatsapp ?? ''));
+      const contactId = key ? existingByKey.get(key) : undefined;
       if (!contactId) {
         importStats.skipped++;
         continue;
@@ -498,8 +516,8 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       const tagStr = String(row.normalized.etiquetas ?? '');
       if (!tagStr.trim()) continue;
 
-      const whatsapp = String(row.normalized.whatsapp ?? '');
-      const contactId = existingWhatsapps.get(whatsapp);
+      const key = phoneComparisonKey(String(row.normalized.whatsapp ?? ''));
+      const contactId = key ? existingByKey.get(key) : undefined;
       if (!contactId) continue;
 
       const tagNames = tagStr.split(',').map((t) => t.trim()).filter(Boolean);
