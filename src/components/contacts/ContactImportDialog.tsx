@@ -922,7 +922,17 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-3xl max-h-[85vh] overflow-y-auto"
+        // Impede fechar acidentalmente ao clicar fora (Alt+Tab retornando o
+        // foco ao browser, clique em barras de rolagem, etc.) ou ao apertar
+        // Escape. O usuário fecha só via o X do dialog ou os botões
+        // "Cancelar"/"Fechar" — para não perder o mapeamento/preview em
+        // andamento.
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
