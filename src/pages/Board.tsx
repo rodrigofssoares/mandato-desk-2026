@@ -287,18 +287,20 @@ export default function Board() {
               onChange={handleSelectBoard}
             />
             {activeBoardId && (
-              <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={debouncedSearch ? 'default' : 'outline'}
-                    size="sm"
-                    title="Pesquisar leads no funil"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    {debouncedSearch ? `"${debouncedSearch}"` : 'Buscar lead'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-80 p-3">
+              <div className="flex items-center">
+                <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={debouncedSearch ? 'default' : 'outline'}
+                      size="sm"
+                      className={debouncedSearch ? 'rounded-r-none' : ''}
+                      title="Pesquisar leads no funil"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      {debouncedSearch ? `"${debouncedSearch}"` : 'Buscar lead'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-80 p-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -328,7 +330,23 @@ export default function Board() {
                       : `Pesquisa apenas no funil ativo (${items.length} lead${items.length === 1 ? '' : 's'})`}
                   </p>
                 </PopoverContent>
-              </Popover>
+                </Popover>
+                {debouncedSearch && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      clearSearch();
+                      setSearchOpen(false);
+                    }}
+                    className="rounded-l-none border-l border-primary-foreground/25 px-2"
+                    title="Limpar busca"
+                    aria-label="Limpar busca"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             )}
             {activeBoardId && canCreate && (
               <Button
