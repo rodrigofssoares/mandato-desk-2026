@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Download, Loader2, ClipboardCopy, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -242,6 +242,14 @@ const PHASE_PROGRESS: Record<Phase, number> = {
   done: 100,
 };
 
+// Chave para persistir o estado da importação em sessionStorage.
+// Sobrevive a Alt+Tab, mudança de rota, F5 acidental — qualquer cenário em
+// que o componente desmonta sem o usuário ter explicitamente fechado o
+// dialog. Limite de ~4.5MB para caber em quotas típicas (5-10MB) — para
+// arquivos maiores, salvamos só o mapping de colunas (re-upload necessário).
+const STORAGE_KEY = 'mdesk:contact-import-state-v1';
+const STORAGE_LIMIT_BYTES = 4_500_000;
+
 export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactImportDialogProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
@@ -252,7 +260,56 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   // colunas (a planilha pode ter cabeçalhos diferentes do template).
   const [rawSheet, setRawSheet] = useState<string[][]>([]);
   const [columnMapping, setColumnMapping] = useState<{ fileHeader: string; systemField: string }[]>([]);
+  const [restored, setRestored] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- Persistência: restaura estado do sessionStorage quando o dialog abre ---
+  useEffect(() => {
+    if (!open || restored) return;
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) { setRestored(true); return; }
+      const s = JSON.parse(raw);
+      if (s.phase && s.phase !== 'idle' && s.phase !== 'done') {
+        if (s.fileName) setFileName(s.fileName);
+        if (Array.isArray(s.columnMapping)) setColumnMapping(s.columnMapping);
+        if (Array.isArray(s.rawSheet) && s.rawSheet.length > 0) setRawSheet(s.rawSheet);
+        if (Array.isArray(s.parsedRows) && s.parsedRows.length > 0) setParsedRows(s.parsedRows);
+        setPhase(s.phase);
+        const msg = s.rawSheet?.length
+          ? 'Estado anterior da importação restaurado'
+          : `Mapeamento de "${s.fileName}" restaurado — re-upload do arquivo para continuar`;
+        toast.success(msg);
+      }
+    } catch {
+      // estado corrompido — ignora
+    } finally {
+      setRestored(true);
+    }
+  }, [open, restored]);
+
+  // --- Persistência: salva mudanças no sessionStorage durante o trabalho ---
+  useEffect(() => {
+    if (!open) return;
+    if (phase === 'idle' || phase === 'done') {
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      return;
+    }
+    // Tenta salvar o estado completo; se exceder a quota, fallback p/ só
+    // metadata (fileName + columnMapping) — usuário re-upload o arquivo
+    // mas não precisa remapear as colunas.
+    try {
+      const full = JSON.stringify({ phase, fileName, columnMapping, rawSheet, parsedRows });
+      if (full.length <= STORAGE_LIMIT_BYTES) {
+        sessionStorage.setItem(STORAGE_KEY, full);
+        return;
+      }
+    } catch { /* fall through */ }
+    try {
+      const lite = JSON.stringify({ phase: 'idle', fileName, columnMapping, rawSheet: [], parsedRows: [] });
+      sessionStorage.setItem(STORAGE_KEY, lite);
+    } catch { /* desiste */ }
+  }, [open, phase, fileName, columnMapping, rawSheet, parsedRows]);
 
   const reset = () => {
     setPhase('idle');
@@ -262,6 +319,8 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     setFileName('');
     setRawSheet([]);
     setColumnMapping([]);
+    setRestored(false);
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
   };
 
   const handleOpenChange = (open: boolean) => {
