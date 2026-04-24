@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Plus, Search, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight } from 'lucide-react';
+import { Loader2, Plus, Search, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -28,7 +28,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
-import { useBoardItems, useRemoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
+import {
+  useBoardItems,
+  useBulkRemoveBoardItems,
+  useRemoveBoardItem,
+  type BoardItemWithContact,
+} from '@/hooks/useBoardItems';
 import { useContact } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { getContactDisplayName } from '@/lib/contactDisplay';
@@ -79,6 +84,7 @@ export default function Board() {
   const { data: stages = [], isLoading: stagesLoading } = useBoardStages(activeBoardId);
   const { data: items = [], isLoading: itemsLoading } = useBoardItems(activeBoardId);
   const removeMutation = useRemoveBoardItem();
+  const bulkRemoveMutation = useBulkRemoveBoardItems();
 
   // UI state
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
@@ -90,10 +96,11 @@ export default function Board() {
   const [stagesEditorOpen, setStagesEditorOpen] = useState(false);
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
 
-  // Modo selecao — usuario marca N cards com checkbox e move todos juntos
+  // Modo selecao — usuario marca N cards com checkbox e move/exclui todos juntos
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [bulkMoveSelectedOpen, setBulkMoveSelectedOpen] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
   // Busca de leads dentro do funil ativo (client-side, so enxerga items do activeBoardId)
   const [searchOpen, setSearchOpen] = useState(false);
@@ -210,6 +217,22 @@ export default function Board() {
       // toast no hook
     } finally {
       setRemoveTarget(null);
+    }
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (!activeBoardId || selectedItemIds.size === 0) return;
+    try {
+      await bulkRemoveMutation.mutateAsync({
+        itemIds: Array.from(selectedItemIds),
+        boardId: activeBoardId,
+      });
+      setSelectedItemIds(new Set());
+      setSelectionMode(false);
+    } catch {
+      // toast no hook
+    } finally {
+      setBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -395,14 +418,27 @@ export default function Board() {
               </Button>
             )}
             {selectionMode && selectedItemIds.size > 0 && (
-              <Button
-                size="sm"
-                onClick={() => setBulkMoveSelectedOpen(true)}
-                className="shadow-lg shadow-primary/30"
-              >
-                <ChevronRight className="h-4 w-4 mr-1" />
-                Mover {selectedItemIds.size} selecionado{selectedItemIds.size > 1 ? 's' : ''}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => setBulkMoveSelectedOpen(true)}
+                  className="shadow-lg shadow-primary/30"
+                >
+                  <ChevronRight className="h-4 w-4 mr-1" />
+                  Mover {selectedItemIds.size} selecionado{selectedItemIds.size > 1 ? 's' : ''}
+                </Button>
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setBulkDeleteConfirmOpen(true)}
+                    className="shadow-lg shadow-destructive/30"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir {selectedItemIds.size} do funil
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
@@ -518,6 +554,34 @@ export default function Board() {
             >
               {removeMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={(open) => !open && !bulkRemoveMutation.isPending && setBulkDeleteConfirmOpen(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remover {selectedItemIds.size} contato{selectedItemIds.size > 1 ? 's' : ''} deste funil?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os contatos continuam existindo no sistema — apenas o vínculo com este funil é
+              removido. Essa ação não pode ser desfeita sem adicioná-los de volta manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkRemoveMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmBulkDelete}
+              disabled={bulkRemoveMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkRemoveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Remover do funil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

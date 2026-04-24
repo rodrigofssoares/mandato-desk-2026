@@ -216,3 +216,44 @@ export function useRemoveBoardItem() {
     },
   });
 }
+
+/**
+ * Remove varios board_items de uma vez. Usado no modo "Selecionar contatos"
+ * pra excluir em massa os leads selecionados do funil atual.
+ * Retorna o `board_id` pra invalidar a query correta no onSuccess.
+ */
+export function useBulkRemoveBoardItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemIds, boardId }: { itemIds: string[]; boardId: string }) => {
+      if (itemIds.length === 0) return { boardId, removed: 0 };
+
+      const { error, count } = await supabase
+        .from('board_items')
+        .delete({ count: 'exact' })
+        .in('id', itemIds);
+
+      if (error) throw error;
+      return { boardId, removed: count ?? itemIds.length };
+    },
+    onSuccess: ({ boardId, removed }) => {
+      queryClient.invalidateQueries({ queryKey: ['board_items', boardId] });
+      if (removed > 0) {
+        toast.success(
+          removed === 1
+            ? 'Contato removido do funil'
+            : `${removed} contatos removidos do funil`,
+        );
+        logActivity({
+          type: 'delete',
+          entity_type: 'board_item',
+          description: `Removeu ${removed} contato(s) do funil em massa`,
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao remover em massa: ${error.message}`);
+    },
+  });
+}
