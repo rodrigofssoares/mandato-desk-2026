@@ -23,6 +23,9 @@ export interface BoardItemWithContact extends BoardItem {
     id: string;
     nome: string;
     instagram: string | null;
+    twitter: string | null;
+    tiktok: string | null;
+    youtube: string | null;
     whatsapp: string | null;
     telefone: string | null;
     email: string | null;
@@ -46,7 +49,7 @@ export function useBoardItems(boardId: string | null | undefined) {
         .select(
           `
           id, board_id, stage_id, contact_id, ordem, moved_at, created_at,
-          contact:contacts(id, nome, instagram, whatsapp, telefone, email, is_favorite, leader_id)
+          contact:contacts(id, nome, instagram, twitter, tiktok, youtube, whatsapp, telefone, email, is_favorite, leader_id)
         `
         )
         .eq('board_id', boardId)
@@ -210,6 +213,47 @@ export function useRemoveBoardItem() {
     },
     onError: (error: Error) => {
       toast.error(`Erro ao remover: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Remove varios board_items de uma vez. Usado no modo "Selecionar contatos"
+ * pra excluir em massa os leads selecionados do funil atual.
+ * Retorna o `board_id` pra invalidar a query correta no onSuccess.
+ */
+export function useBulkRemoveBoardItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemIds, boardId }: { itemIds: string[]; boardId: string }) => {
+      if (itemIds.length === 0) return { boardId, removed: 0 };
+
+      const { error, count } = await supabase
+        .from('board_items')
+        .delete({ count: 'exact' })
+        .in('id', itemIds);
+
+      if (error) throw error;
+      return { boardId, removed: count ?? itemIds.length };
+    },
+    onSuccess: ({ boardId, removed }) => {
+      queryClient.invalidateQueries({ queryKey: ['board_items', boardId] });
+      if (removed > 0) {
+        toast.success(
+          removed === 1
+            ? 'Contato removido do funil'
+            : `${removed} contatos removidos do funil`,
+        );
+        logActivity({
+          type: 'delete',
+          entity_type: 'board_item',
+          description: `Removeu ${removed} contato(s) do funil em massa`,
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao remover em massa: ${error.message}`);
     },
   });
 }

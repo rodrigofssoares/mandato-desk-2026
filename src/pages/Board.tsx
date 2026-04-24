@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Loader2, Plus, Search, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -25,7 +28,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
-import { useBoardItems, useRemoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
+import {
+  useBoardItems,
+  useBulkRemoveBoardItems,
+  useRemoveBoardItem,
+  type BoardItemWithContact,
+} from '@/hooks/useBoardItems';
 import { useContact } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { getContactDisplayName } from '@/lib/contactDisplay';
@@ -76,6 +84,7 @@ export default function Board() {
   const { data: stages = [], isLoading: stagesLoading } = useBoardStages(activeBoardId);
   const { data: items = [], isLoading: itemsLoading } = useBoardItems(activeBoardId);
   const removeMutation = useRemoveBoardItem();
+  const bulkRemoveMutation = useBulkRemoveBoardItems();
 
   // UI state
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
@@ -87,16 +96,43 @@ export default function Board() {
   const [stagesEditorOpen, setStagesEditorOpen] = useState(false);
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
 
-  // Modo selecao — usuario marca N cards com checkbox e move todos juntos
+  // Modo selecao — usuario marca N cards com checkbox e move/exclui todos juntos
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [bulkMoveSelectedOpen, setBulkMoveSelectedOpen] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
-  // Sai do modo selecao se trocar de board (itens viram invalidos)
+  // Busca de leads dentro do funil ativo (client-side, so enxerga items do activeBoardId)
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceRef = useMemo(
+    () => ({ timer: null as ReturnType<typeof setTimeout> | null }),
+    [],
+  );
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchInput(value);
+      if (debounceRef.timer) clearTimeout(debounceRef.timer);
+      debounceRef.timer = setTimeout(() => setDebouncedSearch(value), 300);
+    },
+    [debounceRef],
+  );
+
+  const clearSearch = useCallback(() => {
+    if (debounceRef.timer) clearTimeout(debounceRef.timer);
+    setSearchInput('');
+    setDebouncedSearch('');
+  }, [debounceRef]);
+
+  // Sai do modo selecao e reseta busca quando troca de funil
   useEffect(() => {
     setSelectionMode(false);
     setSelectedItemIds(new Set());
-  }, [activeBoardId]);
+    clearSearch();
+    setSearchOpen(false);
+  }, [activeBoardId, clearSearch]);
 
   const handleToggleSelect = (item: BoardItemWithContact) => {
     setSelectedItemIds((prev) => {
@@ -120,6 +156,59 @@ export default function Board() {
     [items],
   );
 
+  // Items filtrados pela busca. Usado APENAS no Kanban. Selecao e "Adicionar contato"
+  // continuam usando a lista original pra nao perder estado/contexto quando filtra.
+  // Busca em: nome, @ (instagram/twitter/tiktok/youtube), e-mail e telefones (whatsapp/telefone).
+  // Telefone: usuario pode digitar "(21) 98765-4321" e casar com "21987654321" salvo.
+  const filteredItems = useMemo(() => {
+    const q = debouncedSearch.trim();
+    if (!q) return items;
+    const normText = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normDigits = (s: string) => s.replace(/\D/g, '');
+    const textNeedle = normText(q);
+    const digitNeedle = normDigits(q);
+
+    return items.filter((it) => {
+      const c = it.contact;
+      if (!c) return false;
+      const textFields = [c.nome, c.instagram, c.twitter, c.tiktok, c.youtube, c.email];
+      if (textFields.some((f) => f && normText(f).includes(textNeedle))) return true;
+      if (digitNeedle) {
+        const phoneFields = [c.whatsapp, c.telefone];
+        if (phoneFields.some((f) => f && normDigits(f).includes(digitNeedle))) return true;
+      }
+      return false;
+    });
+  }, [items, debouncedSearch]);
+
+  // Toast com contagem de resultados quando a busca muda. Usa ref pra ler a
+  // contagem mais recente sem disparar toast a cada mudanca de `items` (drag,
+  // refetch etc). `id` fixo faz o sonner substituir o toast anterior.
+  // Usa a cor primaria do design system (navy institucional) pra destacar.
+  const filteredCountRef = useRef(0);
+  filteredCountRef.current = filteredItems.length;
+  useEffect(() => {
+    if (!debouncedSearch) return;
+    const count = filteredCountRef.current;
+    const id = 'board-search-result';
+    const msg =
+      count === 0
+        ? `Nenhum lead encontrado para "${debouncedSearch}"`
+        : count === 1
+          ? '1 lead localizado no funil'
+          : `${count} leads localizados no funil`;
+    toast(msg, {
+      id,
+      icon: <Search className="h-4 w-4" />,
+      style: {
+        background: 'hsl(var(--primary))',
+        color: 'hsl(var(--primary-foreground))',
+        border: '1px solid hsl(var(--primary))',
+      },
+    });
+  }, [debouncedSearch]);
+
   const handleConfirmRemove = async () => {
     if (!removeTarget) return;
     try {
@@ -128,6 +217,22 @@ export default function Board() {
       // toast no hook
     } finally {
       setRemoveTarget(null);
+    }
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (!activeBoardId || selectedItemIds.size === 0) return;
+    try {
+      await bulkRemoveMutation.mutateAsync({
+        itemIds: Array.from(selectedItemIds),
+        boardId: activeBoardId,
+      });
+      setSelectedItemIds(new Set());
+      setSelectionMode(false);
+    } catch {
+      // toast no hook
+    } finally {
+      setBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -204,6 +309,68 @@ export default function Board() {
               value={activeBoardId}
               onChange={handleSelectBoard}
             />
+            {activeBoardId && (
+              <div className="flex items-center">
+                <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={debouncedSearch ? 'default' : 'outline'}
+                      size="sm"
+                      className={debouncedSearch ? 'rounded-r-none' : ''}
+                      title="Pesquisar leads no funil"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      {debouncedSearch ? `"${debouncedSearch}"` : 'Buscar lead'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-80 p-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      autoFocus
+                      value={searchInput}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setSearchOpen(false);
+                      }}
+                      placeholder="Nome, @, e-mail, telefone..."
+                      className="pl-9 pr-9"
+                    />
+                    {searchInput && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                        aria-label="Limpar busca"
+                      >
+                        <X className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {debouncedSearch
+                      ? `${filteredItems.length} de ${items.length} lead${items.length === 1 ? '' : 's'} correspondem`
+                      : `Pesquisa apenas no funil ativo (${items.length} lead${items.length === 1 ? '' : 's'})`}
+                  </p>
+                </PopoverContent>
+                </Popover>
+                {debouncedSearch && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      clearSearch();
+                      setSearchOpen(false);
+                    }}
+                    className="rounded-l-none border-l border-primary-foreground/25 px-2"
+                    title="Limpar busca"
+                    aria-label="Limpar busca"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
             {activeBoardId && canCreate && (
               <Button
                 variant="outline"
@@ -251,14 +418,27 @@ export default function Board() {
               </Button>
             )}
             {selectionMode && selectedItemIds.size > 0 && (
-              <Button
-                size="sm"
-                onClick={() => setBulkMoveSelectedOpen(true)}
-                className="shadow-lg shadow-primary/30"
-              >
-                <ChevronRight className="h-4 w-4 mr-1" />
-                Mover {selectedItemIds.size} selecionado{selectedItemIds.size > 1 ? 's' : ''}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => setBulkMoveSelectedOpen(true)}
+                  className="shadow-lg shadow-primary/30"
+                >
+                  <ChevronRight className="h-4 w-4 mr-1" />
+                  Mover {selectedItemIds.size} selecionado{selectedItemIds.size > 1 ? 's' : ''}
+                </Button>
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setBulkDeleteConfirmOpen(true)}
+                    className="shadow-lg shadow-destructive/30"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir {selectedItemIds.size} do funil
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
@@ -279,7 +459,7 @@ export default function Board() {
           ) : (
             <BoardKanban
               stages={stages}
-              items={items}
+              items={filteredItems}
               onCardClick={(item) => {
                 if (item.contact?.id) setEditingContactId(item.contact.id);
               }}
@@ -374,6 +554,34 @@ export default function Board() {
             >
               {removeMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={(open) => !open && !bulkRemoveMutation.isPending && setBulkDeleteConfirmOpen(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remover {selectedItemIds.size} contato{selectedItemIds.size > 1 ? 's' : ''} deste funil?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os contatos continuam existindo no sistema — apenas o vínculo com este funil é
+              removido. Essa ação não pode ser desfeita sem adicioná-los de volta manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkRemoveMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmBulkDelete}
+              disabled={bulkRemoveMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkRemoveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Remover do funil
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
