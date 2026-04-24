@@ -18,6 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { normalizePhone, normalizeName, normalizeEmail, phoneComparisonKey } from '@/lib/normalization';
@@ -30,7 +37,43 @@ interface ContactImportDialogProps {
   onSuccess?: () => void;
 }
 
-type Phase = 'idle' | 'preview' | 'preparing' | 'creating' | 'updating' | 'tags' | 'done';
+type Phase = 'idle' | 'mapping' | 'preview' | 'preparing' | 'creating' | 'updating' | 'tags' | 'done';
+
+// Campos do sistema que o usuário pode mapear as colunas do arquivo para.
+// O valor "__ignore__" significa que a coluna é descartada.
+const SYSTEM_FIELDS: { value: string; label: string }[] = [
+  { value: '__ignore__', label: '— Ignorar esta coluna —' },
+  { value: 'nome_completo', label: 'Nome completo *' },
+  { value: 'nome_whatsapp', label: 'Nome no WhatsApp' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'telefone', label: 'Telefone alternativo' },
+  { value: 'email', label: 'E-mail' },
+  { value: 'canal_whatsapp', label: 'Está no canal do WhatsApp (sim/não)' },
+  { value: 'receber_whatsapp', label: 'Aceita WhatsApp (sim/não)' },
+  { value: 'multiplicador', label: 'É multiplicador (sim/não)' },
+  { value: 'genero', label: 'Gênero' },
+  { value: 'data_nascimento', label: 'Data de nascimento' },
+  { value: 'endereco', label: 'Endereço / Logradouro' },
+  { value: 'numero', label: 'Número' },
+  { value: 'complemento', label: 'Complemento' },
+  { value: 'bairro', label: 'Bairro' },
+  { value: 'cidade', label: 'Cidade' },
+  { value: 'uf', label: 'UF / Estado' },
+  { value: 'cep', label: 'CEP' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'twitter', label: 'Twitter' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'declarou_voto', label: 'Declarou voto (sim/não)' },
+  { value: 'ranking', label: 'Ranking (0 a 10)' },
+  { value: 'leader_id', label: 'ID da liderança' },
+  { value: 'is_favorite', label: 'Favorito (sim/não)' },
+  { value: 'origem', label: 'Origem' },
+  { value: 'observacoes', label: 'Observações' },
+  { value: 'notas_assessor', label: 'Notas do assessor' },
+  { value: 'ultimo_contato', label: 'Último contato' },
+  { value: 'etiquetas', label: 'Etiquetas (separadas por vírgula)' },
+];
 
 interface ParsedRow {
   lineNumber: number;
@@ -179,6 +222,7 @@ const HEADER_MAP: Record<string, string> = {
 
 const PHASE_LABELS: Record<Phase, string> = {
   idle: '',
+  mapping: '',
   preview: '',
   preparing: 'Preparando...',
   creating: 'Criando novos contatos...',
@@ -189,6 +233,7 @@ const PHASE_LABELS: Record<Phase, string> = {
 
 const PHASE_PROGRESS: Record<Phase, number> = {
   idle: 0,
+  mapping: 0,
   preview: 0,
   preparing: 10,
   creating: 40,
@@ -203,6 +248,10 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   const [stats, setStats] = useState<ImportStats>({ created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 });
   const [errors, setErrors] = useState<{ line: number; message: string; raw?: Record<string, string> }[]>([]);
   const [fileName, setFileName] = useState('');
+  // Estado da fase 'mapping': dados brutos do arquivo + conciliação de
+  // colunas (a planilha pode ter cabeçalhos diferentes do template).
+  const [rawSheet, setRawSheet] = useState<string[][]>([]);
+  const [columnMapping, setColumnMapping] = useState<{ fileHeader: string; systemField: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -211,6 +260,8 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
     setStats({ created: 0, updated: 0, duplicates: 0, skipped: 0, errors: 0 });
     setErrors([]);
     setFileName('');
+    setRawSheet([]);
+    setColumnMapping([]);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -314,6 +365,10 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
   };
 
   // --- Parse File ---
+  // Passo 1: abre o arquivo e determina o mapeamento de colunas. Se todas
+  // forem auto-detectadas, vai direto p/ preview. Se houver qualquer coluna
+  // com cabeçalho desconhecido, entra na fase 'mapping' para o usuário
+  // conciliar manualmente.
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -324,7 +379,6 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       const data = new Uint8Array(await file.arrayBuffer());
       const workbook = XLSX.read(data, { type: 'array' });
 
-      // Ignorar aba "Instruções"
       const sheetName = workbook.SheetNames.find(
         (n) => n.toLowerCase() !== 'instruções' && n.toLowerCase() !== 'instrucoes'
       ) ?? workbook.SheetNames[0];
@@ -336,58 +390,112 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         return;
       }
 
-      // Map headers
-      const headerRow = rawRows[0].map((h) => String(h).trim().toLowerCase().replace(/\s+/g, '_'));
-      const mappedHeaders = headerRow.map((h) => HEADER_MAP[h] ?? null);
+      // Auto-detecção por HEADER_MAP (cabeçalhos normalizados em lowercase_underscore)
+      const headerRow = rawRows[0].map((h) => String(h).trim());
+      const mapping = headerRow.map((h) => {
+        const norm = h.toLowerCase().replace(/\s+/g, '_');
+        const guess = HEADER_MAP[norm];
+        return { fileHeader: h, systemField: guess ?? '__ignore__' };
+      });
 
-      const rows: ParsedRow[] = [];
-      for (let i = 1; i < rawRows.length; i++) {
-        const cells = rawRows[i];
-        if (!cells || cells.every((c) => !String(c).trim())) continue; // skip empty
+      setRawSheet(rawRows);
+      setColumnMapping(mapping);
 
-        const raw: Record<string, string> = {};
-        const normalized: Record<string, unknown> = {};
+      const unmapped = mapping.filter((m) => m.systemField === '__ignore__');
+      const allAutoMapped = unmapped.length === 0;
 
-        mappedHeaders.forEach((field, idx) => {
-          if (!field) return;
-          const value = String(cells[idx] ?? '').trim();
-          raw[field] = value;
-        });
-
-        // Normalize
-        if (raw.nome_completo) normalized.nome_completo = normalizeName(raw.nome_completo);
-        else normalized.nome_completo = '';
-        if (raw.whatsapp) normalized.whatsapp = normalizePhone(raw.whatsapp);
-        else normalized.whatsapp = '';
-        if (raw.email) normalized.email = normalizeEmail(raw.email);
-        if (raw.telefone) normalized.telefone = normalizePhone(raw.telefone);
-        if (raw.genero) normalized.genero = raw.genero.toLowerCase();
-        if (raw.declarou_voto) normalized.declarou_voto = parseBoolean(raw.declarou_voto);
-        if (raw.canal_whatsapp) normalized.canal_whatsapp = parseBoolean(raw.canal_whatsapp);
-        if (raw.receber_whatsapp) normalized.receber_whatsapp = parseBoolean(raw.receber_whatsapp);
-        if (raw.multiplicador) normalized.multiplicador = parseBoolean(raw.multiplicador);
-        if (raw.is_favorite) normalized.is_favorite = parseBoolean(raw.is_favorite);
-        if (raw.ranking) {
-          const r = parseInt(raw.ranking, 10);
-          if (!isNaN(r) && r >= 0 && r <= 10) normalized.ranking = r;
-        }
-
-        // Pass through text fields
-        ['nome_whatsapp', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'origem', 'observacoes', 'notas_assessor', 'etiquetas', 'data_nascimento', 'instagram', 'twitter', 'tiktok', 'youtube', 'leader_id', 'ultimo_contato'].forEach((f) => {
-          if (raw[f]) normalized[f] = raw[f];
-        });
-
-        rows.push({ lineNumber: i + 1, raw, normalized });
+      if (allAutoMapped) {
+        // Tudo bateu com template — segue direto
+        applyMappingAndPreview(rawRows, mapping);
+        toast.success(`${rawRows.length - 1} linhas carregadas de "${file.name}"`);
+      } else {
+        // Pede confirmação do usuário
+        setPhase('mapping');
+        toast.info(
+          `${unmapped.length} coluna${unmapped.length > 1 ? 's' : ''} não reconhecida${unmapped.length > 1 ? 's' : ''} — confirme o mapeamento`
+        );
       }
-
-      setParsedRows(rows);
-      setPhase('preview');
-      toast.success(`${rows.length} linhas carregadas de "${file.name}"`);
-    } catch {
-      toast.error('Erro ao ler arquivo');
+    } catch (err: any) {
+      toast.error(`Erro ao ler arquivo: ${err?.message ?? 'desconhecido'}`);
     }
 
     e.target.value = '';
+  };
+
+  // Passo 2: aplica um mapeamento de colunas (dicionário fileHeader → campo
+  // de sistema) em cima do rawSheet e produz parsedRows. Idempotente — pode
+  // ser chamado novamente se o usuário quiser re-mapear.
+  const applyMappingAndPreview = (
+    sheet: string[][],
+    mapping: { fileHeader: string; systemField: string }[]
+  ) => {
+    const rows: ParsedRow[] = [];
+    for (let i = 1; i < sheet.length; i++) {
+      const cells = sheet[i];
+      if (!cells || cells.every((c) => !String(c).trim())) continue;
+
+      const raw: Record<string, string> = {};
+      const normalized: Record<string, unknown> = {};
+
+      mapping.forEach((m, idx) => {
+        if (!m.systemField || m.systemField === '__ignore__') return;
+        const value = String(cells[idx] ?? '').trim();
+        if (!value) return;
+        raw[m.systemField] = value;
+      });
+
+      if (raw.nome_completo) normalized.nome_completo = normalizeName(raw.nome_completo);
+      else normalized.nome_completo = '';
+      if (raw.whatsapp) normalized.whatsapp = normalizePhone(raw.whatsapp);
+      else normalized.whatsapp = '';
+      if (raw.email) normalized.email = normalizeEmail(raw.email);
+      if (raw.telefone) normalized.telefone = normalizePhone(raw.telefone);
+      if (raw.genero) normalized.genero = raw.genero.toLowerCase();
+      if (raw.declarou_voto) normalized.declarou_voto = parseBoolean(raw.declarou_voto);
+      if (raw.canal_whatsapp) normalized.canal_whatsapp = parseBoolean(raw.canal_whatsapp);
+      if (raw.receber_whatsapp) normalized.receber_whatsapp = parseBoolean(raw.receber_whatsapp);
+      if (raw.multiplicador) normalized.multiplicador = parseBoolean(raw.multiplicador);
+      if (raw.is_favorite) normalized.is_favorite = parseBoolean(raw.is_favorite);
+      if (raw.ranking) {
+        const r = parseInt(raw.ranking, 10);
+        if (!isNaN(r) && r >= 0 && r <= 10) normalized.ranking = r;
+      }
+
+      ['nome_whatsapp', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'origem', 'observacoes', 'notas_assessor', 'etiquetas', 'data_nascimento', 'instagram', 'twitter', 'tiktok', 'youtube', 'leader_id', 'ultimo_contato'].forEach((f) => {
+        if (raw[f]) normalized[f] = raw[f];
+      });
+
+      rows.push({ lineNumber: i + 1, raw, normalized });
+    }
+
+    setParsedRows(rows);
+    setPhase('preview');
+  };
+
+  const confirmMapping = () => {
+    // Validação mínima: precisa ter nome_completo
+    const hasNome = columnMapping.some((m) => m.systemField === 'nome_completo');
+    if (!hasNome) {
+      toast.error('Aponte pelo menos uma coluna para "Nome completo *" antes de continuar');
+      return;
+    }
+    // Avisa sobre colisões (2+ colunas mapeando para o mesmo campo) — último vence
+    const fieldCounts = new Map<string, number>();
+    for (const m of columnMapping) {
+      if (m.systemField === '__ignore__') continue;
+      fieldCounts.set(m.systemField, (fieldCounts.get(m.systemField) ?? 0) + 1);
+    }
+    const collisions = [...fieldCounts.entries()].filter(([, c]) => c > 1).map(([f]) => f);
+    if (collisions.length > 0) {
+      toast.error(`Há ${collisions.length} campo(s) com mais de uma coluna apontada: ${collisions.join(', ')}. Corrija antes de continuar.`);
+      return;
+    }
+    applyMappingAndPreview(rawSheet, columnMapping);
+    toast.success(`${rawSheet.length - 1} linhas preparadas — revise o preview`);
+  };
+
+  const updateMapping = (index: number, systemField: string) => {
+    setColumnMapping((prev) => prev.map((m, i) => (i === index ? { ...m, systemField } : m)));
   };
 
   // --- Import ---
@@ -575,7 +683,8 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         const n = r.normalized;
         const obj: Record<string, unknown> = {
           nome: n.nome_completo,
-          whatsapp: n.whatsapp,
+          // whatsapp é opcional — vazio vira null para respeitar unique/null
+          whatsapp: n.whatsapp && String(n.whatsapp).trim() !== '' ? n.whatsapp : null,
         };
         if (n.email) obj.email = n.email;
         if (n.telefone) obj.telefone = n.telefone;
@@ -820,7 +929,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
             Importar Contatos
           </DialogTitle>
           <DialogDescription>
-            Importe contatos de um arquivo CSV ou XLSX. WhatsApp duplicado atualiza o contato existente.
+            Importe contatos de um arquivo CSV ou XLSX. Se o WhatsApp já existir no sistema (em qualquer formato), o contato é atualizado. Contatos sem WhatsApp são criados mesmo assim.
           </DialogDescription>
         </DialogHeader>
 
@@ -847,6 +956,71 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
             <p className="text-sm text-muted-foreground">
               Formatos aceitos: CSV (separador ; ou ,) e Excel (.xlsx, .xls)
             </p>
+          </div>
+        )}
+
+        {/* Mapping: conciliação de colunas quando o arquivo tem cabeçalhos fora do padrão */}
+        {phase === 'mapping' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge variant="secondary">
+                <FileSpreadsheet className="h-3 w-3 mr-1" />
+                {fileName}
+              </Badge>
+              <Badge variant="outline">{rawSheet.length - 1} linhas</Badge>
+            </div>
+
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>Algumas colunas do seu arquivo não foram reconhecidas automaticamente.</p>
+              <p>Para cada uma, escolha a qual campo do sistema corresponde — ou marque <strong>"Ignorar"</strong> se a coluna não deve ser importada.</p>
+              <p><strong>Nome completo *</strong> é obrigatório. WhatsApp é opcional — sem ele o contato é criado mas não dá para detectar duplicatas.</p>
+            </div>
+
+            <div className="max-h-[45vh] overflow-auto border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-48">Coluna do arquivo</TableHead>
+                    <TableHead className="w-40">Exemplo (linha 2)</TableHead>
+                    <TableHead>Campo no sistema</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {columnMapping.map((m, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium text-sm break-all">{m.fileHeader || <span className="text-muted-foreground italic">(sem título)</span>}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground break-all max-w-[12rem]">
+                        {rawSheet[1]?.[i] ? String(rawSheet[1][i]).slice(0, 40) : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Select value={m.systemField} onValueChange={(v) => updateMapping(i, v)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SYSTEM_FIELDS.map((f) => (
+                              <SelectItem key={f.value} value={f.value}>
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              <Button onClick={confirmMapping} className="gap-2 w-full sm:w-auto">
+                <CheckCircle className="h-4 w-4" />
+                Confirmar mapeamento
+              </Button>
+              <Button variant="outline" onClick={reset} className="w-full sm:w-auto">
+                Cancelar
+              </Button>
+            </div>
           </div>
         )}
 
