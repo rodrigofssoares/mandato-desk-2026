@@ -287,42 +287,35 @@ export function useMergeContacts() {
       if (snapshotError) throw snapshotError;
       if (!snapshotData) throw new Error('Contato a ser mesclado não encontrado');
 
-      // 1. Update kept contact with merged data
-      const { error: updateError } = await supabase
-        .from('contacts')
-        .update({ ...mergedData, updated_at: new Date().toISOString() })
-        .eq('id', keptId);
-      if (updateError) throw updateError;
-
-      // 2. Transfer demands from deleted contact to kept contact
+      // 1. Transfer demands from deleted contact to kept contact
       const { error: demandsError } = await supabase
         .from('demands')
         .update({ contact_id: keptId })
         .eq('contact_id', deletedId);
       if (demandsError) throw demandsError;
 
-      // 3. Delete existing tags of kept contact
+      // 2. Delete existing tags of kept contact
       const { error: deleteKeptTagsError } = await supabase
         .from('contact_tags')
         .delete()
         .eq('contact_id', keptId);
       if (deleteKeptTagsError) throw deleteKeptTagsError;
 
-      // 4. Insert selected tags for kept contact
+      // 3. Insert selected tags for kept contact
       if (selectedTagIds.length > 0) {
         const tagRows = selectedTagIds.map((tag_id) => ({ contact_id: keptId, tag_id }));
         const { error: insertTagsError } = await supabase.from('contact_tags').insert(tagRows);
         if (insertTagsError) throw insertTagsError;
       }
 
-      // 5. Delete tags of deleted contact
+      // 4. Delete tags of deleted contact
       const { error: deleteDeletedTagsError } = await supabase
         .from('contact_tags')
         .delete()
         .eq('contact_id', deletedId);
       if (deleteDeletedTagsError) throw deleteDeletedTagsError;
 
-      // 6. Record the merge in contact_merges
+      // 5. Record the merge in contact_merges (snapshot antes de qualquer change)
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData.user?.id;
 
@@ -335,12 +328,21 @@ export function useMergeContacts() {
       });
       if (mergeRecordError) throw mergeRecordError;
 
-      // 7. Mark deleted contact as merged
+      // 6. Mark deleted contact as merged ANTES do update do winner — assim a
+      // trigger prevent_duplicate_contacts (que so olha contatos com merged_into
+      // IS NULL) nao bloqueia quando o winner herda whatsapp/email do loser.
       const { error: markDeletedError } = await supabase
         .from('contacts')
         .update({ merged_into: keptId })
         .eq('id', deletedId);
       if (markDeletedError) throw markDeletedError;
+
+      // 7. Update kept contact with merged data
+      const { error: updateError } = await supabase
+        .from('contacts')
+        .update({ ...mergedData, updated_at: new Date().toISOString() })
+        .eq('id', keptId);
+      if (updateError) throw updateError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
@@ -768,15 +770,7 @@ export function useMergeGroupWithWinner() {
 
       const mergedFields = resolveSoftConflicts(group.contacts, winner);
 
-      if (Object.keys(mergedFields).length > 0) {
-        const { error } = await supabase
-          .from('contacts')
-          .update({ ...mergedFields, updated_at: new Date().toISOString() })
-          .eq('id', winner.id);
-        if (error) throw error;
-      }
-
-      // Uniao de tags
+      // Uniao de tags do winner (com tags dos losers que ele ainda nao tem)
       const winnerTagIds = new Set((winner.contact_tags ?? []).map((t) => t.tag_id));
       const newTagIds = new Set<string>();
       for (const loser of losers) {
@@ -805,7 +799,20 @@ export function useMergeGroupWithWinner() {
         }));
         await supabase.from('contact_merges').insert(mergeRows);
 
+        // Soft-delete losers ANTES do update do winner — trigger
+        // prevent_duplicate_contacts so olha contatos com merged_into IS NULL,
+        // entao precisamos remover os losers do escopo dela primeiro.
         await supabase.from('contacts').update({ merged_into: winner.id }).in('id', loserIds);
+      }
+
+      // Update do winner por ultimo (com whatsapp/email herdado dos losers ja
+      // mesclados, sem disparar duplicate-key da trigger).
+      if (Object.keys(mergedFields).length > 0) {
+        const { error } = await supabase
+          .from('contacts')
+          .update({ ...mergedFields, updated_at: new Date().toISOString() })
+          .eq('id', winner.id);
+        if (error) throw error;
       }
 
       return losers.length;
@@ -888,15 +895,7 @@ export function useAutoResolveDuplicates(opts: AutoResolveOptions = {}) {
                   ? computeMergedFields(ag.group.contacts, winner)
                   : resolveSoftConflicts(ag.group.contacts, winner);
 
-              if (Object.keys(mergedFields).length > 0) {
-                const { error } = await supabase
-                  .from('contacts')
-                  .update({ ...mergedFields, updated_at: new Date().toISOString() })
-                  .eq('id', winner.id);
-                if (error) throw error;
-              }
-
-              // Uniao de tags
+              // Uniao de tags do winner (com tags novas dos losers)
               const winnerTagIds = new Set((winner.contact_tags ?? []).map((t) => t.tag_id));
               const newTagIds = new Set<string>();
               for (const loser of losers) {
@@ -927,8 +926,20 @@ export function useAutoResolveDuplicates(opts: AutoResolveOptions = {}) {
                 }));
                 await supabase.from('contact_merges').insert(mergeRows);
 
-                // Soft-delete dos losers
+                // Soft-delete dos losers ANTES do update do winner — trigger
+                // prevent_duplicate_contacts so olha contatos com merged_into
+                // IS NULL, entao removemos os losers do escopo primeiro.
                 await supabase.from('contacts').update({ merged_into: winner.id }).in('id', loserIds);
+              }
+
+              // Update do winner por ultimo (whatsapp/email herdado dos losers
+              // sem disparar duplicate-key na trigger).
+              if (Object.keys(mergedFields).length > 0) {
+                const { error } = await supabase
+                  .from('contacts')
+                  .update({ ...mergedFields, updated_at: new Date().toISOString() })
+                  .eq('id', winner.id);
+                if (error) throw error;
               }
 
               result.mergedGroups++;
@@ -1027,13 +1038,6 @@ export function useAutoMergeDuplicates() {
 
               // 1. Preenche campos vazios do winner com valores dos losers
               const mergedFields = computeMergedFields(group.contacts, winner);
-              if (Object.keys(mergedFields).length > 0) {
-                const { error } = await supabase
-                  .from('contacts')
-                  .update({ ...mergedFields, updated_at: new Date().toISOString() })
-                  .eq('id', winner.id);
-                if (error) throw error;
-              }
 
               // 2. União das etiquetas: pega tags dos losers que o winner não tem
               const winnerTagIds = new Set((winner.contact_tags ?? []).map((t) => t.tag_id));
@@ -1054,11 +1058,22 @@ export function useAutoMergeDuplicates() {
               // 4. Apaga as ligações de tags dos losers (já estão no winner)
               await supabase.from('contact_tags').delete().in('contact_id', loserIds);
 
-              // 5. Marca os losers como mesclados (soft-delete via merged_into)
+              // 5. Marca losers como mesclados ANTES do update do winner —
+              // trigger prevent_duplicate_contacts so olha contatos com
+              // merged_into IS NULL.
               await supabase
                 .from('contacts')
                 .update({ merged_into: winner.id })
                 .in('id', loserIds);
+
+              // 6. Update do winner por ultimo, sem disparar duplicate-key
+              if (Object.keys(mergedFields).length > 0) {
+                const { error } = await supabase
+                  .from('contacts')
+                  .update({ ...mergedFields, updated_at: new Date().toISOString() })
+                  .eq('id', winner.id);
+                if (error) throw error;
+              }
 
               result.autoResolved++;
             } catch {
