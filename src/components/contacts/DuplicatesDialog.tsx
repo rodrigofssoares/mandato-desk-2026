@@ -20,10 +20,12 @@ import {
   useBulkDeleteDuplicates,
   useDeleteSingleDuplicate,
   useAutoMergeDuplicates,
+  useAutoResolveDuplicates,
   type DuplicateContact,
   type DuplicateGroup,
 } from "@/hooks/useDuplicates";
-import { analyzeDuplicates, type DuplicateCategory } from "@/lib/duplicate-analysis";
+import { analyzeDuplicates } from "@/lib/duplicate-analysis";
+import { Progress } from "@/components/ui/progress";
 import { ContactCompareModal } from "./duplicates/ContactCompareModal";
 import { ContactMergeModal } from "./duplicates/ContactMergeModal";
 import { ContactViewDrawer } from "./duplicates/ContactViewDrawer";
@@ -158,6 +160,13 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
   const autoMerge = useAutoMergeDuplicates();
   const [confirmAutoMerge, setConfirmAutoMerge] = useState(false);
 
+  // Resolucao automatica em massa (auto-merge + dismiss)
+  const [confirmResolveAll, setConfirmResolveAll] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
+  const autoResolve = useAutoResolveDuplicates({
+    onProgress: (done, total, label) => setProgress({ done, total, label }),
+  });
+
   const safeGroups: DuplicateGroup[] = groups ?? [];
   const totalGroups = safeGroups.length;
   const totalDuplicates = safeGroups.reduce((sum, g) => sum + (g.contacts.length - 1), 0);
@@ -201,6 +210,18 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
     await autoMerge.mutateAsync(safeGroups);
     refetch();
     onSuccess?.();
+  }
+
+  async function handleResolveAll() {
+    setConfirmResolveAll(false);
+    setProgress({ done: 0, total: 0, label: 'Iniciando...' });
+    try {
+      await autoResolve.mutateAsync(analysis);
+      refetch();
+      onSuccess?.();
+    } finally {
+      setProgress(null);
+    }
   }
 
   // Quantos grupos (de telefone) podem ser auto-resolvidos sem precisar
@@ -386,6 +407,32 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                 <strong>{analysis.byCategory.DISMISS_NAME.duplicates}</strong> ocultados como falso positivo, e{' '}
                 <strong>{analysis.byCategory.MANUAL.duplicates}</strong> precisam de revisao manual.
               </p>
+
+              {progress ? (
+                <div className="pt-2 space-y-1.5">
+                  <Progress value={progress.total > 0 ? (progress.done / progress.total) * 100 : 0} />
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    {progress.label} — {progress.done} de {progress.total}
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setConfirmResolveAll(true)}
+                  disabled={
+                    autoResolve.isPending ||
+                    (analysis.byCategory.AUTO_HARD.groups +
+                      analysis.byCategory.AUTO_SOFT.groups +
+                      analysis.byCategory.DISMISS_NAME.groups ===
+                      0)
+                  }
+                  className="w-full gap-2 mt-2"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  Resolver tudo automaticamente
+                </Button>
+              )}
             </div>
           )}
 
@@ -660,6 +707,49 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Excluir {deletingGroupKey ? (selectedByGroup[deletingGroupKey]?.length ?? 0) : 0} contatos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmação do "Resolver tudo automaticamente" */}
+      <AlertDialog open={confirmResolveAll} onOpenChange={setConfirmResolveAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5 text-primary" />
+              Resolver duplicatas em massa
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">Vou processar os {analysis.totalGroups} grupos detectados:</span>
+              <span className="block">
+                ✓ <strong>{analysis.byCategory.AUTO_HARD.groups + analysis.byCategory.AUTO_SOFT.groups} grupos</strong>{' '}
+                ({analysis.byCategory.AUTO_HARD.duplicates + analysis.byCategory.AUTO_SOFT.duplicates} contatos)
+                serao mesclados automaticamente, mantendo o registro mais completo e
+                absorvendo etiquetas, dados extras e observacoes dos demais.
+              </span>
+              <span className="block">
+                ✓ <strong>{analysis.byCategory.DISMISS_NAME.groups} grupos</strong>{' '}
+                ({analysis.byCategory.DISMISS_NAME.duplicates} contatos) serao marcados como
+                "nao sao duplicatas" (sao nomes iguais com telefones distintos — falsos positivos).
+              </span>
+              <span className="block">
+                ⚠ <strong>{analysis.byCategory.MANUAL.groups} grupos</strong>{' '}
+                ({analysis.byCategory.MANUAL.duplicates} contatos) ficarao na lista para revisao manual
+                (CPF, nascimento ou genero divergem; ou telefones distintos no mesmo email).
+              </span>
+              <span className="block text-amber-700 mt-2">
+                Esta acao e <strong>reversivel</strong> via tabela <code>contact_merges</code>{' '}
+                (snapshot completo de cada contato consumido) e via <code>dismissed_duplicate_groups</code>{' '}
+                (delete na tabela traz o grupo de volta).
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={autoResolve.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResolveAll} disabled={autoResolve.isPending} className="gap-2">
+              {autoResolve.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Resolver tudo
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLog';
 import { phoneComparisonKey } from '@/lib/normalization';
+import type { DuplicateAnalysis } from '@/lib/duplicate-analysis';
 
 // ---------- Types ----------
 
@@ -596,6 +597,314 @@ export interface AutoMergeResult {
   conflictsRemaining: number;
   errors: number;
   conflictingFields: Map<string, string[]>; // groupValue -> fields
+}
+
+// ---------- Resolucao SOFT (regras suaves) ----------
+
+function readField(c: DuplicateContact, key: string): unknown {
+  return (c as unknown as Record<string, unknown>)[key];
+}
+
+function pickLongest(group: DuplicateContact[], winner: DuplicateContact, key: string): string | null {
+  let best = String(readField(winner, key) ?? '');
+  for (const c of group) {
+    const v = String(readField(c, key) ?? '');
+    if (v && v.length > best.length) best = v;
+  }
+  return best || null;
+}
+
+function pickMostRecent(group: DuplicateContact[], winner: DuplicateContact, key: string): unknown {
+  let bestVal = readField(winner, key);
+  let bestTime = new Date(winner.updated_at ?? winner.created_at).getTime();
+  for (const c of group) {
+    if (c.id === winner.id) continue;
+    const v = readField(c, key);
+    if (v === null || v === undefined || v === '') continue;
+    const t = new Date(c.updated_at ?? c.created_at).getTime();
+    if (bestVal === null || bestVal === undefined || bestVal === '' || t > bestTime) {
+      bestVal = v;
+      bestTime = t;
+    }
+  }
+  return bestVal === '' ? null : bestVal;
+}
+
+function concatenateUnique(group: DuplicateContact[], key: string): string | null {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const c of group) {
+    const v = String(readField(c, key) ?? '').trim();
+    if (v && !seen.has(v)) {
+      seen.add(v);
+      parts.push(v);
+    }
+  }
+  return parts.length === 0 ? null : parts.join('\n---\n');
+}
+
+function orBoolean(group: DuplicateContact[], key: string): boolean {
+  return group.some((c) => Boolean(readField(c, key)));
+}
+
+function maxNumber(group: DuplicateContact[], key: string): number | null {
+  let max: number | null = null;
+  for (const c of group) {
+    const v = readField(c, key);
+    if (typeof v === 'number' && (max === null || v > max)) max = v;
+  }
+  return max;
+}
+
+function pickFirstNonEmpty(group: DuplicateContact[], key: string): unknown {
+  for (const c of group) {
+    const v = readField(c, key);
+    if (v !== null && v !== undefined && v !== '') return v;
+  }
+  return null;
+}
+
+/**
+ * Resolve um grupo com regras suaves: divergencias sao consolidadas com regras
+ * por tipo de campo. Pre-condicao: nao ha conflito hard (CPF / data_nascimento /
+ * genero). Devolve apenas os campos que mudaram em relacao ao winner.
+ */
+function resolveSoftConflicts(
+  group: DuplicateContact[],
+  winner: DuplicateContact
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  const wRec = winner as unknown as Record<string, unknown>;
+
+  // Texto: pegar mais longo
+  for (const k of ['nome', 'nome_whatsapp']) {
+    const v = pickLongest(group, winner, k);
+    if (v && v !== wRec[k]) merged[k] = v;
+  }
+
+  // Mais recente: email + redes sociais
+  for (const k of ['email', 'instagram', 'twitter', 'tiktok', 'youtube']) {
+    const v = pickMostRecent(group, winner, k);
+    if (v !== wRec[k] && v !== null && v !== undefined && v !== '') merged[k] = v;
+  }
+
+  // Endereco: unitario (nao Frankenstein). Se winner tem qualquer campo de
+  // endereco, mantem o dele. Senao, copia em bloco do primeiro contato com
+  // logradouro preenchido.
+  const addressFields = ['logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep'];
+  const winnerHasAddress = addressFields.some(
+    (f) => wRec[f] !== null && wRec[f] !== undefined && wRec[f] !== ''
+  );
+  if (!winnerHasAddress) {
+    const candidate = group
+      .filter((c) => c.id !== winner.id)
+      .find((c) => readField(c, 'logradouro') || readField(c, 'cep') || readField(c, 'bairro'));
+    if (candidate) {
+      const cRec = candidate as unknown as Record<string, unknown>;
+      for (const f of addressFields) {
+        if (cRec[f]) merged[f] = cRec[f];
+      }
+    }
+  }
+
+  // Concatenacao: observacoes + notas
+  for (const k of ['observacoes', 'notas_assessor']) {
+    const v = concatenateUnique(group, k);
+    if (v && v !== wRec[k]) merged[k] = v;
+  }
+
+  // Booleanos: OR (qualquer true vence)
+  for (const k of ['is_favorite', 'aceita_whatsapp', 'em_canal_whatsapp', 'declarou_voto', 'e_multiplicador']) {
+    if (group.some((c) => readField(c, k) !== undefined)) {
+      const v = orBoolean(group, k);
+      if (v !== Boolean(wRec[k])) merged[k] = v;
+    }
+  }
+
+  // Numero: MAX (ranking)
+  const ranking = maxNumber(group, 'ranking');
+  if (ranking !== null && ranking !== wRec.ranking) merged.ranking = ranking;
+
+  // Primeiro nao-vazio: campos onde nao faz sentido somar/concatenar
+  for (const k of ['origem', 'leader_id', 'genero', 'data_nascimento', 'cpf', 'profissao']) {
+    if (!wRec[k]) {
+      const v = pickFirstNonEmpty(group, k);
+      if (v) merged[k] = v;
+    }
+  }
+
+  // ultimo_contato: mais recente
+  let bestLast: string | null = winner.ultimo_contato ?? null;
+  for (const c of group) {
+    if (c.ultimo_contato && (!bestLast || c.ultimo_contato > bestLast)) bestLast = c.ultimo_contato;
+  }
+  if (bestLast && bestLast !== wRec.ultimo_contato) merged.ultimo_contato = bestLast;
+
+  return merged;
+}
+
+// ---------- useAutoResolveDuplicates (massa: auto + dismiss) ----------
+
+export interface AutoResolveResult {
+  mergedGroups: number;
+  mergedContacts: number;
+  dismissedGroups: number;
+  manualRemaining: number;
+  errors: number;
+  errorMessages: string[];
+}
+
+interface AutoResolveOptions {
+  onProgress?: (done: number, total: number, label: string) => void;
+}
+
+export function useAutoResolveDuplicates(opts: AutoResolveOptions = {}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (analysis: DuplicateAnalysis): Promise<AutoResolveResult> => {
+      const result: AutoResolveResult = {
+        mergedGroups: 0,
+        mergedContacts: 0,
+        dismissedGroups: 0,
+        manualRemaining: analysis.byCategory.MANUAL.groups,
+        errors: 0,
+        errorMessages: [],
+      };
+
+      const autoGroups = analysis.groups.filter(
+        (ag) => ag.category === 'AUTO_HARD' || ag.category === 'AUTO_SOFT'
+      );
+      const dismissGroups = analysis.groups.filter((ag) => ag.category === 'DISMISS_NAME');
+
+      const total = autoGroups.length + dismissGroups.length;
+      let done = 0;
+      const tick = (label: string) => {
+        done++;
+        opts.onProgress?.(done, total, label);
+      };
+
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id ?? null;
+
+      // 1. Auto-merge em lotes paralelos
+      const BATCH = 5;
+      for (let i = 0; i < autoGroups.length; i += BATCH) {
+        const slice = autoGroups.slice(i, i + BATCH);
+        await Promise.all(
+          slice.map(async (ag) => {
+            try {
+              const winner = pickWinner(ag.group.contacts);
+              const losers = ag.group.contacts.filter((c) => c.id !== winner.id);
+              const loserIds = losers.map((l) => l.id);
+
+              // AUTO_HARD: so preenche campos vazios. AUTO_SOFT: aplica regras.
+              const mergedFields =
+                ag.category === 'AUTO_HARD'
+                  ? computeMergedFields(ag.group.contacts, winner)
+                  : resolveSoftConflicts(ag.group.contacts, winner);
+
+              if (Object.keys(mergedFields).length > 0) {
+                const { error } = await supabase
+                  .from('contacts')
+                  .update({ ...mergedFields, updated_at: new Date().toISOString() })
+                  .eq('id', winner.id);
+                if (error) throw error;
+              }
+
+              // Uniao de tags
+              const winnerTagIds = new Set((winner.contact_tags ?? []).map((t) => t.tag_id));
+              const newTagIds = new Set<string>();
+              for (const loser of losers) {
+                for (const t of loser.contact_tags ?? []) {
+                  if (!winnerTagIds.has(t.tag_id)) newTagIds.add(t.tag_id);
+                }
+              }
+              if (newTagIds.size > 0) {
+                const tagRows = [...newTagIds].map((tag_id) => ({ contact_id: winner.id, tag_id }));
+                await supabase
+                  .from('contact_tags')
+                  .upsert(tagRows, { onConflict: 'contact_id,tag_id' });
+              }
+
+              if (loserIds.length > 0) {
+                // Transfere demandas
+                await supabase.from('demands').update({ contact_id: winner.id }).in('contact_id', loserIds);
+                // Limpa tags antigas dos losers
+                await supabase.from('contact_tags').delete().in('contact_id', loserIds);
+
+                // Log em contact_merges (um por loser)
+                const mergeRows = losers.map((l) => ({
+                  kept_contact_id: winner.id,
+                  deleted_contact_id: l.id,
+                  deleted_contact_snapshot: l as unknown,
+                  merged_fields: mergedFields,
+                  merged_by: userId,
+                }));
+                await supabase.from('contact_merges').insert(mergeRows);
+
+                // Soft-delete dos losers
+                await supabase.from('contacts').update({ merged_into: winner.id }).in('id', loserIds);
+              }
+
+              result.mergedGroups++;
+              result.mergedContacts += losers.length;
+            } catch (e: unknown) {
+              result.errors++;
+              const msg = e instanceof Error ? e.message : String(e);
+              result.errorMessages.push(`${ag.group.match_value}: ${msg}`);
+            }
+            tick(`Mesclando grupo ${ag.group.match_field}`);
+          })
+        );
+      }
+
+      // 2. Dismiss em massa em chunks
+      if (dismissGroups.length > 0) {
+        const CHUNK = 500;
+        for (let i = 0; i < dismissGroups.length; i += CHUNK) {
+          const slice = dismissGroups.slice(i, i + CHUNK);
+          const rows = slice.map((ag) => ({
+            match_field: ag.group.match_field,
+            match_value: ag.group.match_value,
+            reason: ag.reason,
+            dismissed_by: userId,
+          }));
+          const { error } = await supabase
+            .from('dismissed_duplicate_groups')
+            .upsert(rows, { onConflict: 'match_field,match_value', ignoreDuplicates: true });
+          if (error) {
+            result.errors++;
+            result.errorMessages.push(`dismiss chunk ${i}: ${error.message}`);
+          } else {
+            result.dismissedGroups += slice.length;
+          }
+          slice.forEach(() => tick('Ocultando falsos positivos'));
+        }
+      }
+
+      return result;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
+      const parts: string[] = [];
+      if (result.mergedContacts > 0) parts.push(`${result.mergedContacts} contatos mesclados`);
+      if (result.dismissedGroups > 0) parts.push(`${result.dismissedGroups} grupos ocultos`);
+      if (result.manualRemaining > 0) parts.push(`${result.manualRemaining} para revisar`);
+      if (result.errors > 0) parts.push(`${result.errors} erros`);
+      toast.success(`Resolucao automatica: ${parts.join(' · ')}`);
+      logActivity({
+        type: 'merge',
+        entity_type: 'contact',
+        description: `Auto-resolveu ${result.mergedGroups} grupos (${result.mergedContacts} contatos) e ocultou ${result.dismissedGroups} falsos positivos`,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro na resolucao automatica: ${error.message}`);
+    },
+  });
 }
 
 export function useAutoMergeDuplicates() {
