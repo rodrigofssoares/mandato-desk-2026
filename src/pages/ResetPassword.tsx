@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import {
   Card,
@@ -72,10 +72,10 @@ export default function ResetPassword() {
           <form onSubmit={form.handleSubmit(handleResetPassword)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">Nova senha</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 {...form.register('password')}
               />
               {form.formState.errors.password && (
@@ -87,10 +87,10 @@ export default function ResetPassword() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 {...form.register('confirmPassword')}
               />
               {form.formState.errors.confirmPassword && (

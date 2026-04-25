@@ -2,3 +2,13 @@ project_id = "nevgnvrwqaoztefnyqdj"
 
 [functions.api-proxy]
 verify_jwt = false
+
+# Funções administrativas: o guard `_shared/admin-guard.ts` valida o JWT
+# do chamador e checa role. verify_jwt=false para que o próprio guard
+# retorne erros JSON legíveis (com verify_jwt=true Supabase bloqueia com
+# body genérico antes da função rodar).
+[functions.create-user]
+verify_jwt = false
+
+[functions.reset-user-password]
+verify_jwt = false

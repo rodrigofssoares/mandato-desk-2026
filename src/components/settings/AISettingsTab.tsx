@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -260,9 +260,8 @@ export function AISettingsTab() {
             <Label htmlFor="ai-api-key" className="sr-only">
               Chave API
             </Label>
-            <Input
+            <PasswordInput
               id="ai-api-key"
-              type="password"
               autoComplete="off"
               placeholder={settings.api_key_set ? 'Cole uma nova chave para substituir' : 'sk-...'}
               value={apiKeyInput}

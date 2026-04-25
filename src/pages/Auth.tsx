@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import {
   Card,
@@ -33,7 +34,6 @@ export default function Auth() {
   const navigate = useNavigate();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -54,7 +54,16 @@ export default function Auth() {
       });
 
       if (error) {
-        toast.error('Credenciais inválidas. Verifique seu e-mail e senha.');
+        // Supabase às vezes retorna "Invalid login credentials" mesmo quando
+        // o problema é e-mail não confirmado. Se a mensagem/código indicar isso,
+        // mostramos a causa real.
+        const code = (error as { code?: string }).code ?? '';
+        const msg = error.message?.toLowerCase() ?? '';
+        if (code === 'email_not_confirmed' || msg.includes('email not confirmed')) {
+          toast.error('E-mail ainda não confirmado. Solicite ao administrador.');
+        } else {
+          toast.error('Credenciais inválidas. Verifique seu e-mail e senha.');
+        }
         return;
       }
 
@@ -196,21 +205,12 @@ export default function Auth() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  {...loginForm.register('password')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                {...loginForm.register('password')}
+              />
               {loginForm.formState.errors.password && (
                 <p className="text-sm text-destructive">
                   {loginForm.formState.errors.password.message}

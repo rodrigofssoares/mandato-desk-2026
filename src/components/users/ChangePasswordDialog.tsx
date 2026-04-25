@@ -10,12 +10,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 const ownPasswordSchema = z
   .object({
@@ -57,6 +58,7 @@ export function ChangePasswordDialog({
   isOwnPassword,
 }: ChangePasswordDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { refreshProfile } = useAuth();
 
   const ownForm = useForm<OwnPasswordForm>({
     resolver: zodResolver(ownPasswordSchema),
@@ -91,6 +93,16 @@ export function ChangePasswordDialog({
         return;
       }
 
+      // Se o perfil estava marcado como senha temporária, limpa a flag.
+      await supabase
+        .from('profiles')
+        .update({ senha_temporaria: false })
+        .eq('id', userId);
+
+      // Sincroniza profile no contexto (senão o ProtectedRoute ainda
+      // enxerga senha_temporaria=true e reboca pra /primeiro-acesso).
+      await refreshProfile();
+
       toast.success('Senha alterada com sucesso');
       ownForm.reset();
       onOpenChange(false);
@@ -101,12 +113,45 @@ export function ChangePasswordDialog({
     }
   };
 
-  const handleOtherPasswordSubmit = async (_data: OtherPasswordForm) => {
-    // TODO: Implementar alteração de senha de outro usuário via Edge Function
-    // (manage-user-password). Requer Supabase Admin API no server-side.
-    toast.error(
-      'Alteração de senha de outro usuário requer configuração server-side (Edge Function). Entre em contato com o desenvolvedor.'
-    );
+  const handleOtherPasswordSubmit = async (data: OtherPasswordForm) => {
+    setIsSubmitting(true);
+    try {
+      const { data: resp, error } = await supabase.functions.invoke(
+        'reset-user-password',
+        { body: { userId, password: data.newPassword } },
+      );
+
+      if (error) {
+        // Tenta extrair a mensagem de erro real do body retornado pela
+        // edge function (supabase-js embrulha o body em `error.context`
+        // quando o status é não-2xx).
+        let detail =
+          (resp as { error?: string } | null)?.error ??
+          (error as { message?: string }).message ??
+          'Erro ao redefinir senha';
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) detail = body.error;
+          } catch {
+            /* body não é JSON — mantém detail original */
+          }
+        }
+        toast.error(detail);
+        return;
+      }
+
+      toast.success(
+        'Senha redefinida. O usuário será obrigado a criar uma nova senha no próximo login.',
+      );
+      otherForm.reset();
+      onOpenChange(false);
+    } catch {
+      toast.error('Erro ao redefinir senha');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isOwnPassword) {
@@ -120,9 +165,9 @@ export function ChangePasswordDialog({
           <form onSubmit={ownForm.handleSubmit(handleOwnPasswordSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Senha Atual</Label>
-              <Input
+              <PasswordInput
                 id="currentPassword"
-                type="password"
+                autoComplete="current-password"
                 {...ownForm.register('currentPassword')}
               />
               {ownForm.formState.errors.currentPassword && (
@@ -134,10 +179,10 @@ export function ChangePasswordDialog({
 
             <div className="space-y-2">
               <Label htmlFor="newPassword">Nova Senha</Label>
-              <Input
+              <PasswordInput
                 id="newPassword"
-                type="password"
                 placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
                 {...ownForm.register('newPassword')}
               />
               {ownForm.formState.errors.newPassword && (
@@ -149,9 +194,9 @@ export function ChangePasswordDialog({
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
+                autoComplete="new-password"
                 {...ownForm.register('confirmPassword')}
               />
               {ownForm.formState.errors.confirmPassword && (
@@ -189,10 +234,10 @@ export function ChangePasswordDialog({
         <form onSubmit={otherForm.handleSubmit(handleOtherPasswordSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="otherNewPassword">Nova Senha</Label>
-            <Input
+            <PasswordInput
               id="otherNewPassword"
-              type="password"
               placeholder="Mínimo 6 caracteres"
+              autoComplete="new-password"
               {...otherForm.register('newPassword')}
             />
             {otherForm.formState.errors.newPassword && (
@@ -204,9 +249,9 @@ export function ChangePasswordDialog({
 
           <div className="space-y-2">
             <Label htmlFor="otherConfirmPassword">Confirmar Nova Senha</Label>
-            <Input
+            <PasswordInput
               id="otherConfirmPassword"
-              type="password"
+              autoComplete="new-password"
               {...otherForm.register('confirmPassword')}
             />
             {otherForm.formState.errors.confirmPassword && (

@@ -69,11 +69,11 @@ export function UserCard({ user }: UserCardProps) {
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <Avatar className="h-10 w-10 shrink-0 bg-muted flex items-center justify-center text-sm font-medium">
-              <span>{getInitials(user.nome || user.email)}</span>
+              <span>{getInitials(user.nome?.trim() || user.email)}</span>
             </Avatar>
 
             <div className="flex-1 min-w-0 space-y-1">
-              <p className="font-medium truncate">{user.nome || '(sem nome)'}</p>
+              <p className="font-medium truncate">{user.nome?.trim() || user.email}</p>
               <p className="text-sm text-muted-foreground truncate">{user.email}</p>
               {user.telefone && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -193,7 +193,7 @@ export function UserCard({ user }: UserCardProps) {
         open={passwordDialogOpen}
         onOpenChange={setPasswordDialogOpen}
         userId={user.id}
-        userName={user.nome || user.email}
+        userName={user.nome?.trim() || user.email}
         isOwnPassword={isOwnCard}
       />
 

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -97,8 +98,16 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" placeholder="Mínimo 6 caracteres" {...register('password')} />
+            <Label htmlFor="password">Senha temporária</Label>
+            <PasswordInput
+              id="password"
+              placeholder="Mínimo 6 caracteres"
+              autoComplete="new-password"
+              {...register('password')}
+            />
+            <p className="text-xs text-muted-foreground">
+              O usuário será obrigado a trocar esta senha no primeiro acesso.
+            </p>
             {errors.password && (
               <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
