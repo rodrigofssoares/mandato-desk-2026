@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>V4 — Sidebar Index + Painel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: 213 25% 97%;
+      --fg: 215 50% 8%;
+      --muted: 215 16% 46%;
+      --primary: 213 65% 30%;
+      --primary-fg: 0 0% 100%;
+      --border: 213 25% 88%;
+      --card: 0 0% 100%;
+      --indigo: 226 70% 55%;
+    }
+    body { background: hsl(var(--bg)); color: hsl(var(--fg)); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .backdrop { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .stage-dot { width: 10px; height: 10px; border-radius: 9999px; background: hsl(var(--indigo)); box-shadow: 0 0 0 4px hsl(var(--indigo) / 0.15); }
+    pre.tpl { font-family: ui-monospace, monospace; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.55; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: hsl(215 50% 12%); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; gap: 8px; align-items: center; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .nav-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background .15s; border: 1px solid transparent; }
+    .nav-item:hover { background: hsl(var(--bg)); }
+    .nav-item.active { background: hsl(var(--primary) / 0.08); border-color: hsl(var(--primary) / 0.25); }
+    .nav-item.active .nav-num { background: hsl(var(--primary)); color: white; }
+    .nav-num { width: 22px; height: 22px; border-radius: 9999px; background: hsl(var(--border)); color: hsl(var(--muted)); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .nav-item.active .nav-title { color: hsl(var(--primary)); font-weight: 600; }
+    .scrollarea { overflow-y: auto; }
+    .scrollarea::-webkit-scrollbar { width: 8px; } .scrollarea::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+    .fade-in { animation: fade .3s ease both; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="backdrop" class="backdrop fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-8">
+    <div id="dialog" class="card relative z-50 w-full max-w-4xl rounded-xl shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="dlg-title" style="height: min(85vh, 720px);">
+
+      <header class="px-6 py-4 border-b border-slate-200 flex items-start gap-3">
+        <span class="stage-dot mt-2"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs uppercase tracking-wider text-slate-500">Checklist da etapa</div>
+          <h2 id="dlg-title" class="text-lg font-semibold leading-tight">Primeiro Contato</h2>
+        </div>
+        <button onclick="closeDialog()" aria-label="Fechar" class="rounded-md p-1.5 text-slate-500 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </header>
+
+      <div class="flex-1 grid grid-cols-12 overflow-hidden">
+
+        <aside class="col-span-4 border-r border-slate-200 bg-slate-50/50 scrollarea p-3">
+          <div class="text-[11px] uppercase tracking-wider text-slate-500 px-1 pb-2">Tarefas</div>
+          <ul id="nav-tasks" class="space-y-1"></ul>
+          <div class="text-[11px] uppercase tracking-wider text-slate-500 px-1 pt-4 pb-2">Atalhos</div>
+          <ul class="space-y-1">
+            <li class="nav-item" onclick="setView('templates')">
+              <i data-lucide="message-square-quote" class="w-4 h-4 text-slate-500 mt-0.5"></i>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-700 nav-title">Mensagens prontas</div>
+                <div class="text-xs text-slate-500">2 templates · WhatsApp</div>
+              </div>
+            </li>
+          </ul>
+        </aside>
+
+        <main id="content" class="col-span-8 scrollarea p-6"></main>
+
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 text-xs text-slate-500 bg-slate-50/50 rounded-b-xl flex items-center justify-between">
+        <span><strong>3</strong> tarefas · <strong>2</strong> templates</span>
+        <span><kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px]">Esc</kbd> fecha · <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px]">↑/↓</kbd> navega</span>
+      </footer>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">Copiado!</span>
+  </div>
+
+  <script>
+    const stage = {
+      tasks: [
+        { titulo: 'Cumprimentar e identificar o contato',
+          desc: 'Abra o WhatsApp Web, busque o número do lead, envie a saudação inicial e descubra de qual evento ou indicação ele veio. Não avance enquanto não tiver essa informação.',
+          media: [{ type:'image', url:'https://picsum.photos/seed/wamandato/720/360', caption:'Tela de busca do WhatsApp Web' }] },
+        { titulo: 'Enviar vídeo de apresentação do mandato',
+          desc: 'Compartilhe o vídeo institucional padrão (até 30s). Aguarde a primeira reação antes de avançar.',
+          media: [{ type:'video', url:'https://www.w3schools.com/html/mov_bbb.mp4', caption:'Vídeo de apresentação' }] },
+        { titulo: 'Agendar follow-up no Mandato Desk',
+          desc: 'Mova o contato para a etapa "Aquecendo" e crie um lembrete de follow-up para 48h depois.',
+          media: [{ type:'link', url:'https://exemplo.com/manual-followup', label:'Manual interno: como agendar follow-up' }] }
+      ],
+      templates: [
+        { nome: 'Saudação de boas-vindas', texto: 'Olá *{{nome}}*! Aqui é a equipe do mandato.\nVi que você se inscreveu no nosso _evento_ — posso te enviar o material?' },
+        { nome: 'Lembrete de follow-up (48h)', texto: '~Oi de novo!~ Combinamos de retomar nossa conversa hoje.\n*Bora marcar?* Manda o melhor horário 🙂' }
+      ]
+    };
+
+    let view = { kind: 'task', idx: 0 };
+
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+
+    function renderNav() {
+      document.getElementById('nav-tasks').innerHTML = stage.tasks.map((t, i) => `
+        <li class="nav-item ${view.kind === 'task' && view.idx === i ? 'active' : ''}" onclick="setView('task', ${i})">
+          <span class="nav-num">${i + 1}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm nav-title text-slate-700 leading-snug">${t.titulo}</div>
+            ${t.media.length ? `<div class="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><i data-lucide="paperclip" class="w-3 h-3"></i>${t.media.length} anexo</div>` : ''}
+          </div>
+        </li>
+      `).join('');
+      document.querySelectorAll('aside .nav-item').forEach(n => {
+        const isTplShortcut = n.querySelector('[data-lucide="message-square-quote"]');
+        if (isTplShortcut) n.classList.toggle('active', view.kind === 'templates');
+      });
+    }
+
+    function renderContent() {
+      const el = document.getElementById('content');
+      el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in');
+      if (view.kind === 'task') {
+        const t = stage.tasks[view.idx];
+        el.innerHTML = `
+          <div class="text-xs uppercase tracking-wider text-slate-500 mb-1.5">Tarefa ${view.idx + 1} de ${stage.tasks.length}</div>
+          <h3 class="text-xl font-bold text-slate-900 leading-tight">${t.titulo}</h3>
+          <p class="text-slate-600 mt-3 leading-relaxed">${t.desc}</p>
+          ${t.media.length ? `<div class="mt-5 space-y-3">${t.media.map(renderMedia).join('')}</div>` : ''}
+          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <button onclick="navStep(-1)" class="text-sm text-slate-600 hover:text-slate-900 disabled:opacity-30 flex items-center gap-1" ${view.idx === 0 ? 'disabled' : ''}>
+              <i data-lucide="chevron-left" class="w-4 h-4"></i> Tarefa anterior
+            </button>
+            <button onclick="navStep(1)" class="text-sm text-slate-600 hover:text-slate-900 disabled:opacity-30 flex items-center gap-1" ${view.idx === stage.tasks.length - 1 ? 'disabled' : ''}>
+              Próxima tarefa <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        el.innerHTML = `
+          <div class="text-xs uppercase tracking-wider text-slate-500 mb-1.5">Mensagens prontas</div>
+          <h3 class="text-xl font-bold text-slate-900 leading-tight">Templates de WhatsApp</h3>
+          <p class="text-slate-600 mt-2 text-sm">Os asteriscos viram negrito apenas no WhatsApp; aqui ficam literais.</p>
+          <div class="mt-4 space-y-3">
+            ${stage.templates.map((t, idx) => `
+              <article class="rounded-lg border border-slate-200 bg-white">
+                <header class="flex items-center justify-between px-3 py-2 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
+                    <span class="text-sm font-medium text-slate-800">${t.nome}</span>
+                  </div>
+                  <button onclick="copyTpl(${idx})" aria-label="Copiar template ${t.nome}" class="btn-primary text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+                  </button>
+                </header>
+                <pre class="tpl px-3 py-2.5 text-slate-700">${escapeHtml(t.texto)}</pre>
+              </article>
+            `).join('')}
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function renderMedia(m) {
+      if (m.type === 'image') return `<figure class="rounded-lg overflow-hidden border border-slate-200"><img src="${m.url}" class="w-full h-auto block" />${m.caption?`<figcaption class="text-xs text-slate-500 px-3 py-1.5 bg-slate-50">${m.caption}</figcaption>`:''}</figure>`;
+      if (m.type === 'video') return `<figure class="rounded-lg overflow-hidden border border-slate-200"><video src="${m.url}" controls preload="metadata" class="w-full h-auto block bg-black"></video></figure>`;
+      if (m.type === 'link') return `<a href="${m.url}" target="_blank" class="flex items-center gap-2 text-sm rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-slate-100"><i data-lucide="link-2" class="w-4 h-4 text-slate-500"></i><span class="font-medium text-slate-700">${m.label}</span><span class="text-xs text-slate-400 truncate ml-auto">${m.url}</span><i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400"></i></a>`;
+      return '';
+    }
+
+    function setView(kind, idx) { view = { kind, idx: idx ?? 0 }; renderNav(); renderContent(); }
+    function navStep(d) {
+      if (view.kind !== 'task') return;
+      const next = view.idx + d;
+      if (next >= 0 && next < stage.tasks.length) setView('task', next);
+    }
+
+    async function copyTpl(idx) {
+      try { await navigator.clipboard.writeText(stage.templates[idx].texto); showToast('Template copiado — asteriscos preservados!'); }
+      catch { showToast('Falha ao copiar'); }
+    }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    function closeDialog() { showToast('Dialog fecharia aqui (Esc / clique fora / X)'); }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDialog();
+      else if (e.key === 'ArrowDown') { if (view.kind === 'task' && view.idx < stage.tasks.length - 1) setView('task', view.idx + 1); }
+      else if (e.key === 'ArrowUp') { if (view.kind === 'task' && view.idx > 0) setView('task', view.idx - 1); }
+    });
+    document.getElementById('backdrop').addEventListener('click', e => { if (e.target.id === 'backdrop') closeDialog(); });
+
+    renderNav();
+    renderContent();
+    lucide.createIcons();
+  </script>
+</body>
+</html>

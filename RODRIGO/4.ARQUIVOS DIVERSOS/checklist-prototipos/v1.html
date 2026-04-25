@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>V1 — Lista Vertical Sequencial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: 213 25% 97%;
+      --fg: 215 50% 8%;
+      --muted: 215 16% 46%;
+      --primary: 213 65% 30%;
+      --primary-fg: 0 0% 100%;
+      --border: 213 25% 88%;
+      --card: 0 0% 100%;
+      --indigo: 226 70% 55%;
+    }
+    body { background: hsl(var(--bg)); color: hsl(var(--fg)); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .backdrop { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .btn-ghost:hover { background: hsl(var(--bg)); }
+    .stage-dot { width: 10px; height: 10px; border-radius: 9999px; background: hsl(var(--indigo)); box-shadow: 0 0 0 4px hsl(var(--indigo) / 0.15); }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 9999px;
+      background: hsl(var(--primary)); color: hsl(var(--primary-fg));
+      font-weight: 600; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step { border-left: 2px dashed hsl(var(--border)); margin-left: 13px; padding-left: 28px; padding-bottom: 24px; }
+    .step:last-child { border-left-color: transparent; padding-bottom: 8px; }
+    .step-row { position: relative; }
+    .step-row .step-num { position: absolute; left: -42px; top: -2px; }
+    pre.tpl { font-family: ui-monospace, 'SFMono-Regular', monospace; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.55; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: hsl(215 50% 12%); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; gap: 8px; align-items: center; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .scrollarea { max-height: 70vh; overflow-y: auto; }
+    .scrollarea::-webkit-scrollbar { width: 8px; }
+    .scrollarea::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="backdrop" class="backdrop fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-8">
+    <div id="dialog" class="card relative z-50 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+
+      <header class="px-6 py-4 border-b border-slate-200 flex items-start gap-3">
+        <span class="stage-dot mt-2"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs uppercase tracking-wider text-slate-500">Checklist da etapa</div>
+          <h2 id="dlg-title" class="text-lg font-semibold leading-tight">Primeiro Contato</h2>
+          <p class="text-sm text-slate-500 mt-0.5">Siga este passo a passo para o atendimento desta etapa.</p>
+        </div>
+        <button onclick="closeDialog()" aria-label="Fechar" class="btn-ghost rounded-md p-1.5 text-slate-500 hover:text-slate-900">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </header>
+
+      <div class="scrollarea px-6 py-5">
+        <ol id="tasks" class="relative"></ol>
+
+        <div class="mt-2">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="message-square-quote" class="w-4 h-4 text-slate-500"></i>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-600">Mensagens prontas</h3>
+            <span class="text-xs text-slate-400">copie e cole no WhatsApp</span>
+          </div>
+          <div id="templates" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 bg-slate-50/50 rounded-b-xl">
+        <div id="counts"></div>
+        <div class="flex items-center gap-1.5"><kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px]">Esc</kbd> fecha</div>
+      </footer>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">Copiado!</span>
+  </div>
+
+  <script>
+    const stage = {
+      nome: 'Primeiro Contato',
+      cor: 'indigo',
+      tasks: [
+        {
+          titulo: 'Cumprimentar e identificar o contato',
+          desc: 'Abra o WhatsApp Web, busque o número do lead, envie a saudação inicial e descubra de qual evento ou indicação ele veio. Não avance enquanto não tiver essa informação.',
+          media: [
+            { type:'image', url:'https://picsum.photos/seed/wamandato/720/360', caption:'Tela de busca do WhatsApp Web' }
+          ]
+        },
+        {
+          titulo: 'Enviar vídeo de apresentação do mandato',
+          desc: 'Compartilhe o vídeo institucional padrão (até 30s). Aguarde a primeira reação do lead antes de seguir para a próxima etapa.',
+          media: [
+            { type:'video', url:'https://www.w3schools.com/html/mov_bbb.mp4', caption:'Vídeo de apresentação (preview)' }
+          ]
+        },
+        {
+          titulo: 'Agendar follow-up no Mandato Desk',
+          desc: 'Mova o contato para a etapa "Aquecendo" e crie um lembrete de follow-up para 48h depois.',
+          media: [
+            { type:'link', url:'https://exemplo.com/manual-followup', label:'Manual interno: como agendar follow-up' }
+          ]
+        }
+      ],
+      templates: [
+        { nome: 'Saudação de boas-vindas',
+          texto: 'Olá *{{nome}}*! Aqui é a equipe do mandato.\nVi que você se inscreveu no nosso _evento_ — posso te enviar o material de boas-vindas?'
+        },
+        { nome: 'Lembrete de follow-up (48h)',
+          texto: '~Oi de novo!~ Combinamos de retomar nossa conversa hoje.\n*Bora marcar?* Manda o melhor horário pra gente conversar 🙂'
+        }
+      ]
+    };
+
+    const mediaIcon = { image: 'image', video: 'play-circle', link: 'link-2' };
+
+    function renderTasks() {
+      const ol = document.getElementById('tasks');
+      ol.innerHTML = stage.tasks.map((t, i) => `
+        <li class="step step-row">
+          <div class="step-num">${i + 1}</div>
+          <div>
+            <h4 class="font-semibold text-slate-900">${t.titulo}</h4>
+            <p class="text-sm text-slate-600 mt-1 leading-relaxed">${t.desc}</p>
+            ${t.media && t.media.length ? `<div class="mt-3 space-y-2">${t.media.map(renderMedia).join('')}</div>` : ''}
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function renderMedia(m) {
+      if (m.type === 'image') {
+        return `<figure class="rounded-lg overflow-hidden border border-slate-200">
+          <img src="${m.url}" alt="${m.caption || ''}" class="w-full h-auto block" />
+          ${m.caption ? `<figcaption class="text-xs text-slate-500 px-3 py-1.5 bg-slate-50">${m.caption}</figcaption>` : ''}
+        </figure>`;
+      }
+      if (m.type === 'video') {
+        return `<figure class="rounded-lg overflow-hidden border border-slate-200">
+          <video src="${m.url}" controls preload="metadata" class="w-full h-auto block bg-black"></video>
+          ${m.caption ? `<figcaption class="text-xs text-slate-500 px-3 py-1.5 bg-slate-50">${m.caption}</figcaption>` : ''}
+        </figure>`;
+      }
+      if (m.type === 'link') {
+        return `<a href="${m.url}" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-slate-100 transition">
+          <i data-lucide="link-2" class="w-4 h-4 text-slate-500"></i>
+          <span class="font-medium text-slate-700">${m.label}</span>
+          <span class="text-xs text-slate-400 truncate ml-auto">${m.url}</span>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400"></i>
+        </a>`;
+      }
+      return '';
+    }
+
+    function renderTemplates() {
+      const wrap = document.getElementById('templates');
+      wrap.innerHTML = stage.templates.map((t, idx) => `
+        <article class="rounded-lg border border-slate-200 bg-white">
+          <header class="flex items-center justify-between px-3 py-2 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
+              <span class="text-sm font-medium text-slate-800">${t.nome}</span>
+            </div>
+            <button onclick="copyTpl(${idx})" aria-label="Copiar template ${t.nome}"
+              class="btn-primary text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </header>
+          <pre class="tpl px-3 py-2.5 text-slate-700">${escapeHtml(t.texto)}</pre>
+        </article>
+      `).join('');
+    }
+
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+    async function copyTpl(idx) {
+      const txt = stage.templates[idx].texto;
+      try { await navigator.clipboard.writeText(txt); showToast('Template copiado — asteriscos preservados!'); }
+      catch { showToast('Falha ao copiar', true); }
+    }
+
+    function showToast(msg, err) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function renderCounts() {
+      document.getElementById('counts').innerHTML =
+        `<strong>${stage.tasks.length}</strong> tarefas · <strong>${stage.templates.length}</strong> templates`;
+    }
+
+    function closeDialog() {
+      // Em uso real, fecha o Dialog. Aqui apenas damos feedback.
+      showToast('Dialog fecharia aqui (Esc / clique fora / X)');
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDialog(); });
+    document.getElementById('backdrop').addEventListener('click', e => {
+      if (e.target.id === 'backdrop') closeDialog();
+    });
+
+    renderTasks();
+    renderTemplates();
+    renderCounts();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
