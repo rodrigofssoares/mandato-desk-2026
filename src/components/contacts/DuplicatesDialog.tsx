@@ -21,11 +21,14 @@ import {
   useDeleteSingleDuplicate,
   useAutoMergeDuplicates,
   useAutoResolveDuplicates,
+  useMergeGroupWithWinner,
+  useDismissDuplicateGroups,
   type DuplicateContact,
   type DuplicateGroup,
 } from "@/hooks/useDuplicates";
 import { analyzeDuplicates } from "@/lib/duplicate-analysis";
 import { Progress } from "@/components/ui/progress";
+import { X, Crown } from "lucide-react";
 import { ContactCompareModal } from "./duplicates/ContactCompareModal";
 import { ContactMergeModal } from "./duplicates/ContactMergeModal";
 import { ContactViewDrawer } from "./duplicates/ContactViewDrawer";
@@ -166,6 +169,10 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
   const autoResolve = useAutoResolveDuplicates({
     onProgress: (done, total, label) => setProgress({ done, total, label }),
   });
+
+  // Acoes rapidas por grupo
+  const mergeGroup = useMergeGroupWithWinner();
+  const dismissGroups = useDismissDuplicateGroups();
 
   const safeGroups: DuplicateGroup[] = groups ?? [];
   const totalGroups = safeGroups.length;
@@ -489,12 +496,87 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                       <CollapsibleContent>
                         <div className="bg-muted/20">
                           {/* Group actions bar */}
-                          <div className="flex items-center gap-2 px-6 py-2 border-b border-border/50">
-                            <span className="text-xs text-muted-foreground flex-1">
+                          <div className="flex items-center gap-2 px-6 py-2 border-b border-border/50 flex-wrap">
+                            <span className="text-xs text-muted-foreground flex-1 min-w-[120px]">
                               {selectedCount === 0
                                 ? "Selecione os contatos que deseja excluir"
                                 : `${selectedCount} selecionado${selectedCount !== 1 ? "s" : ""}`}
                             </span>
+
+                            {/* Acoes rapidas: Manter A / Manter B (so para grupos de 2) */}
+                            {group.contacts.length === 2 && (
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 gap-1.5 text-xs"
+                                      disabled={mergeGroup.isPending}
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await mergeGroup.mutateAsync({ group, winnerId: group.contacts[0].id });
+                                        refetch();
+                                        onSuccess?.();
+                                      }}
+                                    >
+                                      <Crown className="h-3.5 w-3.5" />
+                                      Manter {getContactDisplayName(group.contacts[0]).split(' ')[0]}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Mantem o primeiro contato e absorve o segundo (regras suaves)
+                                  </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 gap-1.5 text-xs"
+                                      disabled={mergeGroup.isPending}
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await mergeGroup.mutateAsync({ group, winnerId: group.contacts[1].id });
+                                        refetch();
+                                        onSuccess?.();
+                                      }}
+                                    >
+                                      <Crown className="h-3.5 w-3.5" />
+                                      Manter {getContactDisplayName(group.contacts[1]).split(' ')[0]}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Mantem o segundo contato e absorve o primeiro (regras suaves)
+                                  </TooltipContent>
+                                </Tooltip>
+                              </>
+                            )}
+
+                            {/* Nao sao duplicatas: dispensa este grupo */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs"
+                                  disabled={dismissGroups.isPending}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    await dismissGroups.mutateAsync({ groups: [group] });
+                                    refetch();
+                                    onSuccess?.();
+                                  }}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  Nao sao duplicatas
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Marca este grupo como falso positivo e oculta para sempre
+                              </TooltipContent>
+                            </Tooltip>
 
                             {selectedCount >= 1 && (
                               <Button

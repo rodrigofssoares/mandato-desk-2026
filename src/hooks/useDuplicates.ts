@@ -743,6 +743,90 @@ function resolveSoftConflicts(
   return merged;
 }
 
+// ---------- useMergeGroupWithWinner (acao rapida por grupo) ----------
+
+interface MergeGroupParams {
+  group: DuplicateGroup;
+  winnerId: string;
+}
+
+/**
+ * Mescla um grupo unico com winner explicito (escolhido pelo usuario via
+ * botao "Manter X"). Aplica regras suaves (resolveSoftConflicts), une tags,
+ * transfere demandas, registra em contact_merges e marca losers como
+ * merged_into.
+ */
+export function useMergeGroupWithWinner() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ group, winnerId }: MergeGroupParams): Promise<number> => {
+      const winner = group.contacts.find((c) => c.id === winnerId);
+      if (!winner) throw new Error('Contato escolhido nao esta no grupo');
+      const losers = group.contacts.filter((c) => c.id !== winnerId);
+      const loserIds = losers.map((l) => l.id);
+
+      const mergedFields = resolveSoftConflicts(group.contacts, winner);
+
+      if (Object.keys(mergedFields).length > 0) {
+        const { error } = await supabase
+          .from('contacts')
+          .update({ ...mergedFields, updated_at: new Date().toISOString() })
+          .eq('id', winner.id);
+        if (error) throw error;
+      }
+
+      // Uniao de tags
+      const winnerTagIds = new Set((winner.contact_tags ?? []).map((t) => t.tag_id));
+      const newTagIds = new Set<string>();
+      for (const loser of losers) {
+        for (const t of loser.contact_tags ?? []) {
+          if (!winnerTagIds.has(t.tag_id)) newTagIds.add(t.tag_id);
+        }
+      }
+      if (newTagIds.size > 0) {
+        const tagRows = [...newTagIds].map((tag_id) => ({ contact_id: winner.id, tag_id }));
+        await supabase.from('contact_tags').upsert(tagRows, { onConflict: 'contact_id,tag_id' });
+      }
+
+      if (loserIds.length > 0) {
+        const { data: authData } = await supabase.auth.getUser();
+        const userId = authData.user?.id ?? null;
+
+        await supabase.from('demands').update({ contact_id: winner.id }).in('contact_id', loserIds);
+        await supabase.from('contact_tags').delete().in('contact_id', loserIds);
+
+        const mergeRows = losers.map((l) => ({
+          kept_contact_id: winner.id,
+          deleted_contact_id: l.id,
+          deleted_contact_snapshot: l as unknown,
+          merged_fields: mergedFields,
+          merged_by: userId,
+        }));
+        await supabase.from('contact_merges').insert(mergeRows);
+
+        await supabase.from('contacts').update({ merged_into: winner.id }).in('id', loserIds);
+      }
+
+      return losers.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
+      toast.success(`${count} contato${count !== 1 ? 's' : ''} absorvido${count !== 1 ? 's' : ''}`);
+      logActivity({
+        type: 'merge',
+        entity_type: 'contact',
+        description: 'Mesclou grupo de duplicados (acao rapida)',
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao mesclar grupo: ${error.message}`);
+    },
+  });
+}
+
 // ---------- useAutoResolveDuplicates (massa: auto + dismiss) ----------
 
 export interface AutoResolveResult {
