@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAQ-MAND-EM034 · Mockup 3 — Inline / Bulk bar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          display: ['Space Grotesk', 'sans-serif'],
+        },
+        colors: {
+          primary: { 50:'#EBF1F7',100:'#D0DDE9',200:'#A1BBCF',300:'#7299B5',400:'#3A6BA8',500:'#1A4480',600:'#153A6A',700:'#102E54',800:'#0C2240',900:'#08162C' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Space Grotesk', sans-serif; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+<!-- HEADER -->
+<header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-lg bg-primary-500 flex items-center justify-center text-white font-display font-bold">M</div>
+      <div>
+        <h1 class="font-display font-bold text-lg leading-tight">Mockup 3 · Inline na página de Contatos + Bulk bar</h1>
+        <p class="text-xs text-slate-500">RAQ-MAND-EM034 — Mov. em massa por etiqueta + Boards no card do lead</p>
+      </div>
+    </div>
+    <span class="text-xs text-slate-400">Ancora no fluxo que o operador já usa (filtro de etiquetas)</span>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-8 space-y-12">
+
+  <!-- =================================================================== -->
+  <!-- SEÇÃO A: Página de Contatos com filtro + bulk action bar             -->
+  <!-- =================================================================== -->
+  <section>
+    <div class="flex items-end justify-between mb-4">
+      <div>
+        <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">Parte A</p>
+        <h2 class="font-display font-bold text-2xl">Página de Contatos — filtro por etiqueta aciona a bulk bar</h2>
+        <p class="text-sm text-slate-500 mt-1">Não inventa UI nova: aproveita os filtros existentes em <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">src/pages/Contacts.tsx</code>.</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- Page header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-display font-bold text-xl">Contatos</h3>
+          <p class="text-xs text-slate-500">285 contatos · 47 filtrados</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-md">Exportar</button>
+          <button class="px-3 py-1.5 text-sm font-semibold text-white bg-primary-500 rounded-md">+ Novo contato</button>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-2 text-sm">
+          <svg class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+          <span class="font-semibold text-slate-700">Filtros:</span>
+        </div>
+        <!-- Etiqueta selecionada (highlight) -->
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style="background:#fce7f3;color:#9d174d">
+          <span class="h-2 w-2 rounded-full" style="background:#ec4899"></span>
+          Cabos eleitorais zona leste
+          <button class="ml-1 text-pink-700 hover:text-pink-900">×</button>
+        </div>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">
+          <span class="h-2 w-2 rounded-full" style="background:#f59e0b"></span>
+          Lideranças comunitárias
+          <button class="ml-1 text-amber-700 hover:text-amber-900">×</button>
+        </div>
+        <button class="text-xs text-primary-600 hover:text-primary-800 font-medium px-2 py-1 rounded-full border border-dashed border-primary-300">+ Etiqueta</button>
+        <div class="flex-1"></div>
+        <div class="relative">
+          <input type="text" placeholder="Buscar por nome, email, telefone…" class="pl-9 pr-3 py-1.5 text-sm border border-slate-300 rounded-md w-72" />
+          <svg class="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+      </div>
+
+      <!-- Seletor de tudo + contagem -->
+      <div class="px-6 py-2.5 border-b border-slate-200 bg-white flex items-center gap-3 text-sm">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500" />
+          <span class="font-medium">Selecionar todos (47)</span>
+        </label>
+        <span class="text-xs text-slate-500">· <b class="text-primary-700">12 selecionados</b></span>
+      </div>
+
+      <!-- Lista de contatos -->
+      <ul class="divide-y divide-slate-100">
+        <li class="px-6 py-3 flex items-center gap-4 bg-primary-50/40">
+          <input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500" />
+          <div class="h-9 w-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-white text-xs font-semibold flex items-center justify-center">MS</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-sm">Marcos Silva</p>
+            <p class="text-xs text-slate-500">(11) 98765-4321 · Zona Leste · SP</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fce7f3;color:#9d174d">Cabos</span>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">Lideranças</span>
+          </div>
+          <span class="text-xs text-slate-500">há 3 dias</span>
+        </li>
+        <li class="px-6 py-3 flex items-center gap-4 bg-primary-50/40">
+          <input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500" />
+          <div class="h-9 w-9 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 text-white text-xs font-semibold flex items-center justify-center">AP</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-sm">Ana Paula Costa</p>
+            <p class="text-xs text-slate-500">(11) 97654-3210 · Itaquera · SP</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">Lideranças</span>
+          </div>
+          <span class="text-xs text-slate-500">há 1 semana</span>
+        </li>
+        <li class="px-6 py-3 flex items-center gap-4">
+          <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500" />
+          <div class="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-xs font-semibold flex items-center justify-center">JO</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-sm">João Oliveira</p>
+            <p class="text-xs text-slate-500">(11) 96543-2109 · Penha · SP</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fce7f3;color:#9d174d">Cabos</span>
+          </div>
+          <span class="text-xs text-slate-500">há 2 semanas</span>
+        </li>
+        <li class="px-6 py-3 flex items-center gap-4 bg-primary-50/40">
+          <input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500" />
+          <div class="h-9 w-9 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 text-white text-xs font-semibold flex items-center justify-center">RS</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-sm">Renata Souza</p>
+            <p class="text-xs text-slate-500">(11) 95432-1098 · Tatuapé · SP</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fce7f3;color:#9d174d">Cabos</span>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">Lideranças</span>
+          </div>
+          <span class="text-xs text-slate-500">há 3 semanas</span>
+        </li>
+        <li class="px-6 py-3 text-center text-xs text-slate-500">+ 43 contatos…</li>
+      </ul>
+
+      <!-- BULK ACTION BAR FLUTUANTE (aparece quando há seleção) -->
+      <div class="sticky bottom-0 bg-primary-500 text-white px-6 py-3 flex items-center gap-4 shadow-2xl">
+        <div class="flex items-center gap-2">
+          <div class="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">12</div>
+          <span class="text-sm font-semibold">contatos selecionados</span>
+        </div>
+        <div class="flex-1"></div>
+        <button class="px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white flex items-center gap-1.5 rounded-md hover:bg-white/10">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          Marcar etiqueta
+        </button>
+
+        <!-- Botão principal: abre popover -->
+        <div class="relative">
+          <button class="px-4 py-2 text-sm font-bold bg-white text-primary-700 rounded-md flex items-center gap-2 shadow-lg">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+            Mover p/ board
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+
+          <!-- Popover ancorado (aberto) -->
+          <div class="absolute bottom-full right-0 mb-2 w-[380px] bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-900 overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-200">
+              <h4 class="font-display font-bold text-sm">Mover 12 contatos</h4>
+              <p class="text-xs text-slate-500 mt-0.5">Escolha board e etapa de destino</p>
+            </div>
+            <div class="p-4 space-y-3">
+              <div>
+                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Board</label>
+                <button class="mt-1.5 w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-md flex items-center justify-between">
+                  <span class="font-medium">Prospecção Eleitoral 2026</span>
+                  <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Etapa</label>
+                <div class="mt-1.5 grid grid-cols-2 gap-1.5">
+                  <button class="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 text-left flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-slate-400"></span> Novos
+                  </button>
+                  <button class="px-2.5 py-1.5 text-xs rounded-md border-2 border-primary-500 bg-primary-50 text-left flex items-center gap-1.5 font-semibold text-primary-900">
+                    <span class="h-2 w-2 rounded-full bg-amber-500"></span> Contato inicial
+                  </button>
+                  <button class="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 text-left flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-blue-500"></span> Qualificados
+                  </button>
+                  <button class="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 text-left flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-green-500"></span> Comprometidos
+                  </button>
+                </div>
+              </div>
+
+              <!-- Resumo + aviso -->
+              <div class="p-2.5 rounded-md bg-slate-50 border border-slate-200 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-600">3 já estão no board</span>
+                  <span class="text-slate-600">9 serão adicionados</span>
+                </div>
+                <p class="mt-1 text-slate-500">Os 3 existentes terão a etapa <b>atualizada</b>.</p>
+              </div>
+
+              <div class="flex gap-2 pt-1">
+                <button class="flex-1 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md">Cancelar</button>
+                <button class="flex-1 px-3 py-2 text-sm font-semibold text-white bg-primary-500 hover:bg-primary-600 rounded-md flex items-center justify-center gap-1.5">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5L20 7"/></svg>
+                  Mover 12
+                </button>
+              </div>
+            </div>
+            <!-- Flecha do popover -->
+            <div class="absolute -bottom-2 right-8 h-4 w-4 bg-white border-r border-b border-slate-200 rotate-45"></div>
+          </div>
+        </div>
+
+        <button class="p-1.5 hover:bg-white/10 rounded-md">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Toast de sucesso (estado pós-execução) -->
+    <div class="mt-4 flex items-start gap-3 p-3 rounded-lg bg-green-50 border border-green-200 max-w-md">
+      <svg class="h-5 w-5 text-green-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5L20 7"/></svg>
+      <div class="text-sm">
+        <p class="font-semibold text-green-900">12 contatos movidos</p>
+        <p class="text-xs text-green-700">9 adicionados · 3 tiveram etapa atualizada · 0 falharam</p>
+      </div>
+      <button class="ml-auto text-green-600 hover:text-green-800">×</button>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- SEÇÃO B: Participação em Boards — Timeline                           -->
+  <!-- =================================================================== -->
+  <section>
+    <div class="flex items-end justify-between mb-4">
+      <div>
+        <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">Parte B</p>
+        <h2 class="font-display font-bold text-2xl">Aba "Boards" — timeline vertical</h2>
+        <p class="text-sm text-slate-500 mt-1">Conta uma história: quando o lead entrou, para onde foi, onde está agora.</p>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/20 backdrop-blur-sm rounded-2xl p-8">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-4xl mx-auto overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center gap-4">
+          <div class="h-12 w-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-display font-bold text-lg">MS</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg">Marcos Silva</h3>
+            <p class="text-xs text-slate-500">(11) 98765-4321 · marcos.silva@email.com</p>
+          </div>
+          <button class="p-2 hover:bg-slate-100 rounded-lg"><svg class="h-5 w-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="px-6 pt-4 border-b border-slate-200">
+          <nav class="flex gap-1 -mb-px overflow-x-auto">
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Dados</button>
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Etiquetas</button>
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Campanha</button>
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Tarefas</button>
+            <button class="px-4 py-2.5 text-sm font-semibold text-primary-700 border-b-2 border-primary-500 whitespace-nowrap flex items-center gap-1.5">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+              Boards
+              <span class="ml-1 text-xs bg-primary-100 text-primary-700 px-1.5 rounded-full">3</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Timeline -->
+        <div class="p-6">
+          <div class="relative">
+            <!-- Linha vertical -->
+            <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+
+            <ul class="space-y-5">
+              <!-- Item 1 -->
+              <li class="relative pl-12">
+                <div class="absolute left-0 top-1 h-8 w-8 rounded-full flex items-center justify-center ring-4 ring-white" style="background:#fef3c7">
+                  <span class="h-3 w-3 rounded-full" style="background:#f59e0b"></span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300 hover:shadow-sm transition-all">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-sm">Prospecção Eleitoral 2026</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">
+                          Em contato inicial
+                        </span>
+                      </div>
+                      <p class="text-xs text-slate-500 mt-1">Entrou em <b class="text-slate-700">19 de abril de 2026</b> · há 3 dias</p>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                      <button class="p-1.5 hover:bg-slate-100 rounded-md" title="Mover"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13l-3-3M3 6l3 3M21 18H8l3-3M21 18l-3 3"/></svg></button>
+                      <button class="p-1.5 hover:bg-slate-100 rounded-md" title="Abrir"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M21 14v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg></button>
+                      <button class="p-1.5 hover:bg-red-50 rounded-md" title="Remover"><svg class="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+
+              <!-- Item 2 -->
+              <li class="relative pl-12">
+                <div class="absolute left-0 top-1 h-8 w-8 rounded-full flex items-center justify-center ring-4 ring-white" style="background:#dcfce7">
+                  <span class="h-3 w-3 rounded-full" style="background:#22c55e"></span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300 hover:shadow-sm transition-all">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-sm">Rede de Apoiadores</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dcfce7;color:#166534">
+                          Engajado
+                        </span>
+                      </div>
+                      <p class="text-xs text-slate-500 mt-1">Entrou em <b class="text-slate-700">10 de abril de 2026</b> · há 12 dias</p>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                      <button class="p-1.5 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13l-3-3M3 6l3 3M21 18H8l3-3M21 18l-3 3"/></svg></button>
+                      <button class="p-1.5 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M21 14v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg></button>
+                      <button class="p-1.5 hover:bg-red-50 rounded-md"><svg class="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+
+              <!-- Item 3 -->
+              <li class="relative pl-12">
+                <div class="absolute left-0 top-1 h-8 w-8 rounded-full flex items-center justify-center ring-4 ring-white" style="background:#dbeafe">
+                  <span class="h-3 w-3 rounded-full" style="background:#3b82f6"></span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300 hover:shadow-sm transition-all">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-sm">Demandas · Zona Leste</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dbeafe;color:#1e40af">
+                          Triagem
+                        </span>
+                      </div>
+                      <p class="text-xs text-slate-500 mt-1">Entrou em <b class="text-slate-700">22 de março de 2026</b> · há 1 mês</p>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                      <button class="p-1.5 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13l-3-3M3 6l3 3M21 18H8l3-3M21 18l-3 3"/></svg></button>
+                      <button class="p-1.5 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M21 14v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg></button>
+                      <button class="p-1.5 hover:bg-red-50 rounded-md"><svg class="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <button class="mt-5 w-full py-2.5 border border-dashed border-slate-300 rounded-lg text-sm text-slate-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50/30 transition-colors flex items-center justify-center gap-2">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Adicionar a outro board
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Nota de rodapé -->
+  <div class="p-4 bg-primary-50 border border-primary-100 rounded-lg text-sm text-primary-900">
+    <p class="font-semibold mb-1">💡 Por que esse approach?</p>
+    <p class="text-xs text-primary-800">Aproveita o <b>filtro de etiquetas já existente</b> — zero curva de aprendizado. A <b>bulk bar flutuante</b> só aparece quando há seleção (padrão já usado no CRM em Tarefas). O <b>popover ancorado</b> dá agilidade sem roubar tela. Timeline no card do lead é ótima pra campanhas longas — mostra a jornada, não só o "onde tá agora".</p>
+  </div>
+
+</main>
+
+</body>
+</html>

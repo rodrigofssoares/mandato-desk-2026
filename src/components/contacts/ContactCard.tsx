@@ -12,6 +12,7 @@ import { useToggleFavorite } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { getContactDisplayName } from '@/lib/contactDisplay';
+import { formatPhoneDisplay } from '@/lib/normalization';
 
 interface ContactCardProps {
   contact: Contact;
@@ -92,7 +93,7 @@ export function ContactCard({
             {contact.whatsapp && (
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                 <Phone className="h-3 w-3" />
-                {contact.whatsapp}
+                {formatPhoneDisplay(contact.whatsapp)}
               </p>
             )}
             {contact.email && (

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAQ-MAND-EM034 · Mockup 2 — Drawer lateral</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          display: ['Space Grotesk', 'sans-serif'],
+        },
+        colors: {
+          primary: { 50:'#EBF1F7',100:'#D0DDE9',200:'#A1BBCF',300:'#7299B5',400:'#3A6BA8',500:'#1A4480',600:'#153A6A',700:'#102E54',800:'#0C2240',900:'#08162C' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Space Grotesk', sans-serif; }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+<!-- HEADER -->
+<header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-lg bg-primary-500 flex items-center justify-center text-white font-display font-bold">M</div>
+      <div>
+        <h1 class="font-display font-bold text-lg leading-tight">Mockup 2 · Drawer lateral</h1>
+        <p class="text-xs text-slate-500">RAQ-MAND-EM034 — Mov. em massa por etiqueta + Boards no card do lead</p>
+      </div>
+    </div>
+    <span class="text-xs text-slate-400">Tudo visível de uma vez — mais rápido para uso recorrente</span>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-8 space-y-12">
+
+  <!-- =================================================================== -->
+  <!-- SEÇÃO A: Drawer lateral para movimentação em massa                   -->
+  <!-- =================================================================== -->
+  <section>
+    <div class="flex items-end justify-between mb-4">
+      <div>
+        <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">Parte A</p>
+        <h2 class="font-display font-bold text-2xl">Drawer lateral (direita)</h2>
+        <p class="text-sm text-slate-500 mt-1">Tudo em uma tela só. Ideal pra operador que já entende a feature.</p>
+      </div>
+    </div>
+
+    <!-- Simulação de página do Kanban por baixo + drawer aberto à direita -->
+    <div class="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 min-h-[720px]">
+
+      <!-- Kanban de fundo (desfocado) -->
+      <div class="absolute inset-0 p-6 blur-[2px] opacity-60">
+        <div class="bg-white rounded-lg border border-slate-200 p-4 mb-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <h3 class="font-display font-semibold text-base">Prospecção Eleitoral 2026</h3>
+            <span class="text-xs text-slate-500">75 contatos</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 text-xs font-semibold rounded-md bg-primary-500 text-white">+ Adicionar contato</button>
+            <button class="px-3 py-1.5 text-xs font-semibold rounded-md bg-primary-100 text-primary-700">Mover em massa</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="bg-slate-50 rounded-lg p-3 h-80"><div class="text-xs font-semibold mb-2">Novos leads · 12</div></div>
+          <div class="bg-slate-50 rounded-lg p-3 h-80"><div class="text-xs font-semibold mb-2">Em contato · 34</div></div>
+          <div class="bg-slate-50 rounded-lg p-3 h-80"><div class="text-xs font-semibold mb-2">Qualificados · 21</div></div>
+          <div class="bg-slate-50 rounded-lg p-3 h-80"><div class="text-xs font-semibold mb-2">Comprometidos · 8</div></div>
+        </div>
+      </div>
+
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-slate-900/25"></div>
+
+      <!-- Drawer -->
+      <aside class="absolute top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl flex flex-col">
+
+        <!-- Header -->
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 class="font-display font-bold text-lg">Mover contatos em massa</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Filtre por etiqueta e envie todos pra uma etapa</p>
+          </div>
+          <button class="p-2 hover:bg-slate-100 rounded-lg"><svg class="h-5 w-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <!-- Body scroll -->
+        <div class="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-5">
+
+          <!-- Etiquetas -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Etiquetas</label>
+            <p class="text-xs text-slate-500 mt-0.5 mb-2">Contatos vinculados a qualquer uma das etiquetas serão incluídos.</p>
+            <div class="flex flex-wrap gap-2 p-2.5 border border-slate-200 rounded-lg min-h-[46px]">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style="background:#fce7f3;color:#9d174d">
+                <span class="h-2 w-2 rounded-full" style="background:#ec4899"></span>
+                Cabos eleitorais zona leste
+                <button class="ml-1 text-pink-700 hover:text-pink-900">×</button>
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">
+                <span class="h-2 w-2 rounded-full" style="background:#f59e0b"></span>
+                Lideranças comunitárias
+                <button class="ml-1 text-amber-700 hover:text-amber-900">×</button>
+              </span>
+              <button class="text-xs text-primary-600 hover:text-primary-800 font-medium px-2 py-1 rounded-full border border-dashed border-primary-300 hover:border-primary-500">+ Adicionar</button>
+            </div>
+          </div>
+
+          <!-- Board -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Board de destino</label>
+            <div class="mt-2 relative">
+              <button class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg flex items-center justify-between hover:border-primary-300">
+                <div class="flex items-center gap-2">
+                  <div class="h-6 w-6 rounded bg-primary-100 flex items-center justify-center">
+                    <svg class="h-3 w-3 text-primary-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+                  </div>
+                  <span class="font-medium">Prospecção Eleitoral 2026</span>
+                </div>
+                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Etapa (chips) -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Etapa de destino</label>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+              <button class="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:border-primary-300 text-left">
+                <div class="flex items-center gap-2">
+                  <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+                  <span class="font-medium">Novos leads</span>
+                </div>
+              </button>
+              <button class="px-3 py-2 text-sm rounded-lg border-2 border-primary-500 bg-primary-50 text-left">
+                <div class="flex items-center gap-2">
+                  <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                  <span class="font-semibold text-primary-900">Em contato inicial</span>
+                  <svg class="h-4 w-4 ml-auto text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                </div>
+              </button>
+              <button class="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:border-primary-300 text-left">
+                <div class="flex items-center gap-2">
+                  <span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span>
+                  <span class="font-medium">Qualificados</span>
+                </div>
+              </button>
+              <button class="px-3 py-2 text-sm rounded-lg border border-slate-200 hover:border-primary-300 text-left">
+                <div class="flex items-center gap-2">
+                  <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+                  <span class="font-medium">Comprometidos</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview lista -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Preview — 47 contatos</label>
+              <button class="text-xs text-primary-600 hover:text-primary-800 font-medium">Ver todos</button>
+            </div>
+            <div class="rounded-lg border border-slate-200 overflow-hidden">
+              <ul class="divide-y divide-slate-100 max-h-[220px] overflow-y-auto scrollbar-thin">
+                <li class="px-3 py-2 flex items-center gap-3 hover:bg-slate-50">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-white text-xs font-semibold flex items-center justify-center">MS</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">Marcos Silva</p>
+                    <p class="text-xs text-slate-500">Cabos eleitorais zona leste</p>
+                  </div>
+                  <span class="text-xs text-amber-600 font-medium">já no board</span>
+                </li>
+                <li class="px-3 py-2 flex items-center gap-3 hover:bg-slate-50">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 text-white text-xs font-semibold flex items-center justify-center">AP</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">Ana Paula Costa</p>
+                    <p class="text-xs text-slate-500">Lideranças comunitárias</p>
+                  </div>
+                </li>
+                <li class="px-3 py-2 flex items-center gap-3 hover:bg-slate-50">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-xs font-semibold flex items-center justify-center">JO</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">João Oliveira</p>
+                    <p class="text-xs text-slate-500">Cabos eleitorais zona leste</p>
+                  </div>
+                </li>
+                <li class="px-3 py-2 flex items-center gap-3 hover:bg-slate-50">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 text-white text-xs font-semibold flex items-center justify-center">RS</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">Renata Souza</p>
+                    <p class="text-xs text-slate-500">Lideranças comunitárias · Cabos eleitorais zona leste</p>
+                  </div>
+                </li>
+                <li class="px-3 py-2 flex items-center gap-3 hover:bg-slate-50">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 text-white text-xs font-semibold flex items-center justify-center">CP</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">Carlos Pereira</p>
+                    <p class="text-xs text-slate-500">Cabos eleitorais zona leste</p>
+                  </div>
+                  <span class="text-xs text-amber-600 font-medium">já no board</span>
+                </li>
+                <li class="px-3 py-2 text-center text-xs text-slate-500">+ 42 outros contatos…</li>
+              </ul>
+            </div>
+            <div class="mt-2 flex items-center gap-3 text-xs">
+              <span class="inline-flex items-center gap-1 text-green-700"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> 42 novos</span>
+              <span class="inline-flex items-center gap-1 text-amber-700"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg> 5 terão etapa atualizada</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer sticky -->
+        <div class="px-5 py-4 border-t border-slate-200 bg-white">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-slate-500">Pronto para executar</span>
+            <span class="text-sm font-bold text-primary-700">47 contatos → Em contato inicial</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="flex-1 text-sm font-medium text-slate-600 hover:bg-slate-100 px-4 py-2.5 rounded-lg">Cancelar</button>
+            <button class="flex-[2] text-sm font-semibold text-white bg-primary-500 hover:bg-primary-600 px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5L20 7"/></svg>
+              Mover 47 contatos
+            </button>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- SEÇÃO B: Participação em Boards — Cards coloridos                    -->
+  <!-- =================================================================== -->
+  <section>
+    <div class="flex items-end justify-between mb-4">
+      <div>
+        <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">Parte B</p>
+        <h2 class="font-display font-bold text-2xl">Aba "Boards" — cards coloridos por etapa</h2>
+        <p class="text-sm text-slate-500 mt-1">Mais visual: cada board vira um card com a cor da etapa atual + barra de progresso do pipeline.</p>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/20 backdrop-blur-sm rounded-2xl p-8">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-4xl mx-auto overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center gap-4">
+          <div class="h-12 w-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-display font-bold text-lg">MS</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg">Marcos Silva</h3>
+            <p class="text-xs text-slate-500">(11) 98765-4321 · marcos.silva@email.com</p>
+          </div>
+          <button class="p-2 hover:bg-slate-100 rounded-lg"><svg class="h-5 w-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="px-6 pt-4 border-b border-slate-200">
+          <nav class="flex gap-1 -mb-px overflow-x-auto">
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Dados</button>
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Etiquetas</button>
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Campanha</button>
+            <button class="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-900 whitespace-nowrap">Tarefas</button>
+            <button class="px-4 py-2.5 text-sm font-semibold text-primary-700 border-b-2 border-primary-500 whitespace-nowrap flex items-center gap-1.5">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+              Boards
+              <span class="ml-1 text-xs bg-primary-100 text-primary-700 px-1.5 rounded-full">3</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Cards -->
+        <div class="p-6 space-y-3">
+          <!-- Board 1 -->
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            <div class="h-1.5 w-full" style="background:linear-gradient(90deg, #f59e0b 0%, #f59e0b 50%, #e5e7eb 50%)"></div>
+            <div class="px-4 py-3 flex items-center gap-4">
+              <div class="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
+                <svg class="h-5 w-5 text-primary-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold text-sm">Prospecção Eleitoral 2026</p>
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef3c7;color:#92400e">
+                    <span class="h-1.5 w-1.5 rounded-full" style="background:#f59e0b"></span>
+                    Em contato inicial
+                  </span>
+                </div>
+                <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                  <span>Entrou em <b class="text-slate-700">19/abr/2026</b></span>
+                  <span>·</span>
+                  <span>Etapa 2 de 4</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="p-2 hover:bg-slate-100 rounded-md" title="Mover etapa">
+                  <svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13l-3-3M3 6l3 3M21 18H8l3-3M21 18l-3 3"/></svg>
+                </button>
+                <button class="p-2 hover:bg-slate-100 rounded-md" title="Abrir board">
+                  <svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M21 14v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg>
+                </button>
+                <button class="p-2 hover:bg-red-50 rounded-md" title="Remover">
+                  <svg class="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Board 2 -->
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            <div class="h-1.5 w-full" style="background:linear-gradient(90deg, #22c55e 0%, #22c55e 75%, #e5e7eb 75%)"></div>
+            <div class="px-4 py-3 flex items-center gap-4">
+              <div class="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
+                <svg class="h-5 w-5 text-primary-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold text-sm">Rede de Apoiadores</p>
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dcfce7;color:#166534">
+                    <span class="h-1.5 w-1.5 rounded-full" style="background:#22c55e"></span>
+                    Engajado
+                  </span>
+                </div>
+                <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                  <span>Entrou em <b class="text-slate-700">10/abr/2026</b></span>
+                  <span>·</span>
+                  <span>Etapa 3 de 4</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="p-2 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13l-3-3M3 6l3 3M21 18H8l3-3M21 18l-3 3"/></svg></button>
+                <button class="p-2 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M21 14v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg></button>
+                <button class="p-2 hover:bg-red-50 rounded-md"><svg class="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Board 3 -->
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            <div class="h-1.5 w-full" style="background:linear-gradient(90deg, #3b82f6 0%, #3b82f6 25%, #e5e7eb 25%)"></div>
+            <div class="px-4 py-3 flex items-center gap-4">
+              <div class="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
+                <svg class="h-5 w-5 text-primary-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold text-sm">Demandas · Zona Leste</p>
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dbeafe;color:#1e40af">
+                    <span class="h-1.5 w-1.5 rounded-full" style="background:#3b82f6"></span>
+                    Triagem
+                  </span>
+                </div>
+                <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                  <span>Entrou em <b class="text-slate-700">22/mar/2026</b></span>
+                  <span>·</span>
+                  <span>Etapa 1 de 4</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="p-2 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13l-3-3M3 6l3 3M21 18H8l3-3M21 18l-3 3"/></svg></button>
+                <button class="p-2 hover:bg-slate-100 rounded-md"><svg class="h-4 w-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M21 14v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg></button>
+                <button class="p-2 hover:bg-red-50 rounded-md"><svg class="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <button class="w-full py-3 border border-dashed border-slate-300 rounded-xl text-sm text-slate-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50/30 transition-colors flex items-center justify-center gap-2">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Adicionar a outro board
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Nota de rodapé -->
+  <div class="p-4 bg-primary-50 border border-primary-100 rounded-lg text-sm text-primary-900">
+    <p class="font-semibold mb-1">💡 Por que esse approach?</p>
+    <p class="text-xs text-primary-800">O <b>drawer</b> mantém o Kanban visível por baixo — o operador vê o contexto enquanto configura. <b>Preview inline</b> com contador "42 novos / 5 atualizados" mata a dúvida de duplicidade. Cards com <b>barra de progresso</b> do pipeline no contato dão a sensação de "onde o lead está na jornada".</p>
+  </div>
+
+</main>
+
+</body>
+</html>

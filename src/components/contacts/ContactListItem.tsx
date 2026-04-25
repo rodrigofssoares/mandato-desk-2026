@@ -8,6 +8,7 @@ import { useToggleFavorite } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { getContactDisplayName } from '@/lib/contactDisplay';
+import { formatPhoneDisplay } from '@/lib/normalization';
 import { format } from 'date-fns';
 
 interface ContactListItemProps {
@@ -90,13 +91,13 @@ export function ContactListItem({
         </div>
         {/* Mobile-only inline info */}
         <div className="md:hidden text-xs text-muted-foreground truncate mt-0.5">
-          {contact.whatsapp || contact.email || '—'}
+          {contact.whatsapp ? formatPhoneDisplay(contact.whatsapp) : (contact.email || '—')}
         </div>
       </div>
 
       {/* WhatsApp (md+) */}
       <span className="text-sm text-muted-foreground w-36 truncate hidden md:block">
-        {contact.whatsapp || '—'}
+        {contact.whatsapp ? formatPhoneDisplay(contact.whatsapp) : '—'}
       </span>
 
       {/* Email */}

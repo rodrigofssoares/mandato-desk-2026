@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { formatPhoneDisplay } from "@/lib/normalization";
 
 // ---------- Props ----------
 
@@ -206,8 +206,14 @@ export function ContactMergeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0"
+        // Não fechar acidentalmente em alt+tab/clique fora — só X explícito.
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <GitMerge className="h-5 w-5" />
             Mesclar Contatos
@@ -222,7 +228,7 @@ export function ContactMergeModal({
             Nenhum contato selecionado para mesclar.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto px-6 pb-2 space-y-4 min-h-0">
             {/* Warning alert */}
             <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
@@ -254,7 +260,7 @@ export function ContactMergeModal({
                 </div>
                 <p className="font-semibold text-sm leading-snug">{contactA.nome}</p>
                 <p className="text-xs text-muted-foreground">
-                  {contactA.whatsapp || contactA.email || "(sem contato)"}
+                  {contactA.whatsapp ? formatPhoneDisplay(contactA.whatsapp) : (contactA.email || "(sem contato)")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Criado em {formatDate(contactA.created_at)}
@@ -292,7 +298,7 @@ export function ContactMergeModal({
                 </div>
                 <p className="font-semibold text-sm leading-snug">{contactB.nome}</p>
                 <p className="text-xs text-muted-foreground">
-                  {contactB.whatsapp || contactB.email || "(sem contato)"}
+                  {contactB.whatsapp ? formatPhoneDisplay(contactB.whatsapp) : (contactB.email || "(sem contato)")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Criado em {formatDate(contactB.created_at)}
@@ -304,8 +310,9 @@ export function ContactMergeModal({
               Clique no card ou use o botao de trocar para escolher qual manter
             </p>
 
-            {/* Field selection table */}
-            <ScrollArea className="max-h-[300px] rounded-md border">
+            {/* Field selection table — sem ScrollArea aninhada, deixa o
+                scroll do dialog (overflow-y-auto no wrapper) cuidar de tudo. */}
+            <div className="rounded-md border">
               <div className="p-1">
                 {/* Table header */}
                 <div className="grid grid-cols-[180px_1fr_1fr] gap-2 px-3 py-2 bg-muted/50 rounded text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky top-0 z-10">
@@ -412,7 +419,7 @@ export function ContactMergeModal({
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Tags section */}
             {unifiedTags.length > 0 && (
@@ -467,7 +474,7 @@ export function ContactMergeModal({
           </div>
         )}
 
-        <DialogFooter className="mt-2">
+        <DialogFooter className="px-6 pb-6 pt-4 border-t shrink-0">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

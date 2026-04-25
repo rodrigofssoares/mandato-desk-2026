@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { formatPhoneDisplay } from "@/lib/normalization";
 import { MERGEABLE_FIELDS, type MergeableFieldKey } from "./types";
 
 interface ContactCompareModalProps {
@@ -74,7 +75,7 @@ export function ContactCompareModal({
                 </Badge>
                 <p className="font-semibold text-base">{contactA!.nome}</p>
                 <p className="text-sm text-muted-foreground">
-                  {contactA!.whatsapp ?? "(sem WhatsApp)"}
+                  {contactA!.whatsapp ? formatPhoneDisplay(contactA!.whatsapp) : "(sem WhatsApp)"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Criado em: {formatDate(contactA!.created_at)}
@@ -88,7 +89,7 @@ export function ContactCompareModal({
                 </Badge>
                 <p className="font-semibold text-base">{contactB!.nome}</p>
                 <p className="text-sm text-muted-foreground">
-                  {contactB!.whatsapp ?? "(sem WhatsApp)"}
+                  {contactB!.whatsapp ? formatPhoneDisplay(contactB!.whatsapp) : "(sem WhatsApp)"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Criado em: {formatDate(contactB!.created_at)}

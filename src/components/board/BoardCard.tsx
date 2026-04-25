@@ -14,6 +14,7 @@ import { useTarefasPendentesCount } from '@/hooks/useTarefas';
 import type { BoardItemWithContact } from '@/hooks/useBoardItems';
 import { cn } from '@/lib/utils';
 import { getContactDisplayName } from '@/lib/contactDisplay';
+import { formatPhoneDisplay } from '@/lib/normalization';
 
 interface BoardCardProps {
   item: BoardItemWithContact;
@@ -106,7 +107,7 @@ export function BoardCard({
           {phone && (
             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 min-w-0">
               <Phone className="h-3 w-3 shrink-0" />
-              <span className="truncate min-w-0 flex-1">{phone}</span>
+              <span className="truncate min-w-0 flex-1">{formatPhoneDisplay(phone)}</span>
             </div>
           )}
         </div>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { getContactDisplayName } from "@/lib/contactDisplay";
+import { formatPhoneDisplay } from "@/lib/normalization";
 
 interface ContactViewDrawerProps {
   open: boolean;
@@ -112,7 +113,7 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
                       contact.whatsapp ? (
                         <span className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {contact.whatsapp}
+                          {formatPhoneDisplay(contact.whatsapp)}
                         </span>
                       ) : (
                         <EmptyValue />
@@ -132,7 +133,7 @@ export function ContactViewDrawer({ open, onOpenChange, contact }: ContactViewDr
                       )
                     }
                   />
-                  <FieldRow label="Telefone" value={val(contact.telefone)} />
+                  <FieldRow label="Telefone" value={contact.telefone ? formatPhoneDisplay(contact.telefone) : <EmptyValue />} />
                   <FieldRow label="Gênero" value={val(contact.genero)} />
                   <FieldRow label="Origem" value={val(contact.origem)} />
                   <FieldRow

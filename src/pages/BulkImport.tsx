@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Upload, FileSpreadsheet, CheckCircle, XCircle, ClipboardCopy, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { normalizePhone, normalizeName } from '@/lib/normalization';
+import { normalizePhone, normalizeName, phoneComparisonKey } from '@/lib/normalization';
 import * as XLSX from 'xlsx';
 
 type ImportMode = 'add' | 'delete' | 'edit' | 'tag';
@@ -35,7 +35,7 @@ interface ParsedContact {
   nome: string;
   whatsapp?: string;
   email?: string;
-  status?: 'pending' | 'success' | 'error' | 'not_found';
+  status?: 'pending' | 'success' | 'error' | 'not_found' | 'duplicate';
   error?: string;
 }
 
@@ -112,18 +112,58 @@ export default function BulkImport() {
     setIsProcessing(true);
     let success = 0;
     let failed = 0;
+    let duplicates = 0;
     const updated = [...parsed];
 
+    // Pré-carrega contatos existentes para match por chave normalizada.
+    // Um contato pode aparecer em até 2 chaves (telefone e whatsapp).
+    const { data: existing, error: preloadError } = await supabase
+      .from('contacts')
+      .select('id, telefone, whatsapp');
+    if (preloadError) {
+      toast.error(`Erro ao carregar contatos existentes: ${preloadError.message}`);
+      setIsProcessing(false);
+      return;
+    }
+    const existingByKey = new Map<string, { id: string }>();
+    for (const row of existing ?? []) {
+      const tk = phoneComparisonKey(row.telefone);
+      const wk = phoneComparisonKey(row.whatsapp);
+      if (tk && !existingByKey.has(tk)) existingByKey.set(tk, { id: row.id });
+      if (wk && !existingByKey.has(wk)) existingByKey.set(wk, { id: row.id });
+    }
+
     if (mode === 'add') {
+      // Set de chaves já inseridas neste batch (evita duplicata dentro da própria planilha)
+      const batchKeys = new Set<string>();
+
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         try {
+          const key = phoneComparisonKey(c.whatsapp);
+
+          if (key && (existingByKey.has(key) || batchKeys.has(key))) {
+            updated[i] = { ...c, status: 'duplicate', error: 'Telefone já cadastrado' };
+            duplicates++;
+            setParsed([...updated]);
+            continue;
+          }
+
           const insertData: Record<string, unknown> = { nome: c.nome };
           if (c.whatsapp) insertData.whatsapp = c.whatsapp;
           if (c.email) insertData.email = c.email;
 
-          const { error } = await supabase.from('contacts').insert(insertData);
+          const { data: inserted, error } = await supabase
+            .from('contacts')
+            .insert(insertData)
+            .select('id')
+            .single();
           if (error) throw error;
+
+          if (key) {
+            batchKeys.add(key);
+            if (inserted?.id) existingByKey.set(key, { id: inserted.id });
+          }
 
           updated[i] = { ...c, status: 'success' };
           success++;
@@ -137,32 +177,26 @@ export default function BulkImport() {
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         try {
-          let matchField: string;
-          let matchValue: string;
+          // Lookup por chave normalizada (whatsapp/telefone em qualquer formato),
+          // com fallback p/ email e nome quando telefone não foi informado.
+          const key = phoneComparisonKey(c.whatsapp);
+          let foundId: string | null = null;
 
-          if (c.whatsapp) {
-            matchField = 'whatsapp';
-            matchValue = c.whatsapp;
+          if (key) {
+            foundId = existingByKey.get(key)?.id ?? null;
           } else if (c.email) {
-            matchField = 'email';
-            matchValue = c.email;
+            const { data } = await supabase.from('contacts').select('id').eq('email', c.email).maybeSingle();
+            foundId = data?.id ?? null;
           } else {
-            matchField = 'nome';
-            matchValue = c.nome;
+            const { data } = await supabase.from('contacts').select('id').eq('nome', c.nome).maybeSingle();
+            foundId = data?.id ?? null;
           }
 
-          // Check if exists first
-          const { data: found } = await supabase
-            .from('contacts')
-            .select('id')
-            .eq(matchField, matchValue)
-            .maybeSingle();
-
-          if (!found) {
+          if (!foundId) {
             updated[i] = { ...c, status: 'not_found', error: 'Contato não encontrado' };
             failed++;
           } else {
-            const { error } = await supabase.from('contacts').delete().eq('id', found.id);
+            const { error } = await supabase.from('contacts').delete().eq('id', foundId);
             if (error) throw error;
             updated[i] = { ...c, status: 'success' };
             success++;
@@ -179,19 +213,16 @@ export default function BulkImport() {
         try {
           if (!c.whatsapp) throw new Error('WhatsApp necessário para editar');
 
-          const { data: found } = await supabase
-            .from('contacts')
-            .select('id')
-            .eq('whatsapp', c.whatsapp)
-            .maybeSingle();
+          const key = phoneComparisonKey(c.whatsapp);
+          const foundId = key ? existingByKey.get(key)?.id ?? null : null;
 
-          if (!found) {
+          if (!foundId) {
             updated[i] = { ...c, status: 'not_found', error: 'Contato não encontrado' };
             failed++;
           } else {
             const updateData: Record<string, unknown> = { nome: c.nome };
             if (c.email) updateData.email = c.email;
-            const { error } = await supabase.from('contacts').update(updateData).eq('id', found.id);
+            const { error } = await supabase.from('contacts').update(updateData).eq('id', foundId);
             if (error) throw error;
             updated[i] = { ...c, status: 'success' };
             success++;
@@ -232,19 +263,17 @@ export default function BulkImport() {
           }
 
           if (!c.whatsapp) throw new Error('WhatsApp do contato necessário');
-          const { data: contact } = await supabase
-            .from('contacts')
-            .select('id')
-            .eq('whatsapp', c.whatsapp)
-            .maybeSingle();
 
-          if (!contact) {
+          const key = phoneComparisonKey(c.whatsapp);
+          const foundId = key ? existingByKey.get(key)?.id ?? null : null;
+
+          if (!foundId) {
             updated[i] = { ...c, status: 'not_found', error: 'Contato não encontrado' };
             failed++;
           } else {
             await supabase
               .from('contact_tags')
-              .upsert({ contact_id: contact.id, tag_id: tag!.id }, { onConflict: 'contact_id,tag_id' });
+              .upsert({ contact_id: foundId, tag_id: tag!.id }, { onConflict: 'contact_id,tag_id' });
             updated[i] = { ...c, status: 'success' };
             success++;
           }
@@ -256,13 +285,15 @@ export default function BulkImport() {
       }
     }
 
-    setResults({ success, failed });
+    setResults({ success, failed: failed + duplicates });
     setIsProcessing(false);
-    toast.success(`Importação concluída: ${success} sucesso, ${failed} falhas`);
+    const dupMsg = duplicates > 0 ? `, ${duplicates} duplicados ignorados` : '';
+    toast.success(`Importação concluída: ${success} sucesso, ${failed} falhas${dupMsg}`);
   };
 
   const errorItems = parsed.filter((c) => c.status === 'error');
   const notFoundItems = parsed.filter((c) => c.status === 'not_found');
+  const duplicateItems = parsed.filter((c) => c.status === 'duplicate');
 
   const copyErrors = () => {
     const items = [...errorItems, ...notFoundItems];
@@ -412,6 +443,11 @@ export default function BulkImport() {
                                     Não encontrado
                                   </Badge>
                                 )}
+                                {c.status === 'duplicate' && (
+                                  <Badge variant="outline" className="text-orange-700 border-orange-400" title={c.error}>
+                                    Duplicado
+                                  </Badge>
+                                )}
                                 {c.status === 'pending' && (
                                   <Badge variant="secondary">Pendente</Badge>
                                 )}
@@ -458,6 +494,30 @@ export default function BulkImport() {
                           <Table>
                             <TableBody>
                               {notFoundItems.map((c, i) => (
+                                <TableRow key={i}>
+                                  <TableCell className="text-sm">{c.nome}</TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">{c.whatsapp ?? '-'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Duplicate section */}
+                    {results && duplicateItems.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-orange-700">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            {duplicateItems.length} duplicados ignorados (já existiam no sistema)
+                          </span>
+                        </div>
+                        <div className="max-h-32 overflow-y-auto border border-orange-200 rounded-lg">
+                          <Table>
+                            <TableBody>
+                              {duplicateItems.map((c, i) => (
                                 <TableRow key={i}>
                                   <TableCell className="text-sm">{c.nome}</TableCell>
                                   <TableCell className="text-sm text-muted-foreground">{c.whatsapp ?? '-'}</TableCell>

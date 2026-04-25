@@ -55,7 +55,7 @@ export { normalizeName as formatName } from './normalization';
 
 export const importContactSchema = z.object({
   nome_completo: z.string().min(1, 'Nome é obrigatório').max(255),
-  whatsapp: z.string().min(1, 'WhatsApp é obrigatório').max(20),
+  whatsapp: z.string().max(20).optional().or(z.literal('')),
   whatsapp_habilitado: z.boolean().optional(),
   nome_whatsapp: z.string().max(255).optional(),
   email: z.string().email('E-mail inválido').max(255).optional().or(z.literal('')),

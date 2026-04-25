@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAQ-MAND-EM034 · Iteração 2 — ajustes interativos</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','sans-serif'], display: ['Space Grotesk','sans-serif'] },
+        colors: {
+          primary: { 50:'#EBF1F7',100:'#D0DDE9',200:'#A1BBCF',300:'#7299B5',400:'#3A6BA8',500:'#1A4480',600:'#153A6A',700:'#102E54',800:'#0C2240',900:'#08162C' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Space Grotesk', sans-serif; }
+  /* Checkbox visual simples */
+  .cb { width:16px;height:16px;border:1.5px solid #9ca3af;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;background:white;transition:all .15s; }
+  .cb.checked { background:#1A4480; border-color:#1A4480; }
+  .cb svg { color:white;display:none }
+  .cb.checked svg { display:block }
+  .card-selected { box-shadow: 0 0 0 2px #1A4480; background:#EBF1F740; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+<header class="bg-white border-b px-6 py-4 sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto flex items-center gap-3">
+    <div class="h-9 w-9 rounded-lg bg-primary-500 flex items-center justify-center text-white font-display font-bold">M</div>
+    <div>
+      <h1 class="font-display font-bold text-lg leading-tight">RAQ-MAND-EM034 · Iteração 2 — ajustes interativos</h1>
+      <p class="text-xs text-slate-500">Clique nos controles para alternar entre os estados.</p>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
+
+<!-- =========================================================== -->
+<!-- AJUSTE 1 — Contatos                                          -->
+<!-- =========================================================== -->
+<section>
+  <div class="mb-4">
+    <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">Ajuste 1</p>
+    <h2 class="font-display font-bold text-2xl">Contatos — checkbox só com filtro ativo</h2>
+    <p class="text-sm text-slate-500 mt-1">Sem filtro, a lista fica limpa. Aplique qualquer filtro e os checkboxes surgem.</p>
+  </div>
+
+  <!-- App-like container -->
+  <div class="bg-white border rounded-2xl overflow-hidden shadow-sm">
+    <!-- Header da página -->
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <h3 class="font-display font-bold text-xl">Contatos</h3>
+        <span class="text-xs bg-slate-100 rounded-full px-2 py-0.5 font-semibold" id="c1-count">285</span>
+      </div>
+      <button class="px-3 py-1.5 text-sm font-semibold text-white bg-primary-500 rounded-md">+ Novo Contato</button>
+    </div>
+
+    <!-- Barra de filtros interativa -->
+    <div class="px-6 py-3 bg-slate-50 border-b flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2 text-sm">
+        <svg class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        <span class="font-semibold text-slate-700">Filtros:</span>
+      </div>
+      <button id="c1-btn-tag"
+        onclick="toggleFilterTag('cabos')"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border border-dashed border-primary-300 text-primary-600 hover:bg-primary-50">
+        + Etiqueta: Cabos eleitorais
+      </button>
+      <button id="c1-btn-fav"
+        onclick="toggleFilterFav()"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border border-dashed border-primary-300 text-primary-600 hover:bg-primary-50">
+        + Favoritos
+      </button>
+      <div class="flex-1"></div>
+      <input type="text" placeholder="Buscar..." oninput="onSearch(this.value)" class="px-3 py-1.5 text-sm border rounded-md w-56" />
+    </div>
+
+    <!-- Barra "Selecionar todos" — visível só com filtro -->
+    <div id="c1-select-all" class="hidden px-6 py-2 border-b text-sm flex items-center gap-3">
+      <label class="flex items-center gap-2 cursor-pointer" onclick="togglePageSelect()">
+        <span class="cb" id="c1-all-cb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span>
+        <span class="font-medium">Selecionar todos (<span id="c1-visible-count">4</span>)</span>
+      </label>
+      <span id="c1-selected-label" class="text-primary-700 font-semibold hidden">· <span id="c1-selected-count">0</span> selecionado(s)</span>
+    </div>
+
+    <!-- Lista -->
+    <ul id="c1-list" class="divide-y">
+      <!-- Linhas injetadas via JS -->
+    </ul>
+  </div>
+
+  <!-- Bulk bar flutuante -->
+  <div id="c1-bulkbar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-primary-500 text-white rounded-full shadow-2xl flex items-center gap-2 pl-4 pr-2 py-2">
+    <span class="h-6 min-w-6 px-1.5 rounded-full bg-white/20 text-xs font-bold flex items-center justify-center" id="c1-bulk-count">0</span>
+    <span class="text-sm font-medium">contato(s) selecionado(s)</span>
+    <button class="ml-2 gap-1.5 rounded-full h-8 bg-white text-primary-700 px-3 py-1 text-xs font-bold flex items-center gap-1.5">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+      Mover p/ board
+    </button>
+    <button class="h-8 w-8 rounded-full hover:bg-white/10 flex items-center justify-center" onclick="clearSelection()">×</button>
+  </div>
+
+  <div class="mt-4 text-xs text-slate-500 bg-primary-50 p-3 rounded-lg border border-primary-100">
+    <b class="text-primary-700">Como testar:</b> a lista inicial está <b>sem filtro</b> → zero checkboxes, zero bulk bar. Clique em "+ Etiqueta" ou "+ Favoritos" (ou digite algo na busca) → os checkboxes aparecem, a barra "Selecionar todos" surge. Marque 2-3 contatos para ver a bulk bar flutuante no rodapé. Remova todos os filtros → tudo some e a seleção é limpa.
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<!-- AJUSTE 2 — Kanban com modo seleção                           -->
+<!-- =========================================================== -->
+<section>
+  <div class="mb-4">
+    <p class="text-xs font-bold text-primary-500 uppercase tracking-wider">Ajuste 2</p>
+    <h2 class="font-display font-bold text-2xl">Kanban — selecionar vários cards e mover juntos</h2>
+    <p class="text-sm text-slate-500 mt-1">Novo botão "Selecionar contatos" ativa modo onde o click marca cards. Abre o mesmo drawer, com os contatos pré-carregados.</p>
+  </div>
+
+  <div class="bg-white border rounded-2xl overflow-hidden shadow-sm">
+    <!-- Header do Board -->
+    <div class="px-6 py-4 border-b">
+      <div class="flex items-center gap-2 mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+        <h3 class="font-display font-bold text-xl">Funis</h3>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 border rounded-md text-sm">
+          <span class="h-2 w-2 rounded-full bg-primary-500"></span>
+          <span class="font-medium">Prospecção Eleitoral 2026</span>
+          <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <button class="px-3 py-1.5 text-sm rounded-md border hover:bg-slate-50 flex items-center gap-2">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          Editar estágios
+        </button>
+        <button class="px-3 py-1.5 text-sm rounded-md border hover:bg-slate-50 flex items-center gap-2">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+          Mover em massa
+        </button>
+
+        <!-- Novo botão "Selecionar contatos" -->
+        <button id="k-select-btn" onclick="toggleSelectionMode()"
+          class="px-3 py-1.5 text-sm rounded-md border-2 border-primary-500 text-primary-700 bg-primary-50 hover:bg-primary-100 flex items-center gap-2 font-semibold">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span id="k-select-btn-label">Selecionar contatos</span>
+        </button>
+
+        <!-- Botão que aparece quando há seleção -->
+        <button id="k-move-btn" onclick="openKanbanDrawer()"
+          class="hidden px-3 py-1.5 text-sm rounded-md bg-primary-500 text-white hover:bg-primary-600 flex items-center gap-2 font-semibold shadow-lg shadow-primary-500/30">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5L20 7"/></svg>
+          Mover <span id="k-move-count">0</span> selecionados
+        </button>
+      </div>
+    </div>
+
+    <!-- Colunas do kanban -->
+    <div class="p-4 flex gap-3 overflow-x-auto">
+      <!-- Coluna 1 -->
+      <div class="flex-shrink-0 w-64 rounded-lg border bg-slate-50 flex flex-col">
+        <div class="p-3 border-b border-border/50 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+          <h4 class="font-semibold text-xs uppercase tracking-wide">Novos leads</h4>
+          <span class="ml-auto text-xs bg-white rounded-full px-2">3</span>
+        </div>
+        <div class="p-2 space-y-2 min-h-[200px] kanban-col" data-stage="novos">
+          <div class="kcard" data-id="k1" data-nome="Marcos Silva">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Marcos Silva</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 98765-4321</p>
+          </div>
+          <div class="kcard" data-id="k2" data-nome="Renata Souza">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Renata Souza</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 95432-1098</p>
+          </div>
+          <div class="kcard" data-id="k3" data-nome="Lucas Martins">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Lucas Martins</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 94321-0987</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna 2 -->
+      <div class="flex-shrink-0 w-64 rounded-lg border bg-amber-50/50 flex flex-col">
+        <div class="p-3 border-b border-border/50 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+          <h4 class="font-semibold text-xs uppercase tracking-wide text-amber-900">Em contato</h4>
+          <span class="ml-auto text-xs bg-white rounded-full px-2">3</span>
+        </div>
+        <div class="p-2 space-y-2 min-h-[200px] kanban-col" data-stage="contato">
+          <div class="kcard" data-id="k4" data-nome="Ana Paula Costa">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Ana Paula Costa</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 97654-3210</p>
+          </div>
+          <div class="kcard" data-id="k5" data-nome="João Oliveira">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">João Oliveira</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 96543-2109</p>
+          </div>
+          <div class="kcard" data-id="k6" data-nome="Carlos Pereira">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Carlos Pereira</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 93210-9876</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna 3 -->
+      <div class="flex-shrink-0 w-64 rounded-lg border bg-blue-50/50 flex flex-col">
+        <div class="p-3 border-b border-border/50 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+          <h4 class="font-semibold text-xs uppercase tracking-wide text-blue-900">Qualificados</h4>
+          <span class="ml-auto text-xs bg-white rounded-full px-2">2</span>
+        </div>
+        <div class="p-2 space-y-2 min-h-[200px] kanban-col" data-stage="qualif">
+          <div class="kcard" data-id="k7" data-nome="Patrícia Lima">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Patrícia Lima</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 92109-8765</p>
+          </div>
+          <div class="kcard" data-id="k8" data-nome="Roberto Nunes">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Roberto Nunes</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 91098-7654</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna 4 -->
+      <div class="flex-shrink-0 w-64 rounded-lg border bg-green-50/50 flex flex-col">
+        <div class="p-3 border-b border-border/50 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+          <h4 class="font-semibold text-xs uppercase tracking-wide text-green-900">Comprometidos</h4>
+          <span class="ml-auto text-xs bg-white rounded-full px-2">1</span>
+        </div>
+        <div class="p-2 space-y-2 min-h-[200px] kanban-col" data-stage="comp">
+          <div class="kcard" data-id="k9" data-nome="Julia Ferreira">
+            <div class="kcb-wrap"><span class="cb kcb"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span></div>
+            <p class="text-sm font-medium">Julia Ferreira</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">(11) 90987-6543</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge indicador de modo -->
+    <div id="k-mode-hint" class="hidden px-6 py-2 border-t bg-primary-50 text-xs text-primary-700 flex items-center gap-2">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <b>Modo seleção ativo</b> — click marca/desmarca; drag-and-drop fica desligado enquanto estiver selecionando.
+    </div>
+  </div>
+
+  <!-- Drawer simulado (lateral direita) -->
+  <div id="k-drawer-backdrop" class="hidden fixed inset-0 bg-slate-900/30 z-30" onclick="closeKanbanDrawer()"></div>
+  <aside id="k-drawer" class="hidden fixed top-0 right-0 bottom-0 w-[440px] bg-white shadow-2xl z-40 flex flex-col">
+    <div class="px-5 py-4 border-b">
+      <h3 class="font-display font-bold text-lg">Mover contatos em massa</h3>
+      <p class="text-xs text-slate-500 mt-0.5">Selecione a etapa de destino para os <span id="k-drawer-count">0</span> contato(s) selecionado(s).</p>
+    </div>
+    <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+      <div>
+        <label class="text-[11px] font-bold text-slate-600 uppercase">Contatos selecionados</label>
+        <div class="mt-1.5 flex items-center gap-2 p-2.5 border rounded-lg bg-slate-50">
+          <div class="h-8 w-8 rounded-full bg-primary-500/10 text-primary-500 flex items-center justify-center shrink-0">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+          </div>
+          <p class="text-sm font-semibold" id="k-drawer-names">—</p>
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-slate-600 uppercase">Board de destino</label>
+        <div class="mt-1.5 w-full px-3 py-2 text-sm bg-slate-50 border rounded-lg flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-primary-500"></span>
+            <span class="font-medium">Prospecção Eleitoral 2026</span>
+          </div>
+          <span class="text-[10px] uppercase bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded">fixo</span>
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-slate-600 uppercase">Etapa de destino</label>
+        <div class="mt-1.5 grid grid-cols-2 gap-2">
+          <button class="px-3 py-2 text-sm rounded-md border hover:border-primary-400 text-left flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-slate-400"></span>Novos leads</button>
+          <button class="px-3 py-2 text-sm rounded-md border hover:border-primary-400 text-left flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-amber-500"></span>Em contato</button>
+          <button class="px-3 py-2 text-sm rounded-md border-2 border-primary-500 bg-primary-50 text-left flex items-center gap-2 font-semibold"><span class="h-2 w-2 rounded-full bg-blue-500"></span>Qualificados</button>
+          <button class="px-3 py-2 text-sm rounded-md border hover:border-primary-400 text-left flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-green-500"></span>Comprometidos</button>
+        </div>
+      </div>
+      <div class="p-2.5 rounded-md bg-amber-50 border border-amber-200 flex gap-2 text-xs">
+        <svg class="h-4 w-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p class="text-amber-700"><span id="k-drawer-count2">0</span> já estão neste board — a etapa deles será <b>atualizada</b>. Nenhum será duplicado.</p>
+      </div>
+    </div>
+    <div class="px-5 py-4 border-t flex gap-2">
+      <button class="flex-1 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md py-2.5" onclick="closeKanbanDrawer()">Cancelar</button>
+      <button class="flex-[2] text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-md py-2.5 flex items-center justify-center gap-2" onclick="confirmMove()">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5L20 7"/></svg>
+        Mover <span id="k-drawer-count3">0</span> contato(s)
+      </button>
+    </div>
+  </aside>
+
+  <div class="mt-4 text-xs text-slate-500 bg-primary-50 p-3 rounded-lg border border-primary-100">
+    <b class="text-primary-700">Como testar:</b> clique em <b>"Selecionar contatos"</b> — os cards ganham checkbox e drag é desligado. Clique em 3-4 cards diferentes. O botão <b>"Mover N selecionados"</b> aparece em destaque. Clique nele para abrir o drawer simulado (board já vem travado, você só escolhe a etapa). Depois clique em "Mover" para ver a mensagem.
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<!-- Botão de reset                                               -->
+<!-- =========================================================== -->
+<div class="text-center">
+  <button onclick="location.reload()" class="px-4 py-2 text-sm border rounded-md hover:bg-slate-50">↻ Resetar todos os estados</button>
+</div>
+
+</main>
+
+<script>
+// ====================================================
+// AJUSTE 1 — Contatos
+// ====================================================
+const contatos = [
+  { id:'c1', nome:'Marcos Silva',   whats:'(11) 98765-4321', tags:['cabos','lideres'], fav:true },
+  { id:'c2', nome:'Ana Paula Costa', whats:'(11) 97654-3210', tags:['lideres'], fav:false },
+  { id:'c3', nome:'João Oliveira',   whats:'(11) 96543-2109', tags:['cabos'], fav:true },
+  { id:'c4', nome:'Renata Souza',    whats:'(11) 95432-1098', tags:['cabos','lideres'], fav:false },
+  { id:'c5', nome:'Carlos Pereira',  whats:'(11) 93210-9876', tags:['cabos'], fav:false },
+  { id:'c6', nome:'Patrícia Lima',   whats:'(11) 92109-8765', tags:[], fav:true },
+];
+
+let filterTag = null; // 'cabos' quando selecionado
+let filterFav = false;
+let search = '';
+let selectedContacts = new Set();
+
+function hasFilter() { return !!filterTag || filterFav || search.trim().length > 0; }
+
+function visibleContacts() {
+  return contatos.filter(c => {
+    if (filterTag && !c.tags.includes(filterTag)) return false;
+    if (filterFav && !c.fav) return false;
+    if (search.trim() && !c.nome.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+}
+
+function onSearch(v) { search = v; renderContatos(); }
+
+function toggleFilterTag(tag) {
+  filterTag = filterTag === tag ? null : tag;
+  renderContatos();
+}
+function toggleFilterFav() { filterFav = !filterFav; renderContatos(); }
+
+function toggleContactSelect(id) {
+  if (selectedContacts.has(id)) selectedContacts.delete(id);
+  else selectedContacts.add(id);
+  renderContatos();
+}
+function togglePageSelect() {
+  const vis = visibleContacts();
+  const allSelected = vis.every(c => selectedContacts.has(c.id));
+  if (allSelected) vis.forEach(c => selectedContacts.delete(c.id));
+  else vis.forEach(c => selectedContacts.add(c.id));
+  renderContatos();
+}
+function clearSelection() { selectedContacts.clear(); renderContatos(); }
+
+function renderContatos() {
+  // Limpa seleção se filtros caírem
+  if (!hasFilter()) selectedContacts.clear();
+
+  const vis = visibleContacts();
+  const list = document.getElementById('c1-list');
+  list.innerHTML = '';
+  vis.forEach(c => {
+    const selected = selectedContacts.has(c.id);
+    const tr = document.createElement('li');
+    tr.className = `px-6 py-3 flex items-center gap-4 transition-colors ${selected ? 'bg-primary-50/60' : 'hover:bg-slate-50'}`;
+    const showCheckbox = hasFilter();
+    tr.innerHTML = `
+      ${showCheckbox ? `
+        <label class="cursor-pointer flex items-center shrink-0" onclick="toggleContactSelect('${c.id}'); event.stopPropagation();">
+          <span class="cb ${selected ? 'checked' : ''}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg></span>
+        </label>` : ''}
+      <div class="h-9 w-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-white text-[11px] font-semibold flex items-center justify-center shrink-0">${c.nome.split(' ').slice(0,2).map(p=>p[0]).join('')}</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium">${c.nome}</p>
+        <p class="text-xs text-slate-500">${c.whats}</p>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        ${c.tags.includes('cabos') ? '<span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:#fce7f3;color:#9d174d">Cabos</span>' : ''}
+        ${c.tags.includes('lideres') ? '<span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:#fef3c7;color:#92400e">Líderes</span>' : ''}
+        ${c.fav ? '<svg class="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' : ''}
+      </div>
+    `;
+    list.appendChild(tr);
+  });
+
+  // Barra "Selecionar todos" + chips dos filtros ativos
+  const selAll = document.getElementById('c1-select-all');
+  if (hasFilter()) {
+    selAll.classList.remove('hidden');
+    selAll.classList.add('flex');
+    document.getElementById('c1-visible-count').textContent = vis.length;
+    const allSelected = vis.length > 0 && vis.every(c => selectedContacts.has(c.id));
+    document.getElementById('c1-all-cb').classList.toggle('checked', allSelected);
+    const selLabel = document.getElementById('c1-selected-label');
+    if (selectedContacts.size > 0) {
+      selLabel.classList.remove('hidden');
+      document.getElementById('c1-selected-count').textContent = selectedContacts.size;
+    } else {
+      selLabel.classList.add('hidden');
+    }
+  } else {
+    selAll.classList.add('hidden');
+    selAll.classList.remove('flex');
+  }
+
+  // Bulk bar
+  const bulk = document.getElementById('c1-bulkbar');
+  if (selectedContacts.size > 0) {
+    bulk.classList.remove('hidden');
+    document.getElementById('c1-bulk-count').textContent = selectedContacts.size;
+  } else {
+    bulk.classList.add('hidden');
+  }
+
+  // Botões de filtro — estilo ativo/inativo
+  const btnTag = document.getElementById('c1-btn-tag');
+  btnTag.className = filterTag === 'cabos'
+    ? 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border-2'
+    : 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border border-dashed border-primary-300 text-primary-600 hover:bg-primary-50';
+  if (filterTag === 'cabos') btnTag.style.cssText = 'background:#fce7f3;color:#9d174d;border-color:#ec489970';
+  else btnTag.style.cssText = '';
+  btnTag.textContent = filterTag === 'cabos' ? '× Etiqueta: Cabos eleitorais' : '+ Etiqueta: Cabos eleitorais';
+
+  const btnFav = document.getElementById('c1-btn-fav');
+  btnFav.className = filterFav
+    ? 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border-2 bg-amber-50 text-amber-900'
+    : 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border border-dashed border-primary-300 text-primary-600 hover:bg-primary-50';
+  if (filterFav) btnFav.style.cssText = 'border-color:#fbbf24';
+  else btnFav.style.cssText = '';
+  btnFav.textContent = filterFav ? '× Favoritos' : '+ Favoritos';
+
+  document.getElementById('c1-count').textContent = vis.length;
+}
+renderContatos();
+
+// ====================================================
+// AJUSTE 2 — Kanban
+// ====================================================
+let kSelectionMode = false;
+let kSelected = new Map(); // id -> nome
+
+function renderCards() {
+  document.querySelectorAll('.kcard').forEach(card => {
+    const id = card.dataset.id;
+    const nome = card.dataset.nome;
+    const isSelected = kSelected.has(id);
+
+    // Reset classes base
+    card.className = 'kcard relative bg-white border rounded-md p-2.5 transition-all select-none ';
+
+    if (kSelectionMode) {
+      card.className += ' cursor-pointer hover:border-primary-400';
+      if (isSelected) card.className += ' card-selected';
+    } else {
+      card.className += ' cursor-grab hover:shadow-md';
+    }
+
+    // Checkbox visibility
+    const cbWrap = card.querySelector('.kcb-wrap');
+    if (cbWrap) {
+      cbWrap.style.display = kSelectionMode ? 'flex' : 'none';
+      cbWrap.className = 'kcb-wrap absolute top-1.5 left-1.5 items-center';
+      const cb = card.querySelector('.kcb');
+      cb.classList.toggle('checked', isSelected);
+    }
+
+    // Click handler
+    card.onclick = (e) => {
+      if (!kSelectionMode) return; // modo normal — abre detail (placeholder)
+      e.stopPropagation();
+      if (kSelected.has(id)) kSelected.delete(id);
+      else kSelected.set(id, nome);
+      renderCards();
+      updateKanbanHeader();
+    };
+
+    // Adiciona padding-left extra quando em selection mode
+    if (kSelectionMode) card.style.paddingLeft = '32px';
+    else card.style.paddingLeft = '10px';
+  });
+}
+
+function updateKanbanHeader() {
+  const btn = document.getElementById('k-select-btn');
+  const btnLbl = document.getElementById('k-select-btn-label');
+  const move = document.getElementById('k-move-btn');
+  const moveCount = document.getElementById('k-move-count');
+  const hint = document.getElementById('k-mode-hint');
+
+  if (kSelectionMode) {
+    btn.className = 'px-3 py-1.5 text-sm rounded-md border-2 border-red-300 text-red-700 bg-red-50 hover:bg-red-100 flex items-center gap-2 font-semibold';
+    btn.querySelector('svg').innerHTML = '<path d="M18 6 6 18M6 6l12 12"/>';
+    btnLbl.textContent = 'Cancelar seleção';
+    hint.classList.remove('hidden');
+    hint.classList.add('flex');
+    if (kSelected.size > 0) {
+      move.classList.remove('hidden');
+      move.classList.add('flex');
+      moveCount.textContent = kSelected.size;
+    } else {
+      move.classList.add('hidden');
+      move.classList.remove('flex');
+    }
+  } else {
+    btn.className = 'px-3 py-1.5 text-sm rounded-md border-2 border-primary-500 text-primary-700 bg-primary-50 hover:bg-primary-100 flex items-center gap-2 font-semibold';
+    btn.querySelector('svg').innerHTML = '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>';
+    btnLbl.textContent = 'Selecionar contatos';
+    move.classList.add('hidden');
+    move.classList.remove('flex');
+    hint.classList.add('hidden');
+    hint.classList.remove('flex');
+  }
+}
+
+function toggleSelectionMode() {
+  kSelectionMode = !kSelectionMode;
+  if (!kSelectionMode) kSelected.clear();
+  updateKanbanHeader();
+  renderCards();
+}
+
+function openKanbanDrawer() {
+  if (kSelected.size === 0) return;
+  const names = [...kSelected.values()];
+  document.getElementById('k-drawer-names').textContent =
+    (names.slice(0,3).join(', ')) + (names.length>3 ? ` + ${names.length-3}` : '');
+  document.getElementById('k-drawer-count').textContent = kSelected.size;
+  document.getElementById('k-drawer-count2').textContent = kSelected.size;
+  document.getElementById('k-drawer-count3').textContent = kSelected.size;
+  document.getElementById('k-drawer-backdrop').classList.remove('hidden');
+  document.getElementById('k-drawer').classList.remove('hidden');
+  document.getElementById('k-drawer').classList.add('flex');
+}
+function closeKanbanDrawer() {
+  document.getElementById('k-drawer-backdrop').classList.add('hidden');
+  document.getElementById('k-drawer').classList.add('hidden');
+  document.getElementById('k-drawer').classList.remove('flex');
+}
+function confirmMove() {
+  const n = kSelected.size;
+  closeKanbanDrawer();
+  kSelected.clear();
+  kSelectionMode = false;
+  updateKanbanHeader();
+  renderCards();
+  const t = document.createElement('div');
+  t.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2.5 rounded-lg shadow-2xl text-sm font-semibold flex items-center gap-2 z-50';
+  t.innerHTML = `<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg> ${n} contato(s) movidos para Qualificados — 0 falharam`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+updateKanbanHeader();
+renderCards();
+</script>
+
+</body>
+</html>
