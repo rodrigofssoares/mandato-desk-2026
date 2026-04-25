@@ -114,6 +114,29 @@ function buildGroupsClientSide(contacts: DuplicateContact[]): DuplicateGroup[] {
   return groups;
 }
 
+// ---------- Dismissed groups (false positives ocultados pelo usuario) ----------
+
+interface DismissedGroupRow {
+  match_field: string;
+  match_value: string;
+}
+
+async function fetchDismissedKeys(): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('dismissed_duplicate_groups')
+    .select('match_field, match_value');
+  if (error) throw error;
+  const set = new Set<string>();
+  for (const row of (data ?? []) as DismissedGroupRow[]) {
+    set.add(`${row.match_field}:${row.match_value.trim().toLowerCase()}`);
+  }
+  return set;
+}
+
+function dismissalKey(matchField: string, matchValue: string): string {
+  return `${matchField}:${(matchValue ?? '').trim().toLowerCase()}`;
+}
+
 // ---------- useDuplicateCount ----------
 
 export function useDuplicateCount() {
@@ -145,55 +168,59 @@ export function useDuplicateCount() {
         offset += PAGE;
       }
 
+      // Carrega lista de grupos dispensados pelo usuario p/ ignorar na contagem.
+      const dismissed = await fetchDismissedKeys();
+
       let duplicateCount = 0;
       const seenIds = new Set<string>();
 
       // By whatsapp OR telefone (qualquer um bate, normalizados)
-      const byWhatsapp = new Map<string, string[]>();
+      // Mantemos tambem o telefone original do primeiro contato p/ checar dispensa.
+      const byWhatsapp = new Map<string, { ids: string[]; display: string }>();
       for (const c of contacts) {
         const normalized = phoneComparisonKey(c.whatsapp) || phoneComparisonKey(c.telefone);
         if (!normalized) continue;
-        const bucket = byWhatsapp.get(normalized) ?? [];
-        bucket.push(c.id);
+        const bucket = byWhatsapp.get(normalized) ?? { ids: [], display: c.whatsapp ?? c.telefone ?? '' };
+        bucket.ids.push(c.id);
         byWhatsapp.set(normalized, bucket);
       }
-      for (const [, ids] of byWhatsapp.entries()) {
-        if (ids.length > 1) {
-          duplicateCount += ids.length - 1;
-          ids.forEach((id) => seenIds.add(id));
+      for (const [, bucket] of byWhatsapp.entries()) {
+        if (bucket.ids.length > 1 && !dismissed.has(dismissalKey('whatsapp', bucket.display))) {
+          duplicateCount += bucket.ids.length - 1;
+          bucket.ids.forEach((id) => seenIds.add(id));
         }
       }
 
       // By email
-      const byEmail = new Map<string, string[]>();
+      const byEmail = new Map<string, { ids: string[]; display: string }>();
       for (const c of contacts) {
         if (seenIds.has(c.id) || !c.email) continue;
         const key = c.email.trim().toLowerCase();
         if (!key) continue;
-        const bucket = byEmail.get(key) ?? [];
-        bucket.push(c.id);
+        const bucket = byEmail.get(key) ?? { ids: [], display: c.email };
+        bucket.ids.push(c.id);
         byEmail.set(key, bucket);
       }
-      for (const [, ids] of byEmail.entries()) {
-        if (ids.length > 1) {
-          duplicateCount += ids.length - 1;
-          ids.forEach((id) => seenIds.add(id));
+      for (const [, bucket] of byEmail.entries()) {
+        if (bucket.ids.length > 1 && !dismissed.has(dismissalKey('email', bucket.display))) {
+          duplicateCount += bucket.ids.length - 1;
+          bucket.ids.forEach((id) => seenIds.add(id));
         }
       }
 
       // By nome
-      const byNome = new Map<string, string[]>();
+      const byNome = new Map<string, { ids: string[]; display: string }>();
       for (const c of contacts) {
         if (seenIds.has(c.id) || !c.nome) continue;
         const key = c.nome.trim().toLowerCase();
         if (!key) continue;
-        const bucket = byNome.get(key) ?? [];
-        bucket.push(c.id);
+        const bucket = byNome.get(key) ?? { ids: [], display: c.nome };
+        bucket.ids.push(c.id);
         byNome.set(key, bucket);
       }
-      for (const [, ids] of byNome.entries()) {
-        if (ids.length > 1) {
-          duplicateCount += ids.length - 1;
+      for (const [, bucket] of byNome.entries()) {
+        if (bucket.ids.length > 1 && !dismissed.has(dismissalKey('nome', bucket.display))) {
+          duplicateCount += bucket.ids.length - 1;
         }
       }
 
@@ -227,7 +254,11 @@ export function useDuplicateGroups(enabled: boolean) {
         if (batch.length < PAGE) break;
         offset += PAGE;
       }
-      return buildGroupsClientSide(contacts);
+
+      const allGroups = buildGroupsClientSide(contacts);
+      const dismissed = await fetchDismissedKeys();
+      // Remove grupos que o usuario ja marcou como "nao sao duplicatas".
+      return allGroups.filter((g) => !dismissed.has(dismissalKey(g.match_field, g.match_value)));
     },
   });
 }
@@ -398,6 +429,59 @@ export function useBulkDeleteDuplicates() {
     },
     onError: (error: Error) => {
       toast.error(`Erro ao remover duplicatas: ${error.message}`);
+    },
+  });
+}
+
+// ---------- useDismissDuplicateGroups ----------
+
+interface DismissParams {
+  groups: DuplicateGroup[];
+  reason?: string;
+}
+
+/**
+ * Marca grupos de duplicados como "nao sao duplicatas". Insere em
+ * dismissed_duplicate_groups; o filtro do useDuplicateGroups remove esses
+ * grupos do retorno em sessoes futuras (e na proxima invalidacao).
+ */
+export function useDismissDuplicateGroups() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ groups, reason }: DismissParams): Promise<number> => {
+      if (groups.length === 0) return 0;
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id ?? null;
+
+      const rows = groups.map((g) => ({
+        match_field: g.match_field,
+        match_value: g.match_value,
+        reason: reason ?? null,
+        dismissed_by: userId,
+      }));
+
+      // upsert com onConflict p/ evitar UNIQUE violation se o grupo ja foi dispensado.
+      const { error } = await supabase
+        .from('dismissed_duplicate_groups')
+        .upsert(rows, { onConflict: 'match_field,match_value', ignoreDuplicates: true });
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
+      if (count > 0) {
+        toast.success(`${count} grupo${count !== 1 ? 's' : ''} marcado${count !== 1 ? 's' : ''} como "nao sao duplicatas"`);
+        logActivity({
+          type: 'merge',
+          entity_type: 'contact',
+          description: `Dispensou ${count} grupos de duplicados como falso positivo`,
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao dispensar grupos: ${error.message}`);
     },
   });
 }

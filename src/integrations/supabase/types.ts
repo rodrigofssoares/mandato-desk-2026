@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -941,6 +942,33 @@ export type Database = {
           },
         ]
       }
+      dismissed_duplicate_groups: {
+        Row: {
+          dismissed_at: string
+          dismissed_by: string | null
+          id: string
+          match_field: string
+          match_value: string
+          reason: string | null
+        }
+        Insert: {
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          match_field: string
+          match_value: string
+          reason?: string | null
+        }
+        Update: {
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          match_field?: string
+          match_value?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       google_oauth_tokens: {
         Row: {
           access_token: string
@@ -1247,6 +1275,7 @@ export type Database = {
           id: string
           nome: string | null
           role: string
+          senha_temporaria: boolean
           status_aprovacao: string
           telefone: string | null
         }
@@ -1257,6 +1286,7 @@ export type Database = {
           id: string
           nome?: string | null
           role?: string
+          senha_temporaria?: boolean
           status_aprovacao?: string
           telefone?: string | null
         }
@@ -1267,6 +1297,7 @@ export type Database = {
           id?: string
           nome?: string | null
           role?: string
+          senha_temporaria?: boolean
           status_aprovacao?: string
           telefone?: string | null
         }
@@ -1499,6 +1530,30 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_layouts: {
+        Row: {
+          created_at: string
+          layout: Json
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          layout: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          layout?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1529,6 +1584,7 @@ export type Database = {
           event_type: string
           id: string
           payload: Json | null
+          request_id: number | null
           response: string | null
           status_code: number | null
           webhook_id: string | null
@@ -1538,6 +1594,7 @@ export type Database = {
           event_type: string
           id?: string
           payload?: Json | null
+          request_id?: number | null
           response?: string | null
           status_code?: number | null
           webhook_id?: string | null
@@ -1547,6 +1604,7 @@ export type Database = {
           event_type?: string
           id?: string
           payload?: Json | null
+          request_id?: number | null
           response?: string | null
           status_code?: number | null
           webhook_id?: string | null
@@ -1599,6 +1657,59 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _api_assert_resource: { Args: { p_resource: string }; Returns: undefined }
+      api_delete: {
+        Args: { p_id: string; p_resource: string; p_user_id: string }
+        Returns: Json
+      }
+      api_find_contact_by_lookup: {
+        Args: { p_field: string; p_user_id: string; p_value: string }
+        Returns: Json
+      }
+      api_find_contact_by_phone: {
+        Args: { p_phone_normalized: string; p_user_id: string }
+        Returns: Json
+      }
+      api_get_one: {
+        Args: { p_id: string; p_resource: string; p_user_id: string }
+        Returns: Json
+      }
+      api_insert: {
+        Args: { p_data: Json; p_resource: string; p_user_id: string }
+        Returns: Json
+      }
+      api_link_contact_to_board: {
+        Args: {
+          p_board_ref: string
+          p_contact_id: string
+          p_stage_ref?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      api_list: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_resource: string
+          p_search?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      api_update: {
+        Args: {
+          p_data: Json
+          p_id: string
+          p_resource: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      dispatch_webhooks: {
+        Args: { p_event: string; p_payload: Json }
+        Returns: undefined
+      }
       generate_api_token: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_duplicate_contacts: {
@@ -1626,6 +1737,13 @@ export type Database = {
       normalize_phone: { Args: { phone_number: string }; Returns: string }
       slugify_campo: { Args: { label: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
+      validate_api_token: {
+        Args: { p_token: string }
+        Returns: {
+          token_id: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       activity_type:
