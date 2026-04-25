@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Check,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import {
   useDuplicateGroups,
@@ -22,6 +23,7 @@ import {
   type DuplicateContact,
   type DuplicateGroup,
 } from "@/hooks/useDuplicates";
+import { analyzeDuplicates, type DuplicateCategory } from "@/lib/duplicate-analysis";
 import { ContactCompareModal } from "./duplicates/ContactCompareModal";
 import { ContactMergeModal } from "./duplicates/ContactMergeModal";
 import { ContactViewDrawer } from "./duplicates/ContactViewDrawer";
@@ -79,6 +81,37 @@ interface DuplicatesDialogProps {
 
 // ---------- Helpers ----------
 
+const ANALYSIS_COLORS = {
+  emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  sky: 'bg-sky-100 text-sky-700 border-sky-200',
+  slate: 'bg-slate-100 text-slate-700 border-slate-200',
+  amber: 'bg-amber-100 text-amber-700 border-amber-200',
+} as const;
+
+function AnalysisRow({
+  color,
+  label,
+  hint,
+  stats,
+}: {
+  color: keyof typeof ANALYSIS_COLORS;
+  label: string;
+  hint: string;
+  stats: { groups: number; contacts: number; duplicates: number };
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <Badge variant="outline" className={cn('shrink-0 mt-0.5 font-mono', ANALYSIS_COLORS[color])}>
+        {stats.groups} grupos · {stats.duplicates} dups
+      </Badge>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium">{label}</p>
+        <p className="text-[11px] text-muted-foreground">{hint}</p>
+      </div>
+    </div>
+  );
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -128,6 +161,11 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
   const safeGroups: DuplicateGroup[] = groups ?? [];
   const totalGroups = safeGroups.length;
   const totalDuplicates = safeGroups.reduce((sum, g) => sum + (g.contacts.length - 1), 0);
+
+  // Analise local: classifica cada grupo em AUTO_HARD / AUTO_SOFT / DISMISS_NAME / MANUAL.
+  // Roda em useMemo p/ recomputar apenas quando os grupos mudarem.
+  const analysis = useMemo(() => analyzeDuplicates(safeGroups), [safeGroups]);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   function toggleGroup(key: string) {
     setExpandedGroups((prev) =>
@@ -295,8 +333,58 @@ export function DuplicatesDialog({ open, onOpenChange, onSuccess }: DuplicatesDi
                 </TooltipContent>
               </Tooltip>
 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnalysis((v) => !v)}
+                className="gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                {showAnalysis ? 'Ocultar analise' : 'Analisar duplicatas'}
+              </Button>
+
               <p className="text-xs text-muted-foreground ml-auto">
                 Selecione 2 contatos em um grupo para comparar ou mesclar
+              </p>
+            </div>
+          )}
+
+          {/* Painel de analise classificada */}
+          {!isLoading && totalGroups > 0 && showAnalysis && (
+            <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-xs">
+              <div className="flex items-center gap-2 font-medium text-sm">
+                <Wand2 className="h-4 w-4 text-primary" />
+                Analise dos {analysis.totalGroups} grupos ({analysis.totalContacts} contatos)
+              </div>
+              <AnalysisRow
+                color="emerald"
+                label="Auto-mergeavel sem conflito"
+                hint="mesmo telefone, sem nenhuma divergencia"
+                stats={analysis.byCategory.AUTO_HARD}
+              />
+              <AnalysisRow
+                color="sky"
+                label="Auto-mergeavel com regras suaves"
+                hint="mesmo telefone; nome maior, e-mail mais recente, observacoes concatenadas, etc"
+                stats={analysis.byCategory.AUTO_SOFT}
+              />
+              <AnalysisRow
+                color="slate"
+                label="Falsos positivos por nome"
+                hint="nomes iguais ('Ana', 'Maria') com telefones distintos — devem ser ocultados"
+                stats={analysis.byCategory.DISMISS_NAME}
+              />
+              <AnalysisRow
+                color="amber"
+                label="Conflito real (revisao manual)"
+                hint="CPF/nascimento/genero divergem ou whatsapp diferente em mesmo email"
+                stats={analysis.byCategory.MANUAL}
+              />
+              <p className="text-[11px] text-muted-foreground pt-1">
+                Total: <strong>{analysis.byCategory.AUTO_HARD.duplicates + analysis.byCategory.AUTO_SOFT.duplicates}</strong>{' '}
+                contatos podem ser mesclados automaticamente,{' '}
+                <strong>{analysis.byCategory.DISMISS_NAME.duplicates}</strong> ocultados como falso positivo, e{' '}
+                <strong>{analysis.byCategory.MANUAL.duplicates}</strong> precisam de revisao manual.
               </p>
             </div>
           )}

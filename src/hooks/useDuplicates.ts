@@ -13,6 +13,7 @@ export interface DuplicateContact {
   whatsapp?: string | null;
   email?: string | null;
   telefone?: string | null;
+  cpf?: string | null;
   genero?: string | null;
   data_nascimento?: string | null;
   logradouro?: string | null;
