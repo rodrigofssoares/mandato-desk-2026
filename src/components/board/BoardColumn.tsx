@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus } from 'lucide-react';
 import { BoardCard } from './BoardCard';
+import { StageChecklistTrigger } from './StageChecklistTrigger';
 import { stageBgClass, stageDotClass, stageTextClass } from '@/components/settings/stageColors';
 import type { BoardStage } from '@/hooks/useBoardStages';
 import type { BoardItemWithContact } from '@/hooks/useBoardItems';
@@ -48,6 +49,7 @@ export function BoardColumn({
         <Badge variant="secondary" className="ml-auto text-xs">
           {items.length}
         </Badge>
+        <StageChecklistTrigger stage={stage} />
       </div>
 
       <ScrollArea className="flex-1 h-[calc(100vh-340px)] min-h-[300px]">

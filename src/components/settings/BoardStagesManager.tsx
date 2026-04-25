@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { GripVertical, Plus, Trash2, Loader2, Check, X, Pencil } from 'lucide-react';
+import { GripVertical, Plus, Trash2, Loader2, Check, X, Pencil, ListChecks } from 'lucide-react';
 import {
   useBoardStages,
   useCreateBoardStage,
@@ -39,6 +39,7 @@ import {
 } from '@/hooks/useBoardStages';
 import { useBoardItemCounts } from '@/hooks/useBoardItems';
 import { STAGE_COLORS, nextStageColor, stageDotClass } from './stageColors';
+import { StageChecklistEditor } from './StageChecklistEditor';
 
 interface Props {
   boardId: string;
@@ -55,6 +56,7 @@ export function BoardStagesManager({ boardId }: Props) {
   const [ordered, setOrdered] = useState<BoardStage[]>([]);
   const [addingName, setAddingName] = useState('');
   const [deleting, setDeleting] = useState<BoardStage | null>(null);
+  const [editingChecklist, setEditingChecklist] = useState<BoardStage | null>(null);
 
   useEffect(() => {
     setOrdered(stages);
@@ -135,6 +137,7 @@ export function BoardStagesManager({ boardId }: Props) {
                   count={counts[stage.id] ?? 0}
                   onSave={(patch) => updateStage.mutate({ id: stage.id, patch })}
                   onDelete={() => setDeleting(stage)}
+                  onEditChecklist={() => setEditingChecklist(stage)}
                 />
               ))}
             </div>
@@ -168,6 +171,12 @@ export function BoardStagesManager({ boardId }: Props) {
         </Button>
       </div>
 
+      <StageChecklistEditor
+        open={!!editingChecklist}
+        onOpenChange={(open) => !open && setEditingChecklist(null)}
+        stage={editingChecklist}
+      />
+
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -199,11 +208,13 @@ function SortableStageRow({
   count,
   onSave,
   onDelete,
+  onEditChecklist,
 }: {
   stage: BoardStage;
   count: number;
   onSave: (patch: { nome?: string; cor?: string }) => void;
   onDelete: () => void;
+  onEditChecklist: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stage.id,
@@ -311,6 +322,14 @@ function SortableStageRow({
           </>
         ) : (
           <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onEditChecklist}
+              title="Editar checklist orientativo"
+            >
+              <ListChecks className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

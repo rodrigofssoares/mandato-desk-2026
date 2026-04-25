@@ -20,7 +20,10 @@ interface LogActivityParams {
     | 'board_item'
     | 'tarefa'
     | 'campo_personalizado'
-    | 'ai_settings';
+    | 'ai_settings'
+    // Checklist orientativo por etapa do funil (RAQ-MAND-EM044)
+    | 'stage_checklist_item'
+    | 'stage_message_template';
   entity_name?: string;
   entity_id?: string;
   description?: string;
