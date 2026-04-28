@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checklist por etapa — 4 versões para validação</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: 213 25% 97%;
+      --fg: 215 50% 8%;
+      --muted: 215 16% 46%;
+      --primary: 213 65% 30%;
+      --primary-fg: 0 0% 100%;
+      --border: 213 25% 88%;
+      --card: 0 0% 100%;
+    }
+    body { background: hsl(var(--bg)); color: hsl(var(--fg)); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .iframe-wrap { background: hsl(var(--bg)); border: 1px solid hsl(var(--border)); border-radius: 12px; overflow: hidden; }
+    .iframe-wrap iframe { width: 100%; height: 600px; background: hsl(var(--bg)); }
+    .kbd { background: hsl(var(--border)); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: ui-monospace, monospace; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="max-w-7xl mx-auto px-6 pt-8 pb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-10 h-10 rounded-lg btn-primary flex items-center justify-center">
+        <i data-lucide="list-checks" class="w-5 h-5"></i>
+      </div>
+      <h1 class="text-2xl font-bold">Checklist Orientativo por Etapa do Funil</h1>
+    </div>
+    <p class="text-slate-600 max-w-3xl">
+      4 versões alternativas do popup que o atendente verá ao clicar no ícone de checklist na coluna do funil.
+      Todas usam <strong>o mesmo conteúdo mockado</strong> (3 tarefas, 1 imagem, 1 vídeo, 1 link, 2 templates WhatsApp com asteriscos)
+      para comparação justa. Teste cada uma e escolha a preferida.
+    </p>
+    <div class="mt-4 flex items-center gap-2 text-xs text-slate-500">
+      <span class="kbd">Esc</span> ou <span class="kbd">clique fora</span> fecham.
+      Botões <strong>Copiar</strong> usam clipboard real — cole no WhatsApp para confirmar que <code>*negrito*</code> e <code>_itálico_</code> ficam preservados.
+    </div>
+  </header>
+
+  <section class="max-w-7xl mx-auto px-6 mb-8">
+    <div class="card rounded-xl p-4 border-2" style="border-color: hsl(213 65% 30% / 0.4);">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-xs uppercase tracking-wider font-semibold" style="color: hsl(213 65% 30%);">Novo · Tela do Admin</div>
+          <h2 class="text-lg font-semibold">Cadastro de tarefas, anexos e templates</h2>
+          <p class="text-sm text-slate-600 max-w-2xl">
+            Sheet onde o administrador configura o checklist da etapa: drag-and-drop de tarefas,
+            uploader de imagem/vídeo, links, e editor de templates com pré-visualização literal lado a lado.
+          </p>
+        </div>
+        <a href="admin.html" target="_blank" class="btn-primary text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir em nova aba
+        </a>
+      </div>
+      <div class="iframe-wrap" style="height: 720px;">
+        <iframe src="admin.html" title="Tela de admin" style="height: 720px;"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="max-w-7xl mx-auto px-6 mb-3 text-sm font-semibold uppercase tracking-wider text-slate-600">Visão do atendente — 4 versões</h2>
+  <main class="max-w-7xl mx-auto px-6 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <section class="card rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-xs uppercase tracking-wide text-slate-500">Versão 1 — Recomendada</div>
+          <h2 class="text-lg font-semibold">Lista Vertical Sequencial</h2>
+          <p class="text-sm text-slate-600">Tarefas numeradas em scroll único, mídias inline. Espelha leitura natural do passo a passo.</p>
+        </div>
+        <a href="v1.html" target="_blank" class="btn-primary text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir em nova aba
+        </a>
+      </div>
+      <div class="iframe-wrap">
+        <iframe src="v1.html" title="Versão 1"></iframe>
+      </div>
+    </section>
+
+    <section class="card rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-xs uppercase tracking-wide text-slate-500">Versão 2</div>
+          <h2 class="text-lg font-semibold">Wizard Stepper</h2>
+          <p class="text-sm text-slate-600">Uma tarefa por tela, navegação Anterior/Próximo, progress bar. Ótimo p/ onboarding.</p>
+        </div>
+        <a href="v2.html" target="_blank" class="btn-primary text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir em nova aba
+        </a>
+      </div>
+      <div class="iframe-wrap">
+        <iframe src="v2.html" title="Versão 2"></iframe>
+      </div>
+    </section>
+
+    <section class="card rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-xs uppercase tracking-wide text-slate-500">Versão 3</div>
+          <h2 class="text-lg font-semibold">Tabs Categorizadas</h2>
+          <p class="text-sm text-slate-600">Três abas: Checklist · Materiais · Templates. Acesso rápido se templates são consultados sozinhos.</p>
+        </div>
+        <a href="v3.html" target="_blank" class="btn-primary text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir em nova aba
+        </a>
+      </div>
+      <div class="iframe-wrap">
+        <iframe src="v3.html" title="Versão 3"></iframe>
+      </div>
+    </section>
+
+    <section class="card rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-xs uppercase tracking-wide text-slate-500">Versão 4</div>
+          <h2 class="text-lg font-semibold">Sidebar Index + Painel</h2>
+          <p class="text-sm text-slate-600">Lista de tarefas à esquerda (sticky), detalhe à direita. Bom p/ checklists longos (10+).</p>
+        </div>
+        <a href="v4.html" target="_blank" class="btn-primary text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir em nova aba
+        </a>
+      </div>
+      <div class="iframe-wrap">
+        <iframe src="v4.html" title="Versão 4"></iframe>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="max-w-7xl mx-auto px-6 pb-10 text-xs text-slate-500">
+    <div class="card rounded-xl p-4">
+      <div class="font-semibold text-slate-700 mb-2">Como avaliar</div>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Em cada versão, clique em <strong>Copiar</strong> num template e cole no WhatsApp Web — <code>*Maria*</code> deve aparecer em <strong>negrito</strong> lá, mas literal aqui na tela.</li>
+        <li>Pressione <span class="kbd">Esc</span> ou clique fora do dialog para fechar.</li>
+        <li>Imagens/vídeos devem carregar via CDN público (Picsum / W3Schools).</li>
+        <li>Após decidir, me avise qual versão escolheu (ou se quer mesclar partes de duas).</li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

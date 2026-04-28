@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>V2 — Wizard Stepper</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: 213 25% 97%;
+      --fg: 215 50% 8%;
+      --muted: 215 16% 46%;
+      --primary: 213 65% 30%;
+      --primary-fg: 0 0% 100%;
+      --border: 213 25% 88%;
+      --card: 0 0% 100%;
+      --indigo: 226 70% 55%;
+    }
+    body { background: hsl(var(--bg)); color: hsl(var(--fg)); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .backdrop { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-outline { border: 1px solid hsl(var(--border)); color: hsl(var(--fg)); background: white; }
+    .btn-outline:hover { background: hsl(var(--bg)); }
+    .btn-outline:disabled { opacity: .5; cursor: not-allowed; }
+    .stage-dot { width: 10px; height: 10px; border-radius: 9999px; background: hsl(var(--indigo)); box-shadow: 0 0 0 4px hsl(var(--indigo) / 0.15); }
+    .progress-track { height: 6px; background: hsl(var(--border)); border-radius: 9999px; overflow: hidden; }
+    .progress-fill { height: 100%; background: hsl(var(--primary)); border-radius: 9999px; transition: width .35s ease; }
+    .step-pill { width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+    .step-pill.done { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .step-pill.current { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); box-shadow: 0 0 0 4px hsl(var(--primary) / 0.18); }
+    .step-pill.upcoming { background: hsl(var(--border)); color: hsl(var(--muted)); }
+    .step-line { flex: 1; height: 2px; background: hsl(var(--border)); margin: 0 6px; }
+    .step-line.done { background: hsl(var(--primary)); }
+    pre.tpl { font-family: ui-monospace, monospace; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.55; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: hsl(215 50% 12%); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; gap: 8px; align-items: center; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .fade-in { animation: fade .35s ease both; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="backdrop" class="backdrop fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-8">
+    <div id="dialog" class="card relative z-50 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+
+      <header class="px-6 pt-4 pb-3 border-b border-slate-200">
+        <div class="flex items-start gap-3">
+          <span class="stage-dot mt-2"></span>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs uppercase tracking-wider text-slate-500">Checklist da etapa</div>
+            <h2 id="dlg-title" class="text-lg font-semibold leading-tight">Primeiro Contato</h2>
+          </div>
+          <button onclick="closeDialog()" aria-label="Fechar" class="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="mt-4 flex items-center" id="stepper"></div>
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+          <span id="step-label">Tarefa 1 de 3</span>
+          <div class="progress-track w-32"><div id="progress" class="progress-fill" style="width: 0%"></div></div>
+        </div>
+      </header>
+
+      <div class="px-6 py-5 min-h-[420px]">
+        <div id="stage-content"></div>
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50 rounded-b-xl">
+        <button id="btn-prev" onclick="goPrev()" class="btn-outline text-sm font-medium px-3 py-1.5 rounded-md flex items-center gap-1">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior
+        </button>
+        <span class="text-xs text-slate-500"><kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px]">Esc</kbd> fecha · <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px]">←/→</kbd> navega</span>
+        <button id="btn-next" onclick="goNext()" class="btn-primary text-sm font-medium px-3 py-1.5 rounded-md flex items-center gap-1">
+          Próximo <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </footer>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">Copiado!</span>
+  </div>
+
+  <script>
+    const stage = {
+      nome: 'Primeiro Contato',
+      tasks: [
+        { titulo: 'Cumprimentar e identificar o contato',
+          desc: 'Abra o WhatsApp Web, busque o número do lead, envie a saudação inicial e descubra de qual evento ou indicação ele veio.',
+          media: [{ type:'image', url:'https://picsum.photos/seed/wamandato/720/360', caption:'Tela de busca do WhatsApp Web' }] },
+        { titulo: 'Enviar vídeo de apresentação do mandato',
+          desc: 'Compartilhe o vídeo institucional padrão (até 30s). Aguarde a primeira reação antes de avançar.',
+          media: [{ type:'video', url:'https://www.w3schools.com/html/mov_bbb.mp4', caption:'Vídeo de apresentação' }] },
+        { titulo: 'Agendar follow-up no Mandato Desk',
+          desc: 'Mova o contato para a etapa "Aquecendo" e crie um lembrete de follow-up para 48h depois.',
+          media: [{ type:'link', url:'https://exemplo.com/manual-followup', label:'Manual interno: como agendar follow-up' }] }
+      ],
+      templates: [
+        { nome: 'Saudação de boas-vindas', texto: 'Olá *{{nome}}*! Aqui é a equipe do mandato.\nVi que você se inscreveu no nosso _evento_ — posso te enviar o material de boas-vindas?' },
+        { nome: 'Lembrete de follow-up (48h)', texto: '~Oi de novo!~ Combinamos de retomar nossa conversa hoje.\n*Bora marcar?* Manda o melhor horário 🙂' }
+      ]
+    };
+
+    let cur = 0;
+    const totalSteps = stage.tasks.length + 1; // tasks + bloco final de templates
+
+    function renderStepper() {
+      const el = document.getElementById('stepper');
+      let html = '';
+      for (let i = 0; i < totalSteps; i++) {
+        const cls = i < cur ? 'done' : (i === cur ? 'current' : 'upcoming');
+        const label = i < stage.tasks.length ? (i + 1) : '<i data-lucide="message-square-quote" class="w-3.5 h-3.5"></i>';
+        html += `<div class="step-pill ${cls}">${label}</div>`;
+        if (i < totalSteps - 1) {
+          html += `<div class="step-line ${i < cur ? 'done' : ''}"></div>`;
+        }
+      }
+      el.innerHTML = html;
+    }
+
+    function renderProgress() {
+      const pct = Math.round((cur / (totalSteps - 1)) * 100);
+      document.getElementById('progress').style.width = pct + '%';
+      const isFinal = cur === totalSteps - 1;
+      document.getElementById('step-label').textContent =
+        isFinal ? 'Mensagens prontas' : `Tarefa ${cur + 1} de ${stage.tasks.length}`;
+    }
+
+    function renderContent() {
+      const wrap = document.getElementById('stage-content');
+      wrap.classList.remove('fade-in'); void wrap.offsetWidth; wrap.classList.add('fade-in');
+
+      if (cur < stage.tasks.length) {
+        const t = stage.tasks[cur];
+        wrap.innerHTML = `
+          <div class="text-xs uppercase tracking-wider text-slate-500 mb-1.5">Passo ${cur + 1}</div>
+          <h3 class="text-xl font-bold text-slate-900 leading-tight">${t.titulo}</h3>
+          <p class="text-slate-600 mt-3 leading-relaxed">${t.desc}</p>
+          ${t.media && t.media.length ? `<div class="mt-5 space-y-3">${t.media.map(renderMedia).join('')}</div>` : ''}
+        `;
+      } else {
+        wrap.innerHTML = `
+          <div class="text-xs uppercase tracking-wider text-slate-500 mb-1.5">Etapa final</div>
+          <h3 class="text-xl font-bold text-slate-900 leading-tight">Mensagens prontas para WhatsApp</h3>
+          <p class="text-slate-600 mt-2 text-sm">Use os botões <strong>Copiar</strong> para colar diretamente no chat. Os asteriscos viram negrito no WhatsApp.</p>
+          <div class="mt-4 space-y-3">
+            ${stage.templates.map((t, idx) => `
+              <article class="rounded-lg border border-slate-200 bg-white">
+                <header class="flex items-center justify-between px-3 py-2 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
+                    <span class="text-sm font-medium text-slate-800">${t.nome}</span>
+                  </div>
+                  <button onclick="copyTpl(${idx})" aria-label="Copiar template ${t.nome}" class="btn-primary text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+                  </button>
+                </header>
+                <pre class="tpl px-3 py-2.5 text-slate-700">${escapeHtml(t.texto)}</pre>
+              </article>
+            `).join('')}
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function renderMedia(m) {
+      if (m.type === 'image') return `<figure class="rounded-lg overflow-hidden border border-slate-200"><img src="${m.url}" alt="${m.caption||''}" class="w-full h-auto block" />${m.caption?`<figcaption class="text-xs text-slate-500 px-3 py-1.5 bg-slate-50">${m.caption}</figcaption>`:''}</figure>`;
+      if (m.type === 'video') return `<figure class="rounded-lg overflow-hidden border border-slate-200"><video src="${m.url}" controls preload="metadata" class="w-full h-auto block bg-black"></video>${m.caption?`<figcaption class="text-xs text-slate-500 px-3 py-1.5 bg-slate-50">${m.caption}</figcaption>`:''}</figure>`;
+      if (m.type === 'link') return `<a href="${m.url}" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-slate-100 transition"><i data-lucide="link-2" class="w-4 h-4 text-slate-500"></i><span class="font-medium text-slate-700">${m.label}</span><span class="text-xs text-slate-400 truncate ml-auto">${m.url}</span><i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400"></i></a>`;
+      return '';
+    }
+
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+
+    function refresh() {
+      renderStepper();
+      renderProgress();
+      renderContent();
+      document.getElementById('btn-prev').disabled = cur === 0;
+      const next = document.getElementById('btn-next');
+      const isLast = cur === totalSteps - 1;
+      next.innerHTML = isLast ? `Concluir <i data-lucide="check" class="w-4 h-4"></i>` : `Próximo <i data-lucide="chevron-right" class="w-4 h-4"></i>`;
+      lucide.createIcons();
+    }
+
+    function goNext() { if (cur < totalSteps - 1) { cur++; refresh(); } else { closeDialog(); } }
+    function goPrev() { if (cur > 0) { cur--; refresh(); } }
+
+    async function copyTpl(idx) {
+      const txt = stage.templates[idx].texto;
+      try { await navigator.clipboard.writeText(txt); showToast('Template copiado — asteriscos preservados!'); }
+      catch { showToast('Falha ao copiar'); }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function closeDialog() { showToast('Dialog fecharia aqui (Esc / clique fora / X)'); }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDialog();
+      else if (e.key === 'ArrowRight') goNext();
+      else if (e.key === 'ArrowLeft') goPrev();
+    });
+    document.getElementById('backdrop').addEventListener('click', e => {
+      if (e.target.id === 'backdrop') closeDialog();
+    });
+
+    refresh();
+  </script>
+</body>
+</html>

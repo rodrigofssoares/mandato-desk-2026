@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       activities: {
@@ -1302,6 +1277,152 @@ export type Database = {
         }
         Relationships: []
       }
+      stage_checklist_attachments: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          mime_type: string | null
+          nome_original: string | null
+          ordem: number
+          rotulo: string | null
+          storage_path: string | null
+          tamanho_bytes: number | null
+          tipo: string
+          url_externa: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          mime_type?: string | null
+          nome_original?: string | null
+          ordem?: number
+          rotulo?: string | null
+          storage_path?: string | null
+          tamanho_bytes?: number | null
+          tipo: string
+          url_externa?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          mime_type?: string | null
+          nome_original?: string | null
+          ordem?: number
+          rotulo?: string | null
+          storage_path?: string | null
+          tamanho_bytes?: number | null
+          tipo?: string
+          url_externa?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_checklist_attachments_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "stage_checklist_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_checklist_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          ordem: number
+          stage_id: string
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          stage_id: string
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          stage_id?: string
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_checklist_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_checklist_items_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_message_templates: {
+        Row: {
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          ordem: number
+          stage_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ordem?: number
+          stage_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ordem?: number
+          stage_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_message_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_message_templates_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tag_groups: {
         Row: {
           created_at: string
@@ -1897,9 +2018,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       activity_type: [

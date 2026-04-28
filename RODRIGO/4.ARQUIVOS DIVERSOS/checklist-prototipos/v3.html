@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>V3 — Tabs Categorizadas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: 213 25% 97%;
+      --fg: 215 50% 8%;
+      --muted: 215 16% 46%;
+      --primary: 213 65% 30%;
+      --primary-fg: 0 0% 100%;
+      --border: 213 25% 88%;
+      --card: 0 0% 100%;
+      --indigo: 226 70% 55%;
+    }
+    body { background: hsl(var(--bg)); color: hsl(var(--fg)); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .backdrop { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .stage-dot { width: 10px; height: 10px; border-radius: 9999px; background: hsl(var(--indigo)); box-shadow: 0 0 0 4px hsl(var(--indigo) / 0.15); }
+    .tab { padding: 8px 14px; font-size: 13px; font-weight: 500; color: hsl(var(--muted)); border-bottom: 2px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .tab.active { color: hsl(var(--primary)); border-bottom-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.04); }
+    .tab:hover:not(.active) { color: hsl(var(--fg)); background: hsl(var(--bg)); }
+    .badge { font-size: 11px; padding: 1px 6px; background: hsl(var(--border)); color: hsl(var(--fg)); border-radius: 9999px; font-weight: 600; }
+    .scrollarea { max-height: 60vh; overflow-y: auto; }
+    .scrollarea::-webkit-scrollbar { width: 8px; } .scrollarea::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+    pre.tpl { font-family: ui-monospace, monospace; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.55; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: hsl(215 50% 12%); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; gap: 8px; align-items: center; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    details[open] summary i.chev { transform: rotate(90deg); }
+    summary i.chev { transition: transform .18s; }
+    summary { list-style: none; cursor: pointer; }
+    summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="backdrop" class="backdrop fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-8">
+    <div id="dialog" class="card relative z-50 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+
+      <header class="px-6 py-4 border-b border-slate-200 flex items-start gap-3">
+        <span class="stage-dot mt-2"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs uppercase tracking-wider text-slate-500">Checklist da etapa</div>
+          <h2 id="dlg-title" class="text-lg font-semibold leading-tight">Primeiro Contato</h2>
+        </div>
+        <button onclick="closeDialog()" aria-label="Fechar" class="rounded-md p-1.5 text-slate-500 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </header>
+
+      <nav class="flex border-b border-slate-200 px-3" role="tablist">
+        <button class="tab active" role="tab" data-tab="checklist" onclick="setTab('checklist')">
+          <i data-lucide="list-checks" class="w-4 h-4"></i> Checklist <span class="badge" id="b-checklist">3</span>
+        </button>
+        <button class="tab" role="tab" data-tab="materiais" onclick="setTab('materiais')">
+          <i data-lucide="image" class="w-4 h-4"></i> Materiais <span class="badge" id="b-materiais">3</span>
+        </button>
+        <button class="tab" role="tab" data-tab="templates" onclick="setTab('templates')">
+          <i data-lucide="message-square-quote" class="w-4 h-4"></i> Templates <span class="badge" id="b-templates">2</span>
+        </button>
+      </nav>
+
+      <div class="scrollarea px-6 py-5">
+        <section id="pane-checklist" class="space-y-2"></section>
+        <section id="pane-materiais" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3"></section>
+        <section id="pane-templates" class="hidden space-y-3"></section>
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 text-xs text-slate-500 bg-slate-50/50 rounded-b-xl flex items-center justify-between">
+        <span><strong>3</strong> tarefas · <strong>3</strong> mídias · <strong>2</strong> templates</span>
+        <span><kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px]">Esc</kbd> fecha</span>
+      </footer>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">Copiado!</span>
+  </div>
+
+  <script>
+    const stage = {
+      tasks: [
+        { titulo: 'Cumprimentar e identificar o contato',
+          desc: 'Abra o WhatsApp Web, busque o número, envie a saudação e descubra a origem do lead.',
+          media: [{ type:'image', url:'https://picsum.photos/seed/wamandato/720/360', caption:'Tela de busca do WhatsApp Web', taskIdx: 0 }] },
+        { titulo: 'Enviar vídeo de apresentação do mandato',
+          desc: 'Compartilhe o vídeo institucional padrão (até 30s).',
+          media: [{ type:'video', url:'https://www.w3schools.com/html/mov_bbb.mp4', caption:'Vídeo de apresentação', taskIdx: 1 }] },
+        { titulo: 'Agendar follow-up no Mandato Desk',
+          desc: 'Mova o contato e crie um lembrete para 48h depois.',
+          media: [{ type:'link', url:'https://exemplo.com/manual-followup', label:'Manual interno: como agendar follow-up', taskIdx: 2 }] }
+      ],
+      templates: [
+        { nome: 'Saudação de boas-vindas', texto: 'Olá *{{nome}}*! Aqui é a equipe do mandato.\nVi que você se inscreveu no nosso _evento_ — posso te enviar o material?' },
+        { nome: 'Lembrete de follow-up (48h)', texto: '~Oi de novo!~ Combinamos de retomar nossa conversa hoje.\n*Bora marcar?* Manda o melhor horário 🙂' }
+      ]
+    };
+
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+
+    function renderChecklist() {
+      document.getElementById('pane-checklist').innerHTML = stage.tasks.map((t, i) => `
+        <details class="rounded-lg border border-slate-200 bg-white">
+          <summary class="px-3 py-2.5 flex items-center gap-3">
+            <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center">${i + 1}</span>
+            <span class="text-sm font-medium text-slate-800 flex-1">${t.titulo}</span>
+            ${t.media.length ? `<span class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i>${t.media.length}</span>` : ''}
+            <i data-lucide="chevron-right" class="chev w-4 h-4 text-slate-400"></i>
+          </summary>
+          <div class="px-3 pb-3 pt-1 border-t border-slate-100">
+            <p class="text-sm text-slate-600 leading-relaxed mb-2">${t.desc}</p>
+            ${t.media.map(renderMediaInline).join('')}
+          </div>
+        </details>
+      `).join('');
+    }
+
+    function renderMaterials() {
+      const all = stage.tasks.flatMap((t, i) => t.media.map(m => ({ ...m, taskIdx: i, taskTitle: t.titulo })));
+      document.getElementById('pane-materiais').innerHTML = all.map(m => `
+        <article class="rounded-lg border border-slate-200 bg-white overflow-hidden">
+          ${m.type === 'image' ? `<img src="${m.url}" class="w-full h-32 object-cover" />` : ''}
+          ${m.type === 'video' ? `<video src="${m.url}" controls preload="metadata" class="w-full h-32 object-cover bg-black"></video>` : ''}
+          ${m.type === 'link' ? `<div class="h-32 bg-slate-50 flex items-center justify-center"><i data-lucide="link-2" class="w-10 h-10 text-slate-400"></i></div>` : ''}
+          <div class="px-3 py-2">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Tarefa ${m.taskIdx + 1}</div>
+            <div class="text-xs font-medium text-slate-700 truncate">${m.taskTitle}</div>
+            ${m.type === 'link' ? `<a href="${m.url}" target="_blank" class="text-xs text-blue-600 hover:underline truncate block">${m.label}</a>` : `<div class="text-[11px] text-slate-500 truncate">${m.caption || ''}</div>`}
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function renderMediaInline(m) {
+      if (m.type === 'image') return `<figure class="rounded-md overflow-hidden border border-slate-200 mt-2"><img src="${m.url}" class="w-full h-auto" />${m.caption?`<figcaption class="text-xs text-slate-500 px-2 py-1 bg-slate-50">${m.caption}</figcaption>`:''}</figure>`;
+      if (m.type === 'video') return `<figure class="rounded-md overflow-hidden border border-slate-200 mt-2"><video src="${m.url}" controls preload="metadata" class="w-full h-auto bg-black"></video></figure>`;
+      if (m.type === 'link') return `<a href="${m.url}" target="_blank" class="mt-2 flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 hover:bg-slate-100"><i data-lucide="link-2" class="w-4 h-4 text-slate-500"></i><span class="font-medium text-slate-700">${m.label}</span><i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400 ml-auto"></i></a>`;
+      return '';
+    }
+
+    function renderTemplates() {
+      document.getElementById('pane-templates').innerHTML = stage.templates.map((t, idx) => `
+        <article class="rounded-lg border border-slate-200 bg-white">
+          <header class="flex items-center justify-between px-3 py-2 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
+              <span class="text-sm font-medium text-slate-800">${t.nome}</span>
+            </div>
+            <button onclick="copyTpl(${idx})" aria-label="Copiar template ${t.nome}" class="btn-primary text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </header>
+          <pre class="tpl px-3 py-2.5 text-slate-700">${escapeHtml(t.texto)}</pre>
+        </article>
+      `).join('');
+    }
+
+    function setTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      ['checklist', 'materiais', 'templates'].forEach(p => {
+        document.getElementById('pane-' + p).classList.toggle('hidden', p !== name);
+      });
+      lucide.createIcons();
+    }
+
+    async function copyTpl(idx) {
+      try { await navigator.clipboard.writeText(stage.templates[idx].texto); showToast('Template copiado — asteriscos preservados!'); }
+      catch { showToast('Falha ao copiar'); }
+    }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    function closeDialog() { showToast('Dialog fecharia aqui (Esc / clique fora / X)'); }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDialog(); });
+    document.getElementById('backdrop').addEventListener('click', e => { if (e.target.id === 'backdrop') closeDialog(); });
+
+    renderChecklist();
+    renderMaterials();
+    renderTemplates();
+    lucide.createIcons();
+  </script>
+</body>
+</html>

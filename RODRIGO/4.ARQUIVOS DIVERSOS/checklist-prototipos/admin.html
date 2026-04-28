@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Cadastro de Checklist por Etapa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: 213 25% 97%;
+      --fg: 215 50% 8%;
+      --muted: 215 16% 46%;
+      --primary: 213 65% 30%;
+      --primary-fg: 0 0% 100%;
+      --border: 213 25% 88%;
+      --card: 0 0% 100%;
+      --indigo: 226 70% 55%;
+      --danger: 0 70% 50%;
+      --success: 142 65% 38%;
+    }
+    body { background: hsl(var(--bg)); color: hsl(var(--fg)); font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .backdrop { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(2px); }
+    .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-fg)); }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .btn-outline { border: 1px solid hsl(var(--border)); color: hsl(var(--fg)); background: white; }
+    .btn-outline:hover { background: hsl(var(--bg)); }
+    .btn-ghost { color: hsl(var(--muted)); }
+    .btn-ghost:hover { background: hsl(var(--bg)); color: hsl(var(--fg)); }
+    .btn-danger { color: hsl(var(--danger)); }
+    .btn-danger:hover { background: hsl(var(--danger) / 0.08); }
+    .stage-dot { width: 10px; height: 10px; border-radius: 9999px; background: hsl(var(--indigo)); box-shadow: 0 0 0 4px hsl(var(--indigo) / 0.15); }
+    .scrollarea { overflow-y: auto; }
+    .scrollarea::-webkit-scrollbar { width: 8px; } .scrollarea::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+    .nav-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background .15s; border: 1px solid transparent; }
+    .nav-item:hover { background: hsl(var(--bg)); }
+    .nav-item.active { background: hsl(var(--primary) / 0.08); border-color: hsl(var(--primary) / 0.25); }
+    .nav-item.active .nav-num { background: hsl(var(--primary)); color: white; }
+    .nav-item.active .nav-title { color: hsl(var(--primary)); font-weight: 600; }
+    .nav-num { width: 22px; height: 22px; border-radius: 9999px; background: hsl(var(--border)); color: hsl(var(--muted)); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .drag-handle { cursor: grab; color: hsl(var(--muted)); flex-shrink: 0; opacity: .5; }
+    .drag-handle:hover { opacity: 1; }
+    .nav-item.dragging { opacity: .35; }
+    .nav-item.drag-over { border-top: 2px solid hsl(var(--primary)); }
+    input.field, textarea.field {
+      width: 100%; border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 8px 10px;
+      font-size: 14px; background: white; color: hsl(var(--fg)); transition: border-color .15s, box-shadow .15s;
+    }
+    input.field:focus, textarea.field:focus { outline: none; border-color: hsl(var(--primary)); box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15); }
+    textarea.field { resize: vertical; min-height: 80px; line-height: 1.5; }
+    textarea.tpl-input { font-family: ui-monospace, monospace; font-size: 13px; min-height: 100px; }
+    pre.tpl-preview {
+      font-family: ui-monospace, monospace; white-space: pre-wrap; word-wrap: break-word; font-size: 13px; line-height: 1.55;
+      background: hsl(var(--bg)); border: 1px dashed hsl(var(--border)); border-radius: 8px; padding: 10px;
+      color: hsl(var(--fg)); min-height: 100px;
+    }
+    .label { font-size: 12px; font-weight: 600; color: hsl(var(--muted)); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; display: block; }
+    .help { font-size: 11px; color: hsl(var(--muted)); margin-top: 4px; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: hsl(215 50% 12%); color: white; padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; gap: 8px; align-items: center; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .dropzone {
+      border: 2px dashed hsl(var(--border)); border-radius: 10px; padding: 16px; text-align: center;
+      color: hsl(var(--muted)); font-size: 13px; transition: all .15s; cursor: pointer; background: hsl(var(--bg) / .5);
+    }
+    .dropzone:hover, .dropzone.dragover { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.04); color: hsl(var(--primary)); }
+    .attachment-thumb { position: relative; border: 1px solid hsl(var(--border)); border-radius: 8px; overflow: hidden; background: white; }
+    .attachment-thumb .delete { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,.65); color: white; padding: 4px; border-radius: 999px; cursor: pointer; opacity: 0; transition: opacity .15s; }
+    .attachment-thumb:hover .delete { opacity: 1; }
+    .badge-tipo { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    .badge-tipo.imagem { background: hsl(213 30% 92%); color: hsl(var(--primary)); }
+    .badge-tipo.video { background: hsl(280 30% 92%); color: hsl(280 65% 40%); }
+    .badge-tipo.link { background: hsl(var(--success) / 0.12); color: hsl(var(--success)); }
+    .fade-in { animation: fade .25s ease both; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .empty-state { text-align: center; padding: 40px 20px; color: hsl(var(--muted)); }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="backdrop" class="backdrop fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-6">
+    <div id="dialog" class="card relative z-50 w-full max-w-5xl rounded-xl shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="dlg-title" style="height: min(90vh, 780px);">
+
+      <header class="px-6 py-4 border-b border-slate-200 flex items-start gap-3">
+        <span class="stage-dot mt-2"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs uppercase tracking-wider text-slate-500">Editar checklist · Funil "Seguidores"</div>
+          <h2 id="dlg-title" class="text-lg font-semibold leading-tight">Etapa: Primeiro Contato</h2>
+          <p class="text-xs text-slate-500 mt-0.5">As alterações ficam visíveis para todos os atendentes deste funil.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="togglePreview()" id="btn-preview" class="btn-outline text-sm font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5">
+            <i data-lucide="eye" class="w-4 h-4"></i> Pré-visualizar
+          </button>
+          <button onclick="closeDialog()" aria-label="Fechar" class="btn-ghost rounded-md p-1.5">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="flex-1 grid grid-cols-12 overflow-hidden">
+
+        <aside class="col-span-4 border-r border-slate-200 bg-slate-50/50 scrollarea p-3 flex flex-col">
+          <div class="flex items-center justify-between px-1 pb-2">
+            <div class="text-[11px] uppercase tracking-wider text-slate-500">Tarefas</div>
+            <span class="text-[11px] text-slate-400" id="count-tasks">0</span>
+          </div>
+          <ul id="nav-tasks" class="space-y-1"></ul>
+          <button onclick="addTask()" class="mt-2 nav-item border border-dashed border-slate-300 text-slate-500 hover:text-slate-900 hover:border-slate-400 justify-center">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="text-sm font-medium">Adicionar tarefa</span>
+          </button>
+
+          <div class="text-[11px] uppercase tracking-wider text-slate-500 px-1 pt-5 pb-2">Templates de mensagem</div>
+          <ul class="space-y-1">
+            <li class="nav-item" id="nav-templates" onclick="setView('templates')">
+              <i data-lucide="message-square-quote" class="w-4 h-4 text-slate-500 mt-0.5"></i>
+              <div class="flex-1">
+                <div class="text-sm nav-title text-slate-700 leading-snug">Mensagens prontas</div>
+                <div class="text-xs text-slate-500" id="count-templates">0 templates</div>
+              </div>
+            </li>
+          </ul>
+
+          <div class="mt-auto pt-4 px-1">
+            <div class="text-[11px] text-slate-400 leading-snug">
+              <i data-lucide="info" class="w-3 h-3 inline -mt-0.5"></i>
+              Arraste pelo <i data-lucide="grip-vertical" class="w-3 h-3 inline -mt-0.5"></i> para reordenar.
+            </div>
+          </div>
+        </aside>
+
+        <main id="content" class="col-span-8 scrollarea p-6"></main>
+
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 bg-slate-50/50 rounded-b-xl flex items-center justify-between">
+        <span class="text-xs text-slate-500" id="dirty-status">
+          <i data-lucide="circle-check" class="w-3.5 h-3.5 inline -mt-0.5 text-emerald-600"></i> Tudo salvo
+        </span>
+        <div class="flex items-center gap-2">
+          <button onclick="closeDialog()" class="btn-outline text-sm font-medium px-3 py-1.5 rounded-md">Cancelar</button>
+          <button onclick="saveAll()" class="btn-primary text-sm font-medium px-4 py-1.5 rounded-md flex items-center gap-1.5">
+            <i data-lucide="save" class="w-4 h-4"></i> Salvar alterações
+          </button>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">OK</span>
+  </div>
+
+  <script>
+    // -------- Estado mockado (em React vira useState + react-query) ----------
+    const state = {
+      tasks: [
+        {
+          id: 't1', titulo: 'Cumprimentar e identificar o contato',
+          desc: 'Abra o WhatsApp Web, busque o número do lead, envie a saudação inicial e descubra de qual evento ou indicação ele veio.',
+          attachments: [
+            { id: 'a1', tipo: 'imagem', url: 'https://picsum.photos/seed/wamandato/720/360', nome: 'busca-whatsapp.png' }
+          ]
+        },
+        {
+          id: 't2', titulo: 'Enviar vídeo de apresentação do mandato',
+          desc: 'Compartilhe o vídeo institucional padrão (até 30s).',
+          attachments: [
+            { id: 'a2', tipo: 'video', url: 'https://www.w3schools.com/html/mov_bbb.mp4', nome: 'apresentacao-30s.mp4' }
+          ]
+        },
+        {
+          id: 't3', titulo: 'Agendar follow-up no Mandato Desk',
+          desc: 'Mova o contato para a etapa "Aquecendo" e crie um lembrete de follow-up para 48h depois.',
+          attachments: [
+            { id: 'a3', tipo: 'link', url: 'https://exemplo.com/manual-followup', label: 'Manual interno: como agendar follow-up' }
+          ]
+        }
+      ],
+      templates: [
+        { id: 'tpl1', nome: 'Saudação de boas-vindas', texto: 'Olá *{{nome}}*! Aqui é a equipe do mandato.\nVi que você se inscreveu no nosso _evento_ — posso te enviar o material de boas-vindas?' },
+        { id: 'tpl2', nome: 'Lembrete de follow-up (48h)', texto: '~Oi de novo!~ Combinamos de retomar nossa conversa hoje.\n*Bora marcar?* Manda o melhor horário pra gente conversar 🙂' }
+      ],
+      view: { kind: 'task', idx: 0 },
+      dirty: false,
+      previewing: false,
+    };
+
+    // ----- Helpers -------------------------------------------------------
+    const uid = () => 'id_' + Math.random().toString(36).slice(2, 10);
+    const escapeHtml = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+    function markDirty() {
+      state.dirty = true;
+      document.getElementById('dirty-status').innerHTML = `<i data-lucide="circle-dot" class="w-3.5 h-3.5 inline -mt-0.5 text-amber-600"></i> Alterações não salvas`;
+      lucide.createIcons();
+    }
+    function markSaved() {
+      state.dirty = false;
+      document.getElementById('dirty-status').innerHTML = `<i data-lucide="circle-check" class="w-3.5 h-3.5 inline -mt-0.5 text-emerald-600"></i> Tudo salvo`;
+      lucide.createIcons();
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      const icon = type === 'error' ? 'alert-circle' : 'check-circle-2';
+      const color = type === 'error' ? 'text-red-400' : 'text-emerald-400';
+      t.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 ${color}"></i><span>${msg}</span>`;
+      t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2400);
+      lucide.createIcons();
+    }
+
+    function setView(kind, idx) { state.view = { kind, idx: idx ?? 0 }; render(); }
+
+    function addTask() {
+      const t = { id: uid(), titulo: '', desc: '', attachments: [] };
+      state.tasks.push(t);
+      markDirty();
+      setView('task', state.tasks.length - 1);
+      setTimeout(() => document.getElementById('inp-titulo')?.focus(), 0);
+    }
+
+    function deleteTask(idx) {
+      if (!confirm(`Excluir a tarefa "${state.tasks[idx].titulo || '(sem título)'}"? Anexos também serão removidos.`)) return;
+      state.tasks.splice(idx, 1);
+      markDirty();
+      const newIdx = Math.min(idx, state.tasks.length - 1);
+      setView(state.tasks.length === 0 ? 'templates' : 'task', newIdx < 0 ? 0 : newIdx);
+      showToast('Tarefa excluída');
+    }
+
+    function moveTask(from, to) {
+      if (to < 0 || to >= state.tasks.length || from === to) return;
+      const [it] = state.tasks.splice(from, 1);
+      state.tasks.splice(to, 0, it);
+      markDirty();
+      setView('task', to);
+    }
+
+    function addAttachment(taskIdx, tipo) {
+      const t = state.tasks[taskIdx];
+      if (tipo === 'link') {
+        const url = prompt('URL do link:', 'https://');
+        if (!url) return;
+        const label = prompt('Texto do link (opcional):', url) || url;
+        t.attachments.push({ id: uid(), tipo: 'link', url, label });
+      } else {
+        // simulando upload — em produção: validar mime + tamanho + Supabase Storage
+        const url = tipo === 'imagem'
+          ? 'https://picsum.photos/seed/' + uid() + '/720/360'
+          : 'https://www.w3schools.com/html/mov_bbb.mp4';
+        const nome = tipo === 'imagem' ? 'imagem-' + Date.now() + '.jpg' : 'video-' + Date.now() + '.mp4';
+        t.attachments.push({ id: uid(), tipo, url, nome });
+      }
+      markDirty(); render();
+      showToast('Anexo adicionado');
+    }
+
+    function removeAttachment(taskIdx, attIdx) {
+      state.tasks[taskIdx].attachments.splice(attIdx, 1);
+      markDirty(); render();
+      showToast('Anexo removido');
+    }
+
+    function updateTaskField(idx, field, value) {
+      state.tasks[idx][field] = value;
+      markDirty();
+      // só re-renderiza nav (título mudou) sem perder foco do input
+      renderNav();
+    }
+
+    // ---- Templates -----------------------------------------------------
+    function addTemplate() {
+      state.templates.push({ id: uid(), nome: '', texto: '' });
+      markDirty(); render();
+    }
+    function deleteTemplate(idx) {
+      if (!confirm(`Excluir o template "${state.templates[idx].nome || '(sem nome)'}"?`)) return;
+      state.templates.splice(idx, 1);
+      markDirty(); render();
+      showToast('Template excluído');
+    }
+    function updateTemplate(idx, field, value) {
+      state.templates[idx][field] = value;
+      markDirty();
+      // re-render apenas o preview daquele template
+      const pre = document.getElementById('tpl-preview-' + idx);
+      if (field === 'texto' && pre) pre.textContent = value;
+      const navCount = document.getElementById('count-templates');
+      if (navCount) navCount.textContent = state.templates.length + ' template' + (state.templates.length === 1 ? '' : 's');
+    }
+
+    // ---- Salvar (mock) -------------------------------------------------
+    function saveAll() {
+      // validação básica
+      const empty = state.tasks.findIndex(t => !t.titulo.trim());
+      if (empty >= 0) {
+        showToast(`Tarefa ${empty + 1} sem título`, 'error');
+        setView('task', empty);
+        setTimeout(() => document.getElementById('inp-titulo')?.focus(), 0);
+        return;
+      }
+      const emptyTpl = state.templates.findIndex(t => !t.nome.trim() || !t.texto.trim());
+      if (emptyTpl >= 0) {
+        showToast('Template incompleto', 'error');
+        setView('templates');
+        return;
+      }
+      markSaved();
+      showToast('Checklist salvo!');
+    }
+
+    function closeDialog() {
+      if (state.dirty && !confirm('Há alterações não salvas. Fechar mesmo assim?')) return;
+      showToast('Sheet fecharia aqui');
+    }
+
+    // -------- Drag & drop simples na lista de tarefas -------------------
+    let dragIdx = null;
+    function dragStart(e, idx) { dragIdx = idx; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+    function dragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.nav-item.drag-over').forEach(n => n.classList.remove('drag-over')); }
+    function dragOver(e, idx) { e.preventDefault(); document.querySelectorAll('.nav-item.drag-over').forEach(n => n.classList.remove('drag-over')); e.currentTarget.classList.add('drag-over'); }
+    function drop(e, idx) { e.preventDefault(); if (dragIdx !== null && dragIdx !== idx) moveTask(dragIdx, idx); dragIdx = null; }
+
+    // -------- Render -----------------------------------------------------
+    function renderNav() {
+      const ul = document.getElementById('nav-tasks');
+      document.getElementById('count-tasks').textContent = state.tasks.length;
+      document.getElementById('count-templates').textContent = state.templates.length + ' template' + (state.templates.length === 1 ? '' : 's');
+      ul.innerHTML = state.tasks.map((t, i) => `
+        <li class="nav-item ${state.view.kind === 'task' && state.view.idx === i ? 'active' : ''}"
+            draggable="true"
+            ondragstart="dragStart(event, ${i})" ondragend="dragEnd(event)"
+            ondragover="dragOver(event, ${i})" ondrop="drop(event, ${i})"
+            onclick="if(event.target.closest('.drag-handle'))return; setView('task', ${i})">
+          <i data-lucide="grip-vertical" class="drag-handle w-4 h-4 mt-1"></i>
+          <span class="nav-num">${i + 1}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm nav-title text-slate-700 leading-snug truncate">${escapeHtml(t.titulo) || '<span class="italic text-slate-400">Sem título</span>'}</div>
+            <div class="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+              ${t.attachments.length ? `<span class="flex items-center gap-1"><i data-lucide="paperclip" class="w-3 h-3"></i>${t.attachments.length}</span>` : '<span class="italic text-slate-400">sem anexos</span>'}
+            </div>
+          </div>
+        </li>
+      `).join('');
+      const navTpl = document.getElementById('nav-templates');
+      navTpl.classList.toggle('active', state.view.kind === 'templates');
+      lucide.createIcons();
+    }
+
+    function renderContent() {
+      const el = document.getElementById('content');
+      el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in');
+
+      if (state.view.kind === 'task') {
+        if (state.tasks.length === 0) {
+          el.innerHTML = `
+            <div class="empty-state">
+              <i data-lucide="list-checks" class="w-12 h-12 mx-auto text-slate-300"></i>
+              <h3 class="mt-3 text-base font-medium text-slate-700">Nenhuma tarefa ainda</h3>
+              <p class="text-sm mt-1">Adicione a primeira tarefa para começar a orientar seu time.</p>
+              <button onclick="addTask()" class="btn-primary mt-4 text-sm font-medium px-4 py-2 rounded-md inline-flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-4 h-4"></i> Adicionar primeira tarefa
+              </button>
+            </div>`;
+          lucide.createIcons(); return;
+        }
+        const i = state.view.idx;
+        const t = state.tasks[i];
+        el.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-slate-500">Tarefa ${i + 1} de ${state.tasks.length}</div>
+              <h3 class="text-lg font-semibold text-slate-900 mt-0.5">Editar passo</h3>
+            </div>
+            <button onclick="deleteTask(${i})" class="btn-danger text-xs font-medium px-2.5 py-1.5 rounded-md flex items-center gap-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Excluir
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="label">Título</label>
+              <input id="inp-titulo" class="field" maxlength="120" placeholder="Ex: Cumprimentar e identificar o contato"
+                value="${escapeHtml(t.titulo)}" oninput="updateTaskField(${i}, 'titulo', this.value)" />
+              <div class="help">Aparece como cabeçalho do passo no popup do atendente.</div>
+            </div>
+
+            <div>
+              <label class="label">Descrição / Instruções</label>
+              <textarea class="field" rows="4" maxlength="500" placeholder="Explique o que o atendente deve fazer neste passo."
+                oninput="updateTaskField(${i}, 'desc', this.value)">${escapeHtml(t.desc)}</textarea>
+              <div class="help">Até 500 caracteres. Use frases curtas e diretas.</div>
+            </div>
+
+            <div>
+              <label class="label">Anexos</label>
+
+              <div class="space-y-2">
+                ${t.attachments.map((a, ai) => renderAttachment(a, i, ai)).join('')}
+              </div>
+
+              <div class="dropzone mt-3" onclick="document.getElementById('file-input-${i}').click()">
+                <i data-lucide="upload-cloud" class="w-6 h-6 mx-auto mb-1"></i>
+                <div class="font-medium text-sm">Arraste um arquivo ou clique para escolher</div>
+                <div class="text-xs mt-0.5">Imagem (≤ 5MB · jpg/png/webp) ou Vídeo (≤ 50MB · mp4/webm)</div>
+                <input id="file-input-${i}" type="file" accept="image/*,video/*" class="hidden" />
+              </div>
+
+              <div class="flex flex-wrap gap-2 mt-2">
+                <button onclick="addAttachment(${i}, 'imagem')" class="btn-outline text-xs font-medium px-2.5 py-1.5 rounded-md flex items-center gap-1.5">
+                  <i data-lucide="image" class="w-3.5 h-3.5"></i> Adicionar imagem (mock)
+                </button>
+                <button onclick="addAttachment(${i}, 'video')" class="btn-outline text-xs font-medium px-2.5 py-1.5 rounded-md flex items-center gap-1.5">
+                  <i data-lucide="video" class="w-3.5 h-3.5"></i> Adicionar vídeo (mock)
+                </button>
+                <button onclick="addAttachment(${i}, 'link')" class="btn-outline text-xs font-medium px-2.5 py-1.5 rounded-md flex items-center gap-1.5">
+                  <i data-lucide="link-2" class="w-3.5 h-3.5"></i> Adicionar link
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <button onclick="setView('task', ${i - 1})" class="text-sm text-slate-600 hover:text-slate-900 disabled:opacity-30 flex items-center gap-1" ${i === 0 ? 'disabled' : ''}>
+              <i data-lucide="chevron-left" class="w-4 h-4"></i> Tarefa anterior
+            </button>
+            <button onclick="setView('task', ${i + 1})" class="text-sm text-slate-600 hover:text-slate-900 disabled:opacity-30 flex items-center gap-1" ${i === state.tasks.length - 1 ? 'disabled' : ''}>
+              Próxima tarefa <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        // ---- Templates editor ------------------------------------------
+        el.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-slate-500">Mensagens prontas</div>
+              <h3 class="text-lg font-semibold text-slate-900 mt-0.5">Templates de WhatsApp</h3>
+              <p class="text-xs text-slate-500 mt-1 max-w-md">
+                Use <code class="bg-slate-100 px-1 rounded">*texto*</code> para <strong>negrito</strong>,
+                <code class="bg-slate-100 px-1 rounded">_texto_</code> para <em>itálico</em> e
+                <code class="bg-slate-100 px-1 rounded">~texto~</code> para <s>tachado</s>.
+                Os caracteres ficam <strong>literais aqui</strong> e viram formatação só no WhatsApp.
+              </p>
+            </div>
+            <button onclick="addTemplate()" class="btn-primary text-sm font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-4 h-4"></i> Novo template
+            </button>
+          </div>
+
+          ${state.templates.length === 0 ? `
+            <div class="empty-state">
+              <i data-lucide="message-square-quote" class="w-12 h-12 mx-auto text-slate-300"></i>
+              <h3 class="mt-3 text-base font-medium text-slate-700">Sem templates ainda</h3>
+              <p class="text-sm mt-1">Crie mensagens prontas para o atendente copiar com 1 clique.</p>
+            </div>
+          ` : `
+            <div class="space-y-4">
+              ${state.templates.map((tpl, idx) => `
+                <article class="rounded-lg border border-slate-200 bg-white p-4">
+                  <div class="flex items-start justify-between gap-3 mb-3">
+                    <div class="flex-1 min-w-0">
+                      <label class="label">Título do template</label>
+                      <input class="field" maxlength="120" placeholder="Ex: Saudação de boas-vindas"
+                        value="${escapeHtml(tpl.nome)}" oninput="updateTemplate(${idx}, 'nome', this.value)" />
+                    </div>
+                    <button onclick="deleteTemplate(${idx})" class="btn-danger text-xs font-medium px-2 py-1.5 rounded-md flex items-center gap-1 mt-6">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label class="label flex items-center justify-between">
+                        <span>Conteúdo</span>
+                        <span class="text-[10px] font-normal normal-case tracking-normal text-slate-400">edite aqui</span>
+                      </label>
+                      <textarea class="field tpl-input" rows="6" maxlength="4000"
+                        oninput="updateTemplate(${idx}, 'texto', this.value)">${escapeHtml(tpl.texto)}</textarea>
+                    </div>
+                    <div>
+                      <label class="label flex items-center justify-between">
+                        <span>Pré-visualização literal</span>
+                        <span class="text-[10px] font-normal normal-case tracking-normal text-slate-400">como o atendente verá</span>
+                      </label>
+                      <pre id="tpl-preview-${idx}" class="tpl-preview">${escapeHtml(tpl.texto)}</pre>
+                    </div>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          `}
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function renderAttachment(a, taskIdx, attIdx) {
+      const tipoBadge = `<span class="badge-tipo ${a.tipo}">${a.tipo}</span>`;
+      if (a.tipo === 'imagem') {
+        return `<div class="attachment-thumb flex items-stretch">
+          <img src="${a.url}" class="w-24 h-16 object-cover flex-shrink-0" />
+          <div class="px-3 py-2 flex-1 min-w-0 flex flex-col justify-center">
+            <div class="flex items-center gap-2">${tipoBadge}<span class="text-xs text-slate-400">5 MB</span></div>
+            <div class="text-sm font-medium text-slate-800 truncate mt-0.5">${escapeHtml(a.nome || 'imagem.jpg')}</div>
+          </div>
+          <button onclick="removeAttachment(${taskIdx}, ${attIdx})" aria-label="Remover anexo" class="px-3 text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>`;
+      }
+      if (a.tipo === 'video') {
+        return `<div class="attachment-thumb flex items-stretch">
+          <div class="w-24 h-16 bg-slate-900 flex items-center justify-center flex-shrink-0"><i data-lucide="play" class="w-6 h-6 text-white"></i></div>
+          <div class="px-3 py-2 flex-1 min-w-0 flex flex-col justify-center">
+            <div class="flex items-center gap-2">${tipoBadge}<span class="text-xs text-slate-400">~30s · MP4</span></div>
+            <div class="text-sm font-medium text-slate-800 truncate mt-0.5">${escapeHtml(a.nome || 'video.mp4')}</div>
+          </div>
+          <button onclick="removeAttachment(${taskIdx}, ${attIdx})" aria-label="Remover anexo" class="px-3 text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>`;
+      }
+      if (a.tipo === 'link') {
+        return `<div class="attachment-thumb flex items-stretch">
+          <div class="w-24 h-16 bg-emerald-50 flex items-center justify-center flex-shrink-0"><i data-lucide="link-2" class="w-6 h-6 text-emerald-600"></i></div>
+          <div class="px-3 py-2 flex-1 min-w-0 flex flex-col justify-center">
+            <div class="flex items-center gap-2">${tipoBadge}</div>
+            <div class="text-sm font-medium text-slate-800 truncate mt-0.5">${escapeHtml(a.label || a.url)}</div>
+            <div class="text-xs text-slate-500 truncate">${escapeHtml(a.url)}</div>
+          </div>
+          <button onclick="removeAttachment(${taskIdx}, ${attIdx})" aria-label="Remover anexo" class="px-3 text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>`;
+      }
+      return '';
+    }
+
+    function render() { renderNav(); renderContent(); }
+
+    // -------- Preview (abre v4 na nova aba como referência) --------------
+    function togglePreview() {
+      window.open('v4.html', '_blank');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDialog();
+    });
+    document.getElementById('backdrop').addEventListener('click', e => {
+      if (e.target.id === 'backdrop') closeDialog();
+    });
+
+    render();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
