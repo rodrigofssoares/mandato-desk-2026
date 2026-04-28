@@ -228,7 +228,7 @@ function NavItem({
           {idx + 1}
         </span>
         <div className="flex-1 min-w-0">
-          <p className={cn('text-sm leading-snug truncate', active && 'text-primary font-semibold')}>
+          <p className={cn('text-sm leading-snug break-words', active && 'text-primary font-semibold')}>
             {item.texto}
           </p>
           {item.attachments.length > 0 && (
