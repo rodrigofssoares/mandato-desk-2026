@@ -37,6 +37,7 @@ import { useBranding } from '@/hooks/useBranding';
 import { ROLE_LABELS, type Role } from '@/types/permissions';
 import type { Secao } from '@/types/permissions';
 import type { LucideIcon } from 'lucide-react';
+import { APP_VERSION, LAST_UPDATE } from '@/version';
 
 interface NavItem {
   label: string;
@@ -83,16 +84,6 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   tarefas: (can) => can.viewTarefas(),
   configuracoes: (can) => can.accessSettings(),
 };
-
-const buildVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
-const buildDateRaw = typeof __APP_BUILD_DATE__ !== 'undefined' ? __APP_BUILD_DATE__ : new Date().toISOString();
-const buildDateLabel = new Date(buildDateRaw).toLocaleString('pt-BR', {
-  day: '2-digit',
-  month: '2-digit',
-  year: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-});
 
 export function AppSidebar() {
   const location = useLocation();
@@ -208,11 +199,24 @@ export function AppSidebar() {
             <LogOut className="h-4 w-4" />
             <span className="group-data-[collapsible=icon]:hidden">Sair</span>
           </Button>
+          {/* Versão (modo expandido) */}
           <div
-            className="text-[10px] text-muted-foreground text-center font-mono leading-tight pt-1 group-data-[collapsible=icon]:hidden"
-            title={`Build ${buildVersion} em ${buildDateRaw}`}
+            className="text-center pt-1 leading-tight group-data-[collapsible=icon]:hidden"
+            title={`Última atualização: ${LAST_UPDATE}`}
           >
-            build {buildVersion} · {buildDateLabel}
+            <div className="text-[11px] font-semibold text-muted-foreground">
+              v{APP_VERSION}
+            </div>
+            <div className="text-[10px] text-muted-foreground/70">
+              {LAST_UPDATE}
+            </div>
+          </div>
+          {/* Versão (modo recolhido) */}
+          <div
+            className="hidden group-data-[collapsible=icon]:block text-[9px] font-mono text-muted-foreground/80 text-center pt-1 leading-tight"
+            title={`v${APP_VERSION} — ${LAST_UPDATE}`}
+          >
+            v{APP_VERSION}
           </div>
         </div>
       </SidebarFooter>
