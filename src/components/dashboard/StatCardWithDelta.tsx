@@ -14,6 +14,8 @@ interface StatCardWithDeltaProps {
   /** Linha secundária opcional (ex: "31% taxa", "vs. mês passado"). */
   hint?: string;
   isLoading?: boolean;
+  /** Quando definido, exibe progress bar h-1.5 logo após o valor. */
+  progressPct?: number | null;
 }
 
 export function StatCardWithDelta({
@@ -25,6 +27,7 @@ export function StatCardWithDelta({
   deltaPct,
   hint,
   isLoading = false,
+  progressPct,
 }: StatCardWithDeltaProps) {
   const deltaDisponivel = deltaPct !== null && deltaPct !== undefined;
   const isPositive = deltaDisponivel && (deltaPct as number) > 0;
@@ -55,7 +58,25 @@ export function StatCardWithDelta({
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {label}
                 </p>
-                <p className="text-3xl font-bold mt-1 truncate">{value}</p>
+                <p
+                  className={cn(
+                    'font-bold mt-1 truncate tabular-nums',
+                    progressPct != null ? 'text-2xl' : 'text-3xl'
+                  )}
+                >
+                  {value}
+                </p>
+                {progressPct != null && (
+                  <div className="mt-2 w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all',
+                        progressPct >= 100 ? 'bg-green-500' : 'bg-primary'
+                      )}
+                      style={{ width: `${Math.min(Math.max(progressPct, 0), 100)}%` }}
+                    />
+                  </div>
+                )}
                 <div className="mt-2 flex items-center gap-1 text-xs">
                   {deltaDisponivel && !isZero && (
                     <>
