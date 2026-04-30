@@ -18,12 +18,14 @@ export default function Branding() {
   const [politicianName, setPoliticianName] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [metaVotos, setMetaVotos] = useState<string>('');
 
   useEffect(() => {
     if (branding) {
       setPoliticianName(branding.politician_name || '');
       setPhotoUrl(branding.politician_photo_url || null);
       setPhotoPreview(branding.politician_photo_url || null);
+      setMetaVotos(branding.meta_votos != null ? String(branding.meta_votos) : '');
     }
   }, [branding]);
 
@@ -52,11 +54,15 @@ export default function Branding() {
   };
 
   const handleSave = () => {
+    const trimmed = metaVotos.trim();
+    const parsed = trimmed === '' ? null : parseInt(trimmed, 10);
+    const metaVotosNum = parsed != null && !Number.isNaN(parsed) && parsed >= 0 ? parsed : null;
     updateBranding.mutate({
       mandate_name: branding?.mandate_name ?? 'Meu Mandato',
       primary_color: branding?.primary_color ?? '#0B63D1',
       politician_name: politicianName,
       politician_photo_url: photoUrl,
+      meta_votos: metaVotosNum,
     });
   };
 
@@ -231,6 +237,22 @@ export default function Branding() {
             />
             <p className="text-xs text-muted-foreground">
               Será exibido abaixo da foto na barra lateral
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="meta-votos">Meta de Votos</Label>
+            <Input
+              id="meta-votos"
+              type="number"
+              min={0}
+              step={1}
+              value={metaVotos}
+              onChange={(e) => setMetaVotos(e.target.value)}
+              placeholder="Ex: 5000"
+            />
+            <p className="text-xs text-muted-foreground">
+              Deixe em branco para ocultar o progresso no dashboard.
             </p>
           </div>
 

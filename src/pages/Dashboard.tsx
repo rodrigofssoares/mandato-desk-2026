@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useDashboardMetrics';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
+import { useBranding } from '@/hooks/useBranding';
 import {
   resolveChartType,
   type ChartViewType,
@@ -57,6 +58,7 @@ export default function Dashboard() {
   }, [boardParam, boards]);
 
   const { data: metrics, isLoading } = useDashboardMetrics(period, activeBoardId);
+  const { data: branding } = useBranding();
 
   const setPeriod = (p: DashboardPeriod) => {
     const next = new URLSearchParams(searchParams);
@@ -80,7 +82,20 @@ export default function Dashboard() {
       : undefined;
 
   const novosHint = `${PERIOD_LABELS[period]}`;
-  const votoHint = metrics
+
+  const metaVotos = branding?.meta_votos ?? null;
+  const temMeta = metaVotos != null && metaVotos > 0;
+  const votoAtual = metrics?.votoDeclarado.current ?? 0;
+
+  const votoValue: number | string = temMeta
+    ? `${votoAtual.toLocaleString('pt-BR')} / ${metaVotos!.toLocaleString('pt-BR')}`
+    : votoAtual;
+
+  const votoProgressPct = temMeta ? (votoAtual / metaVotos!) * 100 : null;
+
+  const votoHint = temMeta
+    ? `${votoProgressPct!.toFixed(1)}% da meta`
+    : metrics
     ? `${metrics.votoDeclarado.taxa.toFixed(1)}% taxa`
     : undefined;
 
@@ -155,9 +170,10 @@ export default function Dashboard() {
           icon={CheckCircle2}
           iconColor="text-green-600"
           iconBg="bg-green-500/10"
-          value={metrics?.votoDeclarado.current ?? 0}
+          value={votoValue}
           deltaPct={metrics?.votoDeclarado.deltaPct}
           hint={votoHint}
+          progressPct={votoProgressPct}
           isLoading={isLoading}
         />
         <StatCardWithDelta

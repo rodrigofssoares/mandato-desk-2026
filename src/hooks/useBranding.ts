@@ -8,6 +8,7 @@ export interface BrandingSettings {
   primary_color: string;
   politician_name: string;
   politician_photo_url: string | null;
+  meta_votos: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -17,6 +18,7 @@ const DEFAULT_BRANDING: Omit<BrandingSettings, 'id'> = {
   primary_color: '#0B63D1',
   politician_name: '',
   politician_photo_url: null,
+  meta_votos: null,
 };
 
 export function useBranding() {
@@ -48,6 +50,7 @@ export function useUpdateBranding() {
       primary_color?: string;
       politician_name?: string;
       politician_photo_url?: string | null;
+      meta_votos?: number | null;
     }) => {
       const { data: existing } = await (supabase.from('branding_settings') as any)
         .select('id')
@@ -73,6 +76,7 @@ export function useUpdateBranding() {
             primary_color: input.primary_color ?? DEFAULT_BRANDING.primary_color,
             politician_name: input.politician_name ?? '',
             politician_photo_url: input.politician_photo_url ?? null,
+            meta_votos: input.meta_votos ?? null,
           })
           .select()
           .single();
