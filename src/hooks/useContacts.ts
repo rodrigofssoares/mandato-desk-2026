@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import type { ContactFormData } from '@/lib/contactValidation';
 import { logActivity } from '@/lib/activityLog';
 import { phoneComparisonKey } from '@/lib/normalization';
+import { triggerGoogleSync } from '@/lib/googleSync';
+import { useAuth } from '@/context/AuthContext';
 
 // ---------- Phone duplicity check ----------
 
@@ -442,6 +444,7 @@ export function useContact(id: string | undefined) {
 
 export function useCreateContact() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (formData: ContactFormData) => {
@@ -491,6 +494,11 @@ export function useCreateContact() {
       queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato criado com sucesso');
       logActivity({ type: 'create', entity_type: 'contact', entity_name: data.nome, entity_id: data.id, description: `Criou o contato "${data.nome}"` });
+
+      // Disparo fire-and-forget para Google Contacts (D2)
+      if (user?.id) {
+        triggerGoogleSync('create', data.id, user.id, queryClient);
+      }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar contato: ${error.message}`);
@@ -502,6 +510,7 @@ export function useCreateContact() {
 
 export function useUpdateContact() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, data: formData }: { id: string; data: ContactFormData }) => {
@@ -557,6 +566,11 @@ export function useUpdateContact() {
       queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato atualizado com sucesso');
       logActivity({ type: 'update', entity_type: 'contact', entity_id: variables.id, description: `Atualizou o contato` });
+
+      // Disparo fire-and-forget para Google Contacts (D2)
+      if (user?.id) {
+        triggerGoogleSync('update', variables.id, user.id, queryClient);
+      }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar contato: ${error.message}`);
@@ -568,19 +582,37 @@ export function useUpdateContact() {
 
 export function useDeleteContact() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Captura google_resource_name antes de deletar para uso no sync
+      const { data: contactData } = await supabase
+        .from('contacts')
+        .select('google_resource_name')
+        .eq('id', id)
+        .maybeSingle();
+
+      const googleResourceName = (contactData as { google_resource_name?: string | null } | null)?.google_resource_name ?? null;
+
       // Tags are deleted by cascade
       const { error } = await supabase.from('contacts').delete().eq('id', id);
       if (error) throw error;
+
+      return { contactId: id, googleResourceName };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-count'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-groups'] });
       toast.success('Contato excluído com sucesso');
       logActivity({ type: 'delete', entity_type: 'contact', description: 'Excluiu um contato' });
+
+      // Disparo fire-and-forget para Google Contacts (D2/D7)
+      if (user?.id) {
+        // FIX P-CRIT-2: google_resource_name não é mais enviado — Edge Function busca do banco
+        triggerGoogleSync('delete', result.contactId, user.id, queryClient);
+      }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir contato: ${error.message}`);

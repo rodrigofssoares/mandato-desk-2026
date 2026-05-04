@@ -4,6 +4,7 @@ import { Cable, Globe, Code, Webhook as WebhookIcon } from 'lucide-react';
 import GoogleIntegration from '@/pages/GoogleIntegration';
 import Api from '@/pages/Api';
 import Webhooks from '@/pages/Webhooks';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const SUB_TABS = ['google', 'api', 'webhooks'] as const;
 type SubTab = (typeof SUB_TABS)[number];
@@ -16,8 +17,15 @@ function isValidSub(value: string | null): value is SubTab {
 
 export function IntegrationsTab() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { can } = usePermissions();
+  const canViewGoogle = can.accessGoogle();
   const rawSub = searchParams.get('sub');
-  const activeSub: SubTab = isValidSub(rawSub) ? rawSub : DEFAULT_SUB;
+  const requestedSub: SubTab = isValidSub(rawSub) ? rawSub : DEFAULT_SUB;
+  // Defesa em profundidade: se o sub-tab pedido for "google" mas o user não
+  // tem permissão, cai pra outro disponível (sidebar já oculta o item, mas a
+  // URL é descobrível).
+  const activeSub: SubTab =
+    requestedSub === 'google' && !canViewGoogle ? 'api' : requestedSub;
 
   const handleChange = (value: string) => {
     if (!isValidSub(value)) return;
@@ -36,10 +44,12 @@ export function IntegrationsTab() {
 
       <Tabs value={activeSub} onValueChange={handleChange} className="w-full">
         <TabsList className="h-auto flex-wrap">
-          <TabsTrigger value="google" className="gap-2">
-            <Globe className="h-4 w-4" />
-            Google
-          </TabsTrigger>
+          {canViewGoogle && (
+            <TabsTrigger value="google" className="gap-2">
+              <Globe className="h-4 w-4" />
+              Google
+            </TabsTrigger>
+          )}
           <TabsTrigger value="api" className="gap-2">
             <Code className="h-4 w-4" />
             API
@@ -50,9 +60,11 @@ export function IntegrationsTab() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="google" className="mt-4">
-          <GoogleIntegration />
-        </TabsContent>
+        {canViewGoogle && (
+          <TabsContent value="google" className="mt-4">
+            <GoogleIntegration />
+          </TabsContent>
+        )}
         <TabsContent value="api" className="mt-4">
           <Api />
         </TabsContent>
