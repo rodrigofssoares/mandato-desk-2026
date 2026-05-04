@@ -95,7 +95,10 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   });
 
   useEffect(() => {
-    // Reset dos valores pendentes ao abrir/fechar ou trocar de contato
+    // Só (re)popula o form quando o dialog abre. Sem isso, o estado do form
+    // persiste entre aberturas (RHF mantém valores até reset explícito) e o
+    // último contato preenchido/visualizado vaza pra abertura seguinte.
+    if (!open) return;
     setPendingCampaignValues({});
     if (contact) {
       const tagIds = contact.contact_tags?.map((ct) => ct.tag_id) ?? [];
@@ -135,7 +138,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
     } else {
       form.reset();
     }
-  }, [contact, form]);
+  }, [open, contact, form]);
 
   const onSubmit = async (data: ContactFormData) => {
     // Converte "yyyy-MM-ddTHH:mm" (datetime-local) para ISO UTC antes de enviar
