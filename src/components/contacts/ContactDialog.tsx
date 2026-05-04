@@ -48,6 +48,43 @@ const ESTADOS = [
 
 const RANKING_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+// Form em branco — usado tanto na inicializacao quanto no reset ao abrir em
+// modo "criar". Importante: no RHF, `form.reset({...x})` substitui os
+// defaultValues internos por x, entao `form.reset()` sem args volta pra x —
+// e nao pros valores vazios. Por isso passamos este objeto explicitamente
+// no reset do modo "criar", garantindo limpeza real entre aberturas.
+const EMPTY_CONTACT_FORM: ContactFormData = {
+  nome: '',
+  nome_whatsapp: '',
+  whatsapp: '',
+  em_canal_whatsapp: false,
+  aceita_whatsapp: false,
+  e_multiplicador: false,
+  email: '',
+  telefone: '',
+  genero: null,
+  data_nascimento: '',
+  ultimo_contato: '',
+  logradouro: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  cep: '',
+  instagram: '',
+  twitter: '',
+  tiktok: '',
+  youtube: '',
+  declarou_voto: false,
+  ranking: 0,
+  leader_id: '',
+  origem: '',
+  observacoes: '',
+  notas_assessor: '',
+  tag_ids: [],
+};
+
 export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProps) {
   const isEditing = !!contact;
   const createMutation = useCreateContact();
@@ -61,37 +98,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
-    defaultValues: {
-      nome: '',
-      nome_whatsapp: '',
-      whatsapp: '',
-      em_canal_whatsapp: false,
-      aceita_whatsapp: false,
-      e_multiplicador: false,
-      email: '',
-      telefone: '',
-      genero: null,
-      data_nascimento: '',
-      ultimo_contato: '',
-      logradouro: '',
-      numero: '',
-      complemento: '',
-      bairro: '',
-      cidade: '',
-      estado: '',
-      cep: '',
-      instagram: '',
-      twitter: '',
-      tiktok: '',
-      youtube: '',
-      declarou_voto: false,
-      ranking: 0,
-      leader_id: '',
-      origem: '',
-      observacoes: '',
-      notas_assessor: '',
-      tag_ids: [],
-    },
+    defaultValues: EMPTY_CONTACT_FORM,
   });
 
   useEffect(() => {
@@ -136,7 +143,10 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         tag_ids: tagIds,
       });
     } else {
-      form.reset();
+      // Passa EMPTY_CONTACT_FORM explicitamente: reset() sem args voltaria
+      // pros ultimos defaultValues internos (que viraram os do contato editado
+      // apos um reset com valores anterior) — exatamente o bug deste fix.
+      form.reset(EMPTY_CONTACT_FORM);
     }
   }, [open, contact, form]);
 
