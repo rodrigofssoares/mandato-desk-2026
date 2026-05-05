@@ -12,3 +12,8 @@ verify_jwt = false
 
 [functions.reset-user-password]
 verify_jwt = false
+
+# google-auth: /start valida JWT do user manualmente (auth.getUser),
+# /callback recebe redirect do Google sem header — não pode exigir JWT no gateway.
+[functions.google-auth]
+verify_jwt = false
