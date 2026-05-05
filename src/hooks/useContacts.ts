@@ -468,9 +468,13 @@ export function useCreateContact() {
         Object.entries(contactData).map(([k, v]) => [k, v === '' ? null : v])
       );
 
+      // created_by precisa ser populado para que o sync ↔ Google Contacts encontre o contato
+      // (a Edge Function filtra por .eq('created_by', user_id) como proteção IDOR).
+      const payload = user?.id ? { ...cleaned, created_by: user.id } : cleaned;
+
       const { data, error } = await supabase
         .from('contacts')
-        .insert(cleaned)
+        .insert(payload)
         .select()
         .single();
 

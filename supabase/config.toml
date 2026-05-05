@@ -17,3 +17,9 @@ verify_jwt = false
 # /callback recebe redirect do Google sem header — não pode exigir JWT no gateway.
 [functions.google-auth]
 verify_jwt = false
+
+# google-contacts-sync: faz validação manual de JWT internamente (caller.auth.getUser
+# + checa user_id == callerId). verify_jwt=false no gateway para evitar respostas
+# inconsistentes (404 reportado em alguns casos pelo gateway).
+[functions.google-contacts-sync]
+verify_jwt = false
