@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
   const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
   const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
   const frontendUrl = Deno.env.get('FRONTEND_URL') ?? 'http://localhost:8080';
-  const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET');
+  const stateSecret = Deno.env.get('OAUTH_STATE_SECRET');
 
   if (!supabaseUrl || !serviceRoleKey) {
     return jsonResponse(500, { error: 'Configuração incompleta: variáveis Supabase ausentes' });
@@ -83,8 +83,8 @@ Deno.serve(async (req: Request) => {
   if (!clientId || !clientSecret) {
     return jsonResponse(500, { error: 'Configuração incompleta: credenciais Google OAuth ausentes (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)' });
   }
-  if (!jwtSecret) {
-    return jsonResponse(500, { error: 'Configuração incompleta: SUPABASE_JWT_SECRET ausente' });
+  if (!stateSecret) {
+    return jsonResponse(500, { error: 'Configuração incompleta: OAUTH_STATE_SECRET ausente' });
   }
 
   const redirectUri = `${supabaseUrl}/functions/v1/google-auth/callback`;
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
     // Cria state = nonce:user_id:hmac para proteção CSRF
     const nonce = crypto.randomUUID();
     const payload = `${nonce}:${userId}`;
-    const sig = await hmacSign(payload, jwtSecret);
+    const sig = await hmacSign(payload, stateSecret);
     const state = `${payload}:${sig}`;
 
     // FIX P-HIGH-2: persistir nonce no banco para one-time-use no callback
@@ -174,7 +174,7 @@ Deno.serve(async (req: Request) => {
     const stateSignature = state.slice(lastColon + 1);
     const payload = state.slice(0, lastColon);
 
-    const valid = await hmacVerify(payload, stateSignature, jwtSecret);
+    const valid = await hmacVerify(payload, stateSignature, stateSecret);
     if (!valid) {
       return redirectResponse(`${frontendUrl}/google-integration?error=oauth_failed`);
     }

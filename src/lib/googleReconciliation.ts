@@ -10,37 +10,56 @@ export interface ReconciliationProgress {
  * Busca todos os contatos que precisam ser sincronizados.
  * Retorna contatos sem registro em contact_sync (sync_status != 'synced').
  */
+// Supabase JS limita .select() a 1000 linhas por default — pagina via .range()
+// pra suportar bases com 20k+ contatos.
+const PAGE_SIZE = 1000;
+
 async function fetchContactsForSync(userId: string): Promise<string[]> {
   // Busca todos os contatos não-mesclados visíveis ao usuário. Inclui:
   // (a) os criados pelo próprio usuário (created_by = userId)
   // (b) contatos legados sem created_by (importados em massa antes de o campo
   //     ser populado), que o RLS de contacts permite ao user enxergar e que
   //     também precisam ser sincronizados na reconciliação inicial.
-  const { data: allContacts, error: contactsError } = await supabase
-    .from('contacts')
-    .select('id')
-    .or(`created_by.eq.${userId},created_by.is.null`)
-    .is('merged_into', null)
-    .not('nome', 'is', null);
-
-  if (contactsError) throw contactsError;
-  const allIds = (allContacts ?? []).map((c: { id: string }) => c.id);
+  const allIds: string[] = [];
+  let from = 0;
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('id')
+      .or(`created_by.eq.${userId},created_by.is.null`)
+      .is('merged_into', null)
+      .not('nome', 'is', null)
+      .range(from, to);
+    if (error) throw error;
+    const page = (data ?? []) as { id: string }[];
+    allIds.push(...page.map((c) => c.id));
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
 
   if (allIds.length === 0) return [];
 
-  // Busca os que já estão synced para este user
-  const { data: syncedRows, error: syncError } = await supabase
-    .from('contact_sync')
-    .select('contact_id')
-    .eq('user_id', userId)
-    .eq('sync_status', 'synced');
-
-  if (syncError) throw syncError;
-
-  const syncedSet = new Set((syncedRows ?? []).map((r: { contact_id: string }) => r.contact_id));
+  // Busca os que já estão synced para este user (também paginado)
+  const syncedSet = new Set<string>();
+  from = 0;
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from('contact_sync')
+      .select('contact_id')
+      .eq('user_id', userId)
+      .eq('sync_status', 'synced')
+      .range(from, to);
+    if (error) throw error;
+    const page = (data ?? []) as { contact_id: string }[];
+    page.forEach((r) => syncedSet.add(r.contact_id));
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
 
   // Retorna apenas os que não estão synced
-  return allIds.filter((id: string) => !syncedSet.has(id));
+  return allIds.filter((id) => !syncedSet.has(id));
 }
 
 function sleep(ms: number): Promise<void> {
