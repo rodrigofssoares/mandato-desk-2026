@@ -14,7 +14,8 @@ function getGitSha() {
 export default defineConfig({
   server: {
     host: "::",
-    port: 3001,
+    port: 8085,
+    strictPort: true,
   },
   plugins: [react()],
   resolve: {
