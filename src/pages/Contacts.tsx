@@ -29,6 +29,7 @@ import { useContacts, useDeleteContact, useContact, useContactTags, useLeaders, 
 import { usePermissions } from '@/hooks/usePermissions';
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
+import { useCampaignFields } from '@/hooks/useCampaignFields';
 import { ContactCard } from '@/components/contacts/ContactCard';
 import { ContactListItem } from '@/components/contacts/ContactListItem';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
@@ -93,6 +94,7 @@ export default function Contacts() {
   const { data: leaders = [] } = useLeaders();
   const { data: boards = [] } = useBoards('contact');
   const { data: stages = [] } = useBoardStages(filters.board_id ?? null);
+  const { data: campaignFields = [] } = useCampaignFields();
 
   // Conta filtros ativos (para mostrar/esconder o botão "Salvar filtro")
   const filtrosAtivosCount = useMemo(
@@ -149,9 +151,28 @@ export default function Contacts() {
 
   // Limpa seleção quando filtros/pagina mudam — itens podem sumir da vista.
   // Se o usuario remover todos os filtros, sair do modo de selecao tambem limpa.
+  // Lista todos os filtros que afetam a listagem para evitar BulkMove agir sobre
+  // contatos que sumiram da view ao trocar qualquer filtro.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [debouncedSearch, filters.page, filters.tags, filters.is_favorite, filters.declarou_voto, filters.leader_id, bulkSelectionEnabled]);
+  }, [
+    debouncedSearch,
+    filters.page,
+    filters.tags,
+    filters.is_favorite,
+    filters.declarou_voto,
+    filters.leader_id,
+    filters.cidade,
+    filters.estado,
+    filters.origem,
+    filters.has_phone,
+    filters.has_email,
+    filters.has_demand,
+    filters.board_id,
+    filters.stage_id,
+    filters.no_funnel,
+    bulkSelectionEnabled,
+  ]);
 
   const toggleSelection = useCallback((contact: Contact, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -363,6 +384,7 @@ export default function Contacts() {
         leaders={leaders}
         boards={boards}
         stages={stages}
+        campaignFields={campaignFields}
       />
 
       {/* Filters */}

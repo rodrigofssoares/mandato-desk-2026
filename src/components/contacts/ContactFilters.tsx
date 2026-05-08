@@ -87,6 +87,14 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     setOrigemLocal(filters.origem ?? '');
   }, [filters.origem]);
 
+  // Limpa timers pendentes no unmount — evita update() rodar sobre componente desmontado
+  useEffect(() => {
+    return () => {
+      if (cidadeDebounce.current) clearTimeout(cidadeDebounce.current);
+      if (origemDebounce.current) clearTimeout(origemDebounce.current);
+    };
+  }, []);
+
   const customFieldsCount = Object.values(filters.custom_fields ?? {}).filter(Boolean).length;
 
   // Conta filtros ativos (excluindo page, per_page, sort_by, search)

@@ -1,10 +1,10 @@
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { ContactFilters } from '@/hooks/useContacts';
-import type { Tag } from '@/hooks/useContacts';
+import type { ContactFilters, Tag } from '@/hooks/useContacts';
 import type { Board } from '@/hooks/useBoards';
 import type { BoardStage } from '@/hooks/useBoardStages';
+import type { CampaignField } from '@/hooks/useCampaignFields';
 
 interface ContactFiltersChipsProps {
   filters: ContactFilters;
@@ -15,6 +15,7 @@ interface ContactFiltersChipsProps {
   leaders?: { id: string; nome: string }[];
   boards?: Board[];
   stages?: BoardStage[];
+  campaignFields?: CampaignField[];
 }
 
 interface Chip {
@@ -48,6 +49,7 @@ export function ContactFiltersChips({
   leaders = [],
   boards = [],
   stages = [],
+  campaignFields = [],
 }: ContactFiltersChipsProps) {
   const chips: Chip[] = [];
 
@@ -129,9 +131,11 @@ export function ContactFiltersChips({
   // Campos de campanha — cada campo gera um chip separado
   if (filters.campaign_field_ids && filters.campaign_field_ids.length > 0) {
     filters.campaign_field_ids.forEach((fieldId) => {
+      const field = campaignFields.find((f) => f.id === fieldId);
+      const nome = field?.label ?? fieldId;
       chips.push({
         key: `campaign-${fieldId}`,
-        label: `Campanha: ${fieldId}`,
+        label: `Campanha: ${nome}`,
         onRemove: () => {
           const novos = (filters.campaign_field_ids ?? []).filter((id) => id !== fieldId);
           onChange({ ...filters, campaign_field_ids: novos.length > 0 ? novos : undefined });

@@ -413,10 +413,12 @@ export function useContacts(filters: ContactFilters = {}) {
 
       // Fora de qualquer funil — sub-query client-side em board_items
       if (no_funnel) {
-        const { data: boardItemRows } = await supabase
+        const { data: boardItemRows, error: boardItemError } = await supabase
           .from('board_items')
           .select('contact_id')
           .not('contact_id', 'is', null);
+
+        if (boardItemError) throw boardItemError;
 
         const idsNoFunnel = [...new Set(
           (boardItemRows ?? []).map((r: { contact_id: string | null }) => r.contact_id).filter(Boolean)
@@ -433,10 +435,12 @@ export function useContacts(filters: ContactFilters = {}) {
       // Sub-query é segura para o volume atual; se ultrapassar 300 IDs únicos,
       // considerar RPC (função Postgres com EXISTS) como evolução futura.
       if (has_demand) {
-        const { data: demandRows } = await supabase
+        const { data: demandRows, error: demandError } = await supabase
           .from('demands')
           .select('contact_id')
           .not('contact_id', 'is', null);
+
+        if (demandError) throw demandError;
 
         const idsComDemanda = [...new Set(
           (demandRows ?? []).map((r: { contact_id: string | null }) => r.contact_id).filter(Boolean)
