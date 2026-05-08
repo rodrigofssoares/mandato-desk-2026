@@ -323,7 +323,7 @@ export default function Contacts() {
         </div>
       </div>
 
-      {/* Search + Sort + View Toggle */}
+      {/* Search + Sort + Filtros + View Toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -351,6 +351,9 @@ export default function Contacts() {
           </SelectContent>
         </Select>
 
+        {/* Botão Filtros (drawer off-canvas) */}
+        <ContactFilters filters={filters} onChange={setFilters} />
+
         <div className="flex items-center border rounded-md">
           <Button
             variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
@@ -371,7 +374,7 @@ export default function Contacts() {
         </div>
       </div>
 
-      {/* Chips de filtros ativos — visíveis mesmo com o painel recolhido */}
+      {/* Chips de filtros ativos — visíveis na página (inclui busca textual + filtros estruturados) */}
       <ContactFiltersChips
         filters={queryFilters}
         search={debouncedSearch}
@@ -386,9 +389,6 @@ export default function Contacts() {
         stages={stages}
         campaignFields={campaignFields}
       />
-
-      {/* Filters */}
-      <ContactFilters filters={filters} onChange={setFilters} />
 
       {/* Content */}
       {isLoading ? (

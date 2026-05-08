@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup 01 — Accordion Vertical · Filtros Contatos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface-2: #F1F4F9;
+    --ink: #0B1220;
+    --ink-muted: #4A5568;
+    --ink-subtle: #94A3B8;
+    --border: #E5E9F0;
+    --border-strong: #D2D8E2;
+    --navy: #0E1F3D;
+    --navy-soft: #1B315E;
+    --accent: #2148B7;
+    --accent-soft: #EAF0FF;
+    --danger: #B42318;
+    --danger-soft: #FEF2F2;
+    --success: #0F7A40;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    margin: 0;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+  }
+
+  /* ------- Layout simulado da página ------- */
+  .topbar {
+    height: 56px;
+    background: var(--navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+  }
+  .topbar .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+  }
+  .topbar .crumbs {
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+  }
+  .topbar .crumbs span { color: #fff; }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .page-title h1 { font-size: 22px; font-weight: 700; }
+  .page-title p { color: var(--ink-muted); margin: 4px 0 0; font-size: 13px; }
+  .page-actions { display: flex; gap: 8px; }
+
+  /* ------- Botões ------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .btn-primary:hover { background: var(--navy-soft); border-color: var(--navy-soft); }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ink-muted);
+  }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* ------- Search bar ------- */
+  .toolbar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+  }
+  .search:focus-within { border-color: var(--accent); background: #fff; }
+  .search input {
+    border: none;
+    outline: none;
+    background: transparent;
+    flex: 1;
+    font: inherit;
+    color: var(--ink);
+  }
+
+  /* ------- Filter shell ------- */
+  .filter-shell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .filter-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(180deg, #FAFBFD 0%, #FFFFFF 100%);
+  }
+  .filter-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .filter-title h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .badge-count {
+    background: var(--navy);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    min-width: 22px;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .filter-controls { display: flex; gap: 6px; align-items: center; }
+
+  /* ------- Active chips ------- */
+  .active-chips {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .active-chips .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-subtle);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid var(--border-strong);
+    color: var(--ink);
+    font-size: 12px;
+    padding: 4px 4px 4px 10px;
+    border-radius: 999px;
+    line-height: 1.6;
+  }
+  .chip .chip-key { color: var(--ink-subtle); font-weight: 500; }
+  .chip .chip-val { font-weight: 600; }
+  .chip-x {
+    border: none;
+    background: transparent;
+    color: var(--ink-subtle);
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .chip-x:hover { background: var(--danger-soft); color: var(--danger); }
+
+  /* ------- Accordion sections ------- */
+  .section {
+    border-bottom: 1px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+  .section-trigger {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink);
+    text-align: left;
+    transition: background .15s;
+  }
+  .section-trigger:hover { background: var(--surface-2); }
+  .section-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .section-sub {
+    color: var(--ink-subtle);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .section-tail {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink-subtle);
+  }
+  .pill-count {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    line-height: 1;
+  }
+  .chev {
+    transition: transform .25s ease;
+  }
+  .section.open .chev { transform: rotate(180deg); }
+  .section-body {
+    display: none;
+    padding: 0 16px 18px 60px;
+    animation: slide .25s ease;
+  }
+  .section.open .section-body { display: block; }
+  @keyframes slide {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ------- Field grid ------- */
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    font-weight: 600;
+  }
+  .input, .select {
+    height: 36px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    padding: 0 10px;
+    font: inherit;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .input:focus, .select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(33,72,183,0.1);
+  }
+
+  /* ------- Tag list / checkbox grid ------- */
+  .tag-group { margin-bottom: 10px; }
+  .tag-group:last-child { margin-bottom: 0; }
+  .tag-group-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-subtle);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 4px 10px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink);
+    user-select: none;
+    transition: all .15s;
+  }
+  .tag-pill:hover { border-color: var(--accent); }
+  .tag-pill.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .tag-pill input { display: none; }
+  .tag-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* ------- Switch ------- */
+  .switch-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border-strong);
+    border-radius: 999px;
+    transition: background .2s;
+    cursor: pointer;
+  }
+  .switch-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 2px;
+    top: 2px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .switch-slider { background: var(--accent); }
+  .switch input:checked + .switch-slider::before { transform: translateX(16px); }
+
+  /* ------- Mock list (resultado abaixo) ------- */
+  .results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .results-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--ink-muted);
+    font-size: 13px;
+    background: var(--surface-2);
+  }
+  .res-row {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .res-row:last-child { border-bottom: none; }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .res-name { font-weight: 600; }
+  .res-meta { color: var(--ink-subtle); font-size: 12px; }
+
+  /* footer note */
+  .mockup-stamp {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    background: var(--navy);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    box-shadow: var(--shadow-md);
+    text-transform: uppercase;
+    z-index: 100;
+  }
+
+  @media (max-width: 720px) {
+    .section-body { padding-left: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">▤ Mandato Desk 2026</div>
+  <div class="crumbs">CRM · <span>Contatos</span></div>
+</div>
+
+<main class="page">
+  <header class="page-header">
+    <div class="page-title">
+      <h1>Contatos</h1>
+      <p>4.823 contatos · 12 favoritos · 3 funis ativos</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-sm">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m8-8H4"/></svg>
+        Importar
+      </button>
+      <button class="btn btn-primary btn-sm">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+        Novo contato
+      </button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" placeholder="Buscar por nome, telefone, e-mail..." />
+    </div>
+    <button class="btn btn-sm">Ordenar</button>
+  </div>
+
+  <!-- ===================== FILTROS ===================== -->
+  <section class="filter-shell" id="filterShell">
+    <div class="filter-header">
+      <div class="filter-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        <h2>Filtros</h2>
+        <span class="badge-count" id="totalCount">0</span>
+      </div>
+      <div class="filter-controls">
+        <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expandir tudo</button>
+        <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Recolher tudo</button>
+        <button class="btn btn-sm" id="clearAll" onclick="clearAll()" style="display:none">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          Limpar
+        </button>
+      </div>
+    </div>
+
+    <div class="active-chips" id="activeChips" style="display:none">
+      <span class="label">Ativos</span>
+      <div id="chipsContainer" style="display:contents"></div>
+    </div>
+
+    <!-- Sessão: Pessoais -->
+    <div class="section open" data-section="pessoais">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Pessoais</div>
+            <div class="section-sub">Etiquetas, favoritos, aniversários</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="pessoais">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field" style="margin-bottom: 14px;">
+          <span class="field-label">Etiquetas</span>
+          <div class="tag-row" data-group="pessoais">
+            <label class="tag-pill"><input type="checkbox" data-chip="Etiqueta:Apoiador" /><span class="tag-dot" style="background:#16a34a"></span>Apoiador</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Etiqueta:VIP" /><span class="tag-dot" style="background:#dc2626"></span>VIP</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Etiqueta:Liderança" /><span class="tag-dot" style="background:#2148B7"></span>Liderança</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Etiqueta:Imprensa" /><span class="tag-dot" style="background:#9333ea"></span>Imprensa</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Etiqueta:Doador" /><span class="tag-dot" style="background:#ea580c"></span>Doador</label>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="switch-row">
+            <label class="switch">
+              <input type="checkbox" data-chip="Apenas favoritos" data-group="pessoais" />
+              <span class="switch-slider"></span>
+            </label>
+            <span>Apenas favoritos</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Aniversário</span>
+            <select class="select" data-chip-prefix="Aniversário" data-group="pessoais">
+              <option value="">Todos</option>
+              <option value="today">Hoje</option>
+              <option value="7days">Próximos 7 dias</option>
+              <option value="30days">Próximos 30 dias</option>
+              <option value="month">Este mês</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Localização -->
+    <div class="section" data-section="localizacao">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Localização</div>
+            <div class="section-sub">Cidade, estado, origem</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="localizacao">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Cidade</span>
+            <input type="text" class="input" placeholder="Ex: Belo Horizonte" data-chip-prefix="Cidade" data-group="localizacao" />
+          </div>
+          <div class="field">
+            <span class="field-label">Estado</span>
+            <select class="select" data-chip-prefix="Estado" data-group="localizacao">
+              <option value="">Todos</option>
+              <option>MG — Minas Gerais</option>
+              <option>SP — São Paulo</option>
+              <option>RJ — Rio de Janeiro</option>
+              <option>BA — Bahia</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label">Origem</span>
+            <input type="text" class="input" placeholder="Ex: evento, indicação" data-chip-prefix="Origem" data-group="localizacao" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Engajamento Político -->
+    <div class="section" data-section="engajamento">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Engajamento Político</div>
+            <div class="section-sub">Voto declarado, lideranças</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="engajamento">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Declarou voto</span>
+            <select class="select" data-chip-prefix="Voto" data-group="engajamento">
+              <option value="">Todos</option>
+              <option>Sim</option>
+              <option>Não</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label">Liderança</span>
+            <select class="select" data-chip-prefix="Liderança" data-group="engajamento">
+              <option value="">Todas</option>
+              <option>Maria Silva</option>
+              <option>João Costa</option>
+              <option>Ana Pereira</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Cadastro -->
+    <div class="section" data-section="cadastro">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Cadastro</div>
+            <div class="section-sub">Completude — telefone, e-mail</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="cadastro">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Telefone</span>
+            <select class="select" data-chip-prefix="Telefone" data-group="cadastro">
+              <option value="">Todos</option>
+              <option>Com telefone</option>
+              <option>Sem telefone</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label">E-mail</span>
+            <select class="select" data-chip-prefix="E-mail" data-group="cadastro">
+              <option value="">Todos</option>
+              <option>Com e-mail</option>
+              <option>Sem e-mail</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Atendimento -->
+    <div class="section" data-section="atendimento">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Atendimento</div>
+            <div class="section-sub">Demandas, último contato</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="atendimento">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Demandas</span>
+            <select class="select" data-chip-prefix="Demandas" data-group="atendimento">
+              <option value="">Todos</option>
+              <option>Com demanda</option>
+              <option>Sem demanda</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label">Último contato</span>
+            <select class="select" data-chip-prefix="Último contato" data-group="atendimento">
+              <option value="">Todos</option>
+              <option>Hoje</option>
+              <option>Últimos 7 dias</option>
+              <option>Últimos 30 dias</option>
+              <option>Mais de 30 dias</option>
+              <option>Mais de 60 dias</option>
+              <option>Nunca</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Funil -->
+    <div class="section" data-section="funil">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Funil</div>
+            <div class="section-sub">Pipelines, etapas</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="funil">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Funil</span>
+            <select class="select" data-chip-prefix="Funil" data-group="funil">
+              <option value="">Todos</option>
+              <option>Cadastro de apoiadores</option>
+              <option>Doações 2026</option>
+              <option>Eventos</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label">Etapa</span>
+            <select class="select" data-chip-prefix="Etapa" data-group="funil">
+              <option value="">Todas</option>
+              <option>Novo</option>
+              <option>Contato feito</option>
+              <option>Convertido</option>
+            </select>
+          </div>
+          <div class="switch-row">
+            <label class="switch">
+              <input type="checkbox" data-chip="Fora de qualquer funil" data-group="funil" />
+              <span class="switch-slider"></span>
+            </label>
+            <span>Fora de qualquer funil</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Campanha -->
+    <div class="section" data-section="campanha">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11h3l5-7v18l-5-7H3z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Campanha</div>
+            <div class="section-sub">Listas e mobilização</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="campanha">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field" style="margin-bottom: 10px;">
+          <span class="field-label">Campos de Campanha</span>
+          <div class="tag-row" data-group="campanha">
+            <label class="tag-pill"><input type="checkbox" data-chip="Campanha:Mutirão Norte" />Mutirão Norte</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Campanha:Recadastro" />Recadastro</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Campanha:Doadores 2024" />Doadores 2024</label>
+            <label class="tag-pill"><input type="checkbox" data-chip="Campanha:Veteranos" />Veteranos</label>
+          </div>
+          <p style="margin: 8px 0 0; color: var(--ink-subtle); font-size: 11px;">Contatos precisam ter TODOS os campos marcados.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Personalizados -->
+    <div class="section" data-section="personalizados">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Personalizados</div>
+            <div class="section-sub">Campos definidos por você</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="personalizados">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Bairro de atuação</span>
+            <input type="text" class="input" placeholder="Ex: Centro" data-chip-prefix="Bairro" data-group="personalizados" />
+          </div>
+          <div class="field">
+            <span class="field-label">Profissão</span>
+            <select class="select" data-chip-prefix="Profissão" data-group="personalizados">
+              <option value="">Todas</option>
+              <option>Servidor público</option>
+              <option>Empresário</option>
+              <option>Estudante</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label">Renda</span>
+            <select class="select" data-chip-prefix="Renda" data-group="personalizados">
+              <option value="">Todas</option>
+              <option>Até 2 SM</option>
+              <option>2-5 SM</option>
+              <option>5+ SM</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessão: Datas -->
+    <div class="section" data-section="datas">
+      <button class="section-trigger" onclick="toggleSection(this)">
+        <div class="section-meta">
+          <div class="section-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <div>
+            <div class="section-title">Datas</div>
+            <div class="section-sub">Período de cadastro</div>
+          </div>
+        </div>
+        <div class="section-tail">
+          <span class="pill-count" data-count="datas">0</span>
+          <svg class="chev icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </button>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field">
+            <span class="field-label">Criado a partir de</span>
+            <input type="date" class="input" data-chip-prefix="De" data-group="datas" />
+          </div>
+          <div class="field">
+            <span class="field-label">Criado até</span>
+            <input type="date" class="input" data-chip-prefix="Até" data-group="datas" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- mock results -->
+  <section class="results">
+    <div class="results-head">
+      <span><strong style="color:var(--ink)">42</strong> contatos correspondem aos filtros</span>
+      <button class="btn btn-sm">Exportar CSV</button>
+    </div>
+    <div class="res-row">
+      <div class="avatar">MS</div>
+      <div style="flex:1"><div class="res-name">Maria Silva</div><div class="res-meta">Apoiador · Centro · BH/MG</div></div>
+      <span class="chip"><span class="chip-val">★</span></span>
+    </div>
+    <div class="res-row">
+      <div class="avatar">JC</div>
+      <div style="flex:1"><div class="res-name">João Costa</div><div class="res-meta">VIP · Doações 2026 · SP</div></div>
+    </div>
+    <div class="res-row">
+      <div class="avatar">AP</div>
+      <div style="flex:1"><div class="res-name">Ana Pereira</div><div class="res-meta">Liderança · Mutirão Norte · MG</div></div>
+    </div>
+  </section>
+</main>
+
+<div class="mockup-stamp">Mockup 01 · Accordion Vertical</div>
+
+<script>
+  const state = {};
+
+  function toggleSection(btn) {
+    const section = btn.closest('.section');
+    section.classList.toggle('open');
+  }
+
+  function expandAll() {
+    document.querySelectorAll('.section').forEach(s => s.classList.add('open'));
+  }
+  function collapseAll() {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('open'));
+  }
+
+  function getInputChipKey(input) {
+    if (input.dataset.chip) return input.dataset.chip;
+    if (input.dataset.chipPrefix) {
+      const v = input.value && input.value.trim();
+      if (!v) return null;
+      return `${input.dataset.chipPrefix}: ${v}`;
+    }
+    return null;
+  }
+
+  function getGroup(input) {
+    return input.dataset.group || input.closest('[data-group]')?.dataset.group || 'misc';
+  }
+
+  function rebuild() {
+    const counts = {};
+    const chips = [];
+    document.querySelectorAll('[data-chip], [data-chip-prefix]').forEach(input => {
+      const isCheckbox = input.type === 'checkbox';
+      const isActive = isCheckbox ? input.checked : !!(input.value && input.value.trim());
+      if (!isActive) return;
+      const group = getGroup(input);
+      counts[group] = (counts[group] || 0) + 1;
+      const key = getInputChipKey(input);
+      if (key) chips.push({ key, input });
+    });
+
+    // Update group pills
+    document.querySelectorAll('.pill-count').forEach(p => {
+      const g = p.dataset.count;
+      const c = counts[g] || 0;
+      p.textContent = c;
+      p.style.display = c > 0 ? 'inline-block' : 'none';
+    });
+
+    // Update total
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('totalCount').style.display = total > 0 ? 'inline-block' : 'none';
+    document.getElementById('clearAll').style.display = total > 0 ? 'inline-flex' : 'none';
+
+    // Update chips bar
+    const bar = document.getElementById('activeChips');
+    const container = document.getElementById('chipsContainer');
+    container.innerHTML = '';
+    if (chips.length === 0) {
+      bar.style.display = 'none';
+    } else {
+      bar.style.display = 'flex';
+      chips.forEach(({ key, input }) => {
+        const [k, ...rest] = key.split(':');
+        const v = rest.length ? rest.join(':').trim() : k;
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        if (rest.length) {
+          chip.innerHTML = `<span class="chip-key">${k}:</span><span class="chip-val">${v}</span>`;
+        } else {
+          chip.innerHTML = `<span class="chip-val">${v}</span>`;
+        }
+        const x = document.createElement('button');
+        x.className = 'chip-x';
+        x.innerHTML = '×';
+        x.onclick = () => {
+          if (input.type === 'checkbox') input.checked = false;
+          else input.value = '';
+          input.closest('.tag-pill')?.classList.remove('active');
+          rebuild();
+        };
+        chip.appendChild(x);
+        container.appendChild(chip);
+      });
+    }
+  }
+
+  function clearAll() {
+    document.querySelectorAll('[data-chip], [data-chip-prefix]').forEach(input => {
+      if (input.type === 'checkbox') input.checked = false;
+      else input.value = '';
+    });
+    document.querySelectorAll('.tag-pill').forEach(p => p.classList.remove('active'));
+    rebuild();
+  }
+
+  // Wire up listeners
+  document.querySelectorAll('[data-chip], [data-chip-prefix]').forEach(input => {
+    input.addEventListener('change', () => {
+      const pill = input.closest('.tag-pill');
+      if (pill) pill.classList.toggle('active', input.checked);
+      rebuild();
+    });
+    input.addEventListener('input', () => rebuild());
+  });
+
+  rebuild();
+</script>
+</body>
+</html>

@@ -83,6 +83,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   board: (can) => can.viewBoard(),
   tarefas: (can) => can.viewTarefas(),
   configuracoes: (can) => can.accessSettings(),
+  // ordenacao_filtros não tem item próprio na sidebar — controle via tab de Configurações.
+  ordenacao_filtros: () => false,
 };
 
 export function AppSidebar() {

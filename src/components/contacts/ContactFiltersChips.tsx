@@ -85,7 +85,7 @@ export function ContactFiltersChips({
   if (filters.is_favorite === true) {
     chips.push({
       key: 'is_favorite',
-      label: 'Apenas favoritos',
+      label: 'Contatos favoritos',
       onRemove: () => onChange({ ...filters, is_favorite: undefined }),
     });
   }
@@ -99,6 +99,48 @@ export function ContactFiltersChips({
     });
   }
 
+  // Aceita WhatsApp
+  if (filters.aceita_whatsapp !== undefined && filters.aceita_whatsapp !== null) {
+    chips.push({
+      key: 'aceita_whatsapp',
+      label: `Aceita WhatsApp: ${filters.aceita_whatsapp ? 'Sim' : 'Não'}`,
+      onRemove: () => onChange({ ...filters, aceita_whatsapp: null }),
+    });
+  }
+
+  // Canal do WhatsApp
+  if (filters.em_canal_whatsapp !== undefined && filters.em_canal_whatsapp !== null) {
+    chips.push({
+      key: 'em_canal_whatsapp',
+      label: `Canal WhatsApp: ${filters.em_canal_whatsapp ? 'No canal' : 'Fora do canal'}`,
+      onRemove: () => onChange({ ...filters, em_canal_whatsapp: null }),
+    });
+  }
+
+  // Multiplicador
+  if (filters.e_multiplicador !== undefined && filters.e_multiplicador !== null) {
+    chips.push({
+      key: 'e_multiplicador',
+      label: `Multiplicador: ${filters.e_multiplicador ? 'Sim' : 'Não'}`,
+      onRemove: () => onChange({ ...filters, e_multiplicador: null }),
+    });
+  }
+
+  // Ranking range — chip único cobrindo min/max
+  if (typeof filters.ranking_min === 'number' || typeof filters.ranking_max === 'number') {
+    const min = filters.ranking_min;
+    const max = filters.ranking_max;
+    let label = 'Ranking: ';
+    if (typeof min === 'number' && typeof max === 'number') label += min === max ? String(min) : `${min} → ${max}`;
+    else if (typeof min === 'number') label += `≥ ${min}`;
+    else label += `≤ ${max}`;
+    chips.push({
+      key: 'ranking_range',
+      label,
+      onRemove: () => onChange({ ...filters, ranking_min: undefined, ranking_max: undefined }),
+    });
+  }
+
   // Aniversário
   if (filters.birthday_filter) {
     chips.push({
@@ -108,12 +150,54 @@ export function ContactFiltersChips({
     });
   }
 
+  // Data de Aniversário (range MM-DD) — chip único cobrindo from/to
+  if (filters.birthday_from || filters.birthday_to) {
+    const formatMmDd = (mmdd: string | undefined) => {
+      if (!mmdd) return '';
+      const m = mmdd.match(/^(\d{2})-(\d{2})$/);
+      return m ? `${m[2]}/${m[1]}` : mmdd;
+    };
+    const from = formatMmDd(filters.birthday_from);
+    const to = formatMmDd(filters.birthday_to);
+    let label = 'Data de aniversário: ';
+    if (from && to) label += `${from} → ${to}`;
+    else if (from) label += `a partir de ${from}`;
+    else label += `até ${to}`;
+    chips.push({
+      key: 'birthday_range',
+      label,
+      onRemove: () =>
+        onChange({ ...filters, birthday_from: undefined, birthday_to: undefined }),
+    });
+  }
+
   // Último contato
   if (filters.last_contact_filter) {
     chips.push({
       key: 'last_contact_filter',
       label: `Último contato: ${LAST_CONTACT_LABELS[filters.last_contact_filter] ?? filters.last_contact_filter}`,
       onRemove: () => onChange({ ...filters, last_contact_filter: null }),
+    });
+  }
+
+  // Último contato — range customizado (chip único cobrindo from/to)
+  if (filters.last_contact_from || filters.last_contact_to) {
+    const formatDate = (iso: string | undefined) => {
+      if (!iso) return '';
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+    };
+    const from = formatDate(filters.last_contact_from);
+    const to = formatDate(filters.last_contact_to);
+    let label = 'Período último contato: ';
+    if (from && to) label += `${from} → ${to}`;
+    else if (from) label += `a partir de ${from}`;
+    else label += `até ${to}`;
+    chips.push({
+      key: 'last_contact_range',
+      label,
+      onRemove: () =>
+        onChange({ ...filters, last_contact_from: undefined, last_contact_to: undefined }),
     });
   }
 

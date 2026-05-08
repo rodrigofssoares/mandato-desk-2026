@@ -76,7 +76,15 @@ export interface ContactFilters {
   is_favorite?: boolean;
   declarou_voto?: boolean | null;
   birthday_filter?: 'today' | '7days' | '30days' | 'month' | null;
+  /** Início do range de aniversário (formato MM-DD, ano ignorado) */
+  birthday_from?: string;
+  /** Fim do range de aniversário (formato MM-DD, ano ignorado) */
+  birthday_to?: string;
   last_contact_filter?: 'today' | '7d' | '30d' | '30d+' | '60d+' | 'never' | null;
+  /** Início do range de último contato (data YYYY-MM-DD) */
+  last_contact_from?: string;
+  /** Fim do range de último contato (data YYYY-MM-DD) */
+  last_contact_to?: string;
   leader_id?: string;
   /** IDs de campos de campanha — contato precisa ter TODOS marcados */
   campaign_field_ids?: string[];
@@ -105,6 +113,16 @@ export interface ContactFilters {
   stage_id?: string;
   /** Sem nenhum board_item em nenhum board — exclusivo com board_id */
   no_funnel?: boolean;
+  /** Aceita WhatsApp (sim/não/todos) */
+  aceita_whatsapp?: boolean | null;
+  /** Está no canal de WhatsApp (sim/não/todos) */
+  em_canal_whatsapp?: boolean | null;
+  /** É multiplicador (sim/não/todos) */
+  e_multiplicador?: boolean | null;
+  /** Ranking mínimo (0-10) — inclusivo */
+  ranking_min?: number;
+  /** Ranking máximo (0-10) — inclusivo */
+  ranking_max?: number;
 }
 
 export interface Contact {
@@ -169,7 +187,11 @@ export function useContacts(filters: ContactFilters = {}) {
     is_favorite,
     declarou_voto,
     birthday_filter,
+    birthday_from,
+    birthday_to,
     last_contact_filter,
+    last_contact_from,
+    last_contact_to,
     leader_id,
     campaign_field_ids,
     custom_fields,
@@ -187,6 +209,11 @@ export function useContacts(filters: ContactFilters = {}) {
     board_id,
     stage_id,
     no_funnel,
+    aceita_whatsapp,
+    em_canal_whatsapp,
+    e_multiplicador,
+    ranking_min,
+    ranking_max,
   } = filters;
 
   return useQuery({
@@ -250,6 +277,35 @@ export function useContacts(filters: ContactFilters = {}) {
         query = query.eq('declarou_voto', false);
       }
 
+      // Aceita WhatsApp
+      if (aceita_whatsapp === true) {
+        query = query.eq('aceita_whatsapp', true);
+      } else if (aceita_whatsapp === false) {
+        query = query.eq('aceita_whatsapp', false);
+      }
+
+      // Canal de WhatsApp
+      if (em_canal_whatsapp === true) {
+        query = query.eq('em_canal_whatsapp', true);
+      } else if (em_canal_whatsapp === false) {
+        query = query.eq('em_canal_whatsapp', false);
+      }
+
+      // Multiplicador
+      if (e_multiplicador === true) {
+        query = query.eq('e_multiplicador', true);
+      } else if (e_multiplicador === false) {
+        query = query.eq('e_multiplicador', false);
+      }
+
+      // Ranking range (0-10, inclusivo)
+      if (typeof ranking_min === 'number') {
+        query = query.gte('ranking', ranking_min);
+      }
+      if (typeof ranking_max === 'number') {
+        query = query.lte('ranking', ranking_max);
+      }
+
       // Birthday
       if (birthday_filter) {
         if (birthday_filter === 'today') {
@@ -261,6 +317,12 @@ export function useContacts(filters: ContactFilters = {}) {
         } else {
           query = query.not('data_nascimento', 'is', null);
         }
+      }
+
+      // Birthday range (livre — MM-DD): exige data_nascimento NOT NULL
+      // O filtro fino por intervalo é aplicado no client (suporta range que cruza fim de ano)
+      if (birthday_from || birthday_to) {
+        query = query.not('data_nascimento', 'is', null);
       }
 
       // Último contato
@@ -288,6 +350,17 @@ export function useContacts(filters: ContactFilters = {}) {
           d.setDate(d.getDate() - 60);
           query = query.lt('ultimo_contato', d.toISOString());
         }
+      }
+
+      // Último contato — range customizado (data YYYY-MM-DD). Combina (AND) com o preset acima.
+      if (last_contact_from) {
+        query = query.gte('ultimo_contato', last_contact_from);
+      }
+      if (last_contact_to) {
+        // Fim do dia: <= last_contact_to + 1 dia (exclusivo) para incluir todo o dia escolhido
+        const end = new Date(`${last_contact_to}T00:00:00`);
+        end.setDate(end.getDate() + 1);
+        query = query.lt('ultimo_contato', end.toISOString());
       }
 
       // Leader
@@ -547,6 +620,37 @@ export function useContacts(filters: ContactFilters = {}) {
 
           if (birthday_filter === '7days') return diffDays <= 7;
           if (birthday_filter === '30days') return diffDays <= 30;
+          return true;
+        });
+      }
+
+      // Birthday range (MM-DD ou MM-DD..MM-DD) — ano ignorado, suporta range que cruza dezembro→janeiro
+      if (birthday_from || birthday_to) {
+        // Converte MM-DD em "ordinal" (mês * 100 + dia) para comparações simples
+        const toOrdinal = (mmdd: string): number | null => {
+          const m = mmdd.match(/^(\d{2})-(\d{2})$/);
+          if (!m) return null;
+          const mm = Number(m[1]);
+          const dd = Number(m[2]);
+          if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+          return mm * 100 + dd;
+        };
+        const fromOrd = birthday_from ? toOrdinal(birthday_from) : null;
+        const toOrd = birthday_to ? toOrdinal(birthday_to) : null;
+
+        filtered = filtered.filter((c) => {
+          if (!c.data_nascimento) return false;
+          const bDate = new Date(c.data_nascimento + 'T00:00:00');
+          const bOrd = (bDate.getMonth() + 1) * 100 + bDate.getDate();
+
+          if (fromOrd != null && toOrd != null) {
+            // Range que NÃO cruza fim de ano (de=03/15, até=06/20)
+            if (fromOrd <= toOrd) return bOrd >= fromOrd && bOrd <= toOrd;
+            // Range que cruza fim de ano (de=12/20, até=01/10)
+            return bOrd >= fromOrd || bOrd <= toOrd;
+          }
+          if (fromOrd != null) return bOrd >= fromOrd;
+          if (toOrd != null) return bOrd <= toOrd;
           return true;
         });
       }

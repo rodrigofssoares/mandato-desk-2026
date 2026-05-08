@@ -112,6 +112,7 @@ function generateDefaultPermissions() {
       fullAccess: [
         'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
         'mapa', 'importacao', 'relatorios', 'board', 'tarefas',
+        'ordenacao_filtros',
       ],
       viewOnly: [
         'usuarios', 'google', 'api', 'webhooks', 'personalizacao', 'permissoes',
@@ -121,7 +122,7 @@ function generateDefaultPermissions() {
       viewCreateEdit: [],
     },
     assessor: {
-      fullAccess: [],
+      fullAccess: ['ordenacao_filtros'],
       viewOnly: ['dashboard', 'mapa', 'relatorios'],
       viewCreate: [],
       viewCreateEdit: ['contatos', 'liderancas', 'demandas', 'etiquetas', 'board', 'tarefas'],
