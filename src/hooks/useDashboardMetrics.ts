@@ -54,7 +54,7 @@ export interface DashboardMetrics {
   baseTotal: StatWithDelta;
   novosNoPeriodo: StatWithDelta;
   votoDeclarado: StatWithDelta & { taxa: number };
-  multiplicadores: StatWithDelta;
+  articuladores: StatWithDelta;
   saudeBase: SaudeBase;
   funilStages: FunilStage[];
   alertas: Alert[];
@@ -178,27 +178,26 @@ export function useDashboardMetrics(
       ]);
       const votoTaxa = baseTotalCurrent > 0 ? (votoCurrent / baseTotalCurrent) * 100 : 0;
 
-      // ── Multiplicadores ──
-      // Conta articuladores ativos do tipo "Multiplicador" (tabela leaders).
+      // ── Articuladores ──
+      // Conta TODOS os articuladores ativos (qualquer leader_type).
       // Antes lia contacts.e_multiplicador (flag legada da migration 004);
-      // a 035 migrou esses contatos pra leaders e a flag virou histórica.
-      const countMultiplicadores = async (
+      // a migration 035 migrou pra tabela leaders e a 036 garante sync futuro.
+      const countArticuladores = async (
         atOrBefore?: string
       ): Promise<number> => {
         let q = supabase
           .from('leaders')
-          .select('id, leader_types!inner(slug)', { count: 'exact', head: true })
-          .eq('active', true)
-          .eq('leader_types.slug', 'multiplicador');
+          .select('*', { count: 'exact', head: true })
+          .eq('active', true);
         if (atOrBefore) q = q.lte('created_at', atOrBefore);
         const { count, error } = await q;
         if (error) throw error;
         return count ?? 0;
       };
 
-      const [multCurrent, multPrevious] = await Promise.all([
-        countMultiplicadores(),
-        countMultiplicadores(ranges.previous.end),
+      const [articuladoresCurrent, articuladoresPrevious] = await Promise.all([
+        countArticuladores(),
+        countArticuladores(ranges.previous.end),
       ]);
 
       // ── Saúde da base: ativos / inativos / perdidos por data do último contato ──
@@ -362,10 +361,10 @@ export function useDashboardMetrics(
           deltaPct: calcDelta(votoCurrent, votoPrevious),
           taxa: votoTaxa,
         },
-        multiplicadores: {
-          current: multCurrent,
-          previous: multPrevious,
-          deltaPct: calcDelta(multCurrent, multPrevious),
+        articuladores: {
+          current: articuladoresCurrent,
+          previous: articuladoresPrevious,
+          deltaPct: calcDelta(articuladoresCurrent, articuladoresPrevious),
         },
         saudeBase: {
           ativos,

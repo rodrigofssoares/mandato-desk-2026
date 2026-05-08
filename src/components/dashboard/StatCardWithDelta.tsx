@@ -1,4 +1,5 @@
 import { type LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ interface StatCardWithDeltaProps {
   isLoading?: boolean;
   /** Quando definido, exibe progress bar h-1.5 logo após o valor. */
   progressPct?: number | null;
+  /** Quando definido, o card vira link clicável apontando pra esta rota. */
+  href?: string;
 }
 
 export function StatCardWithDelta({
@@ -28,6 +31,7 @@ export function StatCardWithDelta({
   hint,
   isLoading = false,
   progressPct,
+  href,
 }: StatCardWithDeltaProps) {
   const deltaDisponivel = deltaPct !== null && deltaPct !== undefined;
   const isPositive = deltaDisponivel && (deltaPct as number) > 0;
@@ -42,8 +46,13 @@ export function StatCardWithDelta({
     ? 'text-red-600 dark:text-red-500'
     : 'text-muted-foreground';
 
-  return (
-    <Card className="transition-shadow hover:shadow-md">
+  const card = (
+    <Card
+      className={cn(
+        'transition-shadow hover:shadow-md',
+        href && 'cursor-pointer hover:bg-accent/40'
+      )}
+    >
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -114,4 +123,14 @@ export function StatCardWithDelta({
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link to={href} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 }

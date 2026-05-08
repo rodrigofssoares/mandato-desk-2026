@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users, UserPlus, CheckCircle2, Megaphone } from 'lucide-react';
+import { Users, UserPlus, CheckCircle2, Crown } from 'lucide-react';
 
 import { StatCardWithDelta } from '@/components/dashboard/StatCardWithDelta';
 import { BoardFunnelCard } from '@/components/dashboard/BoardFunnelCard';
@@ -156,12 +156,13 @@ export default function Dashboard() {
           isLoading={isLoading}
         />
         <StatCardWithDelta
-          label="Multiplicadores"
-          icon={Megaphone}
+          label="Articuladores"
+          icon={Crown}
           iconColor="text-purple-600"
           iconBg="bg-purple-500/10"
-          value={metrics?.multiplicadores.current ?? 0}
-          deltaPct={metrics?.multiplicadores.deltaPct}
+          value={metrics?.articuladores.current ?? 0}
+          deltaPct={metrics?.articuladores.deltaPct}
+          href="/leaders"
           isLoading={isLoading}
         />
       </div>
