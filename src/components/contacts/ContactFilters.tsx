@@ -445,7 +445,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
           {/* ── Body com cards expansíveis ── */}
           <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5">
 
-            {/* PESSOAIS */}
+            {/* 1. PESSOAIS */}
             <SegmentCard
               icon={<Users className="h-4 w-4" />}
               title="Pessoais"
@@ -651,66 +651,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </div>
             </SegmentCard>
 
-            {/* LOCALIZAÇÃO */}
-            <SegmentCard
-              icon={<MapPin className="h-4 w-4" />}
-              title="Localização"
-              subtitle="Cidade, estado, origem"
-              count={cLocalizacao}
-              defaultOpen={cLocalizacao > 0}
-            >
-              <div className="mt-2.5 flex flex-col gap-3">
-                <div>
-                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                    Cidade
-                  </Label>
-                  <Input
-                    className="mt-1 h-[34px]"
-                    placeholder="Ex: Belo Horizonte"
-                    maxLength={100}
-                    value={cidadeLocal}
-                    onChange={(e) => handleCidadeChange(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                      Estado
-                    </Label>
-                    <Select
-                      value={filters.estado ?? 'todos'}
-                      onValueChange={(v) => update({ estado: v === 'todos' ? undefined : v })}
-                    >
-                      <SelectTrigger className="mt-1 h-[34px] text-sm">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos</SelectItem>
-                        {ESTADOS_BR.map((uf) => (
-                          <SelectItem key={uf.value} value={uf.value}>{uf.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                      Origem
-                    </Label>
-                    <Input
-                      className="mt-1 h-[34px]"
-                      placeholder="Ex: evento"
-                      maxLength={100}
-                      value={origemLocal}
-                      onChange={(e) => handleOrigemChange(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </SegmentCard>
-
-            {/* ENGAJAMENTO POLÍTICO */}
+            {/* 2. ENGAJAMENTO POLÍTICO */}
             <SegmentCard
               icon={<Shield className="h-4 w-4" />}
               title="Engajamento Político"
@@ -909,7 +850,48 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </div>
             </SegmentCard>
 
-            {/* ATENDIMENTO */}
+            {/* 3. CAMPANHA — renderiza apenas se houver campos */}
+            {campaignFields.length > 0 && (
+              <SegmentCard
+                icon={<Megaphone className="h-4 w-4" />}
+                title="Campanha"
+                subtitle="Listas e mobilizações"
+                count={cCampanha}
+                defaultOpen={cCampanha > 0}
+              >
+                <div className="mt-2.5">
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    Campos de campanha
+                  </Label>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {campaignFields.map((field) => {
+                      const active = (filters.campaign_field_ids ?? []).includes(field.id);
+                      return (
+                        <button
+                          key={field.id}
+                          type="button"
+                          onClick={() => toggleCampaignField(field.id)}
+                          className={[
+                            'inline-flex items-center border rounded-full px-3 py-1 text-xs cursor-pointer transition-all duration-150 select-none',
+                            active
+                              ? 'border-primary bg-primary/[0.07] text-primary font-semibold'
+                              : 'border-border bg-white text-foreground hover:border-primary/50',
+                          ].join(' ')}
+                          aria-pressed={active}
+                        >
+                          {field.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Contatos precisam ter <strong>todos</strong> os campos marcados.
+                  </p>
+                </div>
+              </SegmentCard>
+            )}
+
+            {/* 4. ATENDIMENTO */}
             <SegmentCard
               icon={<MessageSquare className="h-4 w-4" />}
               title="Atendimento"
@@ -1004,7 +986,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </div>
             </SegmentCard>
 
-            {/* FUNIL */}
+            {/* 5. FUNIL */}
             <SegmentCard
               icon={<Filter className="h-4 w-4" />}
               title="Funil"
@@ -1088,48 +1070,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </div>
             </SegmentCard>
 
-            {/* CAMPANHA — renderiza apenas se houver campos */}
-            {campaignFields.length > 0 && (
-              <SegmentCard
-                icon={<Megaphone className="h-4 w-4" />}
-                title="Campanha"
-                subtitle="Listas e mobilizações"
-                count={cCampanha}
-                defaultOpen={cCampanha > 0}
-              >
-                <div className="mt-2.5">
-                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                    Campos de campanha
-                  </Label>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {campaignFields.map((field) => {
-                      const active = (filters.campaign_field_ids ?? []).includes(field.id);
-                      return (
-                        <button
-                          key={field.id}
-                          type="button"
-                          onClick={() => toggleCampaignField(field.id)}
-                          className={[
-                            'inline-flex items-center border rounded-full px-3 py-1 text-xs cursor-pointer transition-all duration-150 select-none',
-                            active
-                              ? 'border-primary bg-primary/[0.07] text-primary font-semibold'
-                              : 'border-border bg-white text-foreground hover:border-primary/50',
-                          ].join(' ')}
-                          aria-pressed={active}
-                        >
-                          {field.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    Contatos precisam ter <strong>todos</strong> os campos marcados.
-                  </p>
-                </div>
-              </SegmentCard>
-            )}
-
-            {/* PERSONALIZADOS — renderiza apenas se houver campos filtráveis */}
+            {/* 6. PERSONALIZADOS — renderiza apenas se houver campos filtráveis */}
             {customFields.length > 0 && (
               <SegmentCard
                 icon={<Sparkles className="h-4 w-4" />}
@@ -1151,7 +1092,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </SegmentCard>
             )}
 
-            {/* DATAS */}
+            {/* 7. DATAS */}
             <SegmentCard
               icon={<Calendar className="h-4 w-4" />}
               title="Datas"
@@ -1184,7 +1125,66 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </div>
               </div>
             </SegmentCard>
-          </div>
+            {/* 8. LOCALIZAÇÃO */}
+            <SegmentCard
+              icon={<MapPin className="h-4 w-4" />}
+              title="Localização"
+              subtitle="Cidade, estado, origem"
+              count={cLocalizacao}
+              defaultOpen={cLocalizacao > 0}
+            >
+              <div className="mt-2.5 flex flex-col gap-3">
+                <div>
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    Cidade
+                  </Label>
+                  <Input
+                    className="mt-1 h-[34px]"
+                    placeholder="Ex: Belo Horizonte"
+                    maxLength={100}
+                    value={cidadeLocal}
+                    onChange={(e) => handleCidadeChange(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                      Estado
+                    </Label>
+                    <Select
+                      value={filters.estado ?? 'todos'}
+                      onValueChange={(v) => update({ estado: v === 'todos' ? undefined : v })}
+                    >
+                      <SelectTrigger className="mt-1 h-[34px] text-sm">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {ESTADOS_BR.map((uf) => (
+                          <SelectItem key={uf.value} value={uf.value}>{uf.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                      Origem
+                    </Label>
+                    <Input
+                      className="mt-1 h-[34px]"
+                      placeholder="Ex: evento"
+                      maxLength={100}
+                      value={origemLocal}
+                      onChange={(e) => handleOrigemChange(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </SegmentCard>
+
+                      </div>
 
           {/* ── Footer fixo ── */}
           <div className="flex gap-2 px-5 py-3.5 border-t bg-background flex-shrink-0 shadow-[0_-2px_8px_rgba(15,23,42,0.04)]">
