@@ -8,6 +8,7 @@ import {
   Sparkles,
   Calendar,
   Megaphone,
+  Award,
   ChevronDown,
   Search,
   X,
@@ -98,9 +99,17 @@ function countLocalizacao(f: Filters): number {
 }
 
 function countEngajamento(f: Filters): number {
+  return [f.leader_id].filter(Boolean).length;
+}
+
+function countStatusClassificacao(f: Filters): number {
   return [
     f.declarou_voto !== undefined && f.declarou_voto !== null,
-    f.leader_id,
+    f.aceita_whatsapp !== undefined && f.aceita_whatsapp !== null,
+    f.em_canal_whatsapp !== undefined && f.em_canal_whatsapp !== null,
+    f.e_multiplicador !== undefined && f.e_multiplicador !== null,
+    // Ranking conta como 1 (range coordenado)
+    typeof f.ranking_min === 'number' || typeof f.ranking_max === 'number',
   ].filter(Boolean).length;
 }
 
@@ -133,6 +142,7 @@ function totalActiveCount(f: Filters): number {
   return (
     countPessoais(f) +
     countLocalizacao(f) +
+    countStatusClassificacao(f) +
     countEngajamento(f) +
     countAtendimento(f) +
     countFunil(f) +
@@ -343,6 +353,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   // Contagens por segmento
   const cPessoais = countPessoais(filters);
   const cLocalizacao = countLocalizacao(filters);
+  const cStatusClassif = countStatusClassificacao(filters);
   const cEngajamento = countEngajamento(filters);
   const cAtendimento = countAtendimento(filters);
   const cFunil = countFunil(filters);
@@ -700,15 +711,76 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </div>
             </SegmentCard>
 
-            {/* ENGAJAMENTO POLÍTICO */}
+            {/* STATUS E CLASSIFICAÇÃO */}
             <SegmentCard
-              icon={<Shield className="h-4 w-4" />}
-              title="Engajamento Político"
-              subtitle="Voto declarado, lideranças"
-              count={cEngajamento}
-              defaultOpen={cEngajamento > 0}
+              icon={<Award className="h-4 w-4" />}
+              title="Status e Classificação"
+              subtitle="WhatsApp, voto declarado, multiplicador, ranking"
+              count={cStatusClassif}
+              defaultOpen={cStatusClassif > 0}
             >
               <div className="grid grid-cols-2 gap-3 mt-2.5">
+                {/* Aceita WhatsApp */}
+                <div>
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    Aceita WhatsApp
+                  </Label>
+                  <Select
+                    value={
+                      filters.aceita_whatsapp === true
+                        ? 'sim'
+                        : filters.aceita_whatsapp === false
+                        ? 'nao'
+                        : 'todos'
+                    }
+                    onValueChange={(v) =>
+                      update({
+                        aceita_whatsapp: v === 'sim' ? true : v === 'nao' ? false : null,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="mt-1 h-[34px] text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Canal do WhatsApp */}
+                <div>
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    Canal do WhatsApp
+                  </Label>
+                  <Select
+                    value={
+                      filters.em_canal_whatsapp === true
+                        ? 'sim'
+                        : filters.em_canal_whatsapp === false
+                        ? 'nao'
+                        : 'todos'
+                    }
+                    onValueChange={(v) =>
+                      update({
+                        em_canal_whatsapp: v === 'sim' ? true : v === 'nao' ? false : null,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="mt-1 h-[34px] text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="sim">No canal</SelectItem>
+                      <SelectItem value="nao">Fora do canal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Declarou voto (movido de Engajamento) */}
                 <div>
                   <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
                     Declarou voto
@@ -738,25 +810,111 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                   </Select>
                 </div>
 
+                {/* Multiplicador */}
                 <div>
                   <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                    Liderança
+                    Multiplicador
                   </Label>
                   <Select
-                    value={filters.leader_id ?? 'todos'}
-                    onValueChange={(v) => update({ leader_id: v === 'todos' ? undefined : v })}
+                    value={
+                      filters.e_multiplicador === true
+                        ? 'sim'
+                        : filters.e_multiplicador === false
+                        ? 'nao'
+                        : 'todos'
+                    }
+                    onValueChange={(v) =>
+                      update({
+                        e_multiplicador: v === 'sim' ? true : v === 'nao' ? false : null,
+                      })
+                    }
                   >
                     <SelectTrigger className="mt-1 h-[34px] text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todos">Todas</SelectItem>
-                      {leaders.map((l) => (
-                        <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
-                      ))}
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Ranking (range 0-10) */}
+              <div className="mt-3">
+                <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                  Ranking
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div>
+                    <Select
+                      value={typeof filters.ranking_min === 'number' ? String(filters.ranking_min) : 'todos'}
+                      onValueChange={(v) =>
+                        update({ ranking_min: v === 'todos' ? undefined : Number(v) })
+                      }
+                    >
+                      <SelectTrigger className="h-[34px] text-sm">
+                        <SelectValue placeholder="Mín" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">— Mín —</SelectItem>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Mínimo</p>
+                  </div>
+                  <div>
+                    <Select
+                      value={typeof filters.ranking_max === 'number' ? String(filters.ranking_max) : 'todos'}
+                      onValueChange={(v) =>
+                        update({ ranking_max: v === 'todos' ? undefined : Number(v) })
+                      }
+                    >
+                      <SelectTrigger className="h-[34px] text-sm">
+                        <SelectValue placeholder="Máx" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">— Máx —</SelectItem>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Máximo</p>
+                  </div>
+                </div>
+              </div>
+            </SegmentCard>
+
+            {/* ENGAJAMENTO POLÍTICO */}
+            <SegmentCard
+              icon={<Shield className="h-4 w-4" />}
+              title="Engajamento Político"
+              subtitle="Lideranças"
+              count={cEngajamento}
+              defaultOpen={cEngajamento > 0}
+            >
+              <div className="mt-2.5">
+                <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                  Liderança
+                </Label>
+                <Select
+                  value={filters.leader_id ?? 'todos'}
+                  onValueChange={(v) => update({ leader_id: v === 'todos' ? undefined : v })}
+                >
+                  <SelectTrigger className="mt-1 h-[34px] text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas</SelectItem>
+                    {leaders.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </SegmentCard>
 

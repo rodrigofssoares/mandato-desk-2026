@@ -99,6 +99,48 @@ export function ContactFiltersChips({
     });
   }
 
+  // Aceita WhatsApp
+  if (filters.aceita_whatsapp !== undefined && filters.aceita_whatsapp !== null) {
+    chips.push({
+      key: 'aceita_whatsapp',
+      label: `Aceita WhatsApp: ${filters.aceita_whatsapp ? 'Sim' : 'Não'}`,
+      onRemove: () => onChange({ ...filters, aceita_whatsapp: null }),
+    });
+  }
+
+  // Canal do WhatsApp
+  if (filters.em_canal_whatsapp !== undefined && filters.em_canal_whatsapp !== null) {
+    chips.push({
+      key: 'em_canal_whatsapp',
+      label: `Canal WhatsApp: ${filters.em_canal_whatsapp ? 'No canal' : 'Fora do canal'}`,
+      onRemove: () => onChange({ ...filters, em_canal_whatsapp: null }),
+    });
+  }
+
+  // Multiplicador
+  if (filters.e_multiplicador !== undefined && filters.e_multiplicador !== null) {
+    chips.push({
+      key: 'e_multiplicador',
+      label: `Multiplicador: ${filters.e_multiplicador ? 'Sim' : 'Não'}`,
+      onRemove: () => onChange({ ...filters, e_multiplicador: null }),
+    });
+  }
+
+  // Ranking range — chip único cobrindo min/max
+  if (typeof filters.ranking_min === 'number' || typeof filters.ranking_max === 'number') {
+    const min = filters.ranking_min;
+    const max = filters.ranking_max;
+    let label = 'Ranking: ';
+    if (typeof min === 'number' && typeof max === 'number') label += min === max ? String(min) : `${min} → ${max}`;
+    else if (typeof min === 'number') label += `≥ ${min}`;
+    else label += `≤ ${max}`;
+    chips.push({
+      key: 'ranking_range',
+      label,
+      onRemove: () => onChange({ ...filters, ranking_min: undefined, ranking_max: undefined }),
+    });
+  }
+
   // Aniversário
   if (filters.birthday_filter) {
     chips.push({

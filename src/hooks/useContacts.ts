@@ -109,6 +109,16 @@ export interface ContactFilters {
   stage_id?: string;
   /** Sem nenhum board_item em nenhum board — exclusivo com board_id */
   no_funnel?: boolean;
+  /** Aceita WhatsApp (sim/não/todos) */
+  aceita_whatsapp?: boolean | null;
+  /** Está no canal de WhatsApp (sim/não/todos) */
+  em_canal_whatsapp?: boolean | null;
+  /** É multiplicador (sim/não/todos) */
+  e_multiplicador?: boolean | null;
+  /** Ranking mínimo (0-10) — inclusivo */
+  ranking_min?: number;
+  /** Ranking máximo (0-10) — inclusivo */
+  ranking_max?: number;
 }
 
 export interface Contact {
@@ -193,6 +203,11 @@ export function useContacts(filters: ContactFilters = {}) {
     board_id,
     stage_id,
     no_funnel,
+    aceita_whatsapp,
+    em_canal_whatsapp,
+    e_multiplicador,
+    ranking_min,
+    ranking_max,
   } = filters;
 
   return useQuery({
@@ -254,6 +269,35 @@ export function useContacts(filters: ContactFilters = {}) {
         query = query.eq('declarou_voto', true);
       } else if (declarou_voto === false) {
         query = query.eq('declarou_voto', false);
+      }
+
+      // Aceita WhatsApp
+      if (aceita_whatsapp === true) {
+        query = query.eq('aceita_whatsapp', true);
+      } else if (aceita_whatsapp === false) {
+        query = query.eq('aceita_whatsapp', false);
+      }
+
+      // Canal de WhatsApp
+      if (em_canal_whatsapp === true) {
+        query = query.eq('em_canal_whatsapp', true);
+      } else if (em_canal_whatsapp === false) {
+        query = query.eq('em_canal_whatsapp', false);
+      }
+
+      // Multiplicador
+      if (e_multiplicador === true) {
+        query = query.eq('e_multiplicador', true);
+      } else if (e_multiplicador === false) {
+        query = query.eq('e_multiplicador', false);
+      }
+
+      // Ranking range (0-10, inclusivo)
+      if (typeof ranking_min === 'number') {
+        query = query.gte('ranking', ranking_min);
+      }
+      if (typeof ranking_max === 'number') {
+        query = query.lte('ranking', ranking_max);
       }
 
       // Birthday
