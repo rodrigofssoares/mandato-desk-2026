@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Users, UserPlus, CheckCircle2, Crown } from 'lucide-react';
+import { startOfMonth, format } from 'date-fns';
 
 import { StatCardWithDelta } from '@/components/dashboard/StatCardWithDelta';
 import { BoardFunnelCard } from '@/components/dashboard/BoardFunnelCard';
@@ -79,6 +80,9 @@ export default function Dashboard() {
     ? `${metrics.votoDeclarado.taxa.toFixed(1)}% taxa`
     : undefined;
 
+  const inicioMes = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+  const novosHref = `/contacts?date_from=${inicioMes}`;
+
   const widgets: Record<DashboardWidgetId, React.ReactNode> = {
     funnel: (
       <BoardFunnelCard
@@ -132,6 +136,7 @@ export default function Dashboard() {
           iconBg="bg-blue-500/10"
           value={metrics?.baseTotal.current ?? 0}
           deltaPct={metrics?.baseTotal.deltaPct}
+          href="/contacts"
           isLoading={isLoading}
         />
         <StatCardWithDelta
@@ -142,6 +147,7 @@ export default function Dashboard() {
           value={metrics?.novosNoPeriodo.current ?? 0}
           deltaPct={metrics?.novosNoPeriodo.deltaPct}
           hint="neste mês"
+          href={novosHref}
           isLoading={isLoading}
         />
         <StatCardWithDelta
@@ -153,6 +159,7 @@ export default function Dashboard() {
           deltaPct={metrics?.votoDeclarado.deltaPct}
           hint={votoHint}
           progressPct={votoProgressPct}
+          href="/contacts?declarou_voto=true"
           isLoading={isLoading}
         />
         <StatCardWithDelta

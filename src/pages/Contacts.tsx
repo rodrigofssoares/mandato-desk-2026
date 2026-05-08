@@ -53,10 +53,25 @@ export default function Contacts() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filters, setFilters] = useState<Filters>({
-    page: 1,
-    per_page: 50,
-    sort_by: 'created_desc',
+  const [filters, setFilters] = useState<Filters>(() => {
+    // Seed inicial via URL params — usado pelos atalhos do Dashboard
+    // (ex: /contacts?declarou_voto=true, /contacts?date_from=2026-05-01).
+    const initial: Filters = {
+      page: 1,
+      per_page: 50,
+      sort_by: 'created_desc',
+    };
+    const declarou = searchParams.get('declarou_voto');
+    if (declarou === 'true') initial.declarou_voto = true;
+    else if (declarou === 'false') initial.declarou_voto = false;
+
+    const dateFrom = searchParams.get('date_from');
+    if (dateFrom) initial.date_from = dateFrom;
+
+    const dateTo = searchParams.get('date_to');
+    if (dateTo) initial.date_to = dateTo;
+
+    return initial;
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
