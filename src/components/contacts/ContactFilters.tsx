@@ -110,7 +110,12 @@ function countEngajamento(f: Filters): number {
 }
 
 function countAtendimento(f: Filters): number {
-  return [f.has_demand, f.last_contact_filter].filter(Boolean).length;
+  return [
+    f.has_demand,
+    f.last_contact_filter,
+    // Range customizado conta como 1 (seleção coordenada)
+    f.last_contact_from || f.last_contact_to,
+  ].filter(Boolean).length;
 }
 
 function countFunil(f: Filters): number {
@@ -960,6 +965,42 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Período customizado de último contato (range livre) */}
+              <div className="mt-3">
+                <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                  Período de último contato
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div>
+                    <Input
+                      type="date"
+                      className="h-[34px] text-sm"
+                      value={filters.last_contact_from ?? ''}
+                      onChange={(e) =>
+                        update({ last_contact_from: e.target.value || undefined })
+                      }
+                      aria-label="Último contato — início do intervalo"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">De</p>
+                  </div>
+                  <div>
+                    <Input
+                      type="date"
+                      className="h-[34px] text-sm"
+                      value={filters.last_contact_to ?? ''}
+                      onChange={(e) =>
+                        update({ last_contact_to: e.target.value || undefined })
+                      }
+                      aria-label="Último contato — fim do intervalo"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Até</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  Pode ser combinado com os atalhos acima (filtros aplicados em conjunto).
+                </p>
               </div>
             </SegmentCard>
 

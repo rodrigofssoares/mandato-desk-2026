@@ -81,6 +81,10 @@ export interface ContactFilters {
   /** Fim do range de aniversário (formato MM-DD, ano ignorado) */
   birthday_to?: string;
   last_contact_filter?: 'today' | '7d' | '30d' | '30d+' | '60d+' | 'never' | null;
+  /** Início do range de último contato (data YYYY-MM-DD) */
+  last_contact_from?: string;
+  /** Fim do range de último contato (data YYYY-MM-DD) */
+  last_contact_to?: string;
   leader_id?: string;
   /** IDs de campos de campanha — contato precisa ter TODOS marcados */
   campaign_field_ids?: string[];
@@ -186,6 +190,8 @@ export function useContacts(filters: ContactFilters = {}) {
     birthday_from,
     birthday_to,
     last_contact_filter,
+    last_contact_from,
+    last_contact_to,
     leader_id,
     campaign_field_ids,
     custom_fields,
@@ -344,6 +350,17 @@ export function useContacts(filters: ContactFilters = {}) {
           d.setDate(d.getDate() - 60);
           query = query.lt('ultimo_contato', d.toISOString());
         }
+      }
+
+      // Último contato — range customizado (data YYYY-MM-DD). Combina (AND) com o preset acima.
+      if (last_contact_from) {
+        query = query.gte('ultimo_contato', last_contact_from);
+      }
+      if (last_contact_to) {
+        // Fim do dia: <= last_contact_to + 1 dia (exclusivo) para incluir todo o dia escolhido
+        const end = new Date(`${last_contact_to}T00:00:00`);
+        end.setDate(end.getDate() + 1);
+        query = query.lt('ultimo_contato', end.toISOString());
       }
 
       // Leader

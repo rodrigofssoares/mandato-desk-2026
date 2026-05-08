@@ -180,6 +180,27 @@ export function ContactFiltersChips({
     });
   }
 
+  // Último contato — range customizado (chip único cobrindo from/to)
+  if (filters.last_contact_from || filters.last_contact_to) {
+    const formatDate = (iso: string | undefined) => {
+      if (!iso) return '';
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+    };
+    const from = formatDate(filters.last_contact_from);
+    const to = formatDate(filters.last_contact_to);
+    let label = 'Período último contato: ';
+    if (from && to) label += `${from} → ${to}`;
+    else if (from) label += `a partir de ${from}`;
+    else label += `até ${to}`;
+    chips.push({
+      key: 'last_contact_range',
+      label,
+      onRemove: () =>
+        onChange({ ...filters, last_contact_from: undefined, last_contact_to: undefined }),
+    });
+  }
+
   // Liderança
   if (filters.leader_id) {
     const leader = leaders.find((l) => l.id === filters.leader_id);
