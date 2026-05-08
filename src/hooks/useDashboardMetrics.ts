@@ -179,11 +179,26 @@ export function useDashboardMetrics(
       const votoTaxa = baseTotalCurrent > 0 ? (votoCurrent / baseTotalCurrent) * 100 : 0;
 
       // ── Multiplicadores ──
+      // Conta articuladores ativos do tipo "Multiplicador" (tabela leaders).
+      // Antes lia contacts.e_multiplicador (flag legada da migration 004);
+      // a 035 migrou esses contatos pra leaders e a flag virou histórica.
+      const countMultiplicadores = async (
+        atOrBefore?: string
+      ): Promise<number> => {
+        let q = supabase
+          .from('leaders')
+          .select('id, leader_types!inner(slug)', { count: 'exact', head: true })
+          .eq('active', true)
+          .eq('leader_types.slug', 'multiplicador');
+        if (atOrBefore) q = q.lte('created_at', atOrBefore);
+        const { count, error } = await q;
+        if (error) throw error;
+        return count ?? 0;
+      };
+
       const [multCurrent, multPrevious] = await Promise.all([
-        countContacts((q) => q.eq('e_multiplicador', true)),
-        countContacts((q) =>
-          q.eq('e_multiplicador', true).lte('updated_at', ranges.previous.end)
-        ),
+        countMultiplicadores(),
+        countMultiplicadores(ranges.previous.end),
       ]);
 
       // ── Saúde da base: ativos / inativos / perdidos por data do último contato ──

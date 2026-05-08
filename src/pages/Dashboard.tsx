@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { Users, UserPlus, CheckCircle2, Megaphone } from 'lucide-react';
 
 import { StatCardWithDelta } from '@/components/dashboard/StatCardWithDelta';
-import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { BoardFunnelCard } from '@/components/dashboard/BoardFunnelCard';
 import { TarefasHojeCard } from '@/components/dashboard/TarefasHojeCard';
 import { AlertsBadge } from '@/components/dashboard/AlertsBadge';
@@ -17,10 +16,7 @@ import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { EditableDashboard } from '@/components/dashboard/EditableDashboard';
 
 import { useBoards } from '@/hooks/useBoards';
-import {
-  useDashboardMetrics,
-  type DashboardPeriod,
-} from '@/hooks/useDashboardMetrics';
+import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { useBranding } from '@/hooks/useBranding';
@@ -30,18 +26,10 @@ import {
   type DashboardWidgetId,
 } from '@/lib/dashboardLayout';
 
-const PERIOD_LABELS: Record<DashboardPeriod, string> = {
-  hoje: 'hoje',
-  '7d': 'nos últimos 7 dias',
-  '30d': 'nos últimos 30 dias',
-  mes: 'neste mês',
-};
-
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [alertsOpen, setAlertsOpen] = useState(false);
 
-  const period = (searchParams.get('period') as DashboardPeriod) || 'mes';
   const boardParam = searchParams.get('board');
 
   const { data: boards = [] } = useBoards('contact');
@@ -57,14 +45,8 @@ export default function Dashboard() {
     return boards[0]?.id ?? null;
   }, [boardParam, boards]);
 
-  const { data: metrics, isLoading } = useDashboardMetrics(period, activeBoardId);
+  const { data: metrics, isLoading } = useDashboardMetrics('mes', activeBoardId);
   const { data: branding } = useBranding();
-
-  const setPeriod = (p: DashboardPeriod) => {
-    const next = new URLSearchParams(searchParams);
-    next.set('period', p);
-    setSearchParams(next, { replace: true });
-  };
 
   const setBoard = (boardId: string) => {
     const next = new URLSearchParams(searchParams);
@@ -80,8 +62,6 @@ export default function Dashboard() {
           });
         }
       : undefined;
-
-  const novosHint = `${PERIOD_LABELS[period]}`;
 
   const metaVotos = branding?.meta_votos ?? null;
   const temMeta = metaVotos != null && metaVotos > 0;
@@ -136,7 +116,6 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-2xl font-bold">Visão Geral</h1>
         <div className="flex items-center gap-2 flex-wrap">
-          <PeriodSelector value={period} onChange={setPeriod} />
           <AlertsBadge
             count={metrics?.alertas.length ?? 0}
             onClick={() => setAlertsOpen(true)}
@@ -162,7 +141,7 @@ export default function Dashboard() {
           iconBg="bg-emerald-500/10"
           value={metrics?.novosNoPeriodo.current ?? 0}
           deltaPct={metrics?.novosNoPeriodo.deltaPct}
-          hint={novosHint}
+          hint="neste mês"
           isLoading={isLoading}
         />
         <StatCardWithDelta
