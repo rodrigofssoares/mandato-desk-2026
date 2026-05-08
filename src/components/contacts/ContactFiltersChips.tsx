@@ -85,7 +85,7 @@ export function ContactFiltersChips({
   if (filters.is_favorite === true) {
     chips.push({
       key: 'is_favorite',
-      label: 'Apenas favoritos',
+      label: 'Contatos favoritos',
       onRemove: () => onChange({ ...filters, is_favorite: undefined }),
     });
   }

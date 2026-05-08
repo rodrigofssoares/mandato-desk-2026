@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Filter,
   Users,
@@ -10,6 +10,7 @@ import {
   Calendar,
   Megaphone,
   ChevronDown,
+  Search,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -248,6 +249,9 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   const [cidadeLocal, setCidadeLocal] = useState(filters.cidade ?? '');
   const [origemLocal, setOrigemLocal] = useState(filters.origem ?? '');
 
+  // Busca local de etiquetas dentro do drawer (não persiste — só filtra a lista visual)
+  const [tagSearch, setTagSearch] = useState('');
+
   useEffect(() => { setCidadeLocal(filters.cidade ?? ''); }, [filters.cidade]);
   useEffect(() => { setOrigemLocal(filters.origem ?? ''); }, [filters.origem]);
 
@@ -319,13 +323,24 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     update({ custom_fields: Object.keys(current).length > 0 ? current : undefined });
   };
 
-  // Agrupa tags por categoria
-  const tagsByCategory: Record<string, typeof allTags> = {};
-  allTags.forEach((tag) => {
-    const cat = tag.group_label || 'Sem categoria';
-    if (!tagsByCategory[cat]) tagsByCategory[cat] = [];
-    tagsByCategory[cat].push(tag);
-  });
+  // Agrupa tags por categoria, filtrando pela busca local (case-insensitive, sem acentos)
+  const tagsByCategory = useMemo(() => {
+    const norm = (s: string) =>
+      s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+    const query = norm(tagSearch.trim());
+    const filtered = query
+      ? allTags.filter(
+          (tag) => norm(tag.nome).includes(query) || norm(tag.group_label || '').includes(query)
+        )
+      : allTags;
+    return filtered.reduce<Record<string, typeof allTags>>((acc, tag) => {
+      const cat = tag.group_label || 'Sem categoria';
+      (acc[cat] ??= []).push(tag);
+      return acc;
+    }, {});
+  }, [allTags, tagSearch]);
+
+  const tagsMatchCount = Object.values(tagsByCategory).reduce((n, arr) => n + arr.length, 0);
 
   // Contagens por segmento
   const cPessoais = countPessoais(filters);
@@ -436,41 +451,71 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
                   Etiquetas
                 </Label>
+
+                {allTags.length > 0 && (
+                  <div className="relative mt-1.5">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar etiqueta..."
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                      className="h-8 pl-8 pr-8 text-sm"
+                      aria-label="Buscar etiqueta pelo nome"
+                    />
+                    {tagSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setTagSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center"
+                        aria-label="Limpar busca de etiqueta"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-1.5 max-h-36 overflow-y-auto border rounded-md p-2.5 bg-background">
-                  {Object.entries(tagsByCategory).map(([cat, catTags]) => (
-                    <div key={cat} className="mb-2 last:mb-0">
-                      <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-1">{cat}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {catTags.map((tag) => {
-                          const active = (filters.tags ?? []).includes(tag.id);
-                          return (
-                            <button
-                              key={tag.id}
-                              type="button"
-                              onClick={() => toggleTag(tag.id)}
-                              className={[
-                                'inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-xs cursor-pointer transition-all duration-150 select-none',
-                                active
-                                  ? 'border-primary bg-primary/[0.07] text-primary font-semibold'
-                                  : 'border-border bg-white text-foreground hover:border-primary/50',
-                              ].join(' ')}
-                              aria-pressed={active}
-                            >
-                              {tag.cor && (
-                                <span
-                                  className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{ background: tag.cor }}
-                                />
-                              )}
-                              {tag.nome}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                  {allTags.length === 0 && (
+                  {allTags.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Nenhuma etiqueta cadastrada</p>
+                  ) : tagsMatchCount === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma etiqueta encontrada para "{tagSearch}"
+                    </p>
+                  ) : (
+                    Object.entries(tagsByCategory).map(([cat, catTags]) => (
+                      <div key={cat} className="mb-2 last:mb-0">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-1">{cat}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {catTags.map((tag) => {
+                            const active = (filters.tags ?? []).includes(tag.id);
+                            return (
+                              <button
+                                key={tag.id}
+                                type="button"
+                                onClick={() => toggleTag(tag.id)}
+                                className={[
+                                  'inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-xs cursor-pointer transition-all duration-150 select-none',
+                                  active
+                                    ? 'border-primary bg-primary/[0.07] text-primary font-semibold'
+                                    : 'border-border bg-white text-foreground hover:border-primary/50',
+                                ].join(' ')}
+                                aria-pressed={active}
+                              >
+                                {tag.cor && (
+                                  <span
+                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                    style={{ background: tag.cor }}
+                                  />
+                                )}
+                                {tag.nome}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
@@ -484,7 +529,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                     id="switch-favoritos"
                   />
                   <Label htmlFor="switch-favoritos" className="text-sm cursor-pointer">
-                    Apenas favoritos
+                    Contatos favoritos
                   </Label>
                 </div>
 
