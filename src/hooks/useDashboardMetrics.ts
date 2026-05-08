@@ -54,7 +54,7 @@ export interface DashboardMetrics {
   baseTotal: StatWithDelta;
   novosNoPeriodo: StatWithDelta;
   votoDeclarado: StatWithDelta & { taxa: number };
-  multiplicadores: StatWithDelta;
+  articuladores: StatWithDelta;
   saudeBase: SaudeBase;
   funilStages: FunilStage[];
   alertas: Alert[];
@@ -178,12 +178,26 @@ export function useDashboardMetrics(
       ]);
       const votoTaxa = baseTotalCurrent > 0 ? (votoCurrent / baseTotalCurrent) * 100 : 0;
 
-      // ── Multiplicadores ──
-      const [multCurrent, multPrevious] = await Promise.all([
-        countContacts((q) => q.eq('e_multiplicador', true)),
-        countContacts((q) =>
-          q.eq('e_multiplicador', true).lte('updated_at', ranges.previous.end)
-        ),
+      // ── Articuladores ──
+      // Conta TODOS os articuladores ativos (qualquer leader_type).
+      // Antes lia contacts.e_multiplicador (flag legada da migration 004);
+      // a migration 035 migrou pra tabela leaders e a 036 garante sync futuro.
+      const countArticuladores = async (
+        atOrBefore?: string
+      ): Promise<number> => {
+        let q = supabase
+          .from('leaders')
+          .select('*', { count: 'exact', head: true })
+          .eq('active', true);
+        if (atOrBefore) q = q.lte('created_at', atOrBefore);
+        const { count, error } = await q;
+        if (error) throw error;
+        return count ?? 0;
+      };
+
+      const [articuladoresCurrent, articuladoresPrevious] = await Promise.all([
+        countArticuladores(),
+        countArticuladores(ranges.previous.end),
       ]);
 
       // ── Saúde da base: ativos / inativos / perdidos por data do último contato ──
@@ -347,10 +361,10 @@ export function useDashboardMetrics(
           deltaPct: calcDelta(votoCurrent, votoPrevious),
           taxa: votoTaxa,
         },
-        multiplicadores: {
-          current: multCurrent,
-          previous: multPrevious,
-          deltaPct: calcDelta(multCurrent, multPrevious),
+        articuladores: {
+          current: articuladoresCurrent,
+          previous: articuladoresPrevious,
+          deltaPct: calcDelta(articuladoresCurrent, articuladoresPrevious),
         },
         saudeBase: {
           ativos,
