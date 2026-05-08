@@ -25,12 +25,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQueryClient } from '@tanstack/react-query';
-import { useContacts, useDeleteContact, useContact, type ContactFilters as Filters, type Contact } from '@/hooks/useContacts';
+import { useContacts, useDeleteContact, useContact, useContactTags, useLeaders, type ContactFilters as Filters, type Contact } from '@/hooks/useContacts';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useBoards } from '@/hooks/useBoards';
+import { useBoardStages } from '@/hooks/useBoardStages';
 import { ContactCard } from '@/components/contacts/ContactCard';
 import { ContactListItem } from '@/components/contacts/ContactListItem';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { ContactFilters } from '@/components/contacts/ContactFilters';
+import { ContactFiltersChips } from '@/components/contacts/ContactFiltersChips';
 import { ContactsPagination } from '@/components/contacts/ContactsPagination';
 import { ExportMenu } from '@/components/contacts/ExportMenu';
 import { ContactImportDialog } from '@/components/contacts/ContactImportDialog';
@@ -85,6 +88,12 @@ export default function Contacts() {
   const { data: duplicateCount = 0 } = useDuplicateCount();
   const { favoritos, salvarFavorito, removerFavorito } = useFiltrosFavoritos();
 
+  // Dados para resolução de labels nos chips de filtros
+  const { data: allTags = [] } = useContactTags();
+  const { data: leaders = [] } = useLeaders();
+  const { data: boards = [] } = useBoards('contact');
+  const { data: stages = [] } = useBoardStages(filters.board_id ?? null);
+
   // Conta filtros ativos (para mostrar/esconder o botão "Salvar filtro")
   const filtrosAtivosCount = useMemo(
     () =>
@@ -98,6 +107,14 @@ export default function Contacts() {
         filters.leader_id,
         filters.date_from,
         filters.date_to,
+        filters.cidade,
+        filters.estado,
+        filters.origem,
+        filters.has_phone,
+        filters.has_email,
+        filters.has_demand,
+        filters.board_id,
+        filters.no_funnel,
       ].filter(Boolean).length,
     [filters, debouncedSearch]
   );
@@ -332,6 +349,21 @@ export default function Contacts() {
           </Button>
         </div>
       </div>
+
+      {/* Chips de filtros ativos — visíveis mesmo com o painel recolhido */}
+      <ContactFiltersChips
+        filters={queryFilters}
+        search={debouncedSearch}
+        onChange={(novosFiltros) => setFilters({ ...novosFiltros, page: 1 })}
+        onSearchChange={(valor) => {
+          setSearchInput(valor);
+          setDebouncedSearch(valor);
+        }}
+        allTags={allTags}
+        leaders={leaders}
+        boards={boards}
+        stages={stages}
+      />
 
       {/* Filters */}
       <ContactFilters filters={filters} onChange={setFilters} />
