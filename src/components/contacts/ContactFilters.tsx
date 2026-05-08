@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,9 +19,42 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useContactTags, useLeaders, type ContactFilters as Filters, type CustomFieldFilterValue } from '@/hooks/useContacts';
+import { useBoards } from '@/hooks/useBoards';
+import { useBoardStages } from '@/hooks/useBoardStages';
 import { useCampaignFields } from '@/hooks/useCampaignFields';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { CustomFieldFilterInput } from './CustomFieldFilterInput';
+
+// Estados brasileiros para o select de estado
+const ESTADOS_BR = [
+  { value: 'AC', label: 'AC — Acre' },
+  { value: 'AL', label: 'AL — Alagoas' },
+  { value: 'AP', label: 'AP — Amapá' },
+  { value: 'AM', label: 'AM — Amazonas' },
+  { value: 'BA', label: 'BA — Bahia' },
+  { value: 'CE', label: 'CE — Ceará' },
+  { value: 'DF', label: 'DF — Distrito Federal' },
+  { value: 'ES', label: 'ES — Espírito Santo' },
+  { value: 'GO', label: 'GO — Goiás' },
+  { value: 'MA', label: 'MA — Maranhão' },
+  { value: 'MT', label: 'MT — Mato Grosso' },
+  { value: 'MS', label: 'MS — Mato Grosso do Sul' },
+  { value: 'MG', label: 'MG — Minas Gerais' },
+  { value: 'PA', label: 'PA — Pará' },
+  { value: 'PB', label: 'PB — Paraíba' },
+  { value: 'PR', label: 'PR — Paraná' },
+  { value: 'PE', label: 'PE — Pernambuco' },
+  { value: 'PI', label: 'PI — Piauí' },
+  { value: 'RJ', label: 'RJ — Rio de Janeiro' },
+  { value: 'RN', label: 'RN — Rio Grande do Norte' },
+  { value: 'RS', label: 'RS — Rio Grande do Sul' },
+  { value: 'RO', label: 'RO — Rondônia' },
+  { value: 'RR', label: 'RR — Roraima' },
+  { value: 'SC', label: 'SC — Santa Catarina' },
+  { value: 'SP', label: 'SP — São Paulo' },
+  { value: 'SE', label: 'SE — Sergipe' },
+  { value: 'TO', label: 'TO — Tocantins' },
+];
 
 interface ContactFiltersProps {
   filters: Filters;
@@ -34,6 +67,33 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   const { data: leaders = [] } = useLeaders();
   const { data: campaignFields = [] } = useCampaignFields();
   const { data: customFields = [] } = useCustomFields({ filtravel: true });
+  const { data: boards = [] } = useBoards('contact');
+  const { data: stages = [] } = useBoardStages(filters.board_id ?? null);
+
+  // Refs para debounce dos inputs de texto livre
+  const cidadeDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const origemDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Estado local para controlar valor dos inputs enquanto o debounce não dispara
+  const [cidadeLocal, setCidadeLocal] = useState(filters.cidade ?? '');
+  const [origemLocal, setOrigemLocal] = useState(filters.origem ?? '');
+
+  // Sincroniza estado local quando favorito externo é aplicado (troca o filtro em lote)
+  useEffect(() => {
+    setCidadeLocal(filters.cidade ?? '');
+  }, [filters.cidade]);
+
+  useEffect(() => {
+    setOrigemLocal(filters.origem ?? '');
+  }, [filters.origem]);
+
+  // Limpa timers pendentes no unmount — evita update() rodar sobre componente desmontado
+  useEffect(() => {
+    return () => {
+      if (cidadeDebounce.current) clearTimeout(cidadeDebounce.current);
+      if (origemDebounce.current) clearTimeout(origemDebounce.current);
+    };
+  }, []);
 
   const customFieldsCount = Object.values(filters.custom_fields ?? {}).filter(Boolean).length;
 
@@ -48,6 +108,14 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     filters.campaign_field_ids && filters.campaign_field_ids.length > 0,
     filters.date_from,
     filters.date_to,
+    filters.cidade,
+    filters.estado,
+    filters.origem,
+    filters.has_phone,
+    filters.has_email,
+    filters.has_demand,
+    filters.board_id,
+    filters.no_funnel,
   ].filter(Boolean).length + customFieldsCount;
 
   const update = (partial: Partial<Filters>) => {
@@ -55,12 +123,30 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   };
 
   const clearAll = () => {
+    setCidadeLocal('');
+    setOrigemLocal('');
     onChange({
       search: filters.search,
       sort_by: filters.sort_by,
       page: 1,
       per_page: filters.per_page,
     });
+  };
+
+  const handleCidadeChange = (value: string) => {
+    setCidadeLocal(value);
+    if (cidadeDebounce.current) clearTimeout(cidadeDebounce.current);
+    cidadeDebounce.current = setTimeout(() => {
+      update({ cidade: value.trim() || undefined });
+    }, 300);
+  };
+
+  const handleOrigemChange = (value: string) => {
+    setOrigemLocal(value);
+    if (origemDebounce.current) clearTimeout(origemDebounce.current);
+    origemDebounce.current = setTimeout(() => {
+      update({ origem: value.trim() || undefined });
+    }, 300);
   };
 
   const toggleTag = (tagId: string) => {
@@ -242,6 +328,174 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 {leaders.map((l) => (
                   <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Localização — Cidade e Estado */}
+          <div>
+            <Label className="text-xs">Cidade</Label>
+            <Input
+              className="mt-1"
+              placeholder="ex: Belo Horizonte"
+              maxLength={100}
+              value={cidadeLocal}
+              onChange={(e) => handleCidadeChange(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs">Estado</Label>
+            <Select
+              value={filters.estado ?? 'todos'}
+              onValueChange={(v) => update({ estado: v === 'todos' ? undefined : v })}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {ESTADOS_BR.map((uf) => (
+                  <SelectItem key={uf.value} value={uf.value}>{uf.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Origem */}
+          <div>
+            <Label className="text-xs">Origem</Label>
+            <Input
+              className="mt-1"
+              placeholder="ex: evento, indicação"
+              maxLength={100}
+              value={origemLocal}
+              onChange={(e) => handleOrigemChange(e.target.value)}
+            />
+          </div>
+
+          {/* Completude do cadastro — Telefone e E-mail */}
+          <div>
+            <Label className="text-xs">Telefone</Label>
+            <Select
+              value={filters.has_phone ?? 'todos'}
+              onValueChange={(v) =>
+                update({ has_phone: v === 'todos' ? undefined : (v as Filters['has_phone']) })
+              }
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="com">Com telefone</SelectItem>
+                <SelectItem value="sem">Sem telefone</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs">E-mail</Label>
+            <Select
+              value={filters.has_email ?? 'todos'}
+              onValueChange={(v) =>
+                update({ has_email: v === 'todos' ? undefined : (v as Filters['has_email']) })
+              }
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="com">Com e-mail</SelectItem>
+                <SelectItem value="sem">Sem e-mail</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Funil e Etapa */}
+          <div>
+            <Label className="text-xs">Funil</Label>
+            <Select
+              value={filters.board_id ?? 'todos'}
+              onValueChange={(v) => {
+                if (v === 'todos') {
+                  update({ board_id: undefined, stage_id: undefined, no_funnel: undefined });
+                } else {
+                  update({ board_id: v, stage_id: undefined, no_funnel: undefined });
+                }
+              }}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os funis</SelectItem>
+                {boards.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Etapa — só aparece quando um funil está selecionado */}
+          {filters.board_id && (
+            <div>
+              <Label className="text-xs">Etapa</Label>
+              <Select
+                value={filters.stage_id ?? 'todos'}
+                onValueChange={(v) =>
+                  update({ stage_id: v === 'todos' ? undefined : v })
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Todas as etapas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as etapas</SelectItem>
+                  {stages.length === 0 ? (
+                    <SelectItem value="__vazio" disabled>Nenhuma etapa neste funil</SelectItem>
+                  ) : (
+                    stages.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Fora de qualquer funil — exclusivo com board_id */}
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={filters.no_funnel === true}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  update({ no_funnel: true, board_id: undefined, stage_id: undefined });
+                } else {
+                  update({ no_funnel: undefined });
+                }
+              }}
+            />
+            <Label className="text-sm">Fora de qualquer funil</Label>
+          </div>
+
+          {/* Atendimento — Demandas */}
+          <div>
+            <Label className="text-xs">Demandas</Label>
+            <Select
+              value={filters.has_demand ?? 'todos'}
+              onValueChange={(v) =>
+                update({ has_demand: v === 'todos' ? undefined : (v as Filters['has_demand']) })
+              }
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="com">Com demanda</SelectItem>
+                <SelectItem value="sem">Sem demanda</SelectItem>
               </SelectContent>
             </Select>
           </div>

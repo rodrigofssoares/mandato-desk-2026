@@ -87,6 +87,24 @@ export interface ContactFilters {
   sort_by?: 'name_asc' | 'name_desc' | 'created_desc' | 'created_asc' | 'favorites_first';
   page?: number;
   per_page?: number;
+  /** Filtro de cidade (ILIKE case-insensitive) */
+  cidade?: string;
+  /** Filtro de estado (match exato, ex: 'MG') */
+  estado?: string;
+  /** Filtro de origem (ILIKE + IS NOT NULL) */
+  origem?: string;
+  /** Filtro de telefone: 'com' = IS NOT NULL, 'sem' = IS NULL */
+  has_phone?: 'com' | 'sem';
+  /** Filtro de e-mail: 'com' = IS NOT NULL, 'sem' = IS NULL */
+  has_email?: 'com' | 'sem';
+  /** Filtro de demanda registrada: 'com' = tem ao menos 1, 'sem' = não tem nenhuma */
+  has_demand?: 'com' | 'sem';
+  /** UUID do board (funil) — usa embed !inner para evitar URL limit */
+  board_id?: string;
+  /** UUID do stage (etapa) — só válido com board_id */
+  stage_id?: string;
+  /** Sem nenhum board_item em nenhum board — exclusivo com board_id */
+  no_funnel?: boolean;
 }
 
 export interface Contact {
@@ -135,6 +153,13 @@ export interface Tag {
   group_slug?: string | null;
 }
 
+// Escapa metacaracteres ILIKE (%, _) no texto buscado pelo usuário.
+// Sem isso, "%" digitado vira wildcard e "_" casa qualquer caractere — o
+// que confunde o usuário e amplia indevidamente o resultado.
+function escapeLike(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 // ---------- useContacts ----------
 
 export function useContacts(filters: ContactFilters = {}) {
@@ -153,6 +178,15 @@ export function useContacts(filters: ContactFilters = {}) {
     sort_by = 'created_desc',
     page = 1,
     per_page = 50,
+    cidade,
+    estado,
+    origem,
+    has_phone,
+    has_email,
+    has_demand,
+    board_id,
+    stage_id,
+    no_funnel,
   } = filters;
 
   return useQuery({
@@ -167,9 +201,20 @@ export function useContacts(filters: ContactFilters = {}) {
       // estourava a URL (>16KB) e o PostgREST retornava 400, fazendo
       // "sumirem" todos os contatos da tela.
       const usingTagFilter = tags && tags.length > 0;
-      const selectClause = usingTagFilter
-        ? '*, contact_tags!inner(tag_id)'
-        : '*, contact_tags(tag_id, tags(id, nome, cor))';
+      const usingBoardFilter = !!board_id;
+
+      // Monta selectClause combinando !inner para tags E board_items conforme necessário.
+      // PostgREST suporta múltiplos !inner no mesmo select.
+      let selectClause: string;
+      if (usingTagFilter && usingBoardFilter) {
+        selectClause = '*, contact_tags!inner(tag_id), board_items!inner(board_id, stage_id)';
+      } else if (usingTagFilter) {
+        selectClause = '*, contact_tags!inner(tag_id)';
+      } else if (usingBoardFilter) {
+        selectClause = '*, contact_tags(tag_id, tags(id, nome, cor)), board_items!inner(board_id, stage_id)';
+      } else {
+        selectClause = '*, contact_tags(tag_id, tags(id, nome, cor))';
+      }
 
       let query = supabase
         .from('contacts')
@@ -179,9 +224,17 @@ export function useContacts(filters: ContactFilters = {}) {
         query = query.in('contact_tags.tag_id', tags as string[]);
       }
 
+      // Filtro de funil via embed !inner (evita .in() com centenas de IDs)
+      if (usingBoardFilter) {
+        query = query.eq('board_items.board_id', board_id as string);
+        if (stage_id) {
+          query = query.eq('board_items.stage_id', stage_id);
+        }
+      }
+
       // Search
       if (search && search.trim()) {
-        const term = `%${search.trim()}%`;
+        const term = `%${escapeLike(search.trim())}%`;
         query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
       }
 
@@ -292,7 +345,7 @@ export function useContacts(filters: ContactFilters = {}) {
             .eq('campo_id', campoId);
 
           if (filtro.tipo === 'texto') {
-            cpv = cpv.ilike('valor_texto', `%${filtro.contains.trim()}%`);
+            cpv = cpv.ilike('valor_texto', `%${escapeLike(filtro.contains.trim())}%`);
           } else if (filtro.tipo === 'numero') {
             if (filtro.min !== undefined) cpv = cpv.gte('valor_numero', filtro.min);
             if (filtro.max !== undefined) cpv = cpv.lte('valor_numero', filtro.max);
@@ -324,6 +377,86 @@ export function useContacts(filters: ContactFilters = {}) {
             return { data: [], count: 0 };
           }
           query = query.in('id', [...intersection]);
+        }
+      }
+
+      // Cidade (ILIKE case-insensitive)
+      if (cidade && cidade.trim()) {
+        query = query.ilike('cidade', `%${escapeLike(cidade.trim())}%`);
+      }
+
+      // Estado (match exato)
+      if (estado) {
+        query = query.eq('estado', estado);
+      }
+
+      // Origem (ILIKE + IS NOT NULL — origens nulas nunca batem)
+      if (origem && origem.trim()) {
+        query = query
+          .not('origem', 'is', null)
+          .ilike('origem', `%${escapeLike(origem.trim())}%`);
+      }
+
+      // Telefone (IS NOT NULL / IS NULL)
+      if (has_phone === 'com') {
+        query = query.not('telefone', 'is', null);
+      } else if (has_phone === 'sem') {
+        query = query.is('telefone', null);
+      }
+
+      // E-mail (IS NOT NULL / IS NULL)
+      if (has_email === 'com') {
+        query = query.not('email', 'is', null);
+      } else if (has_email === 'sem') {
+        query = query.is('email', null);
+      }
+
+      // Fora de qualquer funil — sub-query client-side em board_items
+      if (no_funnel) {
+        const { data: boardItemRows, error: boardItemError } = await supabase
+          .from('board_items')
+          .select('contact_id')
+          .not('contact_id', 'is', null);
+
+        if (boardItemError) throw boardItemError;
+
+        const idsNoFunnel = [...new Set(
+          (boardItemRows ?? []).map((r: { contact_id: string | null }) => r.contact_id).filter(Boolean)
+        )] as string[];
+
+        if (idsNoFunnel.length > 0) {
+          query = query.not('id', 'in', `(${idsNoFunnel.join(',')})`);
+        }
+        // Se não há nenhum board_item, todos os contatos estão fora de funil — não filtra nada
+      }
+
+      // Demanda registrada — sub-query client-side em demands
+      // Índice idx_demands_contact_id confirmado na migration 001_complete_schema.sql.
+      // Sub-query é segura para o volume atual; se ultrapassar 300 IDs únicos,
+      // considerar RPC (função Postgres com EXISTS) como evolução futura.
+      if (has_demand) {
+        const { data: demandRows, error: demandError } = await supabase
+          .from('demands')
+          .select('contact_id')
+          .not('contact_id', 'is', null);
+
+        if (demandError) throw demandError;
+
+        const idsComDemanda = [...new Set(
+          (demandRows ?? []).map((r: { contact_id: string | null }) => r.contact_id).filter(Boolean)
+        )] as string[];
+
+        if (has_demand === 'com') {
+          if (idsComDemanda.length === 0) {
+            return { data: [], count: 0 };
+          }
+          query = query.in('id', idsComDemanda);
+        } else {
+          // 'sem' — contatos sem nenhuma demanda
+          if (idsComDemanda.length > 0) {
+            query = query.not('id', 'in', `(${idsComDemanda.join(',')})`);
+          }
+          // Se não há demandas no sistema, retorna todos (sem filtro adicional)
         }
       }
 
@@ -362,12 +495,14 @@ export function useContacts(filters: ContactFilters = {}) {
 
       if (error) throw error;
 
-      // Quando usamos !inner para o filtro de tags, o embed vem reduzido
-      // (so as tags que bateram no filtro, sem nome/cor). Hidratamos a lista
-      // completa das tags de cada contato exibido numa segunda query pequena
-      // (no maximo per_page UUIDs, URL minuscula).
-      let filtered = data as Contact[];
-      if (usingTagFilter && filtered.length > 0) {
+      // Quando usamos !inner para o filtro de tags ou board_items, o embed vem
+      // reduzido (só os registros que bateram no filtro, sem nome/cor).
+      // Hidratamos a lista completa das tags de cada contato exibido numa segunda
+      // query pequena (no máximo per_page UUIDs, URL mínima).
+      // O tipo inferido pelo Supabase para selects com !inner pode não bater com Contact[].
+      // Cast via unknown é seguro aqui pois a forma dos objetos é compatível.
+      let filtered = (data as unknown) as Contact[];
+      if ((usingTagFilter || usingBoardFilter) && filtered.length > 0) {
         const contactIds = filtered.map((c) => c.id);
         const { data: tagRows, error: tagError } = await supabase
           .from('contact_tags')
