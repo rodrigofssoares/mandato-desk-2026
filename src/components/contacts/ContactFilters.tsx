@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +77,15 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   // Estado local para controlar valor dos inputs enquanto o debounce não dispara
   const [cidadeLocal, setCidadeLocal] = useState(filters.cidade ?? '');
   const [origemLocal, setOrigemLocal] = useState(filters.origem ?? '');
+
+  // Sincroniza estado local quando favorito externo é aplicado (troca o filtro em lote)
+  useEffect(() => {
+    setCidadeLocal(filters.cidade ?? '');
+  }, [filters.cidade]);
+
+  useEffect(() => {
+    setOrigemLocal(filters.origem ?? '');
+  }, [filters.origem]);
 
   const customFieldsCount = Object.values(filters.custom_fields ?? {}).filter(Boolean).length;
 
