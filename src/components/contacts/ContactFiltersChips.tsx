@@ -108,6 +108,27 @@ export function ContactFiltersChips({
     });
   }
 
+  // Data de Aniversário (range MM-DD) — chip único cobrindo from/to
+  if (filters.birthday_from || filters.birthday_to) {
+    const formatMmDd = (mmdd: string | undefined) => {
+      if (!mmdd) return '';
+      const m = mmdd.match(/^(\d{2})-(\d{2})$/);
+      return m ? `${m[2]}/${m[1]}` : mmdd;
+    };
+    const from = formatMmDd(filters.birthday_from);
+    const to = formatMmDd(filters.birthday_to);
+    let label = 'Data de aniversário: ';
+    if (from && to) label += `${from} → ${to}`;
+    else if (from) label += `a partir de ${from}`;
+    else label += `até ${to}`;
+    chips.push({
+      key: 'birthday_range',
+      label,
+      onRemove: () =>
+        onChange({ ...filters, birthday_from: undefined, birthday_to: undefined }),
+    });
+  }
+
   // Último contato
   if (filters.last_contact_filter) {
     chips.push({

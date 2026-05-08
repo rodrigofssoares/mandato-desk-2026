@@ -3,7 +3,6 @@ import {
   Filter,
   Users,
   MapPin,
-  FileText,
   Shield,
   MessageSquare,
   Sparkles,
@@ -87,15 +86,15 @@ function countPessoais(f: Filters): number {
     f.tags && f.tags.length > 0,
     f.is_favorite === true,
     !!f.birthday_filter,
+    // Range de aniversário conta como 1, mesmo se from + to ambos preenchidos (seleção coordenada)
+    !!(f.birthday_from || f.birthday_to),
+    !!f.has_phone,
+    !!f.has_email,
   ].filter(Boolean).length;
 }
 
 function countLocalizacao(f: Filters): number {
   return [f.cidade, f.estado, f.origem].filter(Boolean).length;
-}
-
-function countCadastro(f: Filters): number {
-  return [f.has_phone, f.has_email].filter(Boolean).length;
 }
 
 function countEngajamento(f: Filters): number {
@@ -134,7 +133,6 @@ function totalActiveCount(f: Filters): number {
   return (
     countPessoais(f) +
     countLocalizacao(f) +
-    countCadastro(f) +
     countEngajamento(f) +
     countAtendimento(f) +
     countFunil(f) +
@@ -345,7 +343,6 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   // Contagens por segmento
   const cPessoais = countPessoais(filters);
   const cLocalizacao = countLocalizacao(filters);
-  const cCadastro = countCadastro(filters);
   const cEngajamento = countEngajamento(filters);
   const cAtendimento = countAtendimento(filters);
   const cFunil = countFunil(filters);
@@ -442,7 +439,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
             <SegmentCard
               icon={<Users className="h-4 w-4" />}
               title="Pessoais"
-              subtitle="Etiquetas, favoritos, aniversário"
+              subtitle="Etiquetas, favoritos, aniversário, telefone, e-mail"
               count={cPessoais}
               defaultOpen={cPessoais > 0}
             >
@@ -520,27 +517,94 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </div>
               </div>
 
-              {/* Favoritos + Aniversário */}
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <div className="flex items-center gap-2 col-span-1">
-                  <Switch
-                    checked={filters.is_favorite === true}
-                    onCheckedChange={(checked) => update({ is_favorite: checked || undefined })}
-                    id="switch-favoritos"
-                  />
-                  <Label htmlFor="switch-favoritos" className="text-sm cursor-pointer">
-                    Contatos favoritos
-                  </Label>
-                </div>
+              {/* Contatos favoritos */}
+              <div className="flex items-center gap-2 mt-3">
+                <Switch
+                  checked={filters.is_favorite === true}
+                  onCheckedChange={(checked) => update({ is_favorite: checked || undefined })}
+                  id="switch-favoritos"
+                />
+                <Label htmlFor="switch-favoritos" className="text-sm cursor-pointer">
+                  Contatos favoritos
+                </Label>
+              </div>
 
+              {/* Aniversário (presets relativos) */}
+              <div className="mt-3">
+                <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                  Aniversário
+                </Label>
+                <Select
+                  value={filters.birthday_filter ?? 'todos'}
+                  onValueChange={(v) =>
+                    update({ birthday_filter: v === 'todos' ? null : (v as Filters['birthday_filter']) })
+                  }
+                >
+                  <SelectTrigger className="mt-1 h-[34px] text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="today">Hoje</SelectItem>
+                    <SelectItem value="7days">Próximos 7 dias</SelectItem>
+                    <SelectItem value="30days">Próximos 30 dias</SelectItem>
+                    <SelectItem value="month">Este mês</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Data de Aniversário (range livre por dia/mês — ano ignorado) */}
+              <div className="mt-3">
+                <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                  Data de Aniversário
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div>
+                    <Input
+                      type="date"
+                      className="h-[34px] text-sm"
+                      value={filters.birthday_from ? `2000-${filters.birthday_from}` : ''}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) return update({ birthday_from: undefined });
+                        const mmdd = v.slice(5); // "YYYY-MM-DD" → "MM-DD"
+                        update({ birthday_from: mmdd });
+                      }}
+                      aria-label="Data de aniversário — início do intervalo"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">De</p>
+                  </div>
+                  <div>
+                    <Input
+                      type="date"
+                      className="h-[34px] text-sm"
+                      value={filters.birthday_to ? `2000-${filters.birthday_to}` : ''}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) return update({ birthday_to: undefined });
+                        const mmdd = v.slice(5);
+                        update({ birthday_to: mmdd });
+                      }}
+                      aria-label="Data de aniversário — fim do intervalo"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Até</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  Apenas dia e mês são considerados (o ano é ignorado). Pode ser combinado com o filtro de Aniversário acima.
+                </p>
+              </div>
+
+              {/* Telefone + E-mail (incorporados de Cadastro) */}
+              <div className="grid grid-cols-2 gap-3 mt-3">
                 <div>
                   <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                    Aniversário
+                    Telefone
                   </Label>
                   <Select
-                    value={filters.birthday_filter ?? 'todos'}
+                    value={filters.has_phone ?? 'todos'}
                     onValueChange={(v) =>
-                      update({ birthday_filter: v === 'todos' ? null : (v as Filters['birthday_filter']) })
+                      update({ has_phone: v === 'todos' ? undefined : (v as Filters['has_phone']) })
                     }
                   >
                     <SelectTrigger className="mt-1 h-[34px] text-sm">
@@ -548,10 +612,29 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="today">Hoje</SelectItem>
-                      <SelectItem value="7days">Próximos 7 dias</SelectItem>
-                      <SelectItem value="30days">Próximos 30 dias</SelectItem>
-                      <SelectItem value="month">Este mês</SelectItem>
+                      <SelectItem value="com">Com telefone</SelectItem>
+                      <SelectItem value="sem">Sem telefone</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    E-mail
+                  </Label>
+                  <Select
+                    value={filters.has_email ?? 'todos'}
+                    onValueChange={(v) =>
+                      update({ has_email: v === 'todos' ? undefined : (v as Filters['has_email']) })
+                    }
+                  >
+                    <SelectTrigger className="mt-1 h-[34px] text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="com">Com e-mail</SelectItem>
+                      <SelectItem value="sem">Sem e-mail</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -613,59 +696,6 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                       onChange={(e) => handleOrigemChange(e.target.value)}
                     />
                   </div>
-                </div>
-              </div>
-            </SegmentCard>
-
-            {/* CADASTRO */}
-            <SegmentCard
-              icon={<FileText className="h-4 w-4" />}
-              title="Cadastro"
-              subtitle="Telefone, e-mail"
-              count={cCadastro}
-              defaultOpen={cCadastro > 0}
-            >
-              <div className="grid grid-cols-2 gap-3 mt-2.5">
-                <div>
-                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                    Telefone
-                  </Label>
-                  <Select
-                    value={filters.has_phone ?? 'todos'}
-                    onValueChange={(v) =>
-                      update({ has_phone: v === 'todos' ? undefined : (v as Filters['has_phone']) })
-                    }
-                  >
-                    <SelectTrigger className="mt-1 h-[34px] text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="com">Com telefone</SelectItem>
-                      <SelectItem value="sem">Sem telefone</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                    E-mail
-                  </Label>
-                  <Select
-                    value={filters.has_email ?? 'todos'}
-                    onValueChange={(v) =>
-                      update({ has_email: v === 'todos' ? undefined : (v as Filters['has_email']) })
-                    }
-                  >
-                    <SelectTrigger className="mt-1 h-[34px] text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="com">Com e-mail</SelectItem>
-                      <SelectItem value="sem">Sem e-mail</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </SegmentCard>
