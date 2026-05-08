@@ -153,6 +153,13 @@ export interface Tag {
   group_slug?: string | null;
 }
 
+// Escapa metacaracteres ILIKE (%, _) no texto buscado pelo usuário.
+// Sem isso, "%" digitado vira wildcard e "_" casa qualquer caractere — o
+// que confunde o usuário e amplia indevidamente o resultado.
+function escapeLike(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 // ---------- useContacts ----------
 
 export function useContacts(filters: ContactFilters = {}) {
@@ -227,7 +234,7 @@ export function useContacts(filters: ContactFilters = {}) {
 
       // Search
       if (search && search.trim()) {
-        const term = `%${search.trim()}%`;
+        const term = `%${escapeLike(search.trim())}%`;
         query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
       }
 
@@ -338,7 +345,7 @@ export function useContacts(filters: ContactFilters = {}) {
             .eq('campo_id', campoId);
 
           if (filtro.tipo === 'texto') {
-            cpv = cpv.ilike('valor_texto', `%${filtro.contains.trim()}%`);
+            cpv = cpv.ilike('valor_texto', `%${escapeLike(filtro.contains.trim())}%`);
           } else if (filtro.tipo === 'numero') {
             if (filtro.min !== undefined) cpv = cpv.gte('valor_numero', filtro.min);
             if (filtro.max !== undefined) cpv = cpv.lte('valor_numero', filtro.max);
@@ -375,7 +382,7 @@ export function useContacts(filters: ContactFilters = {}) {
 
       // Cidade (ILIKE case-insensitive)
       if (cidade && cidade.trim()) {
-        query = query.ilike('cidade', `%${cidade.trim()}%`);
+        query = query.ilike('cidade', `%${escapeLike(cidade.trim())}%`);
       }
 
       // Estado (match exato)
@@ -387,7 +394,7 @@ export function useContacts(filters: ContactFilters = {}) {
       if (origem && origem.trim()) {
         query = query
           .not('origem', 'is', null)
-          .ilike('origem', `%${origem.trim()}%`);
+          .ilike('origem', `%${escapeLike(origem.trim())}%`);
       }
 
       // Telefone (IS NOT NULL / IS NULL)

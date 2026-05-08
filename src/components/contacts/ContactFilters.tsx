@@ -330,6 +330,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
             <Input
               className="mt-1"
               placeholder="ex: Belo Horizonte"
+              maxLength={100}
               value={cidadeLocal}
               onChange={(e) => handleCidadeChange(e.target.value)}
             />
@@ -359,6 +360,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
             <Input
               className="mt-1"
               placeholder="ex: evento, indicação"
+              maxLength={100}
               value={origemLocal}
               onChange={(e) => handleOrigemChange(e.target.value)}
             />
