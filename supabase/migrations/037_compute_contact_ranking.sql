@@ -28,7 +28,8 @@
 --
 -- Categoria D — Redes sociais (máx 5 pts)
 --   instagram preenchido          → +3
---   facebook/twitter/tiktok/youtube — +1 cada, máx 2 extras
+--   twitter/tiktok/youtube — +1 cada, máx 2 extras
+--   (facebook não existe na tabela contacts)
 --
 -- Categoria E — Campos de campanha customizáveis (máx 5 pts)
 --   pts = LEAST(campos_ativos * FLOOR(5/total_campos), 5)
@@ -43,6 +44,15 @@
 --   declarou_voto + e_multiplicador + whatsapp    →  43 pts → ranking 4
 --   Todos campos máximos                          → 100 pts → ranking 10
 -- ============================================================================
+-- Verificação pós-migration:
+--   SELECT COUNT(*), MIN(ranking), MAX(ranking), AVG(ranking)::NUMERIC(5,2)
+--   FROM contacts WHERE merged_into IS NULL;
+--   -- Espera: COUNT > 0, MAX <= 10, MIN >= 0
+--
+--   SELECT COUNT(*) FROM contacts
+--   WHERE declarou_voto = true AND e_multiplicador = true AND ranking < 3;
+--   -- Espera: 0 (contatos com declarou+multiplicador têm ranking >= 3)
+-- ============================================================================
 
 -- 1. Backup do valor manual antes de qualquer recálculo
 ALTER TABLE contacts
@@ -52,112 +62,115 @@ COMMENT ON COLUMN contacts.ranking_manual_legado IS
   'Valor manual de ranking antes da migration 037 (backup para auditoria). Não usado no cálculo automático.';
 
 -- ============================================================================
--- 2. Função principal de cálculo
+-- 2. Função interna: calcula a partir de uma ROW de contacts (composite type)
+-- ============================================================================
+-- Recebe a linha já carregada (composite `contacts`) — não faz SELECT extra.
+-- Isto é crítico para uso em trigger BEFORE INSERT, onde a linha ainda não
+-- existe na tabela e um SELECT por id retornaria NOT FOUND.
+--
+-- Para Categoria E (campos de campanha customizáveis), usa p_contact.id
+-- para fazer COUNT em contact_campaign_values. Em BEFORE INSERT, a linha
+-- ainda não está em contacts mas o p_contact.id já foi gerado pelo DEFAULT
+-- (gen_random_uuid()) — DEFAULT é resolvido antes dos triggers BEFORE.
+-- contact_campaign_values também não terá rows para esse id ainda → ptsE=0,
+-- comportamento esperado (contato novo sem campos de campanha vinculados).
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION calc_contact_ranking_score(p_contact_id UUID)
+CREATE OR REPLACE FUNCTION _calc_ranking_from_row(p_contact contacts)
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_contact         contacts%ROWTYPE;
   v_score           INTEGER := 0;
-  -- Categoria A
   v_pts_a           INTEGER := 0;
-  -- Categoria B
   v_pts_b           INTEGER := 0;
-  -- Categoria C
   v_pts_c           INTEGER := 0;
-  -- Categoria D
   v_pts_d           INTEGER := 0;
   v_redes_extras    INTEGER := 0;
-  -- Categoria E
   v_pts_e           INTEGER := 0;
   v_total_campos    INTEGER := 0;
   v_campos_ativos   INTEGER := 0;
   v_pts_por_campo   INTEGER := 0;
 BEGIN
-  -- Lê o contato
-  SELECT * INTO v_contact FROM contacts WHERE id = p_contact_id;
-  IF NOT FOUND THEN
-    RETURN 0;
-  END IF;
-
   -- -------------------------------------------------------------------------
   -- Categoria A — Status de campanha (máx 50 pts)
   -- -------------------------------------------------------------------------
-  IF v_contact.declarou_voto IS TRUE    THEN v_pts_a := v_pts_a + 20; END IF;
-  IF v_contact.e_multiplicador IS TRUE  THEN v_pts_a := v_pts_a + 15; END IF;
-  IF v_contact.aceita_whatsapp IS TRUE  THEN v_pts_a := v_pts_a + 10; END IF;
-  IF v_contact.em_canal_whatsapp IS TRUE THEN v_pts_a := v_pts_a + 5; END IF;
+  IF p_contact.declarou_voto IS TRUE     THEN v_pts_a := v_pts_a + 20; END IF;
+  IF p_contact.e_multiplicador IS TRUE   THEN v_pts_a := v_pts_a + 15; END IF;
+  IF p_contact.aceita_whatsapp IS TRUE   THEN v_pts_a := v_pts_a + 10; END IF;
+  IF p_contact.em_canal_whatsapp IS TRUE THEN v_pts_a := v_pts_a + 5;  END IF;
 
   -- -------------------------------------------------------------------------
   -- Categoria B — Dados de contato e pessoais (máx 25 pts)
   -- -------------------------------------------------------------------------
-  IF v_contact.whatsapp IS NOT NULL AND trim(v_contact.whatsapp) <> '' THEN
+  IF p_contact.whatsapp IS NOT NULL AND trim(p_contact.whatsapp) <> '' THEN
     v_pts_b := v_pts_b + 8;
   END IF;
-  IF v_contact.leader_id IS NOT NULL THEN
+  -- leader_id é UUID: nunca contém '' no banco. Mantemos o check trivial.
+  IF p_contact.leader_id IS NOT NULL THEN
     v_pts_b := v_pts_b + 7;
   END IF;
-  IF v_contact.email IS NOT NULL AND trim(v_contact.email) <> '' THEN
+  IF p_contact.email IS NOT NULL AND trim(p_contact.email) <> '' THEN
     v_pts_b := v_pts_b + 4;
   END IF;
-  IF v_contact.data_nascimento IS NOT NULL THEN
+  IF p_contact.data_nascimento IS NOT NULL THEN
     v_pts_b := v_pts_b + 3;
   END IF;
-  IF v_contact.telefone IS NOT NULL AND trim(v_contact.telefone) <> '' THEN
+  IF p_contact.telefone IS NOT NULL AND trim(p_contact.telefone) <> '' THEN
     v_pts_b := v_pts_b + 3;
   END IF;
 
   -- -------------------------------------------------------------------------
   -- Categoria C — Endereço (máx 15 pts)
   -- -------------------------------------------------------------------------
-  IF v_contact.bairro IS NOT NULL AND trim(v_contact.bairro) <> ''
-     AND v_contact.cidade IS NOT NULL AND trim(v_contact.cidade) <> '' THEN
+  IF p_contact.bairro IS NOT NULL AND trim(p_contact.bairro) <> ''
+     AND p_contact.cidade IS NOT NULL AND trim(p_contact.cidade) <> '' THEN
     v_pts_c := v_pts_c + 7;
   END IF;
-  IF v_contact.cep IS NOT NULL AND trim(v_contact.cep) <> '' THEN
+  IF p_contact.cep IS NOT NULL AND trim(p_contact.cep) <> '' THEN
     v_pts_c := v_pts_c + 4;
   END IF;
-  IF v_contact.estado IS NOT NULL AND trim(v_contact.estado) <> '' THEN
+  IF p_contact.estado IS NOT NULL AND trim(p_contact.estado) <> '' THEN
     v_pts_c := v_pts_c + 2;
   END IF;
-  IF v_contact.logradouro IS NOT NULL AND trim(v_contact.logradouro) <> '' THEN
+  IF p_contact.logradouro IS NOT NULL AND trim(p_contact.logradouro) <> '' THEN
     v_pts_c := v_pts_c + 2;
   END IF;
 
   -- -------------------------------------------------------------------------
   -- Categoria D — Redes sociais (máx 5 pts)
   -- -------------------------------------------------------------------------
-  IF v_contact.instagram IS NOT NULL AND trim(v_contact.instagram) <> '' THEN
+  IF p_contact.instagram IS NOT NULL AND trim(p_contact.instagram) <> '' THEN
     v_pts_d := v_pts_d + 3;
   END IF;
-  -- Redes extras: facebook (não existe na tabela), twitter, tiktok, youtube — +1 cada, máx 2
-  IF v_contact.twitter IS NOT NULL AND trim(v_contact.twitter) <> '' THEN
+  IF p_contact.twitter IS NOT NULL AND trim(p_contact.twitter) <> '' THEN
     v_redes_extras := v_redes_extras + 1;
   END IF;
-  IF v_contact.tiktok IS NOT NULL AND trim(v_contact.tiktok) <> '' THEN
+  IF p_contact.tiktok IS NOT NULL AND trim(p_contact.tiktok) <> '' THEN
     v_redes_extras := v_redes_extras + 1;
   END IF;
-  IF v_contact.youtube IS NOT NULL AND trim(v_contact.youtube) <> '' THEN
+  IF p_contact.youtube IS NOT NULL AND trim(p_contact.youtube) <> '' THEN
     v_redes_extras := v_redes_extras + 1;
   END IF;
   v_pts_d := v_pts_d + LEAST(v_redes_extras, 2);
 
   -- -------------------------------------------------------------------------
   -- Categoria E — Campos de campanha customizáveis (máx 5 pts)
-  -- Evita divisão por zero: CASE WHEN total_campos = 0 THEN 0
+  -- App é single-tenant: o COUNT global em campaign_fields representa o
+  -- universo de campos disponíveis para todos os usuários.
   -- -------------------------------------------------------------------------
   SELECT COUNT(*) INTO v_total_campos
   FROM campaign_fields;
 
+  -- Em BEFORE INSERT, p_contact.id já tem valor (gerado pelo DEFAULT)
+  -- mas contact_campaign_values ainda não tem rows para esse id → 0 ativos,
+  -- comportamento desejado.
   SELECT COUNT(*) INTO v_campos_ativos
   FROM contact_campaign_values
-  WHERE contact_id = p_contact_id
-    AND value IS TRUE;
+  WHERE contact_id = p_contact.id
+    AND valor IS TRUE;
 
   IF v_total_campos = 0 THEN
     v_pts_e := 0;
@@ -175,11 +188,39 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION calc_contact_ranking_score(UUID) IS
-  'Calcula ranking 0-10 de um contato conforme tabela de pesos da migration 037. SECURITY DEFINER para acesso cross-RLS.';
+COMMENT ON FUNCTION _calc_ranking_from_row(contacts) IS
+  'Cálculo interno do ranking a partir de uma linha de contacts. Não faz SELECT — usado por triggers BEFORE e pelo wrapper público calc_contact_ranking_score(UUID).';
 
 -- ============================================================================
--- 3. Trigger em contacts (BEFORE INSERT OR UPDATE)
+-- 3. Função pública por UUID — wrapper que carrega a row e delega
+-- ============================================================================
+-- Mantida com a assinatura original para preservar callers (backfill,
+-- trigger AFTER em contact_campaign_values e código externo que possa chamar).
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION calc_contact_ranking_score(p_contact_id UUID)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_contact contacts%ROWTYPE;
+BEGIN
+  SELECT * INTO v_contact FROM contacts WHERE id = p_contact_id;
+  IF NOT FOUND THEN
+    RETURN 0;
+  END IF;
+
+  RETURN _calc_ranking_from_row(v_contact);
+END;
+$$;
+
+COMMENT ON FUNCTION calc_contact_ranking_score(UUID) IS
+  'Calcula ranking 0-10 de um contato pelo UUID. Carrega a linha e delega para _calc_ranking_from_row.';
+
+-- ============================================================================
+-- 4. Trigger em contacts (BEFORE INSERT OR UPDATE)
 -- ============================================================================
 -- Estratégia anti-loop: o trigger é BEFORE e altera NEW.ranking diretamente,
 -- sem fazer UPDATE extra. Assim não dispara recursão.
@@ -187,8 +228,13 @@ COMMENT ON FUNCTION calc_contact_ranking_score(UUID) IS
 -- o que dispara este trigger BEFORE — mas como é BEFORE, apenas altera
 -- NEW.ranking sem novo UPDATE. Sem loop infinito.
 --
--- WHEN clause exclui: quando APENAS ranking mudou (não recalcula desnecessariamente)
--- e quando pg_trigger_depth() > 0 seria redundante (mas BEFORE já evita isso).
+-- Para INSERT: chama _calc_ranking_from_row(NEW) direto (a linha ainda não
+-- existe na tabela; um SELECT por id retornaria NOT FOUND e ranking ficaria
+-- sempre em 0).
+--
+-- Para UPDATE: só recalcula se algum dos 18 campos relevantes mudou.
+-- Evita disparar recálculo quando apenas `ranking` muda (auto-loop) ou
+-- quando outros campos não-relevantes mudam (ex: notas_assessor).
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION update_contact_ranking()
@@ -197,11 +243,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  v_ranking_calculado INTEGER;
 BEGIN
-  -- Para INSERT: calcula sempre
-  -- Para UPDATE: só recalcula quando algum campo relevante mudou
   IF TG_OP = 'UPDATE' THEN
     -- Verifica se algum campo que afeta o ranking mudou
     IF NOT (
@@ -224,15 +266,12 @@ BEGIN
       (NEW.cidade IS DISTINCT FROM OLD.cidade) OR
       (NEW.estado IS DISTINCT FROM OLD.estado)
     ) THEN
-      -- Nenhum campo relevante mudou — não recalcula (evita disparo no ranking-only update)
       RETURN NEW;
     END IF;
   END IF;
 
-  -- Para INSERT, usamos NEW.id. Para UPDATE, o id não muda.
-  -- Passa o valor calculado diretamente em NEW (trigger BEFORE não precisa de UPDATE extra)
-  v_ranking_calculado := calc_contact_ranking_score(NEW.id);
-  NEW.ranking := v_ranking_calculado;
+  -- Calcula direto a partir de NEW (funciona em INSERT e UPDATE)
+  NEW.ranking := _calc_ranking_from_row(NEW);
 
   RETURN NEW;
 END;
@@ -246,15 +285,16 @@ CREATE TRIGGER trg_contacts_ranking
   EXECUTE FUNCTION update_contact_ranking();
 
 COMMENT ON FUNCTION update_contact_ranking() IS
-  'Trigger BEFORE INSERT OR UPDATE em contacts: recalcula contacts.ranking via calc_contact_ranking_score(). Anti-loop: só age quando campo relevante muda.';
+  'Trigger BEFORE INSERT OR UPDATE em contacts: recalcula NEW.ranking via _calc_ranking_from_row(NEW). Anti-loop: no UPDATE só age quando algum dos 18 campos relevantes muda.';
 
 -- ============================================================================
--- 4. Trigger em contact_campaign_values (AFTER INSERT OR UPDATE OR DELETE)
+-- 5. Trigger em contact_campaign_values (AFTER INSERT OR UPDATE OR DELETE)
 -- ============================================================================
 -- Recalcula o ranking do contato pai quando campos de campanha mudam.
--- É AFTER porque precisa que a linha já exista para o COUNT funcionar.
+-- É AFTER porque precisa que a linha já tenha sido aplicada para o COUNT
+-- de campos ativos refletir o novo estado.
 -- Dispara o trg_contacts_ranking via UPDATE em contacts — sem loop porque
--- UPDATE em contacts.ranking sozinho não recalcula (WHEN clause).
+-- UPDATE em contacts.ranking sozinho não passa pelo WHEN/IF clause.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION recalc_contact_ranking_from_campaign()
@@ -267,7 +307,6 @@ DECLARE
   v_contact_id UUID;
   v_novo_ranking INTEGER;
 BEGIN
-  -- Determina o contact_id independente do tipo de operação
   IF TG_OP = 'DELETE' THEN
     v_contact_id := OLD.contact_id;
   ELSE
@@ -281,7 +320,7 @@ BEGIN
   v_novo_ranking := calc_contact_ranking_score(v_contact_id);
 
   -- UPDATE direto em contacts — dispara trg_contacts_ranking (BEFORE),
-  -- mas como nenhum campo relevante muda (só ranking), o WHEN clause
+  -- mas como nenhum campo relevante muda (só ranking), o IF clause
   -- retorna NEW imediatamente sem loop.
   UPDATE contacts
   SET ranking = v_novo_ranking
@@ -302,20 +341,11 @@ COMMENT ON FUNCTION recalc_contact_ranking_from_campaign() IS
   'Trigger AFTER em contact_campaign_values: atualiza contacts.ranking quando campos de campanha mudam.';
 
 -- ============================================================================
--- 5. Backfill em lotes de 500
+-- 6. Backfill em lotes de 500
 -- ============================================================================
 -- Estratégia: copia ranking atual → ranking_manual_legado, depois recalcula
 -- ranking com a função. Processa em lotes de 500 com pg_sleep(0.1) entre
 -- cada lote para não causar lock longo em produção.
---
--- Verificação pós-migration:
---   SELECT COUNT(*), MIN(ranking), MAX(ranking), AVG(ranking)::NUMERIC(5,2)
---   FROM contacts WHERE merged_into IS NULL;
---   -- Espera: COUNT > 0, MAX <= 10, MIN >= 0
---
---   SELECT COUNT(*) FROM contacts
---   WHERE declarou_voto = true AND e_multiplicador = true AND ranking < 3;
---   -- Espera: 0 (contatos com declarou+multiplicador têm ranking >= 3)
 -- ============================================================================
 
 DO $$
@@ -326,15 +356,13 @@ DECLARE
   v_lotes     INTEGER;
   v_atual     INTEGER := 0;
   v_ids       UUID[];
-  v_id        UUID;
 BEGIN
-  -- Conta total de contatos ativos (não mesclados)
   SELECT COUNT(*) INTO v_total FROM contacts WHERE merged_into IS NULL;
   v_lotes := CEIL(v_total::FLOAT / v_lote);
 
   RAISE NOTICE 'Backfill ranking: % contatos em % lotes de %', v_total, v_lotes, v_lote;
 
-  -- Primeiro: copia valor manual para ranking_manual_legado (backup)
+  -- Backup: copia valor manual para ranking_manual_legado
   UPDATE contacts
   SET ranking_manual_legado = ranking
   WHERE ranking IS NOT NULL
@@ -342,7 +370,7 @@ BEGIN
 
   RAISE NOTICE 'Backup de ranking_manual_legado concluído';
 
-  -- Depois: recalcula em lotes
+  -- Recalcula em lotes
   LOOP
     SELECT ARRAY(
       SELECT id FROM contacts
@@ -353,19 +381,17 @@ BEGIN
 
     EXIT WHEN array_length(v_ids, 1) IS NULL OR array_length(v_ids, 1) = 0;
 
-    -- Recalcula cada contato do lote
-    FOREACH v_id IN ARRAY v_ids LOOP
-      UPDATE contacts
-      SET ranking = calc_contact_ranking_score(id)
-      WHERE id = v_id;
-    END LOOP;
+    -- UPDATE em batch (single roundtrip por lote, ao invés de N UPDATEs)
+    UPDATE contacts
+    SET ranking = calc_contact_ranking_score(id)
+    WHERE id = ANY(v_ids);
 
     v_atual := v_atual + array_length(v_ids, 1);
     v_offset := v_offset + v_lote;
 
-    RAISE NOTICE 'Lote %/% concluído — % contatos processados', CEIL(v_atual::FLOAT/v_lote), v_lotes, v_atual;
+    RAISE NOTICE 'Lote %/% concluído — % contatos processados',
+      CEIL(v_atual::FLOAT/v_lote), v_lotes, v_atual;
 
-    -- Pausa entre lotes para não sobrecarregar o banco em produção
     PERFORM pg_sleep(0.1);
   END LOOP;
 

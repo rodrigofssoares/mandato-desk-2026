@@ -179,13 +179,29 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
 
   const selectedTagIds = form.watch('tag_ids') ?? [];
 
-  // Campos observados para o preview otimista do ranking
-  const watchedForRanking = form.watch([
-    'declarou_voto', 'e_multiplicador', 'aceita_whatsapp', 'em_canal_whatsapp',
-    'whatsapp', 'leader_id', 'email', 'data_nascimento', 'telefone',
-    'bairro', 'cidade', 'cep', 'estado', 'logradouro',
-    'instagram', 'twitter', 'tiktok', 'youtube',
-  ]);
+  // Campos observados para o preview otimista do ranking. Usamos watch por
+  // nome (não por array posicional) pra evitar mapeamento frágil — adicionar
+  // um campo no meio do array deslocava o índice silenciosamente.
+  const rankingPreview = {
+    declarou_voto:     form.watch('declarou_voto') ?? false,
+    e_multiplicador:   form.watch('e_multiplicador') ?? false,
+    aceita_whatsapp:   form.watch('aceita_whatsapp') ?? false,
+    em_canal_whatsapp: form.watch('em_canal_whatsapp') ?? false,
+    whatsapp:          form.watch('whatsapp') ?? null,
+    leader_id:         form.watch('leader_id') ?? null,
+    email:             form.watch('email') ?? null,
+    data_nascimento:   form.watch('data_nascimento') ?? null,
+    telefone:          form.watch('telefone') ?? null,
+    bairro:            form.watch('bairro') ?? null,
+    cidade:            form.watch('cidade') ?? null,
+    cep:               form.watch('cep') ?? null,
+    estado:            form.watch('estado') ?? null,
+    logradouro:        form.watch('logradouro') ?? null,
+    instagram:         form.watch('instagram') ?? null,
+    twitter:           form.watch('twitter') ?? null,
+    tiktok:            form.watch('tiktok') ?? null,
+    youtube:           form.watch('youtube') ?? null,
+  };
 
   function toggleTag(tagId: string) {
     const current = form.getValues('tag_ids') ?? [];
@@ -419,26 +435,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                   {/* Ranking calculado automaticamente (preview otimista) */}
                   <div>
                     <RankingBadge
-                      contact={{
-                        declarou_voto: watchedForRanking[0] ?? false,
-                        e_multiplicador: watchedForRanking[1] ?? false,
-                        aceita_whatsapp: watchedForRanking[2] ?? false,
-                        em_canal_whatsapp: watchedForRanking[3] ?? false,
-                        whatsapp: watchedForRanking[4] ?? null,
-                        leader_id: watchedForRanking[5] ?? null,
-                        email: watchedForRanking[6] ?? null,
-                        data_nascimento: watchedForRanking[7] ?? null,
-                        telefone: watchedForRanking[8] ?? null,
-                        bairro: watchedForRanking[9] ?? null,
-                        cidade: watchedForRanking[10] ?? null,
-                        cep: watchedForRanking[11] ?? null,
-                        estado: watchedForRanking[12] ?? null,
-                        logradouro: watchedForRanking[13] ?? null,
-                        instagram: watchedForRanking[14] ?? null,
-                        twitter: watchedForRanking[15] ?? null,
-                        tiktok: watchedForRanking[16] ?? null,
-                        youtube: watchedForRanking[17] ?? null,
-                      }}
+                      contact={rankingPreview}
                       campaignValues={isEditing ? dbCampaignValues : pendingCampaignValues}
                       totalCampaignFields={campaignFields.length}
                     />

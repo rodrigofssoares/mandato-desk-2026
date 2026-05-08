@@ -119,24 +119,31 @@ export function computeRankingScore(
 
   // -------------------------------------------------------------------------
   // Categoria D — Redes sociais (máx 5 pts)
-  // Instagram vale +3; twitter, tiktok, youtube — +1 cada, máx 2 extras
+  // Instagram vale +3; twitter, tiktok, youtube — +1 cada, máx 2 extras.
+  // Quando o usuário preenche 3 redes extras, a 3ª não conta — marcamos como
+  // "não-marcado" no breakdown pra coerência visual: total da categoria
+  // bate com o número de itens marcados × peso.
   // -------------------------------------------------------------------------
   const temInstagram = preenchido(contact.instagram);
-  let redesExtras = 0;
-  if (preenchido(contact.twitter))  redesExtras += 1;
-  if (preenchido(contact.tiktok))   redesExtras += 1;
-  if (preenchido(contact.youtube))  redesExtras += 1;
-  const extrasLimitados = Math.min(redesExtras, 2);
+  const extrasPreenchidos: Array<{ label: string; preenchido: boolean }> = [
+    { label: 'Twitter/X', preenchido: preenchido(contact.twitter) },
+    { label: 'TikTok',    preenchido: preenchido(contact.tiktok) },
+    { label: 'YouTube',   preenchido: preenchido(contact.youtube) },
+  ];
+  // Marca como contribuindo apenas as 2 primeiras redes extras preenchidas
+  let extrasContados = 0;
+  const itensExtras: RankingItem[] = extrasPreenchidos.map((rede) => {
+    const contribui = rede.preenchido && extrasContados < 2;
+    if (contribui) extrasContados += 1;
+    return { label: rede.label, peso: 1, marcado: contribui };
+  });
 
   const itensD: RankingItem[] = [
-    { label: 'Instagram',    peso: 3, marcado: temInstagram },
-    { label: 'Twitter/X',    peso: 1, marcado: preenchido(contact.twitter) },
-    { label: 'TikTok',       peso: 1, marcado: preenchido(contact.tiktok) },
-    { label: 'YouTube',      peso: 1, marcado: preenchido(contact.youtube) },
+    { label: 'Instagram', peso: 3, marcado: temInstagram },
+    ...itensExtras,
   ];
 
-  // Pontuação respeitando o cap: instagram=3 + min(extras, 2)
-  const ptsD = (temInstagram ? 3 : 0) + extrasLimitados;
+  const ptsD = (temInstagram ? 3 : 0) + extrasContados;
 
   // -------------------------------------------------------------------------
   // Categoria E — Campos de campanha customizáveis (máx 5 pts)
