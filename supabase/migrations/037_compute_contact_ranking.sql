@@ -346,6 +346,16 @@ COMMENT ON FUNCTION recalc_contact_ranking_from_campaign() IS
 -- Estratégia: copia ranking atual → ranking_manual_legado, depois recalcula
 -- ranking com a função. Processa em lotes de 500 com pg_sleep(0.1) entre
 -- cada lote para não causar lock longo em produção.
+--
+-- DESABILITAÇÃO TEMPORÁRIA do trigger trg_prevent_duplicate_contacts:
+-- esse trigger (migration 001/027) faz SELECT EXISTS por linha em cada
+-- INSERT/UPDATE em contacts pra checar duplicata de whatsapp/email. Em base
+-- com ~20k contatos sem índice por whatsapp, isso causa statement timeout.
+-- Pior: 18 contatos da base atual têm whatsapp duplicado (pré-existentes,
+-- não geram erro normalmente), mas qualquer UPDATE neles dispara o RAISE
+-- EXCEPTION. Como aqui só atualizamos a coluna `ranking` (não whatsapp),
+-- desabilitar o trigger durante o backfill é seguro: nenhum dado de
+-- duplicata muda. Reabilita ao fim.
 -- ============================================================================
 
 DO $$
@@ -361,6 +371,10 @@ BEGIN
   v_lotes := CEIL(v_total::FLOAT / v_lote);
 
   RAISE NOTICE 'Backfill ranking: % contatos em % lotes de %', v_total, v_lotes, v_lote;
+
+  -- Desabilita trigger anti-duplicata só pelo escopo do backfill
+  ALTER TABLE contacts DISABLE TRIGGER trg_prevent_duplicate_contacts;
+  RAISE NOTICE 'Trigger trg_prevent_duplicate_contacts desabilitado temporariamente';
 
   -- Backup: copia valor manual para ranking_manual_legado
   UPDATE contacts
@@ -395,6 +409,19 @@ BEGIN
     PERFORM pg_sleep(0.1);
   END LOOP;
 
+  -- Reabilita trigger
+  ALTER TABLE contacts ENABLE TRIGGER trg_prevent_duplicate_contacts;
+  RAISE NOTICE 'Trigger trg_prevent_duplicate_contacts reabilitado';
+
   RAISE NOTICE 'Backfill concluído: % contatos com ranking recalculado', v_atual;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Garante que o trigger volta mesmo se algo falhar no meio do backfill
+    BEGIN
+      ALTER TABLE contacts ENABLE TRIGGER trg_prevent_duplicate_contacts;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+    RAISE;
 END;
 $$;
