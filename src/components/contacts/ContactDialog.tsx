@@ -5,13 +5,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Loader2, User, CheckSquare, Tag, Clock } from 'lucide-react';
 import { CampaignFieldsList } from '@/components/contacts/CampaignFieldsList';
+import { RankingBadge } from '@/components/contacts/RankingBadge';
+import { useCampaignFields } from '@/hooks/useCampaignFields';
 import { CustomFieldsPanel } from '@/components/contacts/CustomFieldsPanel';
 import {
   ContactTarefasPanel,
   ContactTarefasPendenteBadge,
 } from '@/components/contacts/ContactTarefasPanel';
 import { ContactBoardsPanel } from '@/components/contacts/ContactBoardsPanel';
-import { useSetContactCampaignValues } from '@/hooks/useCampaignFields';
+import { useSetContactCampaignValues, useContactCampaignValues } from '@/hooks/useCampaignFields';
 import {
   Dialog,
   DialogContent,
@@ -45,8 +47,6 @@ const ESTADOS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
   'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
 ];
-
-const RANKING_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 // Form em branco — usado tanto na inicializacao quanto no reset ao abrir em
 // modo "criar". Importante: no RHF, `form.reset({...x})` substitui os
@@ -92,6 +92,9 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   const setCampaignValues = useSetContactCampaignValues();
   const { data: allTags = [] } = useContactTags();
   const { data: leaders = [] } = useLeaders();
+  const { data: campaignFields = [] } = useCampaignFields();
+  // Em modo edição, busca os valores do banco para o preview do ranking
+  const { data: dbCampaignValues = {} } = useContactCampaignValues(contact?.id);
 
   // Valores pendentes dos campos de campanha (apenas em modo criação)
   const [pendingCampaignValues, setPendingCampaignValues] = useState<Record<string, boolean>>({});
@@ -177,7 +180,14 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const selectedTagIds = form.watch('tag_ids') ?? [];
-  const currentRanking = form.watch('ranking') ?? 0;
+
+  // Campos observados para o preview otimista do ranking
+  const watchedForRanking = form.watch([
+    'declarou_voto', 'e_multiplicador', 'aceita_whatsapp', 'em_canal_whatsapp',
+    'whatsapp', 'leader_id', 'email', 'data_nascimento', 'telefone',
+    'bairro', 'cidade', 'cep', 'estado', 'logradouro',
+    'instagram', 'twitter', 'tiktok', 'youtube',
+  ]);
 
   function toggleTag(tagId: string) {
     const current = form.getValues('tag_ids') ?? [];
@@ -408,26 +418,32 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </label>
                   </div>
 
-                  {/* Ranking com botões */}
+                  {/* Ranking calculado automaticamente (preview otimista) */}
                   <div>
-                    <Label>Ranking</Label>
-                    <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5 mt-2">
-                      {RANKING_VALUES.map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => form.setValue('ranking', val, { shouldDirty: true })}
-                          className={cn(
-                            "h-9 w-full rounded-md text-xs font-semibold border transition-colors",
-                            currentRanking === val
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-background border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground"
-                          )}
-                        >
-                          {val}
-                        </button>
-                      ))}
-                    </div>
+                    <RankingBadge
+                      contact={{
+                        declarou_voto: watchedForRanking[0] ?? false,
+                        e_multiplicador: watchedForRanking[1] ?? false,
+                        aceita_whatsapp: watchedForRanking[2] ?? false,
+                        em_canal_whatsapp: watchedForRanking[3] ?? false,
+                        whatsapp: watchedForRanking[4] ?? null,
+                        leader_id: watchedForRanking[5] ?? null,
+                        email: watchedForRanking[6] ?? null,
+                        data_nascimento: watchedForRanking[7] ?? null,
+                        telefone: watchedForRanking[8] ?? null,
+                        bairro: watchedForRanking[9] ?? null,
+                        cidade: watchedForRanking[10] ?? null,
+                        cep: watchedForRanking[11] ?? null,
+                        estado: watchedForRanking[12] ?? null,
+                        logradouro: watchedForRanking[13] ?? null,
+                        instagram: watchedForRanking[14] ?? null,
+                        twitter: watchedForRanking[15] ?? null,
+                        tiktok: watchedForRanking[16] ?? null,
+                        youtube: watchedForRanking[17] ?? null,
+                      }}
+                      campaignValues={isEditing ? dbCampaignValues : pendingCampaignValues}
+                      totalCampaignFields={campaignFields.length}
+                    />
                   </div>
 
                   {/* Articulador vinculado */}
