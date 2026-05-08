@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { Fragment, useState, useRef, useEffect, useMemo } from 'react';
 import {
   Filter,
   Users,
@@ -46,6 +46,7 @@ import { useCampaignFields } from '@/hooks/useCampaignFields';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { CustomFieldFilterInput } from './CustomFieldFilterInput';
 import { ContactFiltersChips } from './ContactFiltersChips';
+import { useFilterOrder, type FilterSegmentKey } from '@/hooks/useFilterOrder';
 
 // ─── Estados brasileiros ─────────────────────────────────────────────────────
 
@@ -359,94 +360,12 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   const cCampanha = countCampanha(filters);
   const cPersonalizados = countPersonalizados(filters);
   const cDatas = countDatas(filters);
+  const { order } = useFilterOrder();
 
-  return (
-    <>
-      {/* Botão gatilho — fica na toolbar da página */}
-      <Button
-        variant={activeCount > 0 ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => setDrawerOpen(true)}
-        className="gap-2 shrink-0"
-        aria-label="Abrir painel de filtros"
-      >
-        <Filter className="h-3.5 w-3.5" />
-        Filtros
-        {activeCount > 0 && (
-          <Badge className="bg-white text-primary text-[11px] font-bold px-[7px] py-0.5 rounded-full min-w-[20px] text-center ml-0.5">
-            {activeCount}
-          </Badge>
-        )}
-      </Button>
-
-      {/* Drawer (Sheet off-canvas lado direito) */}
-      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        {/* [&>button]:hidden suprime o SheetPrimitive.Close nativo do shadcn (ver components/ui/sheet.tsx),
-            substituído pelo botão de fechar customizado abaixo. Frágil se o shadcn mudar a estrutura interna. */}
-        <SheetContent
-          side="right"
-          className="p-0 flex flex-col w-full sm:max-w-[480px] [&>button]:hidden"
-        >
-          {/* Título acessível (obrigatório pelo Radix) */}
-          <SheetTitle className="sr-only">Filtros de contatos</SheetTitle>
-
-          {/* ── Header ── */}
-          <div className="flex items-center justify-between px-5 py-[18px] border-b bg-gradient-to-b from-muted/60 to-white flex-shrink-0">
-            <div className="flex items-center gap-2.5">
-              <Filter className="h-[18px] w-[18px] text-foreground" />
-              <span className="text-base font-bold text-foreground font-[Space_Grotesk,Inter,sans-serif]">
-                Filtros
-              </span>
-              {activeCount > 0 && (
-                <Badge className="bg-primary text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                  {activeCount}
-                </Badge>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-background hover:border hover:border-border transition-all duration-150"
-              aria-label="Fechar painel de filtros"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* ── Sticky bar de chips aplicados (dentro do drawer) ── */}
-          {activeCount > 0 && (
-            <div className="px-5 py-3.5 bg-primary/[0.07] border-b border-primary/20 flex-shrink-0">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-[11px] uppercase tracking-[0.06em] font-bold text-primary">
-                  Aplicados
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAll}
-                  className="ml-auto h-auto py-1 px-2 text-[12px] font-semibold text-primary hover:bg-primary/10"
-                >
-                  Limpar
-                </Button>
-              </div>
-              <ContactFiltersChips
-                filters={filters}
-                search=""
-                onChange={(novosFiltros) => onChange({ ...novosFiltros, page: 1 })}
-                allTags={allTags}
-                leaders={leaders}
-                boards={boards}
-                stages={stages}
-                campaignFields={campaignFields}
-              />
-            </div>
-          )}
-
-          {/* ── Body com cards expansíveis ── */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5">
-
-            {/* 1. PESSOAIS */}
-            <SegmentCard
+  // Renderers indexados por chave de segmento — a ordem é determinada por useFilterOrder.
+  const segmentRenderers: Record<FilterSegmentKey, () => React.ReactNode> = {
+pessoais: () => (
+<SegmentCard
               icon={<Users className="h-4 w-4" />}
               title="Pessoais"
               subtitle="Etiquetas, favoritos, aniversário, telefone, e-mail"
@@ -650,9 +569,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </div>
               </div>
             </SegmentCard>
+),
 
-            {/* 2. ENGAJAMENTO POLÍTICO */}
-            <SegmentCard
+engajamento: () => (
+<SegmentCard
               icon={<Shield className="h-4 w-4" />}
               title="Engajamento Político"
               subtitle="WhatsApp, voto, multiplicador, ranking, liderança"
@@ -849,10 +769,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </Select>
               </div>
             </SegmentCard>
+),
 
-            {/* 3. CAMPANHA — renderiza apenas se houver campos */}
-            {campaignFields.length > 0 && (
-              <SegmentCard
+campanha: () => (campaignFields.length > 0 ? (
+<SegmentCard
                 icon={<Megaphone className="h-4 w-4" />}
                 title="Campanha"
                 subtitle="Listas e mobilizações"
@@ -889,10 +809,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                   </p>
                 </div>
               </SegmentCard>
-            )}
+) : null),
 
-            {/* 4. ATENDIMENTO */}
-            <SegmentCard
+atendimento: () => (
+<SegmentCard
               icon={<MessageSquare className="h-4 w-4" />}
               title="Atendimento"
               subtitle="Demandas, último contato"
@@ -985,9 +905,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </p>
               </div>
             </SegmentCard>
+),
 
-            {/* 5. FUNIL */}
-            <SegmentCard
+funil: () => (
+<SegmentCard
               icon={<Filter className="h-4 w-4" />}
               title="Funil"
               subtitle="Pipelines e etapas"
@@ -1069,10 +990,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </div>
               </div>
             </SegmentCard>
+),
 
-            {/* 6. PERSONALIZADOS — renderiza apenas se houver campos filtráveis */}
-            {customFields.length > 0 && (
-              <SegmentCard
+personalizados: () => (customFields.length > 0 ? (
+<SegmentCard
                 icon={<Sparkles className="h-4 w-4" />}
                 title="Personalizados"
                 subtitle="Campos definidos por você"
@@ -1090,10 +1011,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                   ))}
                 </div>
               </SegmentCard>
-            )}
+) : null),
 
-            {/* 7. DATAS */}
-            <SegmentCard
+datas: () => (
+<SegmentCard
               icon={<Calendar className="h-4 w-4" />}
               title="Datas"
               subtitle="Período de cadastro"
@@ -1125,8 +1046,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </div>
               </div>
             </SegmentCard>
-            {/* 8. LOCALIZAÇÃO */}
-            <SegmentCard
+),
+
+localizacao: () => (
+<SegmentCard
               icon={<MapPin className="h-4 w-4" />}
               title="Localização"
               subtitle="Cidade, estado, origem"
@@ -1183,8 +1106,100 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                 </div>
               </div>
             </SegmentCard>
+),
+  };
 
-                      </div>
+
+  return (
+    <>
+      {/* Botão gatilho — fica na toolbar da página */}
+      <Button
+        variant={activeCount > 0 ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => setDrawerOpen(true)}
+        className="gap-2 shrink-0"
+        aria-label="Abrir painel de filtros"
+      >
+        <Filter className="h-3.5 w-3.5" />
+        Filtros
+        {activeCount > 0 && (
+          <Badge className="bg-white text-primary text-[11px] font-bold px-[7px] py-0.5 rounded-full min-w-[20px] text-center ml-0.5">
+            {activeCount}
+          </Badge>
+        )}
+      </Button>
+
+      {/* Drawer (Sheet off-canvas lado direito) */}
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        {/* [&>button]:hidden suprime o SheetPrimitive.Close nativo do shadcn (ver components/ui/sheet.tsx),
+            substituído pelo botão de fechar customizado abaixo. Frágil se o shadcn mudar a estrutura interna. */}
+        <SheetContent
+          side="right"
+          className="p-0 flex flex-col w-full sm:max-w-[480px] [&>button]:hidden"
+        >
+          {/* Título acessível (obrigatório pelo Radix) */}
+          <SheetTitle className="sr-only">Filtros de contatos</SheetTitle>
+
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between px-5 py-[18px] border-b bg-gradient-to-b from-muted/60 to-white flex-shrink-0">
+            <div className="flex items-center gap-2.5">
+              <Filter className="h-[18px] w-[18px] text-foreground" />
+              <span className="text-base font-bold text-foreground font-[Space_Grotesk,Inter,sans-serif]">
+                Filtros
+              </span>
+              {activeCount > 0 && (
+                <Badge className="bg-primary text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                  {activeCount}
+                </Badge>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-background hover:border hover:border-border transition-all duration-150"
+              aria-label="Fechar painel de filtros"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* ── Sticky bar de chips aplicados (dentro do drawer) ── */}
+          {activeCount > 0 && (
+            <div className="px-5 py-3.5 bg-primary/[0.07] border-b border-primary/20 flex-shrink-0">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-[11px] uppercase tracking-[0.06em] font-bold text-primary">
+                  Aplicados
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAll}
+                  className="ml-auto h-auto py-1 px-2 text-[12px] font-semibold text-primary hover:bg-primary/10"
+                >
+                  Limpar
+                </Button>
+              </div>
+              <ContactFiltersChips
+                filters={filters}
+                search=""
+                onChange={(novosFiltros) => onChange({ ...novosFiltros, page: 1 })}
+                allTags={allTags}
+                leaders={leaders}
+                boards={boards}
+                stages={stages}
+                campaignFields={campaignFields}
+              />
+            </div>
+          )}
+
+          {/* ── Body com cards expansíveis ── */}
+          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5">
+
+            {order.map((key) => {
+              const node = segmentRenderers[key]();
+              return node ? <Fragment key={key}>{node}</Fragment> : null;
+            })}
+          </div>
 
           {/* ── Footer fixo ── */}
           <div className="flex gap-2 px-5 py-3.5 border-t bg-background flex-shrink-0 shadow-[0_-2px_8px_rgba(15,23,42,0.04)]">

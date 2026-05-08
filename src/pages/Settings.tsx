@@ -9,6 +9,7 @@ import { PermsTab } from '@/components/settings/PermsTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 import { AISettingsTab } from '@/components/settings/AISettingsTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
+import { FilterOrderTab } from '@/components/settings/FilterOrderTab';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const TABS = [
@@ -19,6 +20,7 @@ const TABS = [
   'integracoes',
   'ia',
   'personalizacao',
+  'filtros',
 ] as const;
 type SettingsTab = (typeof TABS)[number];
 
@@ -83,6 +85,7 @@ export default function Settings() {
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
           <TabsTrigger value="ia">IA</TabsTrigger>
           <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
+          <TabsTrigger value="filtros">Ordenação de Filtros</TabsTrigger>
         </TabsList>
 
         <TabsContent value="geral" className="mt-4">
@@ -105,6 +108,9 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="personalizacao" className="mt-4">
           <BrandingTab />
+        </TabsContent>
+        <TabsContent value="filtros" className="mt-4">
+          <FilterOrderTab />
         </TabsContent>
       </Tabs>
     </div>
