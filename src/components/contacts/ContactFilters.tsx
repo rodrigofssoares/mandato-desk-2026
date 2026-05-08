@@ -8,7 +8,6 @@ import {
   Sparkles,
   Calendar,
   Megaphone,
-  Award,
   ChevronDown,
   Search,
   X,
@@ -99,10 +98,6 @@ function countLocalizacao(f: Filters): number {
 }
 
 function countEngajamento(f: Filters): number {
-  return [f.leader_id].filter(Boolean).length;
-}
-
-function countStatusClassificacao(f: Filters): number {
   return [
     f.declarou_voto !== undefined && f.declarou_voto !== null,
     f.aceita_whatsapp !== undefined && f.aceita_whatsapp !== null,
@@ -110,6 +105,7 @@ function countStatusClassificacao(f: Filters): number {
     f.e_multiplicador !== undefined && f.e_multiplicador !== null,
     // Ranking conta como 1 (range coordenado)
     typeof f.ranking_min === 'number' || typeof f.ranking_max === 'number',
+    f.leader_id,
   ].filter(Boolean).length;
 }
 
@@ -142,7 +138,6 @@ function totalActiveCount(f: Filters): number {
   return (
     countPessoais(f) +
     countLocalizacao(f) +
-    countStatusClassificacao(f) +
     countEngajamento(f) +
     countAtendimento(f) +
     countFunil(f) +
@@ -353,7 +348,6 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   // Contagens por segmento
   const cPessoais = countPessoais(filters);
   const cLocalizacao = countLocalizacao(filters);
-  const cStatusClassif = countStatusClassificacao(filters);
   const cEngajamento = countEngajamento(filters);
   const cAtendimento = countAtendimento(filters);
   const cFunil = countFunil(filters);
@@ -711,13 +705,13 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
               </div>
             </SegmentCard>
 
-            {/* STATUS E CLASSIFICAÇÃO */}
+            {/* ENGAJAMENTO POLÍTICO */}
             <SegmentCard
-              icon={<Award className="h-4 w-4" />}
-              title="Status e Classificação"
-              subtitle="WhatsApp, voto declarado, multiplicador, ranking"
-              count={cStatusClassif}
-              defaultOpen={cStatusClassif > 0}
+              icon={<Shield className="h-4 w-4" />}
+              title="Engajamento Político"
+              subtitle="WhatsApp, voto, multiplicador, ranking, liderança"
+              count={cEngajamento}
+              defaultOpen={cEngajamento > 0}
             >
               <div className="grid grid-cols-2 gap-3 mt-2.5">
                 {/* Aceita WhatsApp */}
@@ -780,7 +774,7 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                   </Select>
                 </div>
 
-                {/* Declarou voto (movido de Engajamento) */}
+                {/* Declarou voto */}
                 <div>
                   <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
                     Declarou voto
@@ -887,17 +881,9 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
                   </div>
                 </div>
               </div>
-            </SegmentCard>
 
-            {/* ENGAJAMENTO POLÍTICO */}
-            <SegmentCard
-              icon={<Shield className="h-4 w-4" />}
-              title="Engajamento Político"
-              subtitle="Lideranças"
-              count={cEngajamento}
-              defaultOpen={cEngajamento > 0}
-            >
-              <div className="mt-2.5">
+              {/* Liderança */}
+              <div className="mt-3">
                 <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
                   Liderança
                 </Label>
