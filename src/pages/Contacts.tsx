@@ -348,6 +348,7 @@ export default function Contacts() {
             <SelectItem value="name_asc">Nome A-Z</SelectItem>
             <SelectItem value="name_desc">Nome Z-A</SelectItem>
             <SelectItem value="favorites_first">Favoritos primeiro</SelectItem>
+            <SelectItem value="ranking_desc">Mais engajados primeiro</SelectItem>
           </SelectContent>
         </Select>
 
