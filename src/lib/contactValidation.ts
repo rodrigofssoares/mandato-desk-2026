@@ -31,7 +31,11 @@ export const contactSchema = z.object({
 
   // Político
   declarou_voto: z.boolean().optional().default(false),
-  ranking: z.number().min(0).max(10).optional().default(0),
+  // Campo `ranking` removido do schema do form: é calculado pelo trigger SQL
+  // `update_contact_ranking` e nunca deve ser submetido pelo cliente. Aceitar
+  // ranking no payload abriria vetor de mass-assignment em UPDATEs que não tocam
+  // os 18 campos monitorados pelo WHEN clause do trigger (Finding #1 do audit
+  // de segurança RAQ-MAND-EM049). Ver migration 037_compute_contact_ranking.sql.
   leader_id: z.string().uuid().optional().nullable().or(z.literal('')),
 
   // Observações
