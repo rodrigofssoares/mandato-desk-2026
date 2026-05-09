@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Plus, Users as UsersIcon } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useUsers } from '@/hooks/useUsers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UserCard } from '@/components/users/UserCard';
@@ -36,18 +37,21 @@ export default function Users() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <UsersIcon className="h-6 w-6 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Usuários</h1>
-        </div>
-        {can.accessUsers() && (
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Usuário
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Sistema"
+        title="Usuários"
+        description="Gerencie a equipe que tem acesso ao sistema."
+        icon={UsersIcon}
+        iconVariant="info"
+        actions={
+          can.accessUsers() ? (
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Usuário
+            </Button>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">

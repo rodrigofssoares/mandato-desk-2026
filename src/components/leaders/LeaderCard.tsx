@@ -1,8 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, MapPin, Users, Pencil, Trash2 } from 'lucide-react';
 import type { Leader } from '@/hooks/useLeaders';
+import { StatusChip } from '@/components/ui-system';
 
 interface LeaderCardProps {
   leader: Leader;
@@ -24,14 +24,14 @@ export function LeaderCard({ leader, onEdit, onDelete, canEdit, canDelete }: Lea
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="font-semibold text-base truncate">{leader.nome}</h3>
-            <Badge variant="secondary" className="mt-1 text-xs">
+            <StatusChip variant="accent" className="mt-1">
               {leader.leader_type_label ?? '—'}
-            </Badge>
+            </StatusChip>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <div
               className={`w-2.5 h-2.5 rounded-full ${
-                leader.active ? 'bg-green-500' : 'bg-gray-400'
+                leader.active ? 'bg-success' : 'bg-muted-foreground/40'
               }`}
               title={leader.active ? 'Ativo' : 'Inativo'}
             />

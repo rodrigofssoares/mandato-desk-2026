@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { StatusChip } from '@/components/ui-system';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -111,11 +111,11 @@ export function SyncErrorsList({ errors, isLoading }: SyncErrorsListProps) {
           <div key={err.contact_id} className="flex items-start justify-between gap-3 p-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                <AlertCircle className="h-4 w-4 text-danger shrink-0" />
                 <span className="font-medium text-sm truncate">
                   {err.contacts?.nome ?? err.contact_id}
                 </span>
-                <Badge variant="destructive" className="shrink-0">Erro</Badge>
+                <StatusChip variant="danger" tone="solid" className="shrink-0">Erro</StatusChip>
               </div>
               {err.last_error && (
                 <p className="text-xs text-muted-foreground mt-1 pl-6 truncate">

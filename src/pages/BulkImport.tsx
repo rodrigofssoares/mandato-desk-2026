@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/ui-system';
 import { Loader2, Upload, FileSpreadsheet, CheckCircle, XCircle, ClipboardCopy, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -339,10 +340,13 @@ export default function BulkImport() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <FileSpreadsheet className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Importação em Massa</h1>
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Importação em Massa"
+        description="Importe contatos, tags e demandas em lote a partir de arquivos."
+        icon={FileSpreadsheet}
+        iconVariant="info"
+      />
 
       <Tabs value={mode} onValueChange={(v) => { setMode(v as ImportMode); setParsed([]); setRawText(''); setResults(null); }}>
         <TabsList>

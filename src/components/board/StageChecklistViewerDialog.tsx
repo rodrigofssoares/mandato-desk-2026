@@ -22,7 +22,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { CopyButton } from '@/components/common/CopyButton';
-import { stageDotClass } from '@/components/settings/stageColors';
+import { stageColorStyle } from '@/components/settings/stageColors';
 import { useStageChecklist, type ChecklistItem, type ChecklistAttachment } from '@/hooks/useStageChecklist';
 import { useStageTemplates } from '@/hooks/useStageTemplates';
 import { useSignedUrls } from '@/hooks/useStageAttachmentUpload';
@@ -76,7 +76,7 @@ export function StageChecklistViewerDialog({ open, onOpenChange, stage }: Props)
       >
         {/* Header */}
         <header className="px-6 py-4 border-b border-border flex items-start gap-3">
-          <span className={cn('w-2.5 h-2.5 rounded-full mt-2 shrink-0', stageDotClass(stage.cor))} />
+          <span className="w-2.5 h-2.5 rounded-full mt-2 shrink-0" style={stageColorStyle(stage.cor)} />
           <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Checklist da etapa</p>
             <DialogTitle className="text-lg leading-tight">{stage.nome}</DialogTitle>

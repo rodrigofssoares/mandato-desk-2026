@@ -8,10 +8,11 @@ import {
   Upload,
   GitMerge,
   Loader2,
+  Activity,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -24,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRecentActivities, useProfilesList } from '@/hooks/useDashboard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ActivitiesExportMenu } from '@/components/activities/ActivitiesExportMenu';
+import { WidgetHeader } from './WidgetHeader';
 
 const ACTIVITY_ICONS: Record<string, React.ElementType> = {
   create: Plus,
@@ -61,40 +63,58 @@ export function ActivityFeed() {
   const { data: profiles } = useProfilesList();
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between"><CardTitle className="text-lg">Atividades Recentes</CardTitle>{can.exportData() && <ActivitiesExportMenu />}</div>
-        <div className="flex flex-col sm:flex-row gap-2 mt-2">
-          <Select value={activityType} onValueChange={(v) => { setActivityType(v === 'all' ? '' : v); setPage(0); }}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Tipo de atividade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              {Object.entries(ACTIVITY_LABELS).map(([key, label]) => (
-                <SelectItem key={key} value={key}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <Card className="h-full flex flex-col overflow-hidden">
+      <WidgetHeader
+        eyebrow="Tempo real"
+        title="Atividades Recentes"
+        icon={Activity}
+        iconVariant="info"
+        actions={can.exportData() ? <ActivitiesExportMenu /> : undefined}
+      />
+      <div className="px-6 pb-3 flex flex-col sm:flex-row gap-2 shrink-0">
+        <Select
+          value={activityType}
+          onValueChange={(v) => {
+            setActivityType(v === 'all' ? '' : v);
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+            <SelectValue placeholder="Tipo de atividade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {Object.entries(ACTIVITY_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <Select value={responsibleId} onValueChange={(v) => { setResponsibleId(v === 'all' ? '' : v); setPage(0); }}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Responsável" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {(profiles ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.nome || p.id.slice(0, 8)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent>
+        <Select
+          value={responsibleId}
+          onValueChange={(v) => {
+            setResponsibleId(v === 'all' ? '' : v);
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {(profiles ?? []).map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.nome || p.id.slice(0, 8)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {/* CardContent agora tem scroll interno: o widget pode ser redimensionado
+          pra qualquer altura e a lista rola dentro sem cortar conteúdo. */}
+      <CardContent className="flex-1 min-h-0 overflow-y-auto pt-0">
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -124,7 +144,8 @@ export function ActivityFeed() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm leading-snug">
                         <span className="font-medium">{a.responsibleName}</span>{' '}
-                        {a.description || `${ACTIVITY_LABELS[a.type] ?? a.type} - ${a.entityType}`}
+                        {a.description ||
+                          `${ACTIVITY_LABELS[a.type] ?? a.type} - ${a.entityType}`}
                         {a.entityName && (
                           <span className="text-muted-foreground"> ({a.entityName})</span>
                         )}

@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy, Printer, KanbanSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { PageHeader, StatusChip, EmptyState } from '@/components/ui-system';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -254,74 +254,77 @@ export default function Contacts() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Contatos</h1>
-          <Badge variant="secondary" className="text-sm">
-            {isLoading ? '...' : totalCount}
-          </Badge>
-        </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Contatos"
+        description="Gerencie e segmente sua base eleitoral."
+        icon={Users}
+        iconVariant="primary"
+        actions={
+          <>
+            <StatusChip variant="primary" size="md">
+              {isLoading ? '…' : totalCount.toLocaleString('pt-BR')}
+            </StatusChip>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {can.mergeContacts() && duplicateCount > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDuplicatesOpen(true)}
-              className="gap-2"
-            >
-              <Copy className="h-4 w-4" />
-              Duplicados
-              <Badge variant="destructive" className="ml-1 text-xs px-1.5 py-0">
-                {duplicateCount}
-              </Badge>
-            </Button>
-          )}
+            {can.mergeContacts() && duplicateCount > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDuplicatesOpen(true)}
+                className="gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Duplicados
+                <StatusChip variant="danger" size="sm" className="ml-1">
+                  {duplicateCount}
+                </StatusChip>
+              </Button>
+            )}
 
-          {can.importContacts() && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              className="gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Importar
-            </Button>
-          )}
+            {can.importContacts() && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setImportOpen(true)}
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Importar
+              </Button>
+            )}
 
-          {can.exportData() && <ExportMenu filters={queryFilters} />}
+            {can.exportData() && <ExportMenu filters={queryFilters} />}
 
-          <FiltrosFavoritosBar
-            favoritos={favoritos}
-            filtrosAtuais={queryFilters}
-            filtrosAtivosCount={filtrosAtivosCount}
-            onSalvar={salvarFavorito}
-            onAplicar={aplicarFiltroFavorito}
-            onRemover={removerFavorito}
-          />
+            <FiltrosFavoritosBar
+              favoritos={favoritos}
+              filtrosAtuais={queryFilters}
+              filtrosAtivosCount={filtrosAtivosCount}
+              onSalvar={salvarFavorito}
+              onAplicar={aplicarFiltroFavorito}
+              onRemover={removerFavorito}
+            />
 
-          {can.exportData() && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setLabelsOpen(true)}
-              className="gap-2"
-            >
-              <Printer className="h-4 w-4" />
-              Etiquetas
-            </Button>
-          )}
+            {can.exportData() && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setLabelsOpen(true)}
+                className="gap-2"
+              >
+                <Printer className="h-4 w-4" />
+                Etiquetas
+              </Button>
+            )}
 
-          {can.createContact() && (
-            <Button size="sm" onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Contato
-            </Button>
-          )}
-        </div>
-      </div>
+            {can.createContact() && (
+              <Button size="sm" onClick={openCreate} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Contato
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Search + Sort + Filtros + View Toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -416,21 +419,23 @@ export default function Contacts() {
           )}
         </div>
       ) : contacts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold">Nenhum contato encontrado</h3>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {debouncedSearch || Object.keys(filters).length > 4
+        <EmptyState
+          icon={Users}
+          title="Nenhum contato encontrado"
+          description={
+            debouncedSearch || Object.keys(filters).length > 4
               ? 'Tente ajustar os filtros ou o termo de busca.'
-              : 'Comece adicionando seu primeiro contato.'}
-          </p>
-          {can.createContact() && !debouncedSearch && (
-            <Button className="mt-4 gap-2" onClick={openCreate}>
-              <Plus className="h-4 w-4" />
-              Novo Contato
-            </Button>
-          )}
-        </div>
+              : 'Comece adicionando seu primeiro contato.'
+          }
+          action={
+            can.createContact() && !debouncedSearch ? (
+              <Button onClick={openCreate} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Contato
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <>
           {/* Barra de selecao — aparece apenas quando ha filtro ativo,

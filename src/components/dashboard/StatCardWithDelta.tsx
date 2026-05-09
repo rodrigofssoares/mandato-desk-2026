@@ -2,13 +2,18 @@ import { type LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IconBubble, type IconBubbleVariant } from '@/components/ui-system/IconBubble';
 import { cn } from '@/lib/utils';
 
 interface StatCardWithDeltaProps {
   label: string;
   value: number | string;
   icon: LucideIcon;
+  /** Variante semântica do ícone bubble. Default: 'primary'. */
+  iconVariant?: IconBubbleVariant;
+  /** @deprecated Use `iconVariant`. Mantido pra compat. */
   iconColor?: string;
+  /** @deprecated Use `iconVariant`. Mantido pra compat. */
   iconBg?: string;
   /** Variação percentual (null = sem comparação disponível). */
   deltaPct?: number | null;
@@ -24,9 +29,10 @@ interface StatCardWithDeltaProps {
 export function StatCardWithDelta({
   label,
   value,
-  icon: Icon,
-  iconColor = 'text-primary',
-  iconBg = 'bg-primary/10',
+  icon,
+  iconVariant = 'primary',
+  iconColor,
+  iconBg,
   deltaPct,
   hint,
   isLoading = false,
@@ -38,19 +44,21 @@ export function StatCardWithDelta({
   const isNegative = deltaDisponivel && (deltaPct as number) < 0;
   const isZero = deltaDisponivel && (deltaPct as number) === 0;
 
-  const deltaIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Minus;
-  const DeltaIcon = deltaIcon;
+  const DeltaIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Minus;
   const deltaColor = isPositive
-    ? 'text-green-600 dark:text-green-500'
+    ? 'text-success'
     : isNegative
-    ? 'text-red-600 dark:text-red-500'
+    ? 'text-danger'
     : 'text-muted-foreground';
+
+  // Compat: se passou iconColor/iconBg legados, monta className override.
+  const legacyOverride = iconColor || iconBg ? cn(iconBg, iconColor) : undefined;
 
   const card = (
     <Card
       className={cn(
         'transition-shadow hover:shadow-md',
-        href && 'cursor-pointer hover:bg-accent/40'
+        href && 'cursor-pointer hover:bg-accent/40',
       )}
     >
       <CardContent className="p-5">
@@ -69,8 +77,8 @@ export function StatCardWithDelta({
                 </p>
                 <p
                   className={cn(
-                    'font-bold mt-1 truncate tabular-nums',
-                    progressPct != null ? 'text-2xl' : 'text-3xl'
+                    'font-bold mt-1 truncate tabular-nums text-foreground',
+                    progressPct != null ? 'text-2xl' : 'text-3xl',
                   )}
                 >
                   {value}
@@ -80,7 +88,7 @@ export function StatCardWithDelta({
                     <div
                       className={cn(
                         'h-full rounded-full transition-all',
-                        progressPct >= 100 ? 'bg-green-500' : 'bg-primary'
+                        progressPct >= 100 ? 'bg-success' : 'bg-primary',
                       )}
                       style={{ width: `${Math.min(Math.max(progressPct, 0), 100)}%` }}
                     />
@@ -111,14 +119,12 @@ export function StatCardWithDelta({
               </>
             )}
           </div>
-          <div
-            className={cn(
-              'flex items-center justify-center h-11 w-11 rounded-lg shrink-0',
-              iconBg
-            )}
-          >
-            <Icon className={cn('h-5 w-5', iconColor)} />
-          </div>
+          <IconBubble
+            icon={icon}
+            variant={iconVariant}
+            size="lg"
+            className={legacyOverride}
+          />
         </div>
       </CardContent>
     </Card>
@@ -126,7 +132,10 @@ export function StatCardWithDelta({
 
   if (href) {
     return (
-      <Link to={href} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+      <Link
+        to={href}
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
+      >
         {card}
       </Link>
     );

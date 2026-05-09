@@ -20,11 +20,7 @@ import { useBulkUpdateTags, useBulkDeleteTags } from '@/hooks/useTags';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { Tag } from '@/hooks/useTags';
 import type { TagGroup } from '@/hooks/useTagGroups';
-
-const PRESET_COLORS = [
-  '#EF4444', '#F97316', '#EAB308', '#22C55E',
-  '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280',
-];
+import { ColorPicker } from '@/components/ui-system';
 
 interface TagBulkActionsBarProps {
   selectedTags: Tag[];
@@ -41,6 +37,9 @@ export function TagBulkActionsBar({
   const bulkUpdate = useBulkUpdateTags();
   const bulkDelete = useBulkDeleteTags();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // Cor mostrada como preview no ColorPicker enquanto o usuário não escolher
+  // outra. Default = primeira cor do design system (vinho do tema).
+  const [pickerColor, setPickerColor] = useState<string>('#7B1E2E');
 
   const count = selectedTags.length;
   const totalContacts = selectedTags.reduce((sum, t) => sum + (t.contact_count ?? 0), 0);
@@ -54,6 +53,9 @@ export function TagBulkActionsBar({
   };
 
   const handleChangeColor = async (color: string) => {
+    setPickerColor(color);
+    // Só persiste se for um hex válido (usuário pode estar digitando ainda).
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) return;
     await bulkUpdate.mutateAsync({ ids, patch: { cor: color } });
     onClearSelection();
   };
@@ -115,22 +117,13 @@ export function TagBulkActionsBar({
               Trocar cor
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="center" className="w-auto p-2">
-            <div className="text-xs font-medium text-muted-foreground px-1 pb-2">
-              Escolha a nova cor
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {PRESET_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  disabled={bulkUpdate.isPending}
-                  className="w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform"
-                  style={{ backgroundColor: color }}
-                  onClick={() => handleChangeColor(color)}
-                />
-              ))}
-            </div>
+          <PopoverContent align="center" className="w-72 p-3">
+            <ColorPicker
+              label={`Aplicar a ${count} etiqueta${count === 1 ? '' : 's'}`}
+              value={pickerColor}
+              onChange={handleChangeColor}
+              disabled={bulkUpdate.isPending}
+            />
           </PopoverContent>
         </Popover>
 

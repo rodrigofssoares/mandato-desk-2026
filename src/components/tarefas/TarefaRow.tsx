@@ -44,7 +44,7 @@ export function TarefaRow({
         checked={tarefa.concluida}
         onCheckedChange={() => onToggleConcluida(tarefa)}
         aria-label="Marcar como concluída"
-        className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+        className="data-[state=checked]:bg-success data-[state=checked]:border-success"
       />
 
       <TarefaIcon tipo={tarefa.tipo} className="h-4 w-4 shrink-0" />
@@ -59,7 +59,7 @@ export function TarefaRow({
             {tarefa.titulo}
           </span>
           {atrasada && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-rose-600">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-danger">
               <AlertCircle className="h-3 w-3" />
               atrasada
             </span>

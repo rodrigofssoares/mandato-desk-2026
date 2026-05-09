@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+export type ThemePreference = 'navy-institucional' | 'burgundy-institucional';
+
 export interface Profile {
   id: string;
   nome: string;
@@ -12,6 +14,12 @@ export interface Profile {
   senha_temporaria?: boolean;
   avatar_url?: string;
   telefone?: string;
+  /**
+   * Preferência de tema do usuário. NULL = usa o tema default do sistema
+   * (burgundy-institucional). Persistida na coluna profiles.theme_preference
+   * (migration 039_add_theme_preference.sql).
+   */
+  theme_preference?: ThemePreference | null;
   created_at?: string;
   updated_at?: string;
 }

@@ -23,7 +23,7 @@ export function SyncStatusCards({ counts, lastFullSync, isLoading }: SyncStatusC
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sincronizados</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -36,10 +36,10 @@ export function SyncStatusCards({ counts, lastFullSync, isLoading }: SyncStatusC
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Com erro</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertCircle className="h-4 w-4 text-danger" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-danger">
               {isLoading ? '...' : counts.error}
             </div>
             <p className="text-xs text-muted-foreground">precisam de atenção</p>
@@ -49,10 +49,10 @@ export function SyncStatusCards({ counts, lastFullSync, isLoading }: SyncStatusC
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+            <Clock className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-warning">
               {isLoading ? '...' : counts.pending}
             </div>
             <p className="text-xs text-muted-foreground">aguardando sincronização</p>

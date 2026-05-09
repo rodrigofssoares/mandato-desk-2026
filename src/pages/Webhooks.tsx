@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Webhook as WebhookIcon } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useWebhooks } from '@/hooks/useWebhooks';
 import type { Webhook } from '@/hooks/useWebhooks';
 import { WebhookCard } from '@/components/webhooks/WebhookCard';
@@ -23,16 +24,19 @@ export default function Webhooks() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <WebhookIcon className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Webhooks</h1>
-        </div>
-        <Button onClick={handleNew}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Webhook
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Integrações"
+        title="Webhooks"
+        description="Notificações HTTP automáticas pra outros sistemas."
+        icon={WebhookIcon}
+        iconVariant="info"
+        actions={
+          <Button onClick={handleNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Webhook
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">

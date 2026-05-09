@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { PageHeader } from '@/components/ui-system';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -144,10 +145,13 @@ export default function GoogleIntegration() {
   if (isStatusLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <CloudCog className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Integracao Google Contacts</h1>
-        </div>
+        <PageHeader
+          eyebrow="Integrações"
+          title="Integração Google Contacts"
+          description="Sincronize sua agenda do Google com a base de contatos."
+          icon={CloudCog}
+          iconVariant="info"
+        />
         <Card className="max-w-lg">
           <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
           <CardContent className="space-y-3">
@@ -162,10 +166,13 @@ export default function GoogleIntegration() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <CloudCog className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Integracao Google Contacts</h1>
-      </div>
+      <PageHeader
+        eyebrow="Integrações"
+        title="Integração Google Contacts"
+        description="Sincronize sua agenda do Google com a base de contatos."
+        icon={CloudCog}
+        iconVariant="info"
+      />
 
       {/* Banner token expirado */}
       {isExpired && (

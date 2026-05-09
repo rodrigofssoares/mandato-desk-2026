@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users, UserPlus, CheckCircle2, Crown } from 'lucide-react';
+import { Users, UserPlus, CheckCircle2, Crown, LayoutDashboard } from 'lucide-react';
 import { startOfMonth, format } from 'date-fns';
+
+import { PageHeader } from '@/components/ui-system';
 
 import { StatCardWithDelta } from '@/components/dashboard/StatCardWithDelta';
 import { BoardFunnelCard } from '@/components/dashboard/BoardFunnelCard';
@@ -116,24 +118,27 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Visão Geral</h1>
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* ── Header padronizado (PageHeader do design system) ─────── */}
+      <PageHeader
+        eyebrow="Painel principal"
+        title="Visão Geral"
+        description="Métricas em tempo real da sua base e funil eleitoral."
+        icon={LayoutDashboard}
+        iconVariant="primary"
+        actions={
           <AlertsBadge
             count={metrics?.alertas.length ?? 0}
             onClick={() => setAlertsOpen(true)}
           />
-        </div>
-      </div>
+        }
+      />
 
       {/* ── 4 StatCards fixos no topo (não editáveis) ──────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCardWithDelta
           label="Base Total"
           icon={Users}
-          iconColor="text-blue-600"
-          iconBg="bg-blue-500/10"
+          iconVariant="info"
           value={metrics?.baseTotal.current ?? 0}
           deltaPct={metrics?.baseTotal.deltaPct}
           href="/contacts"
@@ -142,8 +147,7 @@ export default function Dashboard() {
         <StatCardWithDelta
           label="Novos"
           icon={UserPlus}
-          iconColor="text-emerald-600"
-          iconBg="bg-emerald-500/10"
+          iconVariant="success"
           value={metrics?.novosNoPeriodo.current ?? 0}
           deltaPct={metrics?.novosNoPeriodo.deltaPct}
           hint="neste mês"
@@ -153,8 +157,7 @@ export default function Dashboard() {
         <StatCardWithDelta
           label="Voto Declarado"
           icon={CheckCircle2}
-          iconColor="text-green-600"
-          iconBg="bg-green-500/10"
+          iconVariant="primary"
           value={votoValue}
           deltaPct={metrics?.votoDeclarado.deltaPct}
           hint={votoHint}
@@ -165,8 +168,7 @@ export default function Dashboard() {
         <StatCardWithDelta
           label="Articuladores"
           icon={Crown}
-          iconColor="text-purple-600"
-          iconBg="bg-purple-500/10"
+          iconVariant="accent"
           value={metrics?.articuladores.current ?? 0}
           deltaPct={metrics?.articuladores.deltaPct}
           href="/leaders"

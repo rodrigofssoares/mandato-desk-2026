@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>V5 — Caixa sem rolagem (subabas verticais) · Mandato Desk 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          display: ['Space Grotesk', 'Inter', 'sans-serif'],
+        },
+        colors: {
+          ink: { 900: '#0E1F38', 700: '#1F2D49', 500: '#54607A', 400: '#7A839A' },
+          navy: { 50: '#EEF2F8', 100: '#DDE5F0', 200: '#B6C4DC', 500: '#3A5A8C', 700: '#1B3A6B', 900: '#0F2342' },
+          accent: { gold: '#C99A3D', goldSoft: '#F2E5C7', wine: '#B43C2E' },
+          paper: { 50: '#F8FAFD', 100: '#F4F6F9', 200: '#E9EDF3', 300: '#DCE2EC' },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { background: linear-gradient(180deg, #F4F6F9 0%, #DDE5F0 100%); color: #0E1F38; font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+  body { font-feature-settings: "ss01", "cv11"; }
+
+  .btn-pill { height: 40px; border-radius: 9999px; padding: 0 1.25rem; font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: all .18s; }
+  .btn-primary { background: #1B3A6B; color: #fff; }
+  .btn-primary:hover { background: #0F2342; }
+  .btn-secondary { background: #fff; color: #0E1F38; border: 1px solid #DCE2EC; }
+  .btn-secondary:hover { border-color: #1B3A6B; color: #1B3A6B; background: #F8FAFD; }
+  .btn-ghost { background: transparent; color: #0E1F38; }
+  .btn-ghost:hover { background: #EEF2F8; }
+
+  .input { height: 44px; padding: 0 1rem; border-radius: 12px; border: 1px solid #DCE2EC; background: #fff; font-size: 0.9rem; transition: all .15s; width: 100%; color: #0E1F38; }
+  .input:focus { outline: none; border-color: #1B3A6B; box-shadow: 0 0 0 3px rgba(27,58,107,0.15); }
+  .input::placeholder { color: #7A839A; }
+
+  label.field-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; color: #54607A; text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+  .chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; line-height: 1.2; }
+  .h-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; letter-spacing: -0.01em; }
+
+  /* Toggle modo (Editar / Novo) */
+  .modo-list { display: inline-flex; gap: 0.25rem; padding: 4px; background: #fff; border-radius: 9999px; border: 1px solid #DCE2EC; box-shadow: 0 1px 3px rgba(15,35,66,0.04); }
+  .modo-btn { padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; color: #54607A; cursor: pointer; transition: all .15s; border: none; background: transparent; display: inline-flex; align-items: center; gap: 0.4rem; }
+  .modo-btn.active { background: #1B3A6B; color: #fff; }
+
+  /* Subabas verticais */
+  .vtab {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.7rem 0.875rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #54607A;
+    cursor: pointer;
+    transition: all .12s;
+    text-align: left;
+    width: 100%;
+    border: none;
+    background: transparent;
+    position: relative;
+  }
+  .vtab:hover { background: #EEF2F8; color: #0E1F38; }
+  .vtab.active {
+    background: #fff;
+    color: #0F2342;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(15,35,66,0.08), 0 0 0 1px rgba(15,35,66,0.04);
+  }
+  .vtab.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px; bottom: 8px;
+    width: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #1B3A6B, #C99A3D);
+  }
+  .vtab-icon {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    color: #7A839A;
+    flex-shrink: 0;
+  }
+  .vtab.active .vtab-icon { color: #1B3A6B; }
+  .vtab-badge {
+    margin-left: auto;
+    background: #B43C2E;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    padding: 0.1rem 0.4rem;
+    line-height: 1.2;
+  }
+
+  /* Modal */
+  .caixa {
+    background: #fff;
+    border: 1px solid #E9EDF3;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -16px rgba(15,35,66,0.28);
+  }
+
+  /* Inner sidebar bg */
+  .vtab-sidebar { background: #F8FAFD; border-right: 1px solid #E9EDF3; }
+
+  svg { stroke-width: 1.7; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Top banner -->
+<div class="bg-navy-900 text-white px-6 py-2.5 flex items-center justify-between text-xs">
+  <div class="flex items-center gap-3">
+    <span class="font-semibold tracking-wide uppercase text-[0.7rem]">V5 · Caixa sem rolagem (subabas verticais)</span>
+    <span class="opacity-60">·</span>
+    <span class="opacity-80">9 subabas em coluna lateral · sem scroll horizontal</span>
+  </div>
+  <a href="./index.html" class="opacity-80 hover:opacity-100 underline-offset-2 hover:underline text-[0.72rem]">← voltar pro comparador</a>
+</div>
+
+<div class="max-w-5xl mx-auto px-6 py-10 lg:py-14">
+
+  <!-- Hero -->
+  <div class="text-center mb-10">
+    <div class="text-xs font-bold tracking-widest uppercase mb-2" style="color: #C99A3D">RAQ-MAND-EM048 · Variação adicional</div>
+    <h1 class="h-display text-3xl lg:text-4xl text-ink-900 mb-3">Subabas em coluna lateral</h1>
+    <p class="text-ink-500 text-base max-w-2xl mx-auto leading-relaxed">
+      Em vez de espalhar 9 subabas numa fileira (que estoura a largura e exige rolagem horizontal), elas viram <strong class="text-ink-900">menu vertical</strong> dentro do próprio modal. Cabem todas, com nomes inteiros, e o conteúdo respira ao lado.
+    </p>
+  </div>
+
+  <!-- Toggle modo -->
+  <div class="flex items-center justify-center gap-3 mb-6">
+    <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Modo:</span>
+    <div class="modo-list">
+      <button class="modo-btn active" data-caixa-modo="editar">📝 Editar Contato</button>
+      <button class="modo-btn" data-caixa-modo="novo">＋ Novo Contato</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="caixa flex flex-col">
+
+    <!-- Header -->
+    <div class="px-6 py-5 border-b border-paper-200 flex items-start gap-4">
+      <div data-caixa-content="editar" class="flex items-start gap-4 flex-1 min-w-0">
+        <div class="w-14 h-14 rounded-2xl text-white grid place-items-center font-display font-bold text-base shrink-0" style="background: linear-gradient(135deg,#1B3A6B,#0F2342)">ME</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="h-display text-xl text-ink-900">Maria Eduarda Cavalcanti</h2>
+            <span class="chip bg-navy-700 text-white font-semibold">Voto Declarado</span>
+            <svg class="text-accent-gold shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l6.9-1z"/></svg>
+          </div>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500 mt-1">
+            <span>maria.e@email.com</span>
+            <span>·</span>
+            <span>(81) 99876-1234</span>
+            <span>·</span>
+            <span>Recife / PE</span>
+            <span>·</span>
+            <span>há 4 dias</span>
+          </div>
+        </div>
+      </div>
+      <div data-caixa-content="novo" class="hidden flex items-center gap-4 flex-1 min-w-0">
+        <div class="w-14 h-14 rounded-2xl bg-navy-50 grid place-items-center text-navy-700 shrink-0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8 1.5 0 2.9.4 4.1 1.1"/><path d="M19 14v6M16 17h6"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 class="h-display text-xl text-ink-900">Novo Contato</h2>
+          <p class="text-xs text-ink-500 mt-1">Preencha os dados básicos pra começar</p>
+        </div>
+      </div>
+      <button class="w-9 h-9 rounded-full bg-paper-100 hover:bg-paper-200 grid place-items-center text-ink-500 hover:text-ink-900 transition-colors shrink-0" aria-label="Fechar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Body: 2 colunas (sidebar + form) -->
+    <div class="flex flex-col sm:flex-row" style="min-height: 540px; max-height: 70vh;">
+
+      <!-- Sidebar com 9 subabas verticais -->
+      <nav class="vtab-sidebar w-full sm:w-56 shrink-0 p-3 sm:p-4 flex flex-col gap-1 overflow-y-auto">
+        <button class="vtab active" data-vtab="pessoais">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+          Pessoais
+        </button>
+        <button class="vtab" data-vtab="personalizados">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3v18M19 3v18M3 5h18M3 19h18M3 12h18"/></svg></span>
+          Personalizados
+        </button>
+        <button class="vtab" data-vtab="tarefas">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          Tarefas
+          <span class="vtab-badge">3</span>
+        </button>
+        <button class="vtab" data-vtab="funis">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg></span>
+          Funis
+        </button>
+        <button class="vtab" data-vtab="campanha">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/></svg></span>
+          Campanha
+        </button>
+        <button class="vtab" data-vtab="etiquetas">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1 0-2.8l7.2-7.2a2 2 0 0 1 1.4-.6h7.2A2 2 0 0 1 21 4.8v7.2a2 2 0 0 1-.4 1.4z"/></svg></span>
+          Etiquetas
+        </button>
+        <button class="vtab" data-vtab="endereco">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+          Endereço
+        </button>
+        <button class="vtab" data-vtab="redes">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+          Redes
+        </button>
+        <button class="vtab" data-vtab="obs">
+          <span class="vtab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+          Observações
+        </button>
+      </nav>
+
+      <!-- Conteúdo -->
+      <div class="flex-1 min-w-0 overflow-y-auto p-5 sm:p-6">
+
+        <!-- ====== Pessoais ====== -->
+        <div data-vcontent="pessoais">
+          <div data-caixa-content="editar" class="space-y-4">
+            <div><label class="field-label">Nome completo *</label><input class="input" value="Maria Eduarda Cavalcanti" /></div>
+            <div><label class="field-label">Nome no WhatsApp</label><input class="input" value="Maria Eduarda" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">WhatsApp</label><input class="input" value="(81) 99876-1234" /></div>
+              <div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div>
+            </div>
+            <div><label class="field-label">E-mail</label><input class="input" value="maria.e@email.com" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Data de nascimento</label><input class="input" type="date" value="1972-08-15" /></div>
+              <div><label class="field-label">Gênero</label><select class="input"><option>Feminino</option></select></div>
+            </div>
+            <div><label class="field-label">Último contato</label><input class="input" type="datetime-local" value="2026-05-05T14:30" /></div>
+            <div class="flex items-center gap-2.5 p-3 rounded-xl bg-paper-100 text-xs text-ink-500 border border-paper-200">
+              <svg class="text-ink-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Atualizado em <strong class="text-ink-900">05/05/2026 às 14:30</strong> por <strong class="text-ink-900">Camila Souza</strong></span>
+            </div>
+          </div>
+          <div data-caixa-content="novo" class="hidden space-y-4">
+            <div><label class="field-label">Nome completo *</label><input class="input" placeholder="Ex: Maria Eduarda Cavalcanti" /></div>
+            <div><label class="field-label">Nome no WhatsApp</label><input class="input" placeholder="Como aparece no WhatsApp" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">WhatsApp</label><input class="input" placeholder="(00) 00000-0000" /></div>
+              <div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div>
+            </div>
+            <div><label class="field-label">E-mail</label><input class="input" placeholder="email@exemplo.com" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Data de nascimento</label><input class="input" type="date" /></div>
+              <div><label class="field-label">Gênero</label><select class="input"><option>Selecione</option><option>Masculino</option><option>Feminino</option><option>Outro</option></select></div>
+            </div>
+            <div class="flex items-start gap-2.5 p-3 rounded-xl bg-navy-50 text-xs text-ink-700 border border-navy-100">
+              <svg class="text-navy-700 shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Após criar, você pode adicionar campos personalizados, etiquetas, funis e tarefas vinculadas.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== Personalizados ====== -->
+        <div data-vcontent="personalizados" class="hidden">
+          <p class="text-xs text-ink-500 mb-4">Campos configurados em Configurações → Campos.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="field-label">Profissão</label><input class="input" value="Professora" /></div>
+            <div><label class="field-label">Empresa / Instituição</label><input class="input" value="Escola Estadual Recife" /></div>
+            <div><label class="field-label">Tempo na cidade</label><input class="input" value="32 anos" /></div>
+            <div><label class="field-label">Indicação</label><input class="input" value="Rita Fernandes" /></div>
+            <div><label class="field-label">Religião</label><input class="input" placeholder="—" /></div>
+            <div><label class="field-label">Causas</label><input class="input" value="Educação, Cultura" /></div>
+          </div>
+        </div>
+
+        <!-- ====== Tarefas ====== -->
+        <div data-vcontent="tarefas" class="hidden">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-ink-500">3 pendentes · 12 concluídas</p>
+            <button class="btn-pill btn-primary text-xs h-8"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> Nova tarefa</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-paper-200 hover:bg-paper-50">
+              <input type="checkbox" class="accent-navy-700 w-4 h-4" />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-ink-900">Confirmar presença evento Várzea · 12 Mai</div>
+                <div class="text-xs text-ink-500">Vence amanhã às 18:00</div>
+              </div>
+              <span class="chip bg-accent-wine/10 text-accent-wine">Alta</span>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-paper-200 hover:bg-paper-50">
+              <input type="checkbox" class="accent-navy-700 w-4 h-4" />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-ink-900">Enviar foto da reunião regional</div>
+                <div class="text-xs text-ink-500">Vence em 3 dias</div>
+              </div>
+              <span class="chip bg-accent-goldSoft text-accent-gold">Média</span>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-paper-200 hover:bg-paper-50">
+              <input type="checkbox" class="accent-navy-700 w-4 h-4" checked />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-ink-500 line-through">Ligar pra confirmar dados</div>
+                <div class="text-xs text-ink-400">Concluída há 4 dias</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== Funis ====== -->
+        <div data-vcontent="funis" class="hidden">
+          <p class="text-xs text-ink-500 mb-4">Funis kanban em que este contato está participando.</p>
+          <div class="space-y-3">
+            <div class="p-4 rounded-xl border border-paper-200">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-semibold text-ink-900">Funil Eleitoral 2026</div>
+                <span class="chip bg-navy-700 text-white">Voto Declarado</span>
+              </div>
+              <div class="text-xs text-ink-500">Movido pra esta etapa há 4 dias por <strong class="text-ink-900">Camila S.</strong></div>
+            </div>
+            <div class="p-4 rounded-xl border border-paper-200">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-semibold text-ink-900">Multiplicadores · Várzea</div>
+                <span class="chip bg-accent-goldSoft text-accent-gold">Articulando</span>
+              </div>
+              <div class="text-xs text-ink-500">Entrou no funil há 12 dias</div>
+            </div>
+            <button class="btn-pill btn-secondary text-xs w-full justify-center">+ Adicionar a outro funil</button>
+          </div>
+        </div>
+
+        <!-- ====== Campanha ====== -->
+        <div data-vcontent="campanha" class="hidden">
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-3 rounded-xl border border-navy-200 bg-navy-50 cursor-pointer">
+                <input type="checkbox" class="accent-navy-700 w-4 h-4" checked />
+                <span class="text-xs leading-tight">Aceita WhatsApp</span>
+              </label>
+              <label class="flex items-center gap-2 p-3 rounded-xl border border-navy-200 bg-navy-50 cursor-pointer">
+                <input type="checkbox" class="accent-navy-700 w-4 h-4" checked />
+                <span class="text-xs leading-tight">Canal do WhatsApp</span>
+              </label>
+              <label class="flex items-center gap-2 p-3 rounded-xl border border-navy-200 bg-navy-50 cursor-pointer">
+                <input type="checkbox" class="accent-navy-700 w-4 h-4" checked />
+                <span class="text-xs leading-tight">Declarou voto</span>
+              </label>
+              <label class="flex items-center gap-2 p-3 rounded-xl border border-paper-200 cursor-pointer">
+                <input type="checkbox" class="accent-navy-700 w-4 h-4" />
+                <span class="text-xs leading-tight">Multiplicador</span>
+              </label>
+            </div>
+            <div class="p-4 rounded-xl border border-paper-200 bg-gradient-to-br from-paper-50 to-white">
+              <div class="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-2">Ranking</div>
+              <div class="flex items-baseline gap-3">
+                <div class="h-display text-3xl font-bold text-navy-700">9.4</div>
+                <div class="text-xs text-ink-500">automático · top 4% da base</div>
+              </div>
+              <div class="flex gap-1 mt-3">
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">0</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">1</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">2</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">3</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">4</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">5</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">6</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">7</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">8</button>
+                <button class="w-7 h-7 rounded-md bg-navy-700 text-white text-xs font-semibold">9</button>
+                <button class="w-7 h-7 rounded-md bg-paper-100 hover:bg-navy-50 text-xs font-semibold text-ink-500">10</button>
+              </div>
+              <div class="text-xs text-ink-500 mt-2">Override manual desativa o cálculo automático</div>
+            </div>
+            <div>
+              <label class="field-label">Articulador vinculado</label>
+              <div class="flex items-center gap-3 p-3 rounded-xl border border-paper-200 bg-paper-50">
+                <div class="w-9 h-9 rounded-full text-white grid place-items-center font-semibold text-xs" style="background: linear-gradient(135deg,#1B3A6B,#0F2342)">RF</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-ink-900 truncate">Rita Fernandes</div>
+                  <div class="text-xs text-ink-500 truncate">Liderança · Várzea</div>
+                </div>
+                <button class="btn-pill btn-ghost text-xs h-8">Trocar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== Etiquetas ====== -->
+        <div data-vcontent="etiquetas" class="hidden">
+          <p class="text-xs text-ink-500 mb-4">Selecione as etiquetas que descrevem este contato.</p>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-navy-200 bg-navy-50 cursor-pointer"><input type="checkbox" checked class="accent-navy-700 w-4 h-4" /><span class="text-xs">Apoiador</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-accent-goldSoft bg-accent-goldSoft cursor-pointer"><input type="checkbox" checked class="accent-accent-gold w-4 h-4" /><span class="text-xs" style="color:#8E6E2F">Liderança</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-navy-200 bg-navy-50 cursor-pointer"><input type="checkbox" checked class="accent-navy-700 w-4 h-4" /><span class="text-xs">Multiplicador</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-paper-200 hover:border-paper-300 cursor-pointer"><input type="checkbox" class="accent-navy-700 w-4 h-4" /><span class="text-xs">Voluntário</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-paper-200 hover:border-paper-300 cursor-pointer"><input type="checkbox" class="accent-navy-700 w-4 h-4" /><span class="text-xs">Doador</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-paper-200 hover:border-paper-300 cursor-pointer"><input type="checkbox" class="accent-navy-700 w-4 h-4" /><span class="text-xs">Formador de opinião</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-paper-200 hover:border-paper-300 cursor-pointer"><input type="checkbox" class="accent-navy-700 w-4 h-4" /><span class="text-xs" style="color:#B43C2E">Crítico</span></label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-paper-200 hover:border-paper-300 cursor-pointer"><input type="checkbox" class="accent-navy-700 w-4 h-4" /><span class="text-xs">Indeciso</span></label>
+          </div>
+        </div>
+
+        <!-- ====== Endereço ====== -->
+        <div data-vcontent="endereco" class="hidden">
+          <div class="space-y-4">
+            <div><label class="field-label">Logradouro</label><input class="input" value="Rua das Mangueiras" placeholder="Rua, Avenida..." /></div>
+            <div class="grid grid-cols-3 gap-3">
+              <div><label class="field-label">Número</label><input class="input" value="142" /></div>
+              <div class="col-span-2"><label class="field-label">Complemento</label><input class="input" value="Apto 304" placeholder="Apto, Bloco..." /></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Bairro</label><input class="input" value="Várzea" /></div>
+              <div><label class="field-label">Cidade</label><input class="input" value="Recife" /></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Estado</label><select class="input"><option>PE</option></select></div>
+              <div><label class="field-label">CEP</label><input class="input" value="50741-000" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== Redes ====== -->
+        <div data-vcontent="redes" class="hidden">
+          <div class="space-y-4">
+            <div>
+              <label class="field-label">Instagram</label>
+              <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-sm">@</span><input class="input pl-7" value="mariaeduarda.cv" placeholder="usuario" /></div>
+            </div>
+            <div>
+              <label class="field-label">Twitter / X</label>
+              <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-sm">@</span><input class="input pl-7" placeholder="usuario" /></div>
+            </div>
+            <div>
+              <label class="field-label">TikTok</label>
+              <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-sm">@</span><input class="input pl-7" placeholder="usuario" /></div>
+            </div>
+            <div><label class="field-label">YouTube</label><input class="input" placeholder="Canal ou URL" /></div>
+          </div>
+        </div>
+
+        <!-- ====== Observações ====== -->
+        <div data-vcontent="obs" class="hidden">
+          <div class="space-y-4">
+            <div><label class="field-label">Origem</label><input class="input" value="Indicação · Rita Fernandes" placeholder="Ex: Indicação, Evento, Mídia" /></div>
+            <div>
+              <label class="field-label">Observações</label>
+              <textarea class="input" style="height: 110px; padding: 0.75rem 1rem;" placeholder="Observações gerais sobre o contato...">Liderança comunitária ativa há 8 anos. Mobiliza grupo de cerca de 80 pessoas no bairro. Disponível pra eventos aos fins de semana.</textarea>
+            </div>
+            <div>
+              <label class="field-label">Notas do Assessor</label>
+              <textarea class="input" style="height: 110px; padding: 0.75rem 1rem;" placeholder="Notas internas da assessoria..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-paper-200 flex items-center justify-between gap-3 bg-paper-50">
+      <div class="flex-1 min-w-0">
+        <button data-caixa-content="editar" class="btn-pill btn-ghost text-xs h-9">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18l-2 13H5L3 6zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Excluir contato
+        </button>
+        <span data-caixa-content="novo" class="hidden text-xs text-ink-500">Os campos com * são obrigatórios</span>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button class="btn-pill btn-secondary">Cancelar</button>
+        <button class="btn-pill btn-primary">
+          <span data-caixa-content="editar">Salvar alterações</span>
+          <span data-caixa-content="novo" class="hidden">Criar contato</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparativo: vantagens da abordagem vertical -->
+  <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white border border-paper-200 rounded-2xl p-5">
+      <div class="w-10 h-10 rounded-xl bg-navy-50 grid place-items-center text-navy-700 mb-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </div>
+      <h3 class="font-display font-semibold text-ink-900 mb-1">Sem rolagem horizontal</h3>
+      <p class="text-sm text-ink-500 leading-relaxed">Todas as 9 subabas visíveis ao mesmo tempo, com o nome inteiro. Não precisa "descobrir" que tem mais opções escondidas.</p>
+    </div>
+    <div class="bg-white border border-paper-200 rounded-2xl p-5">
+      <div class="w-10 h-10 rounded-xl bg-navy-50 grid place-items-center text-navy-700 mb-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h3 class="font-display font-semibold text-ink-900 mb-1">Memória muscular</h3>
+      <p class="text-sm text-ink-500 leading-relaxed">"Endereço fica na 7ª posição da coluna" vira reflexo. Em fila horizontal a posição varia com a largura da tela.</p>
+    </div>
+    <div class="bg-white border border-paper-200 rounded-2xl p-5">
+      <div class="w-10 h-10 rounded-xl bg-navy-50 grid place-items-center text-navy-700 mb-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+      </div>
+      <h3 class="font-display font-semibold text-ink-900 mb-1">Espaço pra crescer</h3>
+      <p class="text-sm text-ink-500 leading-relaxed">Adicionar uma 10ª ou 11ª subaba no futuro? Só ganha mais um item na lista vertical. Em fila horizontal estoura e exige redesign.</p>
+    </div>
+  </div>
+
+  <p class="text-xs text-ink-500 text-center mt-8 max-w-md mx-auto">
+    Esta variação usa a paleta <strong class="text-navy-700">Navy</strong> (sua escolha atual). Se gostar da abordagem, dá pra replicar nas outras 3 paletas (V1 Starbucks · V3 Slate · V4 Burgundy) com 1 comando.
+  </p>
+
+  <div class="mt-10 pt-6 border-t border-paper-300 flex items-center justify-between text-xs text-ink-500">
+    <div>RAQ-MAND-EM048 · V5 · Maio 2026</div>
+    <a href="./index.html" class="hover:text-navy-700 underline-offset-2 hover:underline">Voltar ao comparador →</a>
+  </div>
+
+</div>
+
+<script>
+  // Subabas verticais
+  document.querySelectorAll('.vtab[data-vtab]').forEach(tab => tab.addEventListener('click', () => {
+    const target = tab.dataset.vtab;
+    document.querySelectorAll('.vtab[data-vtab]').forEach(t => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('[data-vcontent]').forEach(c => c.classList.toggle('hidden', c.dataset.vcontent !== target));
+  }));
+  // Toggle Editar / Novo
+  document.querySelectorAll('[data-caixa-modo]').forEach(btn => btn.addEventListener('click', () => {
+    const modo = btn.dataset.caixaModo;
+    document.querySelectorAll('[data-caixa-modo]').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('[data-caixa-content]').forEach(c => c.classList.toggle('hidden', c.dataset.caixaContent !== modo));
+  }));
+</script>
+</body>
+</html>

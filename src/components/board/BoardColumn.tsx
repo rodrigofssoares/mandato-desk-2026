@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus } from 'lucide-react';
 import { BoardCard } from './BoardCard';
 import { StageChecklistTrigger } from './StageChecklistTrigger';
-import { stageBgClass, stageDotClass, stageTextClass } from '@/components/settings/stageColors';
+import { colorToHex } from '@/components/settings/stageColors';
 import type { BoardStage } from '@/hooks/useBoardStages';
 import type { BoardItemWithContact } from '@/hooks/useBoardItems';
 
@@ -32,18 +32,24 @@ export function BoardColumn({
 }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
+  // Cor do stage suporta hex livre OU nome legacy. Convertemos pra hex e
+  // aplicamos via inline style com opacidade — funciona universalmente.
+  const corHex = colorToHex(stage.cor);
+
   return (
     <div
       ref={setNodeRef}
-      className={`flex-shrink-0 w-72 max-w-72 overflow-hidden rounded-lg border flex flex-col ${stageBgClass(
-        stage.cor,
-      )} ${isOver ? 'ring-2 ring-primary/60' : ''}`}
+      className={`flex-shrink-0 w-72 max-w-72 overflow-hidden rounded-lg border flex flex-col ${
+        isOver ? 'ring-2 ring-primary/60' : ''
+      }`}
+      style={{
+        backgroundColor: `${corHex}14`, // ~8% alpha
+        borderColor: `${corHex}30`,
+      }}
     >
       <div className="p-3 border-b border-border/50 flex items-center gap-2">
-        <span className={`w-2.5 h-2.5 rounded-full ${stageDotClass(stage.cor)}`} />
-        <h3
-          className={`font-semibold text-sm uppercase tracking-wide ${stageTextClass(stage.cor)}`}
-        >
+        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: corHex }} />
+        <h3 className="font-semibold text-sm uppercase tracking-wide" style={{ color: corHex }}>
           {stage.nome}
         </h3>
         <Badge variant="secondary" className="ml-auto text-xs">

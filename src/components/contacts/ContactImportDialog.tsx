@@ -1168,44 +1168,44 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         {/* Done */}
         {phase === 'done' && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-green-700">
+            <div className="flex items-center gap-2 text-success">
               <CheckCircle className="h-5 w-5" />
               <span className="font-medium">Importação concluída!</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-700">{stats.created}</p>
-                <p className="text-xs text-green-600">Criados</p>
+              <div className="text-center p-3 bg-success-soft rounded-lg">
+                <p className="text-2xl font-bold text-success-soft-foreground">{stats.created}</p>
+                <p className="text-xs text-success-soft-foreground/80">Criados</p>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-700">{stats.updated}</p>
-                <p className="text-xs text-blue-600">Atualizados</p>
+              <div className="text-center p-3 bg-info-soft rounded-lg">
+                <p className="text-2xl font-bold text-info-soft-foreground">{stats.updated}</p>
+                <p className="text-xs text-info-soft-foreground/80">Atualizados</p>
               </div>
-              <div className="text-center p-3 bg-orange-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-700">{stats.duplicates}</p>
-                <p className="text-xs text-orange-600">Duplicados</p>
+              <div className="text-center p-3 bg-warning-soft rounded-lg">
+                <p className="text-2xl font-bold text-warning-soft-foreground">{stats.duplicates}</p>
+                <p className="text-xs text-warning-soft-foreground/80">Duplicados</p>
               </div>
-              <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                <p className="text-2xl font-bold text-yellow-700">{stats.skipped}</p>
-                <p className="text-xs text-yellow-600">Ignorados</p>
+              <div className="text-center p-3 bg-warning-soft rounded-lg">
+                <p className="text-2xl font-bold text-warning-soft-foreground">{stats.skipped}</p>
+                <p className="text-xs text-warning-soft-foreground/80">Ignorados</p>
               </div>
-              <div className="text-center p-3 bg-red-50 rounded-lg">
-                <p className="text-2xl font-bold text-red-700">{stats.errors}</p>
-                <p className="text-xs text-red-600">Erros</p>
+              <div className="text-center p-3 bg-danger-soft rounded-lg">
+                <p className="text-2xl font-bold text-danger-soft-foreground">{stats.errors}</p>
+                <p className="text-xs text-danger-soft-foreground/80">Erros</p>
               </div>
             </div>
 
             {/* Updated rows (o que mudou) */}
             {parsedRows.some((r) => r.action === 'update') && (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-blue-700">
+                <div className="flex items-center gap-2 text-info-soft-foreground">
                   <CheckCircle className="h-4 w-4" />
                   <span className="text-sm font-medium">
                     {parsedRows.filter((r) => r.action === 'update').length} contatos atualizados
                   </span>
                 </div>
-                <div className="max-h-40 overflow-auto border border-blue-200 rounded-lg">
+                <div className="max-h-40 overflow-auto border border-info/30 rounded-lg">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1225,7 +1225,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
                               <div className="font-medium">{r.matchedContact?.nome ?? String(r.normalized.nome_completo ?? '')}</div>
                               <div className="text-xs text-muted-foreground">{r.matchedContact?.whatsapp ?? '—'}</div>
                             </TableCell>
-                            <TableCell className="text-xs text-blue-700">{r.changeSummary ?? '—'}</TableCell>
+                            <TableCell className="text-xs text-info-soft-foreground">{r.changeSummary ?? '—'}</TableCell>
                           </TableRow>
                         ))}
                     </TableBody>
@@ -1237,13 +1237,13 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
             {/* Duplicados */}
             {parsedRows.some((r) => r.action === 'duplicate') && (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-orange-700">
+                <div className="flex items-center gap-2 text-warning-soft-foreground">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm font-medium">
                     {parsedRows.filter((r) => r.action === 'duplicate').length} duplicados ignorados — todos os campos da planilha já estavam idênticos no banco
                   </span>
                 </div>
-                <div className="max-h-40 overflow-auto border border-orange-200 rounded-lg">
+                <div className="max-h-40 overflow-auto border border-warning/30 rounded-lg">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1279,7 +1279,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
             {errors.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2 text-red-600">
+                  <div className="flex items-center gap-2 text-danger">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm font-medium">{errors.length} erros</span>
                   </div>
@@ -1308,7 +1308,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
                             {e.raw?.nome_completo ? (
                               <span className="text-muted-foreground mr-2">{e.raw.nome_completo}</span>
                             ) : null}
-                            <span className="text-red-600">{e.message}</span>
+                            <span className="text-danger">{e.message}</span>
                           </TableCell>
                         </TableRow>
                       ))}

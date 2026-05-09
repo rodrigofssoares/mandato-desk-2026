@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Plus, Pencil, Trash2, CheckSquare, Search, X, LayoutGrid, List } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, CheckSquare, Search, X, LayoutGrid, List, Tag as TagIcon } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useTags, useDeleteTag } from '@/hooks/useTags';
 import { useTagGroups } from '@/hooks/useTagGroups';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -124,54 +125,60 @@ export default function Tags() {
 
   return (
     <div className="p-6 space-y-6 pb-24">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold">Etiquetas</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex rounded-md border bg-background p-0.5">
-            <Button
-              type="button"
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => changeViewMode('grid')}
-              className="h-8 px-2 gap-1.5"
-              title="Visualização em grade"
-            >
-              <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Grade</span>
-            </Button>
-            <Button
-              type="button"
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => changeViewMode('list')}
-              className="h-8 px-2 gap-1.5"
-              title="Visualização em lista"
-            >
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Lista</span>
-            </Button>
-          </div>
-          {can.exportData() && <TagsExportMenu />}
-          {!selectMode && can.editTag() && (
-            <Button variant="outline" onClick={enterSelectMode} className="gap-2">
-              <CheckSquare className="h-4 w-4" />
-              Selecionar
-            </Button>
-          )}
-          {selectMode && (
-            <Button variant="outline" onClick={exitSelectMode} className="gap-2">
-              <X className="h-4 w-4" />
-              Cancelar seleção
-            </Button>
-          )}
-          {can.createTag() && (
-            <Button onClick={handleNewTag}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Etiqueta
-            </Button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Etiquetas"
+        description="Categorize contatos com tags reutilizáveis."
+        icon={TagIcon}
+        iconVariant="warning"
+        actions={
+          <>
+            <div className="inline-flex rounded-md border bg-background p-0.5">
+              <Button
+                type="button"
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => changeViewMode('grid')}
+                className="h-8 px-2 gap-1.5"
+                title="Visualização em grade"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Grade</span>
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => changeViewMode('list')}
+                className="h-8 px-2 gap-1.5"
+                title="Visualização em lista"
+              >
+                <List className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Lista</span>
+              </Button>
+            </div>
+            {can.exportData() && <TagsExportMenu />}
+            {!selectMode && can.editTag() && (
+              <Button variant="outline" onClick={enterSelectMode} className="gap-2">
+                <CheckSquare className="h-4 w-4" />
+                Selecionar
+              </Button>
+            )}
+            {selectMode && (
+              <Button variant="outline" onClick={exitSelectMode} className="gap-2">
+                <X className="h-4 w-4" />
+                Cancelar seleção
+              </Button>
+            )}
+            {can.createTag() && (
+              <Button onClick={handleNewTag}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Etiqueta
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {selectMode && (
         <div className="flex items-center gap-2 flex-wrap p-3 bg-muted/30 border rounded-lg">

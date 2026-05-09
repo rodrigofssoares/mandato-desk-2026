@@ -10,10 +10,12 @@ import {
   Pie,
   Legend,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tag } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTagDistribution } from '@/hooks/useDashboard';
 import { ChartViewToggle } from './ChartViewToggle';
+import { WidgetHeader } from './WidgetHeader';
 import type { ChartViewType } from '@/lib/dashboardLayout';
 
 const FALLBACK_COLORS = [
@@ -24,8 +26,9 @@ const FALLBACK_COLORS = [
 const TOOLTIP_STYLE = {
   backgroundColor: 'hsl(var(--card))',
   border: '1px solid hsl(var(--border))',
-  borderRadius: '8px',
+  borderRadius: '12px',
   color: 'hsl(var(--card-foreground))',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 };
 
 interface TagDistributionChartProps {
@@ -47,14 +50,19 @@ export function TagDistributionChart({
   const hasData = tinted.length > 0;
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-lg">Distribuição por Tag</CardTitle>
-        {onChangeViewType && (
-          <ChartViewToggle value={viewType} onChange={onChangeViewType} />
-        )}
-      </CardHeader>
-      <CardContent className="flex-1 min-h-0">
+    <Card className="h-full flex flex-col overflow-hidden">
+      <WidgetHeader
+        eyebrow="Distribuição"
+        title="Etiquetas"
+        icon={Tag}
+        iconVariant="warning"
+        actions={
+          onChangeViewType ? (
+            <ChartViewToggle value={viewType} onChange={onChangeViewType} />
+          ) : undefined
+        }
+      />
+      <CardContent className="flex-1 min-h-0 pb-4">
         {isLoading ? (
           <Skeleton className="h-full min-h-[220px] w-full" />
         ) : !hasData ? (
@@ -64,7 +72,7 @@ export function TagDistributionChart({
         ) : (
           <ResponsiveContainer width="100%" height="100%" minHeight={220}>
             {viewType === 'pie' ? (
-              <PieChart>
+              <PieChart margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                 <Pie
                   data={tinted}
                   dataKey="count"
@@ -91,7 +99,7 @@ export function TagDistributionChart({
               <BarChart
                 data={tinted}
                 layout="vertical"
-                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                margin={{ top: 12, right: 24, left: 0, bottom: 8 }}
               >
                 <XAxis
                   type="number"
@@ -106,16 +114,19 @@ export function TagDistributionChart({
                 />
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
+                  cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
                   formatter={(value: number) => [value, 'Contatos']}
                 />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                   {tinted.map((entry) => (
                     <Cell key={entry.name} fill={entry.fill} />
                   ))}
                 </Bar>
               </BarChart>
             ) : (
-              <BarChart data={tinted} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
+              // bar-vertical: top=24 pra dar espaço a labels superiores e
+              // bottom=64 pra rótulos rotacionados não cortarem.
+              <BarChart data={tinted} margin={{ top: 24, right: 16, left: 0, bottom: 64 }}>
                 <XAxis
                   dataKey="name"
                   angle={-35}
@@ -129,9 +140,10 @@ export function TagDistributionChart({
                 />
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
+                  cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
                   formatter={(value: number) => [value, 'Contatos']}
                 />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                   {tinted.map((entry) => (
                     <Cell key={entry.name} fill={entry.fill} />
                   ))}

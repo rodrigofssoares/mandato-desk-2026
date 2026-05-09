@@ -39,7 +39,7 @@ export function WebhookCard({ webhook, onEdit }: WebhookCardProps) {
               {lastLogSuccess !== null && (
                 <span
                   className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    lastLogSuccess ? 'bg-green-500' : 'bg-red-500'
+                    lastLogSuccess ? 'bg-success' : 'bg-danger'
                   }`}
                 />
               )}

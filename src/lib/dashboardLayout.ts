@@ -70,27 +70,32 @@ export const DEFAULT_CHART_TYPE: Record<ChartableWidgetId, ChartViewType> = {
 
 /**
  * Layout padrão em breakpoints lg (>=1024px). Grid de 12 colunas.
+ *
+ * Limites permissivos: minW=2 e minH=2 em quase todos pra dar liberdade de
+ * personalização fina. maxH amplo (até 24) pra usuário expandir widgets de
+ * lista grande (atividades, crescimento) sem esbarrar em teto. maxW=12
+ * (largura total) em todos.
  */
 export const DEFAULT_LAYOUT_LG: Layout[] = [
-  { i: 'funnel',       x: 0, y: 0,  w: 8,  h: 8, minW: 4, minH: 6, maxW: 12, maxH: 14 },
-  { i: 'tarefas',      x: 8, y: 0,  w: 4,  h: 4, minW: 3, minH: 3, maxW: 6,  maxH: 8  },
-  { i: 'aniversarios', x: 8, y: 4,  w: 4,  h: 4, minW: 3, minH: 3, maxW: 6,  maxH: 8  },
-  { i: 'saude-base',   x: 0, y: 8,  w: 12, h: 5, minW: 4, minH: 4, maxW: 12, maxH: 8  },
-  { i: 'crescimento',  x: 0, y: 13, w: 8,  h: 6, minW: 4, minH: 4, maxW: 12, maxH: 10 },
-  { i: 'atividades',   x: 8, y: 13, w: 4,  h: 6, minW: 3, minH: 4, maxW: 6,  maxH: 12 },
-  { i: 'tags',         x: 0, y: 19, w: 6,  h: 5, minW: 3, minH: 4, maxW: 12, maxH: 10 },
-  { i: 'voto',         x: 6, y: 19, w: 6,  h: 5, minW: 3, minH: 4, maxW: 12, maxH: 10 },
+  { i: 'funnel',       x: 0, y: 0,  w: 8,  h: 8, minW: 2, minH: 3, maxW: 12, maxH: 24 },
+  { i: 'tarefas',      x: 8, y: 0,  w: 4,  h: 4, minW: 2, minH: 2, maxW: 12, maxH: 20 },
+  { i: 'aniversarios', x: 8, y: 4,  w: 4,  h: 4, minW: 2, minH: 2, maxW: 12, maxH: 20 },
+  { i: 'saude-base',   x: 0, y: 8,  w: 12, h: 5, minW: 2, minH: 3, maxW: 12, maxH: 20 },
+  { i: 'crescimento',  x: 0, y: 13, w: 8,  h: 6, minW: 2, minH: 3, maxW: 12, maxH: 24 },
+  { i: 'atividades',   x: 8, y: 13, w: 4,  h: 6, minW: 2, minH: 3, maxW: 12, maxH: 24 },
+  { i: 'tags',         x: 0, y: 19, w: 6,  h: 5, minW: 2, minH: 3, maxW: 12, maxH: 20 },
+  { i: 'voto',         x: 6, y: 19, w: 6,  h: 5, minW: 2, minH: 3, maxW: 12, maxH: 20 },
 ];
 
 export const DEFAULT_LAYOUT_MD: Layout[] = [
-  { i: 'funnel',       x: 0, y: 0,  w: 10, h: 8, minW: 4, minH: 6 },
-  { i: 'tarefas',      x: 0, y: 8,  w: 5,  h: 4, minW: 3, minH: 3 },
-  { i: 'aniversarios', x: 5, y: 8,  w: 5,  h: 4, minW: 3, minH: 3 },
-  { i: 'saude-base',   x: 0, y: 12, w: 10, h: 5, minW: 4, minH: 4 },
-  { i: 'crescimento',  x: 0, y: 17, w: 10, h: 6, minW: 4, minH: 4 },
-  { i: 'atividades',   x: 0, y: 23, w: 10, h: 6, minW: 3, minH: 4 },
-  { i: 'tags',         x: 0, y: 29, w: 5,  h: 5, minW: 3, minH: 4 },
-  { i: 'voto',         x: 5, y: 29, w: 5,  h: 5, minW: 3, minH: 4 },
+  { i: 'funnel',       x: 0, y: 0,  w: 10, h: 8, minW: 2, minH: 3, maxH: 24 },
+  { i: 'tarefas',      x: 0, y: 8,  w: 5,  h: 4, minW: 2, minH: 2, maxH: 20 },
+  { i: 'aniversarios', x: 5, y: 8,  w: 5,  h: 4, minW: 2, minH: 2, maxH: 20 },
+  { i: 'saude-base',   x: 0, y: 12, w: 10, h: 5, minW: 2, minH: 3, maxH: 20 },
+  { i: 'crescimento',  x: 0, y: 17, w: 10, h: 6, minW: 2, minH: 3, maxH: 24 },
+  { i: 'atividades',   x: 0, y: 23, w: 10, h: 6, minW: 2, minH: 3, maxH: 24 },
+  { i: 'tags',         x: 0, y: 29, w: 5,  h: 5, minW: 2, minH: 3, maxH: 20 },
+  { i: 'voto',         x: 5, y: 29, w: 5,  h: 5, minW: 2, minH: 3, maxH: 20 },
 ];
 
 export const DEFAULT_LAYOUT_SM: Layout[] = [

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>V4 — Burgundy Institucional · Mandato Desk 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], display: ['Space Grotesk', 'Inter', 'sans-serif'] },
+        colors: {
+          ink: { 900: '#2C1518', 700: '#3F2A2D', 500: '#7C5F62', 400: '#A18B8E', 300: '#C7B5B7' },
+          wine: { 50: '#FBF1F2', 100: '#F4DCDF', 200: '#E5B6BC', 500: '#A8334A', 700: '#7B1E2E', 800: '#6A1A28', 900: '#561019' },
+          gold: { 50: '#FBF7EC', 100: '#F2E8C9', 200: '#E5D6A0', 500: '#D4A446', 600: '#B88928', 800: '#8A6614' },
+          warm: { 50: '#FCFAF5', 100: '#FAF6F0', 200: '#F2EBDB', 300: '#E5DAC8', 400: '#D6C7AF' },
+          sage: { 500: '#5A7A5C', 600: '#476548' },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { background: #FAF6F0; color: #2C1518; font-family: 'Inter', system-ui, sans-serif; }
+  body { font-feature-settings: "ss01", "cv11"; }
+
+  .btn-pill { height: 40px; border-radius: 9999px; padding: 0 1.25rem; font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: all .18s; }
+  .btn-primary { background: #7B1E2E; color: #fff; box-shadow: 0 1px 2px rgba(86,16,25,0.12); }
+  .btn-primary:hover { background: #561019; box-shadow: 0 2px 8px rgba(86,16,25,0.25); }
+  .btn-secondary { background: #fff; color: #2C1518; border: 1px solid #E5DAC8; }
+  .btn-secondary:hover { border-color: #7B1E2E; color: #7B1E2E; background: #FCFAF5; }
+  .btn-ghost { background: transparent; color: #2C1518; }
+  .btn-ghost:hover { background: #F2EBDB; }
+  .btn-gold { background: #D4A446; color: #2C1518; }
+  .btn-gold:hover { background: #B88928; color: #fff; }
+
+  .tab-pill-list { display: flex; gap: 0.25rem; padding: 4px; background: #fff; border-radius: 9999px; border: 1px solid #E5DAC8; overflow-x: auto; scrollbar-width: thin; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); }
+  .tab-pill-list::-webkit-scrollbar { height: 4px; }
+  .tab-pill-list::-webkit-scrollbar-thumb { background: rgba(123,30,46,0.2); border-radius: 2px; }
+  .tab-pill { flex-shrink: 0; padding: 0.55rem 1.05rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 500; color: #7C5F62; cursor: pointer; transition: all .15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.4rem; }
+  .tab-pill:hover { color: #2C1518; background: #FBF1F2; }
+  .tab-pill.active { background: linear-gradient(135deg, #7B1E2E, #561019); color: #fff; box-shadow: 0 2px 6px rgba(86,16,25,0.3); }
+
+  .card { background: #fff; border: 1px solid #F2EBDB; border-radius: 18px; }
+  .card-elev { box-shadow: 0 1px 2px rgba(86,16,25,0.04), 0 2px 6px rgba(86,16,25,0.06); }
+
+  .input { height: 44px; padding: 0 1rem; border-radius: 12px; border: 1px solid #E5DAC8; background: #fff; font-size: 0.9rem; transition: all .15s; width: 100%; color: #2C1518; }
+  .input:focus { outline: none; border-color: #7B1E2E; box-shadow: 0 0 0 3px rgba(123,30,46,0.12); }
+  .input::placeholder { color: #A18B8E; }
+  .input-pill { border-radius: 9999px; }
+
+  label.field-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; color: #7C5F62; text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+  .chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 500; line-height: 1.3; }
+
+  .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.875rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500; color: #7C5F62; transition: all .12s; cursor: pointer; }
+  .nav-link:hover { background: #F2EBDB; color: #2C1518; }
+  .nav-link.active { background: linear-gradient(135deg, #7B1E2E, #561019); color: #fff; }
+  .nav-link.active svg { color: #D4A446; }
+
+  .section-eyebrow { font-size: 0.7rem; font-weight: 700; color: #B88928; letter-spacing: 0.1em; text-transform: uppercase; }
+  .section-divider { height: 1px; background: linear-gradient(90deg, transparent, #E5DAC8, transparent); margin: 1.5rem 0; }
+
+  .view-switch { background: #fff; border: 1px solid #E5DAC8; padding: 4px; border-radius: 9999px; display: inline-flex; gap: 4px; box-shadow: 0 1px 2px rgba(86,16,25,0.04); }
+  .view-switch button { padding: 0.5rem 1.25rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; color: #7C5F62; cursor: pointer; transition: all .15s; border: none; background: transparent; }
+  .view-switch button.active { background: #7B1E2E; color: #fff; }
+
+  [data-view]:not(.active) { display: none; }
+
+  .funnel-bar { height: 36px; border-radius: 12px; background: #F2EBDB; overflow: hidden; position: relative; }
+  .funnel-bar-fill { height: 100%; background: linear-gradient(90deg, #7B1E2E, #A8334A); border-radius: 12px; display: flex; align-items: center; padding: 0 1rem; color: #fff; font-size: 0.8rem; font-weight: 600; }
+  .funnel-bar-gold .funnel-bar-fill { background: linear-gradient(90deg, #D4A446, #E5C46C); color: #2C1518; }
+
+  .avatar { width: 40px; height: 40px; border-radius: 9999px; background: linear-gradient(135deg, #7B1E2E, #561019); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; flex-shrink: 0; }
+  .avatar-lg { width: 64px; height: 64px; font-size: 1.25rem; }
+
+  .floating-cta { position: fixed; bottom: 1.5rem; right: 1.5rem; width: 64px; height: 64px; border-radius: 9999px; background: linear-gradient(135deg, #7B1E2E, #561019); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px -8px rgba(86,16,25,0.5); cursor: pointer; transition: transform .15s; }
+  .floating-cta:hover { transform: scale(1.05); }
+  .delta-up { color: #5A7A5C; }
+  .delta-down { color: #A8334A; }
+  svg { stroke-width: 1.7; }
+  .h-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; letter-spacing: -0.01em; }
+
+  /* Subtle gold seal element on key cards */
+  .seal { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border: 1.5px solid #D4A446; border-radius: 9999px; display: grid; place-items: center; color: #B88928; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="text-white px-6 py-2.5 flex items-center justify-between text-xs" style="background: linear-gradient(135deg, #561019, #2C1518)">
+  <div class="flex items-center gap-3">
+    <span class="font-semibold tracking-wide uppercase text-[0.7rem]">V4 · Burgundy Institucional</span>
+    <span class="opacity-60">·</span>
+    <span class="opacity-80">Vinho primário · Dourado warm · Identidade clássica refinada</span>
+  </div>
+  <a href="./index.html" class="opacity-80 hover:opacity-100 underline-offset-2 hover:underline text-[0.72rem]">← voltar pro comparador</a>
+</div>
+
+<div class="flex">
+  <aside class="w-64 shrink-0 bg-white border-r border-warm-200 min-h-screen p-4 flex flex-col gap-1">
+    <div class="flex items-center gap-3 px-2 py-3 mb-2">
+      <div class="w-11 h-11 rounded-xl grid place-items-center text-white font-display font-bold text-lg relative" style="background: linear-gradient(135deg, #7B1E2E, #561019)">M<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-gold-500 border-2 border-white"></span></div>
+      <div>
+        <div class="font-display font-semibold text-ink-900 leading-tight">Mandato Desk</div>
+        <div class="text-xs text-ink-500">Raquel Lyra · 2026</div>
+      </div>
+    </div>
+
+    <div class="text-[0.65rem] font-bold text-ink-500 tracking-widest uppercase px-3 mt-2 mb-1">Principal</div>
+    <a class="nav-link active" data-target="dashboard"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12L12 4l9 8M5 10v10h14V10"/></svg> Dashboard</a>
+    <a class="nav-link" data-target="contatos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 21c.6-3.4 3.4-6 6.5-6s5.9 2.6 6.5 6"/><circle cx="17" cy="6" r="2.5"/></svg> Contatos</a>
+    <a class="nav-link" data-target="detalhes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg> Detalhes Contato</a>
+
+    <div class="text-[0.65rem] font-bold text-ink-500 tracking-widest uppercase px-3 mt-4 mb-1">Operação</div>
+    <a class="nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg> Funis</a>
+    <a class="nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M16 16l2 2 4-4"/></svg> Tarefas</a>
+    <a class="nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1 0-2.8l7.2-7.2a2 2 0 0 1 1.4-.6h7.2A2 2 0 0 1 21 4.8v7.2a2 2 0 0 1-.4 1.4z"/></svg> Etiquetas</a>
+    <a class="nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11h6M9 15h6M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg> Demandas</a>
+    <a class="nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h6l3-9 4 18 3-9h2"/></svg> Lideranças</a>
+
+    <div class="mt-auto pt-4 border-t border-warm-200">
+      <div class="flex items-center gap-3 px-2"><div class="avatar text-sm">RA</div><div class="min-w-0 flex-1"><div class="text-sm font-semibold truncate">Rodrigo Antigravity</div><div class="text-xs text-ink-500 truncate">Administrador</div></div></div>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <div class="h-16 border-b border-warm-200 bg-warm-50/90 backdrop-blur sticky top-0 z-30 px-6 flex items-center justify-between">
+      <div class="relative">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Buscar contatos, tarefas, etiquetas..." class="input input-pill pl-10 w-80" />
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn-pill btn-ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bg-wine-700 text-white text-[0.65rem] font-bold rounded-full px-1.5 py-0.5">3</span></button>
+        <div class="view-switch">
+          <button data-view-btn="dashboard" class="active">Dashboard</button>
+          <button data-view-btn="contatos">Contatos</button>
+          <button data-view-btn="detalhes">Detalhes Contato</button>
+          <button data-view-btn="caixa">Caixa Contato</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section data-view="dashboard" class="active p-6 lg:p-8 space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div class="section-eyebrow mb-1">Visão Geral · Maio 2026</div>
+          <h1 class="h-display text-3xl text-ink-900">Bom dia, Rodrigo.</h1>
+          <p class="text-ink-500 mt-1 text-sm">Aqui está como sua base se comportou nos últimos 30 dias.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Maio · 2026</button>
+          <button class="btn-pill btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> Novo Contato</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card card-elev p-5">
+          <div class="flex items-start justify-between"><div class="w-11 h-11 rounded-xl bg-wine-50 grid place-items-center"><svg class="text-wine-700" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 21c.6-3.4 3.4-6 6.5-6s5.9 2.6 6.5 6"/><circle cx="17" cy="6" r="2.5"/></svg></div><span class="chip bg-sage-500/10 text-sage-600 delta-up font-semibold">↑ 12.4%</span></div>
+          <div class="mt-4"><div class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Base Total</div><div class="h-display text-3xl text-ink-900 mt-1">6.379</div><div class="text-xs text-ink-500 mt-2">+ 234 nos últimos 7 dias</div></div>
+        </div>
+        <div class="card card-elev p-5">
+          <div class="flex items-start justify-between"><div class="w-11 h-11 rounded-xl bg-wine-50 grid place-items-center"><svg class="text-wine-700" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6M19 8v6"/></svg></div><span class="chip bg-sage-500/10 text-sage-600 delta-up font-semibold">↑ 8.7%</span></div>
+          <div class="mt-4"><div class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Novos · Mês</div><div class="h-display text-3xl text-ink-900 mt-1">412</div><div class="text-xs text-ink-500 mt-2">no período de Maio</div></div>
+        </div>
+        <div class="card card-elev p-5 relative">
+          <div class="seal">META</div>
+          <div class="flex items-start justify-between"><div class="w-11 h-11 rounded-xl bg-wine-50 grid place-items-center"><svg class="text-wine-700" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div><span class="chip bg-sage-500/10 text-sage-600 delta-up font-semibold">↑ 4.2%</span></div>
+          <div class="mt-4"><div class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Voto Declarado</div><div class="h-display text-3xl text-ink-900 mt-1">2.847 <span class="text-base text-ink-500 font-medium">/ 5.000</span></div><div class="mt-2"><div class="h-1.5 rounded-full bg-warm-200 overflow-hidden"><div class="h-full bg-wine-700 rounded-full" style="width: 56.9%"></div></div><div class="text-xs text-ink-500 mt-1.5">56.9% da meta</div></div></div>
+        </div>
+        <div class="card card-elev p-5">
+          <div class="flex items-start justify-between"><div class="w-11 h-11 rounded-xl bg-gold-50 grid place-items-center"><svg class="text-gold-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zM5 20h14"/></svg></div><span class="chip bg-gold-50 text-gold-600 font-semibold">↑ 2 novos</span></div>
+          <div class="mt-4"><div class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Articuladores</div><div class="h-display text-3xl text-ink-900 mt-1">38</div><div class="text-xs text-ink-500 mt-2">nas 12 regiões ativas</div></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card card-elev p-6 lg:col-span-2">
+          <div class="flex items-start justify-between mb-5"><div><div class="section-eyebrow mb-1">Funil de Conversão</div><h3 class="h-display text-lg text-ink-900">Funil Eleitoral 2026</h3></div><button class="btn-pill btn-ghost text-xs"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg> Trocar funil</button></div>
+          <div class="space-y-3">
+            <div><div class="flex items-center justify-between text-sm mb-1.5"><span class="font-medium text-ink-900">Lead Frio</span><span class="text-ink-500">3.124 · 49%</span></div><div class="funnel-bar"><div class="funnel-bar-fill" style="width: 100%">100%</div></div></div>
+            <div><div class="flex items-center justify-between text-sm mb-1.5"><span class="font-medium text-ink-900">Engajado</span><span class="text-ink-500">1.842 · 29%</span></div><div class="funnel-bar"><div class="funnel-bar-fill" style="width: 78%">78%</div></div></div>
+            <div><div class="flex items-center justify-between text-sm mb-1.5"><span class="font-medium text-ink-900">Voto Declarado</span><span class="text-ink-500">982 · 16%</span></div><div class="funnel-bar"><div class="funnel-bar-fill" style="width: 52%">52%</div></div></div>
+            <div><div class="flex items-center justify-between text-sm mb-1.5"><span class="font-medium text-ink-900">Multiplicador</span><span class="text-ink-500">431 · 7%</span></div><div class="funnel-bar funnel-bar-gold"><div class="funnel-bar-fill" style="width: 28%">28%</div></div></div>
+          </div>
+        </div>
+
+        <div class="card card-elev p-6">
+          <div class="flex items-center justify-between mb-4"><div><div class="section-eyebrow mb-1">Hoje · 09 Mai</div><h3 class="h-display text-lg text-ink-900">Tarefas do Dia</h3></div><span class="chip bg-wine-50 text-wine-700 font-semibold">5 pendentes</span></div>
+          <div class="space-y-2.5">
+            <label class="flex items-start gap-3 cursor-pointer p-2 rounded-xl hover:bg-warm-50"><input type="checkbox" class="mt-0.5 accent-wine-700 w-4 h-4" /><div class="min-w-0 flex-1"><div class="text-sm font-medium text-ink-900">Ligar para Maria Eduarda</div><div class="text-xs text-ink-500 mt-0.5">10:00 · Visita Várzea</div></div></label>
+            <label class="flex items-start gap-3 cursor-pointer p-2 rounded-xl hover:bg-warm-50"><input type="checkbox" class="mt-0.5 accent-wine-700 w-4 h-4" /><div class="min-w-0 flex-1"><div class="text-sm font-medium text-ink-900">Confirmar agenda Caruaru</div><div class="text-xs text-ink-500 mt-0.5">11:30 · Reunião zona oeste</div></div></label>
+            <label class="flex items-start gap-3 cursor-pointer p-2 rounded-xl hover:bg-warm-50"><input type="checkbox" class="mt-0.5 accent-wine-700 w-4 h-4" checked /><div class="min-w-0 flex-1"><div class="text-sm font-medium text-ink-500 line-through">Enviar resumo semanal</div><div class="text-xs text-ink-400 mt-0.5">08:00 · Concluído</div></div></label>
+            <label class="flex items-start gap-3 cursor-pointer p-2 rounded-xl hover:bg-warm-50"><input type="checkbox" class="mt-0.5 accent-wine-700 w-4 h-4" /><div class="min-w-0 flex-1"><div class="text-sm font-medium text-ink-900">Revisar aniversariantes</div><div class="text-xs text-ink-500 mt-0.5">14:00 · 23 contatos</div></div></label>
+          </div>
+          <button class="btn-pill btn-secondary w-full justify-center mt-4 text-xs">Ver todas as tarefas</button>
+        </div>
+
+        <div class="card card-elev p-6 lg:col-span-2">
+          <div class="flex items-start justify-between mb-4"><div><div class="section-eyebrow mb-1">Últimos 30 dias</div><h3 class="h-display text-lg text-ink-900">Crescimento da Base</h3></div><div class="tab-pill-list" style="background: #FCFAF5;"><span class="tab-pill active">Linha</span><span class="tab-pill">Barra</span><span class="tab-pill">Área</span></div></div>
+          <svg viewBox="0 0 600 180" class="w-full h-44">
+            <defs><linearGradient id="g4" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7B1E2E" stop-opacity="0.25"/><stop offset="100%" stop-color="#7B1E2E" stop-opacity="0"/></linearGradient></defs>
+            <g stroke="#F2EBDB" stroke-dasharray="3 3"><line x1="0" y1="40" x2="600" y2="40"/><line x1="0" y1="80" x2="600" y2="80"/><line x1="0" y1="120" x2="600" y2="120"/></g>
+            <path d="M 0 140 L 50 130 L 100 120 L 150 105 L 200 100 L 250 80 L 300 95 L 350 70 L 400 60 L 450 55 L 500 40 L 550 35 L 600 25 L 600 180 L 0 180 Z" fill="url(#g4)"/>
+            <path d="M 0 140 L 50 130 L 100 120 L 150 105 L 200 100 L 250 80 L 300 95 L 350 70 L 400 60 L 450 55 L 500 40 L 550 35 L 600 25" stroke="#7B1E2E" stroke-width="2.5" fill="none"/>
+            <g fill="#D4A446"><circle cx="50" cy="130" r="3.5" stroke="#fff" stroke-width="1.5"/><circle cx="150" cy="105" r="3.5" stroke="#fff" stroke-width="1.5"/><circle cx="250" cy="80" r="3.5" stroke="#fff" stroke-width="1.5"/><circle cx="350" cy="70" r="3.5" stroke="#fff" stroke-width="1.5"/><circle cx="450" cy="55" r="3.5" stroke="#fff" stroke-width="1.5"/><circle cx="550" cy="35" r="3.5" stroke="#fff" stroke-width="1.5"/></g>
+          </svg>
+          <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-warm-200"><div><div class="text-xs text-ink-500">Total</div><div class="font-display text-lg text-ink-900">+ 412</div></div><div><div class="text-xs text-ink-500">Pico diário</div><div class="font-display text-lg text-ink-900">38</div></div><div><div class="text-xs text-ink-500">Média</div><div class="font-display text-lg text-ink-900">13.7/dia</div></div></div>
+        </div>
+
+        <div class="card card-elev p-6">
+          <div class="flex items-center justify-between mb-4"><div><div class="section-eyebrow mb-1">Esta Semana</div><h3 class="h-display text-lg text-ink-900">Aniversariantes</h3></div><span class="chip bg-gold-50 text-gold-600 font-semibold">7</span></div>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3"><div class="avatar text-xs">JC</div><div class="flex-1 min-w-0"><div class="text-sm font-medium text-ink-900 truncate">João Carlos</div><div class="text-xs text-ink-500">Hoje · 52 anos</div></div><button class="btn-pill btn-secondary text-xs h-8">Parabéns</button></div>
+            <div class="flex items-center gap-3"><div class="avatar text-xs">MS</div><div class="flex-1 min-w-0"><div class="text-sm font-medium text-ink-900 truncate">Maria Silva</div><div class="text-xs text-ink-500">Amanhã · 47 anos</div></div><button class="btn-pill btn-ghost text-xs h-8">Ver</button></div>
+            <div class="flex items-center gap-3"><div class="avatar text-xs">PA</div><div class="flex-1 min-w-0"><div class="text-sm font-medium text-ink-900 truncate">Pedro Alves</div><div class="text-xs text-ink-500">Quinta · 38 anos</div></div><button class="btn-pill btn-ghost text-xs h-8">Ver</button></div>
+          </div>
+        </div>
+
+        <div class="card card-elev p-6">
+          <div class="section-eyebrow mb-1">Diagnóstico</div><h3 class="h-display text-lg text-ink-900 mb-4">Saúde da Base</h3>
+          <div class="space-y-3">
+            <div><div class="flex items-center justify-between text-sm mb-1"><span class="text-ink-700">Com WhatsApp</span><span class="font-semibold text-sage-600">94%</span></div><div class="h-1.5 rounded-full bg-warm-200 overflow-hidden"><div class="h-full bg-sage-500 rounded-full" style="width:94%"></div></div></div>
+            <div><div class="flex items-center justify-between text-sm mb-1"><span class="text-ink-700">Com endereço</span><span class="font-semibold text-wine-700">71%</span></div><div class="h-1.5 rounded-full bg-warm-200 overflow-hidden"><div class="h-full bg-wine-700 rounded-full" style="width:71%"></div></div></div>
+            <div><div class="flex items-center justify-between text-sm mb-1"><span class="text-ink-700">Com etiquetas</span><span class="font-semibold text-gold-600">42%</span></div><div class="h-1.5 rounded-full bg-warm-200 overflow-hidden"><div class="h-full bg-gold-500 rounded-full" style="width:42%"></div></div></div>
+            <div><div class="flex items-center justify-between text-sm mb-1"><span class="text-ink-700">Em algum funil</span><span class="font-semibold text-wine-500">28%</span></div><div class="h-1.5 rounded-full bg-warm-200 overflow-hidden"><div class="h-full bg-wine-500 rounded-full" style="width:28%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="card card-elev p-6">
+          <div class="section-eyebrow mb-1">Distribuição</div><h3 class="h-display text-lg text-ink-900 mb-4">Etiquetas</h3>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3"><span class="w-2.5 h-2.5 rounded-full bg-wine-700"></span><span class="text-sm text-ink-900 flex-1">Apoiador</span><span class="text-sm font-semibold text-ink-700">2.341</span></div>
+            <div class="flex items-center gap-3"><span class="w-2.5 h-2.5 rounded-full bg-gold-500"></span><span class="text-sm text-ink-900 flex-1">Liderança</span><span class="text-sm font-semibold text-ink-700">432</span></div>
+            <div class="flex items-center gap-3"><span class="w-2.5 h-2.5 rounded-full bg-wine-200"></span><span class="text-sm text-ink-900 flex-1">Voluntário</span><span class="text-sm font-semibold text-ink-700">187</span></div>
+            <div class="flex items-center gap-3"><span class="w-2.5 h-2.5 rounded-full bg-wine-500"></span><span class="text-sm text-ink-900 flex-1">Crítico</span><span class="text-sm font-semibold text-ink-700">94</span></div>
+          </div>
+          <div class="mt-4 flex h-2 rounded-full overflow-hidden">
+            <div class="bg-wine-700" style="width: 76%"></div><div class="bg-gold-500" style="width: 14%"></div><div class="bg-wine-200" style="width: 7%"></div><div class="bg-wine-500" style="width: 3%"></div>
+          </div>
+        </div>
+
+        <div class="card card-elev p-6">
+          <div class="section-eyebrow mb-1">Tempo Real</div><h3 class="h-display text-lg text-ink-900 mb-4">Atividades</h3>
+          <div class="space-y-3">
+            <div class="flex gap-3"><div class="avatar text-xs" style="width:32px;height:32px">CS</div><div class="text-sm flex-1 min-w-0"><div class="text-ink-900"><strong>Camila S.</strong> moveu <em class="text-ink-500">Marcos Pereira</em> para <strong>Voto Declarado</strong></div><div class="text-xs text-ink-500 mt-0.5">há 4 min</div></div></div>
+            <div class="flex gap-3"><div class="avatar text-xs" style="width:32px;height:32px">RA</div><div class="text-sm flex-1 min-w-0"><div class="text-ink-900"><strong>Você</strong> criou tarefa <em>"Confirmar agenda Caruaru"</em></div><div class="text-xs text-ink-500 mt-0.5">há 12 min</div></div></div>
+            <div class="flex gap-3"><div class="avatar text-xs" style="width:32px;height:32px">JM</div><div class="text-sm flex-1 min-w-0"><div class="text-ink-900"><strong>João M.</strong> importou <strong>184 contatos</strong> via Google</div><div class="text-xs text-ink-500 mt-0.5">há 1h</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTATOS -->
+    <section data-view="contatos" class="p-6 lg:p-8 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-end gap-3"><h1 class="h-display text-3xl text-ink-900">Contatos</h1><span class="chip bg-wine-50 text-wine-700 font-semibold mb-1.5">6.379</span></div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9"/></svg> Duplicados <span class="chip bg-wine-700 text-white text-[0.65rem] -mr-1">12</span></button>
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> Importar</button>
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Exportar</button>
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Etiquetas</button>
+          <button class="btn-pill btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> Novo Contato</button>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1"><svg class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="text" placeholder="Buscar por nome, e-mail ou WhatsApp..." class="input pl-10" /></div>
+        <select class="input sm:w-56"><option>Mais recentes</option><option>Mais antigos</option><option>Nome A-Z</option></select>
+        <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg> Filtros <span class="chip bg-wine-50 text-wine-700 -mr-2">3</span></button>
+        <div class="view-switch"><button class="active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button><button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg></button></div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-ink-500 font-medium">Filtros ativos:</span>
+        <span class="chip bg-wine-50 text-wine-700 font-medium">Cidade · Recife <button class="ml-1 hover:text-wine-900">×</button></span>
+        <span class="chip bg-wine-50 text-wine-700 font-medium">Voto declarado <button class="ml-1 hover:text-wine-900">×</button></span>
+        <span class="chip bg-wine-50 text-wine-700 font-medium">Etiqueta · Apoiador <button class="ml-1 hover:text-wine-900">×</button></span>
+        <button class="text-xs text-ink-500 hover:text-wine-700 underline-offset-2 hover:underline">Limpar tudo</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+        <div class="card card-elev p-5 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="flex items-start gap-3">
+            <div class="avatar avatar-lg" style="background: linear-gradient(135deg,#7B1E2E,#561019)">ME</div>
+            <div class="flex-1 min-w-0"><div class="flex items-center gap-1.5"><div class="font-display font-semibold text-ink-900 truncate">Maria Eduarda</div><svg class="text-gold-500 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l6.9-1z"/></svg></div><div class="text-xs text-ink-500 truncate">maria.e@email.com</div><div class="flex items-center gap-1 mt-1 text-xs text-ink-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg><span>(81) 99876-1234</span></div></div>
+          </div>
+          <div class="flex flex-wrap gap-1 mt-3"><span class="chip bg-wine-100 text-wine-900">Apoiador</span><span class="chip bg-gold-50 text-gold-600">Liderança</span></div>
+          <div class="mt-3 pt-3 border-t border-warm-200 flex items-center justify-between"><div class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full bg-wine-700"></span><span class="text-ink-500">Voto Declarado</span></div><span class="font-display text-xs font-bold text-wine-700">R · 9.4</span></div>
+        </div>
+
+        <div class="card card-elev p-5 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="flex items-start gap-3"><div class="avatar avatar-lg" style="background: linear-gradient(135deg,#A8334A,#7B1E2E)">JC</div><div class="flex-1 min-w-0"><div class="font-display font-semibold text-ink-900 truncate">João Carlos Mendes</div><div class="text-xs text-ink-500 truncate">jc.mendes@email.com</div><div class="flex items-center gap-1 mt-1 text-xs text-ink-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg><span>(81) 98123-9988</span></div></div></div>
+          <div class="flex flex-wrap gap-1 mt-3"><span class="chip bg-wine-100 text-wine-900">Apoiador</span></div>
+          <div class="mt-3 pt-3 border-t border-warm-200 flex items-center justify-between"><div class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full bg-wine-200"></span><span class="text-ink-500">Engajado</span></div><span class="font-display text-xs font-bold text-wine-500">R · 7.1</span></div>
+        </div>
+
+        <div class="card card-elev p-5 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="flex items-start gap-3"><div class="avatar avatar-lg" style="background: linear-gradient(135deg,#D4A446,#B88928)">PA</div><div class="flex-1 min-w-0"><div class="font-display font-semibold text-ink-900 truncate">Pedro Alves</div><div class="text-xs text-ink-500 truncate">pedro.a@email.com</div><div class="flex items-center gap-1 mt-1 text-xs text-ink-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg><span>(81) 97564-2211</span></div></div></div>
+          <div class="flex flex-wrap gap-1 mt-3"><span class="chip bg-gold-50 text-gold-600">Liderança</span><span class="chip bg-wine-100 text-wine-900">Multiplicador</span></div>
+          <div class="mt-3 pt-3 border-t border-warm-200 flex items-center justify-between"><div class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full bg-gold-500"></span><span class="text-ink-500">Articulador</span></div><span class="font-display text-xs font-bold text-gold-600">R · 9.8</span></div>
+        </div>
+
+        <div class="card card-elev p-5 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="flex items-start gap-3"><div class="avatar avatar-lg" style="background: linear-gradient(135deg,#7B1E2E,#A8334A)">MS</div><div class="flex-1 min-w-0"><div class="font-display font-semibold text-ink-900 truncate">Maria Silva</div><div class="text-xs text-ink-500 truncate">maria.silva@email.com</div><div class="flex items-center gap-1 mt-1 text-xs text-ink-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg><span>(81) 99211-7676</span></div></div></div>
+          <div class="flex flex-wrap gap-1 mt-3"><span class="chip bg-wine-100 text-wine-900">Apoiador</span><span class="chip bg-wine-100 text-wine-900">Voluntário</span></div>
+          <div class="mt-3 pt-3 border-t border-warm-200 flex items-center justify-between"><div class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full bg-wine-700"></span><span class="text-ink-500">Voto Declarado</span></div><span class="font-display text-xs font-bold text-wine-700">R · 8.5</span></div>
+        </div>
+
+        <div class="card card-elev p-5 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="flex items-start gap-3"><div class="avatar avatar-lg" style="background: linear-gradient(135deg,#A18B8E,#7C5F62)">CB</div><div class="flex-1 min-w-0"><div class="font-display font-semibold text-ink-900 truncate">Carla Bezerra</div><div class="text-xs text-ink-500 truncate">— sem e-mail —</div><div class="flex items-center gap-1 mt-1 text-xs text-ink-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg><span>(81) 98412-3344</span></div></div></div>
+          <div class="flex flex-wrap gap-1 mt-3"><span class="chip bg-wine-100 text-wine-900">Apoiador</span></div>
+          <div class="mt-3 pt-3 border-t border-warm-200 flex items-center justify-between"><div class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full bg-ink-400"></span><span class="text-ink-500">Lead Frio</span></div><span class="font-display text-xs font-bold text-ink-500">R · 4.2</span></div>
+        </div>
+
+        <div class="card card-elev p-5 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="flex items-start gap-3"><div class="avatar avatar-lg" style="background: linear-gradient(135deg,#7B1E2E,#561019)">RF</div><div class="flex-1 min-w-0"><div class="flex items-center gap-1.5"><div class="font-display font-semibold text-ink-900 truncate">Rita Fernandes</div><svg class="text-gold-500 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l6.9-1z"/></svg></div><div class="text-xs text-ink-500 truncate">rita.f@email.com</div><div class="flex items-center gap-1 mt-1 text-xs text-ink-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg><span>(81) 99887-1100</span></div></div></div>
+          <div class="flex flex-wrap gap-1 mt-3"><span class="chip bg-wine-100 text-wine-900">Apoiador</span><span class="chip bg-gold-50 text-gold-600">Liderança</span><span class="chip bg-wine-100 text-wine-900">Multiplicador</span></div>
+          <div class="mt-3 pt-3 border-t border-warm-200 flex items-center justify-between"><div class="flex items-center gap-1.5 text-xs"><span class="w-2 h-2 rounded-full bg-wine-700"></span><span class="text-ink-500">Voto Declarado</span></div><span class="font-display text-xs font-bold text-wine-700">R · 9.7</span></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <div class="text-sm text-ink-500">Mostrando <strong class="text-ink-900">1–50</strong> de <strong class="text-ink-900">6.379</strong></div>
+        <div class="flex items-center gap-1">
+          <button class="btn-pill btn-secondary h-9 px-3"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="btn-pill btn-primary h-9 px-3.5">1</button>
+          <button class="btn-pill btn-ghost h-9 px-3.5">2</button>
+          <button class="btn-pill btn-ghost h-9 px-3.5">3</button>
+          <span class="text-ink-500 text-xs px-1">…</span>
+          <button class="btn-pill btn-ghost h-9 px-3.5">128</button>
+          <button class="btn-pill btn-secondary h-9 px-3"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DETALHES -->
+    <section data-view="detalhes" class="p-6 lg:p-8 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-2 text-sm">
+          <a class="text-ink-500 hover:text-wine-700 cursor-pointer">Contatos</a>
+          <svg class="text-ink-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+          <span class="font-medium text-ink-900">Maria Eduarda Cavalcanti</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7"/></svg> Mensagem</button>
+          <button class="btn-pill btn-secondary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18l-2 13H5L3 6zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Excluir</button>
+          <button class="btn-pill btn-primary">Salvar alterações</button>
+        </div>
+      </div>
+
+      <div class="card card-elev p-6">
+        <div class="flex flex-col sm:flex-row gap-5 items-start">
+          <div class="avatar avatar-lg" style="width:80px;height:80px;font-size:1.5rem;background: linear-gradient(135deg,#7B1E2E,#561019)">ME</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="h-display text-2xl text-ink-900">Maria Eduarda Cavalcanti</h1>
+              <svg class="text-gold-500 shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l6.9-1z"/></svg>
+              <span class="chip bg-wine-700 text-white font-semibold">Voto Declarado</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-500 mt-2">
+              <span class="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2"/></svg> (81) 99876-1234</span>
+              <span class="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v12"/><polyline points="22 6 12 13 2 6"/></svg> maria.e@email.com</span>
+              <span class="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg> Recife · PE</span>
+              <span class="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> há 4 dias</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="chip bg-wine-100 text-wine-900">Apoiador</span>
+              <span class="chip bg-gold-50 text-gold-600">Liderança · Várzea</span>
+              <span class="chip bg-wine-100 text-wine-900">Multiplicador</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Ranking</div>
+            <div class="font-display text-4xl font-bold text-wine-700">9.4</div>
+            <div class="text-xs text-ink-500">Top 4% da base</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subabas em fila única -->
+      <div class="tab-pill-list">
+        <span class="tab-pill active" data-subtab="pessoais"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg> Pessoais</span>
+        <span class="tab-pill" data-subtab="personalizados"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3v18M19 3v18M3 5h18M3 19h18M3 12h18"/></svg> Personalizados</span>
+        <span class="tab-pill" data-subtab="tarefas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Tarefas <span class="bg-wine-700 text-white text-[0.65rem] font-bold rounded-full px-1.5 leading-none py-0.5">3</span></span>
+        <span class="tab-pill" data-subtab="funis"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg> Funis</span>
+        <span class="tab-pill" data-subtab="campanha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/></svg> Campanha</span>
+        <span class="tab-pill" data-subtab="etiquetas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1 0-2.8l7.2-7.2a2 2 0 0 1 1.4-.6h7.2A2 2 0 0 1 21 4.8v7.2a2 2 0 0 1-.4 1.4z"/></svg> Etiquetas</span>
+        <span class="tab-pill" data-subtab="endereco"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg> Endereço</span>
+        <span class="tab-pill" data-subtab="redes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg> Redes Sociais</span>
+        <span class="tab-pill" data-subtab="obs"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Observações</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5" data-subcontent="pessoais">
+        <div class="lg:col-span-2 space-y-5">
+          <div class="card card-elev p-6">
+            <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 rounded-xl bg-wine-50 grid place-items-center"><svg class="text-wine-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div><div><h3 class="font-display font-semibold text-ink-900">Dados Básicos</h3><p class="text-xs text-ink-500">Identificação e formas de contato</p></div></div>
+            <div class="space-y-4">
+              <div><label class="field-label">Nome completo *</label><input class="input" value="Maria Eduarda Cavalcanti" /></div>
+              <div><label class="field-label">Nome no WhatsApp</label><input class="input" value="Maria Eduarda" /></div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="field-label">WhatsApp</label><input class="input" value="(81) 99876-1234" /></div><div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div></div>
+              <div><label class="field-label">E-mail</label><input class="input" value="maria.e@email.com" /></div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="field-label">Data de nascimento</label><input class="input" type="date" value="1972-08-15" /></div><div><label class="field-label">Gênero</label><select class="input"><option>Feminino</option></select></div></div>
+              <div><label class="field-label">Último contato</label><input class="input" type="datetime-local" value="2026-05-05T14:30" /></div>
+            </div>
+          </div>
+          <div class="card p-4 flex items-center gap-3 text-sm"><div class="w-8 h-8 rounded-xl bg-warm-200 grid place-items-center shrink-0"><svg class="text-ink-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span class="text-ink-500">Última atualização em <strong class="text-ink-900">05/05/2026 às 14:30</strong> por <strong class="text-ink-900">Camila Souza</strong></span></div>
+        </div>
+        <div class="space-y-5">
+          <div class="card card-elev p-5">
+            <div class="section-eyebrow mb-2">Status</div>
+            <div class="space-y-3">
+              <label class="flex items-center justify-between p-3 rounded-xl border border-warm-200 hover:border-wine-200 cursor-pointer"><div class="text-sm font-medium text-ink-900">Aceita WhatsApp</div><div class="w-9 h-5 bg-wine-700 rounded-full relative"><div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div></div></label>
+              <label class="flex items-center justify-between p-3 rounded-xl border border-warm-200 hover:border-wine-200 cursor-pointer"><div class="text-sm font-medium text-ink-900">Canal do WhatsApp</div><div class="w-9 h-5 bg-wine-700 rounded-full relative"><div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div></div></label>
+              <label class="flex items-center justify-between p-3 rounded-xl border border-wine-200 bg-wine-50 cursor-pointer"><div class="text-sm font-medium text-wine-900">Declarou voto</div><div class="w-9 h-5 bg-wine-700 rounded-full relative"><div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div></div></label>
+              <label class="flex items-center justify-between p-3 rounded-xl border border-warm-200 hover:border-wine-200 cursor-pointer"><div class="text-sm font-medium text-ink-900">Multiplicador</div><div class="w-9 h-5 bg-warm-300 rounded-full relative"><div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div></div></label>
+            </div>
+          </div>
+          <div class="card card-elev p-5">
+            <div class="section-eyebrow mb-2">Vínculo</div>
+            <label class="field-label">Articulador responsável</label>
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-warm-200 bg-warm-50"><div class="avatar text-xs">RF</div><div class="flex-1 min-w-0"><div class="text-sm font-semibold text-ink-900 truncate">Rita Fernandes</div><div class="text-xs text-ink-500 truncate">Liderança · Várzea</div></div><button class="btn-pill btn-ghost text-xs h-8">Trocar</button></div>
+          </div>
+          <div class="card card-elev p-5">
+            <div class="section-eyebrow mb-3">Linha do Tempo</div>
+            <div class="space-y-3 text-sm">
+              <div class="flex gap-3"><span class="w-2 h-2 rounded-full bg-wine-700 mt-1.5 shrink-0"></span><div class="flex-1 min-w-0"><div class="text-ink-900">Movido para <strong>Voto Declarado</strong></div><div class="text-xs text-ink-500">há 4 dias · Camila S.</div></div></div>
+              <div class="flex gap-3"><span class="w-2 h-2 rounded-full bg-gold-500 mt-1.5 shrink-0"></span><div class="flex-1 min-w-0"><div class="text-ink-900">Etiqueta <strong>Liderança</strong> aplicada</div><div class="text-xs text-ink-500">há 12 dias · Você</div></div></div>
+              <div class="flex gap-3"><span class="w-2 h-2 rounded-full bg-warm-300 mt-1.5 shrink-0"></span><div class="flex-1 min-w-0"><div class="text-ink-900">Contato criado</div><div class="text-xs text-ink-500">há 28 dias · Importação</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden grid grid-cols-1 lg:grid-cols-3 gap-5" data-subcontent="personalizados">
+        <div class="lg:col-span-3 card card-elev p-6">
+          <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 rounded-xl bg-wine-50 grid place-items-center"><svg class="text-wine-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3v18M19 3v18M3 5h18M3 19h18M3 12h18"/></svg></div><div><h3 class="font-display font-semibold text-ink-900">Campos Personalizados</h3><p class="text-xs text-ink-500">Configurados em Configurações → Campos</p></div></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div><label class="field-label">Profissão</label><input class="input" value="Professora" /></div>
+            <div><label class="field-label">Empresa / Instituição</label><input class="input" value="Escola Estadual Recife" /></div>
+            <div><label class="field-label">Tempo na cidade</label><input class="input" value="32 anos" /></div>
+            <div><label class="field-label">Indicação</label><input class="input" value="Rita Fernandes" /></div>
+            <div><label class="field-label">Religião</label><input class="input" placeholder="—" /></div>
+            <div><label class="field-label">Causas</label><input class="input" value="Educação, Cultura" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="tarefas">
+        <div class="card card-elev p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-wine-50 grid place-items-center"><svg class="text-wine-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div><h3 class="font-display font-semibold text-ink-900">Tarefas vinculadas</h3><p class="text-xs text-ink-500">3 pendentes · 12 concluídas</p></div></div>
+            <button class="btn-pill btn-primary text-xs h-9"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> Nova tarefa</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-warm-200 hover:bg-warm-50"><input type="checkbox" class="accent-wine-700 w-4 h-4" /><div class="flex-1 min-w-0"><div class="text-sm font-medium text-ink-900">Confirmar presença evento Várzea · 12 Mai</div><div class="text-xs text-ink-500">Vence amanhã às 18:00</div></div><span class="chip bg-wine-50 text-wine-700">Alta</span></div>
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-warm-200 hover:bg-warm-50"><input type="checkbox" class="accent-wine-700 w-4 h-4" /><div class="flex-1 min-w-0"><div class="text-sm font-medium text-ink-900">Enviar foto da reunião regional</div><div class="text-xs text-ink-500">Vence em 3 dias</div></div><span class="chip bg-gold-50 text-gold-600">Média</span></div>
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-warm-200 hover:bg-warm-50"><input type="checkbox" class="accent-wine-700 w-4 h-4" checked /><div class="flex-1 min-w-0"><div class="text-sm font-medium text-ink-500 line-through">Ligar pra confirmar dados</div><div class="text-xs text-ink-400">Concluída há 4 dias</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="funis"><div class="card card-elev p-6 text-center text-ink-500">📋 Conteúdo de "Funis" segue o mesmo padrão visual.</div></div>
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="campanha"><div class="card card-elev p-6 text-center text-ink-500">📋 Conteúdo de "Campanha" segue o mesmo padrão visual.</div></div>
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="etiquetas"><div class="card card-elev p-6 text-center text-ink-500">📋 Conteúdo de "Etiquetas" segue o mesmo padrão visual.</div></div>
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="endereco"><div class="card card-elev p-6 text-center text-ink-500">📋 Conteúdo de "Endereço" segue o mesmo padrão visual.</div></div>
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="redes"><div class="card card-elev p-6 text-center text-ink-500">📋 Conteúdo de "Redes Sociais" segue o mesmo padrão visual.</div></div>
+      <div class="hidden grid grid-cols-1 gap-5" data-subcontent="obs"><div class="card card-elev p-6 text-center text-ink-500">📋 "Observações" agora vive na mesma fileira de subabas, integrada visualmente.</div></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- ============================ CAIXA (MODAL) ======================== -->
+    <!-- =================================================================== -->
+    <section data-view="caixa" class="min-h-[calc(100vh-104px)] flex flex-col items-center px-6 py-8 lg:py-10 gap-5" style="background: linear-gradient(180deg, #FAF6F0 0%, #F2EBDB 100%);">
+
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Modo:</span>
+        <div class="tab-pill-list" style="background:#fff;">
+          <span class="tab-pill active" data-caixa-modo="editar">📝 Editar Contato</span>
+          <span class="tab-pill" data-caixa-modo="novo">＋ Novo Contato</span>
+        </div>
+      </div>
+
+      <div class="w-full max-w-2xl bg-white border border-warm-200 rounded-3xl flex flex-col overflow-hidden" style="box-shadow: 0 24px 60px -16px rgba(86,16,25,0.28);">
+
+        <div class="px-6 py-5 border-b border-warm-200 flex items-start gap-4">
+          <div data-caixa-content="editar" class="flex items-start gap-4 flex-1 min-w-0">
+            <div class="avatar avatar-lg" style="width:56px;height:56px;font-size:1.05rem;background:linear-gradient(135deg,#7B1E2E,#561019)">ME</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="h-display text-xl text-ink-900">Maria Eduarda Cavalcanti</h2>
+                <span class="chip bg-wine-700 text-white font-semibold">Voto Declarado</span>
+              </div>
+              <p class="text-xs text-ink-500 mt-1">Editar contato · Atualizada há 4 dias</p>
+            </div>
+          </div>
+          <div data-caixa-content="novo" class="hidden flex items-center gap-4 flex-1 min-w-0">
+            <div class="w-14 h-14 rounded-2xl bg-wine-50 grid place-items-center text-wine-700 shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8 1.5 0 2.9.4 4.1 1.1"/><path d="M19 14v6M16 17h6"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h2 class="h-display text-xl text-ink-900">Novo Contato</h2>
+              <p class="text-xs text-ink-500 mt-1">Preencha os dados básicos pra começar</p>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full bg-warm-100 hover:bg-warm-200 grid place-items-center text-ink-500 hover:text-ink-900 transition-colors shrink-0" aria-label="Fechar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="px-6 pt-4">
+          <div class="tab-pill-list">
+            <span class="tab-pill active">Pessoais</span>
+            <span class="tab-pill">Personalizados</span>
+            <span class="tab-pill">Tarefas <span class="bg-wine-700 text-white text-[0.6rem] font-bold rounded-full px-1.5 leading-none py-0.5 ml-0.5">3</span></span>
+            <span class="tab-pill">Funis</span>
+            <span class="tab-pill">Campanha</span>
+            <span class="tab-pill">Etiquetas</span>
+            <span class="tab-pill">Endereço</span>
+            <span class="tab-pill">Redes</span>
+            <span class="tab-pill">Obs</span>
+          </div>
+        </div>
+
+        <div class="px-6 py-5 overflow-y-auto" style="max-height: 55vh;">
+          <div data-caixa-content="editar" class="space-y-4">
+            <div><label class="field-label">Nome completo *</label><input class="input" value="Maria Eduarda Cavalcanti" /></div>
+            <div><label class="field-label">Nome no WhatsApp</label><input class="input" value="Maria Eduarda" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">WhatsApp</label><input class="input" value="(81) 99876-1234" /></div>
+              <div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div>
+            </div>
+            <div><label class="field-label">E-mail</label><input class="input" value="maria.e@email.com" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Data de nascimento</label><input class="input" type="date" value="1972-08-15" /></div>
+              <div><label class="field-label">Gênero</label><select class="input"><option>Feminino</option></select></div>
+            </div>
+            <div><label class="field-label">Último contato</label><input class="input" type="datetime-local" value="2026-05-05T14:30" /></div>
+            <div class="flex items-center gap-2.5 p-3 rounded-xl bg-warm-100 text-xs text-ink-500 border border-warm-200">
+              <svg class="text-ink-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Atualizado em <strong class="text-ink-900">05/05/2026 às 14:30</strong> por <strong class="text-ink-900">Camila Souza</strong></span>
+            </div>
+          </div>
+          <div data-caixa-content="novo" class="hidden space-y-4">
+            <div><label class="field-label">Nome completo *</label><input class="input" placeholder="Ex: Maria Eduarda Cavalcanti" /></div>
+            <div><label class="field-label">Nome no WhatsApp</label><input class="input" placeholder="Como aparece no WhatsApp" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">WhatsApp</label><input class="input" placeholder="(00) 00000-0000" /></div>
+              <div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div>
+            </div>
+            <div><label class="field-label">E-mail</label><input class="input" placeholder="email@exemplo.com" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Data de nascimento</label><input class="input" type="date" /></div>
+              <div><label class="field-label">Gênero</label><select class="input"><option>Selecione</option><option>Masculino</option><option>Feminino</option><option>Outro</option></select></div>
+            </div>
+            <div class="flex items-start gap-2.5 p-3 rounded-xl bg-wine-50 text-xs text-ink-700 border border-wine-100">
+              <svg class="text-wine-700 shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Após criar, você pode adicionar campos personalizados, etiquetas, funis e tarefas vinculadas.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-warm-200 flex items-center justify-between gap-3 bg-warm-50">
+          <div class="flex-1 min-w-0">
+            <button data-caixa-content="editar" class="btn-pill btn-ghost text-xs h-9">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18l-2 13H5L3 6zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Excluir
+            </button>
+            <span data-caixa-content="novo" class="hidden text-xs text-ink-500">Os campos com * são obrigatórios</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="btn-pill btn-secondary">Cancelar</button>
+            <button class="btn-pill btn-primary">
+              <span data-caixa-content="editar">Salvar alterações</span>
+              <span data-caixa-content="novo" class="hidden">Criar contato</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-ink-500 text-center max-w-md mt-1">
+        Esta é a <strong class="text-ink-900">caixa</strong> do contato — Dialog modal que abre sobre a tela atual. Subabas em fileira única (rolagem horizontal), conteúdo com scroll interno, ações fixas no rodapé.
+      </p>
+    </section>
+  </main>
+</div>
+
+<div class="floating-cta" title="Novo Contato"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></div>
+
+<script>
+  document.querySelectorAll('[data-view-btn]').forEach(btn => btn.addEventListener('click', () => {
+    const target = btn.dataset.viewBtn;
+    document.querySelectorAll('[data-view-btn]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[data-view]').forEach(v => v.classList.toggle('active', v.dataset.view === target));
+    document.querySelectorAll('.nav-link[data-target]').forEach(l => l.classList.toggle('active', l.dataset.target === target));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }));
+  document.querySelectorAll('.nav-link[data-target]').forEach(link => link.addEventListener('click', () => {
+    const btn = document.querySelector(`[data-view-btn="${link.dataset.target}"]`);
+    if (btn) btn.click();
+  }));
+  document.querySelectorAll('.tab-pill[data-subtab]').forEach(tab => tab.addEventListener('click', () => {
+    const target = tab.dataset.subtab;
+    document.querySelectorAll('.tab-pill[data-subtab]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('[data-subcontent]').forEach(c => c.classList.toggle('hidden', c.dataset.subcontent !== target));
+  }));
+  // Caixa (modal) — toggle Editar/Novo
+  document.querySelectorAll('[data-caixa-modo]').forEach(btn => btn.addEventListener('click', () => {
+    const modo = btn.dataset.caixaModo;
+    document.querySelectorAll('[data-caixa-modo]').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('[data-caixa-content]').forEach(c => c.classList.toggle('hidden', c.dataset.caixaContent !== modo));
+  }));
+</script>
+</body>
+</html>

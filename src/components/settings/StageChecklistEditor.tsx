@@ -51,7 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { stageDotClass } from '@/components/settings/stageColors';
+import { stageColorStyle } from '@/components/settings/stageColors';
 import {
   useStageChecklist,
   useCreateChecklistItem,
@@ -158,7 +158,7 @@ export function StageChecklistEditor({ open, onOpenChange, stage, boardName }: P
           {/* Header */}
           <SheetHeader className="px-6 py-4 border-b border-border space-y-1.5">
             <div className="flex items-start gap-3">
-              <span className={cn('w-2.5 h-2.5 rounded-full mt-2 shrink-0', stageDotClass(stage.cor))} />
+              <span className="w-2.5 h-2.5 rounded-full mt-2 shrink-0" style={stageColorStyle(stage.cor)} />
               <div className="flex-1 min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Editar checklist {boardName && <>· Funil "{boardName}"</>}

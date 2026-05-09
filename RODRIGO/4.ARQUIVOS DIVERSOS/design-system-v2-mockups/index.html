@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design System v2 · Comparador · Mandato Desk 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html, body { background: #0F172A; color: #F8FAFC; font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+  .h-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; letter-spacing: -0.01em; }
+  .gradient-bg { background: radial-gradient(circle at 20% 30%, rgba(123,30,46,0.18), transparent 40%), radial-gradient(circle at 80% 70%, rgba(27,58,107,0.18), transparent 40%), radial-gradient(circle at 50% 90%, rgba(0,98,65,0.15), transparent 40%); }
+  .palette-swatch { width: 28px; height: 28px; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255,255,255,0.1) inset; }
+  .card-link { transition: all .2s; }
+  .card-link:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -16px rgba(0,0,0,0.5); }
+  .preview-frame { aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); position: relative; }
+</style>
+</head>
+<body class="gradient-bg">
+
+<div class="max-w-7xl mx-auto px-6 py-12 lg:py-16">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 text-sm text-slate-400 mb-3">
+    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider uppercase">RAQ-MAND-EM048</span>
+    <span>·</span>
+    <span>Refatoração visual com novo Design System</span>
+  </div>
+
+  <h1 class="h-display text-4xl lg:text-5xl font-bold mb-3">4 abordagens visuais.<br/><span class="text-slate-400">Uma escolha.</span></h1>
+
+  <p class="text-slate-300 text-lg max-w-3xl leading-relaxed">
+    Quatro mockups interativos com a <strong class="text-white">mesma estrutura Starbucks design-md</strong> (pill buttons, hierarquia robusta, generous spacing, subabas em fileira única) — variando apenas a paleta. Navegue entre <strong class="text-white">Dashboard</strong>, <strong class="text-white">Contatos</strong>, <strong class="text-white">Detalhes</strong> (página) e <strong class="text-white">Caixa Contato</strong> (modal) em cada um pra comparar de verdade.
+  </p>
+
+  <div class="mt-6 flex flex-wrap gap-3 text-sm">
+    <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-300">✅ Subabas em fila única (rolagem horizontal)</span>
+    <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-300">✅ Cards uniformes</span>
+    <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-300">✅ Hierarquia consistente</span>
+    <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-300">✅ Tema claro (dark vem depois)</span>
+  </div>
+
+  <!-- 4 cards -->
+  <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- V1 Starbucks Faithful -->
+    <a href="./v1-starbucks-faithful.html" class="card-link block bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      <div class="preview-frame" style="background: linear-gradient(135deg, #F7F5F1 0%, #EAF4F0 100%);">
+        <!-- mock UI -->
+        <div class="absolute inset-0 p-6 flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-[#006241] grid place-items-center text-white font-bold">M</div>
+            <div class="flex-1"><div class="h-2 w-24 bg-[#1E3932]/20 rounded-full"></div><div class="h-2 w-16 bg-[#1E3932]/10 rounded-full mt-1.5"></div></div>
+            <div class="px-4 py-2 rounded-full bg-[#006241] text-white text-xs font-semibold">+ Novo</div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="bg-white rounded-xl p-3 border border-[#E5DFD2]"><div class="w-7 h-7 rounded-full bg-[#EAF4F0] mb-2"></div><div class="h-2 bg-[#1E3932]/20 rounded-full w-12"></div><div class="h-3 bg-[#1E3932] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#E5DFD2]"><div class="w-7 h-7 rounded-full bg-[#EAF4F0] mb-2"></div><div class="h-2 bg-[#1E3932]/20 rounded-full w-12"></div><div class="h-3 bg-[#1E3932] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#E5DFD2]"><div class="w-7 h-7 rounded-full bg-[#FBE3B3] mb-2"></div><div class="h-2 bg-[#1E3932]/20 rounded-full w-12"></div><div class="h-3 bg-[#CBA258] rounded mt-1.5 w-10"></div></div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-[#E5DFD2] flex-1">
+            <div class="flex justify-between items-center mb-3"><div class="h-3 w-32 bg-[#1E3932]/30 rounded-full"></div><div class="px-3 py-1 rounded-full bg-[#EAF4F0] text-[10px] text-[#006241] font-bold">FUNIL</div></div>
+            <div class="space-y-1.5">
+              <div class="h-5 rounded-md bg-gradient-to-r from-[#006241] to-[#00754A]" style="width: 100%"></div>
+              <div class="h-5 rounded-md bg-gradient-to-r from-[#006241] to-[#00754A]" style="width: 78%"></div>
+              <div class="h-5 rounded-md bg-gradient-to-r from-[#006241] to-[#00754A]" style="width: 52%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold tracking-widest text-[#00754A] uppercase">Variante 01</div>
+          <div class="flex gap-1">
+            <span class="palette-swatch" style="background:#006241"></span>
+            <span class="palette-swatch" style="background:#00754A"></span>
+            <span class="palette-swatch" style="background:#D4E9E2"></span>
+            <span class="palette-swatch" style="background:#F7F5F1"></span>
+            <span class="palette-swatch" style="background:#CBA258"></span>
+          </div>
+        </div>
+        <h3 class="h-display text-2xl font-bold mb-2">Starbucks Faithful</h3>
+        <p class="text-slate-300 text-sm leading-relaxed mb-4">Aplicação literal da referência: verde tier system, cream canvas warm, pill buttons universais 50px, floating CTA. Identidade visual quente e acolhedora — afasta do "azul corporate" óbvio.</p>
+        <div class="flex flex-wrap gap-1.5 text-[0.7rem]">
+          <span class="px-2 py-0.5 rounded-full bg-[#006241]/20 text-[#9FCFB7]">Verde tier 4 níveis</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Cream canvas</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Pills universais</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- V2 Navy Institucional -->
+    <a href="./v2-navy-institucional.html" class="card-link block bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      <div class="preview-frame" style="background: linear-gradient(135deg, #F4F6F9 0%, #DDE5F0 100%);">
+        <div class="absolute inset-0 p-6 flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-xl grid place-items-center text-white font-bold" style="background: linear-gradient(135deg, #1B3A6B, #0F2342)">M</div>
+            <div class="flex-1"><div class="h-2 w-24 bg-[#0E1F38]/20 rounded-full"></div><div class="h-2 w-16 bg-[#0E1F38]/10 rounded-full mt-1.5"></div></div>
+            <div class="px-4 py-2 rounded-full text-white text-xs font-semibold" style="background: #1B3A6B">+ Novo</div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="bg-white rounded-xl p-3 border border-[#E9EDF3]"><div class="w-7 h-7 rounded-lg bg-[#EEF2F8] mb-2"></div><div class="h-2 bg-[#0E1F38]/20 rounded-full w-12"></div><div class="h-3 bg-[#0E1F38] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#E9EDF3]"><div class="w-7 h-7 rounded-lg bg-[#EEF2F8] mb-2"></div><div class="h-2 bg-[#0E1F38]/20 rounded-full w-12"></div><div class="h-3 bg-[#0E1F38] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#E9EDF3]"><div class="w-7 h-7 rounded-lg bg-[#F2E5C7] mb-2"></div><div class="h-2 bg-[#0E1F38]/20 rounded-full w-12"></div><div class="h-3 bg-[#C99A3D] rounded mt-1.5 w-10"></div></div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-[#E9EDF3] flex-1">
+            <div class="flex justify-between items-center mb-3"><div class="h-3 w-32 bg-[#0E1F38]/30 rounded-full"></div><div class="px-3 py-1 rounded-full text-[10px] font-bold" style="background: #C99A3D; color: #fff">FUNIL</div></div>
+            <div class="space-y-1.5">
+              <div class="h-5 rounded-md" style="width: 100%; background: linear-gradient(90deg, #1B3A6B, #3A5A8C)"></div>
+              <div class="h-5 rounded-md" style="width: 78%; background: linear-gradient(90deg, #1B3A6B, #3A5A8C)"></div>
+              <div class="h-5 rounded-md" style="width: 52%; background: linear-gradient(90deg, #C99A3D, #E0B85F)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold tracking-widest uppercase" style="color: #C99A3D">Variante 02 · Atual</div>
+          <div class="flex gap-1">
+            <span class="palette-swatch" style="background:#0F2342"></span>
+            <span class="palette-swatch" style="background:#1B3A6B"></span>
+            <span class="palette-swatch" style="background:#3A5A8C"></span>
+            <span class="palette-swatch" style="background:#F4F6F9"></span>
+            <span class="palette-swatch" style="background:#C99A3D"></span>
+          </div>
+        </div>
+        <h3 class="h-display text-2xl font-bold mb-2">Navy Institucional</h3>
+        <p class="text-slate-300 text-sm leading-relaxed mb-4">Mantém a identidade Navy escolhida (sua decisão atual) mas aplica a estrutura Starbucks: pills, hierarquia clara, dourado como accent institucional. Aposta segura e formal — herança política sólida.</p>
+        <div class="flex flex-wrap gap-1.5 text-[0.7rem]">
+          <span class="px-2 py-0.5 rounded-full bg-[#1B3A6B]/40 text-[#B6C4DC]">Navy + Gold</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Estrutura Starbucks</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Coerência com tema atual</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- V3 Slate Sofisticado -->
+    <a href="./v3-slate-sofisticado.html" class="card-link block bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      <div class="preview-frame" style="background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);">
+        <div class="absolute inset-0 p-6 flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-lg grid place-items-center text-white font-bold" style="background: linear-gradient(135deg, #0F172A, #334155)">M</div>
+            <div class="flex-1"><div class="h-2 w-24 bg-[#0F172A]/20 rounded-full"></div><div class="h-2 w-16 bg-[#0F172A]/10 rounded-full mt-1.5"></div></div>
+            <div class="px-3 py-2 rounded-lg text-white text-xs font-semibold" style="background: #0F172A">+ Novo</div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="bg-white rounded-xl p-3 border border-[#E2E8F0]"><div class="w-7 h-7 rounded-md bg-[#F1F5F9] mb-2"></div><div class="h-2 bg-[#0F172A]/20 rounded-full w-12"></div><div class="h-3 bg-[#0F172A] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#E2E8F0]"><div class="w-7 h-7 rounded-md bg-[#E0F2FE] mb-2"></div><div class="h-2 bg-[#0F172A]/20 rounded-full w-12"></div><div class="h-3 bg-[#0EA5E9] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#E2E8F0]"><div class="w-7 h-7 rounded-md bg-[#FFFBEB] mb-2"></div><div class="h-2 bg-[#0F172A]/20 rounded-full w-12"></div><div class="h-3 bg-[#F59E0B] rounded mt-1.5 w-10"></div></div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-[#E2E8F0] flex-1">
+            <div class="flex justify-between items-center mb-3"><div class="h-3 w-32 bg-[#0F172A]/30 rounded-full"></div><div class="px-3 py-1 rounded-md text-[10px] font-bold" style="background: #F1F5F9; color: #0F172A">FUNIL</div></div>
+            <div class="space-y-1.5">
+              <div class="h-5 rounded-md" style="width: 100%; background: linear-gradient(90deg, #0F172A, #334155)"></div>
+              <div class="h-5 rounded-md" style="width: 78%; background: linear-gradient(90deg, #334155, #475569)"></div>
+              <div class="h-5 rounded-md" style="width: 52%; background: linear-gradient(90deg, #0EA5E9, #38BDF8)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold tracking-widest uppercase" style="color: #38BDF8">Variante 03</div>
+          <div class="flex gap-1">
+            <span class="palette-swatch" style="background:#0F172A"></span>
+            <span class="palette-swatch" style="background:#334155"></span>
+            <span class="palette-swatch" style="background:#0EA5E9"></span>
+            <span class="palette-swatch" style="background:#F8FAFC"></span>
+            <span class="palette-swatch" style="background:#F59E0B"></span>
+          </div>
+        </div>
+        <h3 class="h-display text-2xl font-bold mb-2">Slate Sofisticado</h3>
+        <p class="text-slate-300 text-sm leading-relaxed mb-4">Visual SaaS contemporâneo (estilo Linear/Stripe). Slate como base, sky azul como accent vivo, amber pra destaques de liderança. Menos pill-heavy, mais squared/clean. Posicionamento moderno, atemporal.</p>
+        <div class="flex flex-wrap gap-1.5 text-[0.7rem]">
+          <span class="px-2 py-0.5 rounded-full bg-[#0EA5E9]/20 text-[#7DD3FC]">SaaS contemporâneo</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Sky accent</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Atemporal</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- V4 Burgundy Institucional -->
+    <a href="./v4-burgundy-institucional.html" class="card-link block bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      <div class="preview-frame" style="background: linear-gradient(135deg, #FAF6F0 0%, #F2EBDB 100%);">
+        <div class="absolute inset-0 p-6 flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-xl grid place-items-center text-white font-bold relative" style="background: linear-gradient(135deg, #7B1E2E, #561019)">M<span class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full" style="background:#D4A446; border: 2px solid #FAF6F0"></span></div>
+            <div class="flex-1"><div class="h-2 w-24 bg-[#2C1518]/20 rounded-full"></div><div class="h-2 w-16 bg-[#2C1518]/10 rounded-full mt-1.5"></div></div>
+            <div class="px-4 py-2 rounded-full text-white text-xs font-semibold" style="background: linear-gradient(135deg, #7B1E2E, #561019)">+ Novo</div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <div class="bg-white rounded-xl p-3 border border-[#F2EBDB]"><div class="w-7 h-7 rounded-xl bg-[#FBF1F2] mb-2"></div><div class="h-2 bg-[#2C1518]/20 rounded-full w-12"></div><div class="h-3 bg-[#7B1E2E] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#F2EBDB]"><div class="w-7 h-7 rounded-xl bg-[#FBF1F2] mb-2"></div><div class="h-2 bg-[#2C1518]/20 rounded-full w-12"></div><div class="h-3 bg-[#7B1E2E] rounded mt-1.5 w-10"></div></div>
+            <div class="bg-white rounded-xl p-3 border border-[#F2EBDB]"><div class="w-7 h-7 rounded-xl bg-[#FBF7EC] mb-2"></div><div class="h-2 bg-[#2C1518]/20 rounded-full w-12"></div><div class="h-3 bg-[#D4A446] rounded mt-1.5 w-10"></div></div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-[#F2EBDB] flex-1">
+            <div class="flex justify-between items-center mb-3"><div class="h-3 w-32 bg-[#2C1518]/30 rounded-full"></div><div class="px-3 py-1 rounded-full text-[10px] font-bold" style="background: #FBF7EC; color: #B88928">FUNIL</div></div>
+            <div class="space-y-1.5">
+              <div class="h-5 rounded-md" style="width: 100%; background: linear-gradient(90deg, #7B1E2E, #A8334A)"></div>
+              <div class="h-5 rounded-md" style="width: 78%; background: linear-gradient(90deg, #7B1E2E, #A8334A)"></div>
+              <div class="h-5 rounded-md" style="width: 52%; background: linear-gradient(90deg, #D4A446, #E5C46C)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold tracking-widest uppercase" style="color: #D4A446">Variante 04</div>
+          <div class="flex gap-1">
+            <span class="palette-swatch" style="background:#561019"></span>
+            <span class="palette-swatch" style="background:#7B1E2E"></span>
+            <span class="palette-swatch" style="background:#A8334A"></span>
+            <span class="palette-swatch" style="background:#FAF6F0"></span>
+            <span class="palette-swatch" style="background:#D4A446"></span>
+          </div>
+        </div>
+        <h3 class="h-display text-2xl font-bold mb-2">Burgundy Institucional</h3>
+        <p class="text-slate-300 text-sm leading-relaxed mb-4">Vinho profundo + dourado warm + canvas creme. Identidade clássica refinada, calor humano e tradição política. Selo dourado em métricas-chave. Diferencial visual forte — não se confunde com nenhum CRM corporativo padrão.</p>
+        <div class="flex flex-wrap gap-1.5 text-[0.7rem]">
+          <span class="px-2 py-0.5 rounded-full bg-[#7B1E2E]/30 text-[#E5B6BC]">Vinho + Dourado</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Warm canvas</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Identidade única</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Variação adicional: V5 — Caixa sem rolagem -->
+  <div class="mt-12 bg-gradient-to-br from-amber-500/10 to-rose-500/10 border border-amber-500/20 rounded-2xl p-6 lg:p-8">
+    <div class="flex flex-col md:flex-row gap-6 items-center">
+      <div class="flex-1">
+        <div class="text-xs font-bold tracking-widest uppercase mb-2 text-amber-400">Variação adicional</div>
+        <h2 class="h-display text-2xl font-bold mb-2">V5 — Caixa sem rolagem (subabas verticais)</h2>
+        <p class="text-slate-300 text-sm leading-relaxed mb-4">
+          Alternativa de layout pra Caixa do Contato: em vez das 9 subabas em fila horizontal (que rola lateralmente), elas viram <strong class="text-white">menu vertical</strong> dentro do próprio modal — todas visíveis ao mesmo tempo, sem rolagem, posições fixas. Aplicada na paleta Navy.
+        </p>
+        <div class="flex flex-wrap gap-1.5 text-[0.7rem]">
+          <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">Sem scroll horizontal</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">9 subabas visíveis</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Layout 2 colunas no modal</span>
+          <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300">Memória muscular</span>
+        </div>
+      </div>
+      <a href="./v5-caixa-tabs-verticais.html" class="btn-link shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white text-ink-900 font-semibold text-sm hover:bg-amber-100 transition-colors" style="color:#0F172A">
+        Abrir V5
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Como avaliar -->
+  <div class="mt-12 bg-white/5 border border-white/10 rounded-2xl p-6 lg:p-8">
+    <h2 class="h-display text-2xl font-bold mb-4">Como avaliar cada versão</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-300">
+      <div>
+        <div class="text-xs font-bold tracking-widest text-slate-400 uppercase mb-2">1. Dashboard</div>
+        <p class="text-sm leading-relaxed">Veja se a hierarquia entre os 4 stat cards e os widgets editáveis ficou clara. Os contrastes (fundo / card / borda / texto) batem o que você espera de um produto profissional?</p>
+      </div>
+      <div>
+        <div class="text-xs font-bold tracking-widest text-slate-400 uppercase mb-2">2. Contatos</div>
+        <p class="text-sm leading-relaxed">Cards de contato em grid: identidade visual coerente? Filtros chips legíveis? Os botões de ação (importar/exportar/etiquetas/novo) ficam organizados sem competir entre si?</p>
+      </div>
+      <div>
+        <div class="text-xs font-bold tracking-widest text-slate-400 uppercase mb-2">3. Detalhes (página)</div>
+        <p class="text-sm leading-relaxed">Página dedicada — alternativa ao modal. Layout 2 colunas: forma + sticky lateral (Status / Articulador / Timeline). Ideal pra trabalho profundo no contato.</p>
+      </div>
+      <div>
+        <div class="text-xs font-bold tracking-widest text-slate-400 uppercase mb-2">4. Caixa (modal)</div>
+        <p class="text-sm leading-relaxed">Dialog que abre por cima da tela — mantém o padrão atual. Toggle <em>Editar/Novo</em> no topo, subabas em <strong class="text-white">fileira única</strong>, scroll interno e ações fixas no rodapé.</p>
+      </div>
+    </div>
+
+    <div class="mt-6 pt-6 border-t border-white/10">
+      <div class="text-xs font-bold tracking-widest text-slate-400 uppercase mb-2">Problemas atacados em todas as 4 versões</div>
+      <ul class="text-sm text-slate-300 space-y-1.5 grid grid-cols-1 md:grid-cols-2 gap-x-6">
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Subabas em fila única (scroll horizontal, sem flex-wrap quebrando)</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Larguras padronizadas: cards stat, cards contato, painéis lateral</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> "Observação" reintegrada visualmente às outras subabas</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Hierarquia tipográfica consistente (display/title/body/caption)</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Bordas, shadows e radius unificados em sistema de tokens</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Estados visuais (hover/focus/active) padronizados em inputs e botões</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Contraste melhor em texto secundário (acessibilidade WCAG AA)</li>
+        <li class="flex gap-2"><span class="text-emerald-400">✓</span> Generous spacing aplicado consistente em todas as telas</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Próximo passo -->
+  <div class="mt-12 text-center">
+    <p class="text-slate-400 text-sm mb-2">Após escolher uma versão</p>
+    <p class="text-slate-300 text-base">Aplicaremos a paleta vencedora ao Tailwind config + CSS tokens, atualizaremos os componentes shadcn/ui e refatoraremos as páginas Dashboard / Contacts / ContactDialog.</p>
+  </div>
+
+  <!-- Footer -->
+  <div class="mt-16 pt-8 border-t border-white/10 flex items-center justify-between text-xs text-slate-500">
+    <div>RAQ-MAND-EM048 · Maio 2026</div>
+    <div>Gerado por Claude Code · Mockups HTML interativos</div>
+  </div>
+
+</div>
+</body>
+</html>

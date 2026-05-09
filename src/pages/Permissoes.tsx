@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Loader2, Shield, RotateCcw, AlertTriangle } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { usePermissoesAll, useUpdatePermissao, useSeedPermissoes, type PermissaoPerfil } from '@/hooks/usePermissoesAdmin';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { ROLES, ROLE_LABELS, SECOES, SECAO_LABELS, type Role, type Secao } from '@/types/permissions';
@@ -73,46 +74,44 @@ export default function Permissoes() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Shield className="h-6 w-6 text-muted-foreground" />
-          <div>
-            <h1 className="text-2xl font-bold">Permissões</h1>
-            <p className="text-sm text-muted-foreground">
-              Configure as permissões de acesso por cargo
-            </p>
-          </div>
-        </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Restaurar Padrão
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Restaurar permissões padrão?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Todas as permissões customizadas serão perdidas e substituídas pelos valores padrão.
-                Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => seedPermissoes.mutate()}
-                disabled={seedPermissoes.isPending}
-              >
-                {seedPermissoes.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                Restaurar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      <PageHeader
+        eyebrow="Sistema"
+        title="Permissões"
+        description="Configure as permissões de acesso por cargo."
+        icon={Shield}
+        iconVariant="warning"
+        actions={
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restaurar Padrão
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Restaurar permissões padrão?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Todas as permissões customizadas serão perdidas e substituídas pelos valores padrão.
+                  Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => seedPermissoes.mutate()}
+                  disabled={seedPermissoes.isPending}
+                >
+                  {seedPermissoes.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : null}
+                  Restaurar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        }
+      />
 
       {isImpersonating && (
         <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">

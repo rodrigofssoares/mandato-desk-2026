@@ -1,23 +1,25 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SlidersHorizontal } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { SlidersHorizontal, Wand2 } from 'lucide-react';
+import { PageHeader, PanelHeader } from '@/components/ui-system';
 import { CustomFieldsManager } from './CustomFieldsManager';
 
 export function GeneralTab() {
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <SlidersHorizontal className="h-6 w-6 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Geral</h1>
-      </div>
+      <PageHeader
+        eyebrow="Configuração"
+        title="Geral"
+        icon={SlidersHorizontal}
+        iconVariant="primary"
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Campos Personalizados</CardTitle>
-          <CardDescription>
-            Adicione campos extras para classificar seus contatos com informações específicas do seu
-            mandato.
-          </CardDescription>
-        </CardHeader>
+        <PanelHeader
+          title="Campos Personalizados"
+          description="Adicione campos extras pra classificar seus contatos com informações específicas do seu mandato."
+          icon={Wand2}
+          iconVariant="accent"
+        />
         <CardContent>
           <CustomFieldsManager />
         </CardContent>

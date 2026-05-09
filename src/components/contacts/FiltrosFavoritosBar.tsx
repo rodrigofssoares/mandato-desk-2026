@@ -85,7 +85,7 @@ export function FiltrosFavoritosBar({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 text-amber-600 hover:text-amber-700 hover:border-amber-300"
+              className="h-9 text-warning hover:text-warning hover:border-warning/50"
             >
               <Star className="h-4 w-4 mr-1" />
               Salvar filtro
@@ -119,7 +119,7 @@ export function FiltrosFavoritosBar({
             <Button variant="outline" size="sm" className="h-9">
               <Bookmark className="h-4 w-4 mr-1" />
               Favoritos
-              <Badge className="bg-amber-100 text-amber-800 text-[10px] px-1.5 ml-1.5 border-0">
+              <Badge className="bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft text-[10px] px-1.5 ml-1.5 border-0">
                 {favoritos.length}
               </Badge>
               <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
@@ -140,7 +140,7 @@ export function FiltrosFavoritosBar({
                     toast.success(`Filtro "${fav.nome}" aplicado`);
                   }}
                 >
-                  <Star className="h-3.5 w-3.5 text-amber-500 shrink-0 fill-amber-500" />
+                  <Star className="h-3.5 w-3.5 text-warning shrink-0 fill-warning" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{fav.nome}</p>
                     <p className="text-[11px] text-muted-foreground truncate">

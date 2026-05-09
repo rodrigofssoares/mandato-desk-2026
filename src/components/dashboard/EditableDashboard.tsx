@@ -276,6 +276,10 @@ export function EditableDashboard({ widgets, canEdit }: EditableDashboardProps) 
         onLayoutChange={handleLayoutChange}
         compactType="vertical"
         preventCollision={false}
+        // Handles de resize em todos os lados e cantos. Default do RGL é só
+        // 'se' (canto inferior direito), o que impede expandir pra esquerda
+        // ou pra cima quando o widget já tá colado na borda direita do grid.
+        resizeHandles={['s', 'w', 'e', 'n', 'sw', 'nw', 'se', 'ne']}
       >
         {visibleIds.map((id) => (
           <div
@@ -315,7 +319,7 @@ export function EditableDashboard({ widgets, canEdit }: EditableDashboardProps) 
       </ResponsiveGridLayout>
 
       {hasDraft && !editing && (
-        <div className="rounded-md border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
+        <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-warning-soft-foreground">
           Você tem alterações não salvas no layout. Entre em modo de edição
           para salvar ou descartar.
         </div>

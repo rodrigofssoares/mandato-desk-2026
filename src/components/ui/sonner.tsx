@@ -13,12 +13,13 @@ import { Toaster as Sonner } from "sonner"
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "navy" } = useTheme()
-  const sonnerTheme = theme === 'navy' ? 'light' : 'dark'
+  // Ambos os temas (navy-institucional e burgundy-institucional) são light.
+  // useTheme mantido importado caso futuro tema dark precise reativar a lógica.
+  useTheme()
 
   return (
     <Sonner
-      theme={sonnerTheme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
       icons={{
         success: <CircleCheck className="h-4 w-4" />,

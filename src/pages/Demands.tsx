@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search } from 'lucide-react';
+import { Loader2, Plus, Search, MessageSquare } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useDemands } from '@/hooks/useDemands';
 import { usePermissions } from '@/hooks/usePermissions';
 import { DemandKanban } from '@/components/demands/DemandKanban';
@@ -40,18 +41,24 @@ export default function Demands() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Demandas</h1>
-        <div className="flex items-center gap-2">
-          {can.exportData() && <DemandsExportMenu />}
-          {can.createDemand() && (
-            <Button onClick={handleNewDemand}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Demanda
-            </Button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Demandas"
+        description="Solicitações registradas pelos contatos da sua base."
+        icon={MessageSquare}
+        iconVariant="info"
+        actions={
+          <>
+            {can.exportData() && <DemandsExportMenu />}
+            {can.createDemand() && (
+              <Button onClick={handleNewDemand}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Demanda
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">

@@ -5,10 +5,10 @@ import { useGrowthMetrics } from '@/hooks/useDashboard';
 
 function TrendIndicator({ current, previous }: { current: number; previous: number }) {
   if (current > previous) {
-    return <TrendingUp className="h-4 w-4 text-green-500" />;
+    return <TrendingUp className="h-4 w-4 text-success" />;
   }
   if (current < previous) {
-    return <TrendingDown className="h-4 w-4 text-red-500" />;
+    return <TrendingDown className="h-4 w-4 text-danger" />;
   }
   return <Minus className="h-4 w-4 text-muted-foreground" />;
 }

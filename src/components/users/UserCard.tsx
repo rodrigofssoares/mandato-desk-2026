@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { StatusChip, type StatusChipVariant } from '@/components/ui-system';
 import { Avatar } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -24,18 +24,18 @@ interface UserCardProps {
   user: UserProfile;
 }
 
-const statusConfig = {
-  ATIVO: { label: 'Ativo', variant: 'default' as const, className: 'bg-green-100 text-green-800 hover:bg-green-100' },
-  PENDENTE: { label: 'Pendente', variant: 'default' as const, className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' },
-  INATIVO: { label: 'Inativo', variant: 'default' as const, className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+const statusConfig: Record<string, { label: string; chipVariant: StatusChipVariant }> = {
+  ATIVO:    { label: 'Ativo',    chipVariant: 'success' },
+  PENDENTE: { label: 'Pendente', chipVariant: 'warning' },
+  INATIVO:  { label: 'Inativo',  chipVariant: 'danger' },
 };
 
-const roleColorMap: Record<Role, string> = {
-  admin: 'bg-purple-100 text-purple-800',
-  proprietario: 'bg-blue-100 text-blue-800',
-  assessor: 'bg-cyan-100 text-cyan-800',
-  assistente: 'bg-gray-100 text-gray-700',
-  estagiario: 'bg-orange-100 text-orange-800',
+const roleChipVariant: Record<Role, StatusChipVariant> = {
+  admin:        'primary',
+  proprietario: 'info',
+  assessor:     'accent',
+  assistente:   'neutral',
+  estagiario:   'warning',
 };
 
 function getInitials(name: string): string {
@@ -82,12 +82,12 @@ export function UserCard({ user }: UserCardProps) {
                 </p>
               )}
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="default" className={roleColorMap[user.role] ?? 'bg-gray-100 text-gray-700'}>
+                <StatusChip variant={roleChipVariant[user.role] ?? 'neutral'}>
                   {ROLE_LABELS[user.role] ?? user.role}
-                </Badge>
-                <Badge variant={status.variant} className={status.className}>
+                </StatusChip>
+                <StatusChip variant={status.chipVariant}>
                   {status.label}
-                </Badge>
+                </StatusChip>
               </div>
             </div>
 

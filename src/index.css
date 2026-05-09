@@ -3,49 +3,59 @@
 @tailwind utilities;
 
 @layer base {
-  :root, .navy {
-    /* shadcn HSL tokens — Navy (Light) */
-    --background: 213 25% 97%;
-    --foreground: 215 50% 8%;
+  /*
+   * Sistema com 2 temas claros disponíveis:
+   *   .burgundy-institucional — DEFAULT; vinho + dourado warm
+   *   .navy-institucional      — alternativa; azul profundo + dourado
+   *
+   * O :root herda de .burgundy-institucional pra que o tema default seja
+   * aplicado mesmo antes do JS rodar (e enquanto next-themes resolve o tema
+   * preferido do usuário). Removidos: navy (antigo), midnight, obsidian.
+   */
+
+  :root, .burgundy-institucional {
+    /* shadcn HSL tokens — Burgundy Institucional (Light) — DEFAULT */
+    --background: 36 50% 96%;        /* #FAF6F0 — warm canvas */
+    --foreground: 353 35% 13%;       /* #2C1518 */
     --card: 0 0% 100%;
-    --card-foreground: 215 50% 8%;
+    --card-foreground: 353 35% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 50% 8%;
-    --primary: 213 65% 30%;
+    --popover-foreground: 353 35% 13%;
+    --primary: 351 61% 30%;          /* #7B1E2E — vinho */
     --primary-foreground: 0 0% 100%;
-    --secondary: 213 25% 95%;
-    --secondary-foreground: 215 50% 8%;
-    --muted: 213 25% 95%;
-    --muted-foreground: 215 16% 53%;
-    --accent: 213 25% 95%;
-    --accent-foreground: 215 50% 8%;
-    --destructive: 0 84% 60%;
+    --secondary: 36 35% 90%;         /* #F2EBDB */
+    --secondary-foreground: 353 35% 13%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%; /* #7C5F62 */
+    --accent: 40 62% 55%;            /* #D4A446 — gold warm */
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 213 25% 87%;
-    --input: 213 25% 87%;
-    --ring: 213 65% 30%;
-    --radius: 0.75rem;
+    --border: 36 35% 84%;            /* #E5DAC8 */
+    --input: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
 
-    /* Sidebar Navy */
-    --sidebar-background: 210 20% 98%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 213 65% 30%;
+    /* Sidebar Burgundy */
+    --sidebar-background: 40 47% 98%;          /* #FCFAF5 */
+    --sidebar-foreground: 354 12% 43%;
+    --sidebar-primary: 351 61% 30%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 213 25% 95%;
-    --sidebar-accent-foreground: 215 25% 27%;
-    --sidebar-border: 213 25% 91%;
-    --sidebar-ring: 213 65% 30%;
+    --sidebar-accent: 36 35% 90%;
+    --sidebar-accent-foreground: 353 35% 13%;
+    --sidebar-border: 36 35% 84%;
+    --sidebar-ring: 351 61% 30%;
 
-    /* OKLCH Design System tokens — Navy */
-    --color-bg: oklch(97% 0.006 220);
-    --color-surface: oklch(99% 0.002 220);
-    --color-muted: oklch(95% 0.008 220);
-    --color-border: oklch(90% 0.012 220);
-    --color-border-subtle: oklch(93% 0.008 220);
-    --color-text-primary: oklch(15% 0.02 220);
-    --color-text-secondary: oklch(40% 0.02 220);
-    --color-text-muted: oklch(55% 0.02 220);
-    --color-text-subtle: oklch(62% 0.02 220);
+    /* OKLCH Design tokens — Burgundy */
+    --color-bg: oklch(96% 0.012 75);
+    --color-surface: oklch(99% 0.005 75);
+    --color-muted: oklch(91% 0.018 75);
+    --color-border: oklch(85% 0.025 70);
+    --color-border-subtle: oklch(89% 0.018 70);
+    --color-text-primary: oklch(20% 0.04 20);
+    --color-text-secondary: oklch(40% 0.03 20);
+    --color-text-muted: oklch(55% 0.025 20);
+    --color-text-subtle: oklch(62% 0.022 20);
 
     /* Layout */
     --app-sidebar-width: 0px;
@@ -54,92 +64,93 @@
     --app-bottom-nav-height: 0px;
   }
 
-  .midnight {
-    /* shadcn HSL tokens — Midnight (Dark) */
-    --background: 228 60% 6%;
-    --foreground: 228 30% 96%;
-    --card: 228 40% 10%;
-    --card-foreground: 228 30% 96%;
-    --popover: 228 40% 10%;
-    --popover-foreground: 228 30% 96%;
-    --primary: 226 100% 69%;
+  .navy-institucional {
+    /* shadcn HSL tokens — Navy Institucional (Light) — alternativa */
+    --background: 220 27% 97%;       /* #F4F6F9 */
+    --foreground: 216 60% 14%;       /* #0E1F38 */
+    --card: 0 0% 100%;
+    --card-foreground: 216 60% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 60% 14%;
+    --primary: 214 60% 26%;          /* #1B3A6B */
     --primary-foreground: 0 0% 100%;
-    --secondary: 228 40% 15%;
-    --secondary-foreground: 228 30% 96%;
-    --muted: 228 40% 15%;
-    --muted-foreground: 228 15% 54%;
-    --accent: 228 40% 15%;
-    --accent-foreground: 228 30% 96%;
-    --destructive: 0 86% 71%;
+    --secondary: 217 25% 95%;        /* #E9EDF3 */
+    --secondary-foreground: 216 60% 14%;
+    --muted: 217 25% 95%;
+    --muted-foreground: 218 18% 40%; /* #54607A */
+    --accent: 38 56% 52%;            /* #C99A3D — gold institucional */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 65% 45%;        /* #B43C2E */
     --destructive-foreground: 0 0% 100%;
-    --border: 228 40% 15%;
-    --input: 228 40% 15%;
-    --ring: 226 100% 69%;
+    --border: 218 24% 89%;           /* #DCE2EC */
+    --input: 218 24% 89%;
+    --ring: 214 60% 26%;
+    --radius: 0.875rem;
 
-    /* Sidebar Midnight */
-    --sidebar-background: 228 55% 5%;
-    --sidebar-foreground: 228 30% 96%;
-    --sidebar-primary: 226 100% 69%;
+    /* Sidebar Navy */
+    --sidebar-background: 220 50% 98%;          /* #F8FAFD */
+    --sidebar-foreground: 218 18% 40%;
+    --sidebar-primary: 214 60% 26%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 228 40% 13%;
-    --sidebar-accent-foreground: 228 30% 96%;
-    --sidebar-border: 228 40% 13%;
-    --sidebar-ring: 226 100% 69%;
+    --sidebar-accent: 217 25% 95%;
+    --sidebar-accent-foreground: 216 60% 14%;
+    --sidebar-border: 218 24% 89%;
+    --sidebar-ring: 214 60% 26%;
 
-    /* OKLCH Design System tokens — Midnight */
-    --color-bg: oklch(11% 0.03 250);
-    --color-surface: oklch(15% 0.025 250);
-    --color-muted: oklch(20% 0.02 250);
-    --color-border: oklch(24% 0.015 250);
-    --color-border-subtle: oklch(20% 0.012 250 / 0.6);
-    --color-text-primary: oklch(97% 0.005 250);
-    --color-text-secondary: oklch(75% 0.015 250);
-    --color-text-muted: oklch(60% 0.02 250);
-    --color-text-subtle: oklch(50% 0.02 250);
+    /* OKLCH Design tokens — Navy */
+    --color-bg: oklch(97% 0.008 220);
+    --color-surface: oklch(99% 0.004 220);
+    --color-muted: oklch(95% 0.012 220);
+    --color-border: oklch(89% 0.018 220);
+    --color-border-subtle: oklch(93% 0.012 220);
+    --color-text-primary: oklch(20% 0.04 230);
+    --color-text-secondary: oklch(40% 0.025 220);
+    --color-text-muted: oklch(55% 0.02 220);
+    --color-text-subtle: oklch(62% 0.018 220);
   }
 
-  .obsidian {
-    /* shadcn HSL tokens — Obsidian (Dark) */
-    --background: 220 50% 6%;
-    --foreground: 222 30% 95%;
-    --card: 222 35% 10%;
-    --card-foreground: 222 30% 95%;
-    --popover: 222 35% 10%;
-    --popover-foreground: 222 30% 95%;
-    --primary: 171 65% 50%;
-    --primary-foreground: 220 50% 6%;
-    --secondary: 222 35% 15%;
-    --secondary-foreground: 222 30% 95%;
-    --muted: 222 35% 15%;
-    --muted-foreground: 222 15% 49%;
-    --accent: 222 35% 15%;
-    --accent-foreground: 222 30% 95%;
-    --destructive: 0 86% 71%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 222 35% 17%;
-    --input: 222 35% 17%;
-    --ring: 171 65% 50%;
+  /*
+   * Tokens semânticos — iguais nos 2 temas.
+   *
+   * Use em qualquer status visual ao invés de cores Tailwind hardcoded
+   * (`bg-emerald-500/10`, `text-amber-600`, etc):
+   *   - success: ações concluídas, deltas positivos, "ativo", "ok"
+   *   - warning: atenção, status médio, alertas não-críticos
+   *   - info:    informação neutra, links, destaque sem peso
+   *   - danger:  destrutivo, deltas negativos, erros (alias semântico
+   *              do destructive do shadcn — destructive permanece pra
+   *              componentes que esperam ele)
+   *
+   * Cada um tem 4 variantes:
+   *   --foo               — fill principal (forte, alta saturação)
+   *   --foo-foreground    — texto sobre o fill
+   *   --foo-soft          — bg sutil (~tint pra chips, badges)
+   *   --foo-soft-foreground — texto sobre o soft (cor escura legível)
+   */
+  :root {
+    /* Success (verde) */
+    --success: 142 71% 45%;             /* #22c55e */
+    --success-foreground: 0 0% 100%;
+    --success-soft: 142 76% 95%;        /* #dcfce7 */
+    --success-soft-foreground: 142 72% 26%;  /* #14532d */
 
-    /* Sidebar Obsidian */
-    --sidebar-background: 220 50% 5%;
-    --sidebar-foreground: 222 30% 95%;
-    --sidebar-primary: 171 65% 50%;
-    --sidebar-primary-foreground: 220 50% 6%;
-    --sidebar-accent: 222 35% 13%;
-    --sidebar-accent-foreground: 222 30% 95%;
-    --sidebar-border: 222 35% 13%;
-    --sidebar-ring: 171 65% 50%;
+    /* Warning (amber) */
+    --warning: 38 92% 50%;              /* #f59e0b */
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 48 96% 89%;         /* #fef3c7 */
+    --warning-soft-foreground: 26 83% 30%;   /* #92400e */
 
-    /* OKLCH Obsidian */
-    --color-bg: oklch(10% 0.025 240);
-    --color-surface: oklch(14% 0.02 240);
-    --color-muted: oklch(19% 0.018 240);
-    --color-border: oklch(23% 0.014 240);
-    --color-border-subtle: oklch(19% 0.012 240 / 0.6);
-    --color-text-primary: oklch(96% 0.005 240);
-    --color-text-secondary: oklch(72% 0.015 240);
-    --color-text-muted: oklch(58% 0.02 240);
-    --color-text-subtle: oklch(48% 0.02 240);
+    /* Info (sky) */
+    --info: 199 89% 48%;                /* #0ea5e9 */
+    --info-foreground: 0 0% 100%;
+    --info-soft: 204 94% 94%;           /* #e0f2fe */
+    --info-soft-foreground: 200 98% 28%;     /* #075985 */
+
+    /* Danger */
+    --danger: 0 73% 51%;                /* #dc2626 */
+    --danger-foreground: 0 0% 100%;
+    --danger-soft: 0 86% 97%;           /* #fef2f2 */
+    --danger-soft-foreground: 0 70% 35%;     /* #991b1b */
   }
 
   * {
@@ -158,21 +169,16 @@
     font-family: var(--font-display, "Space Grotesk", sans-serif);
   }
 
-  /* Glassmorphism */
+  /* Glassmorphism — versão clara unificada (ambos temas são light) */
   .glass {
-    background: oklch(99% 0.002 220 / 0.8);
+    background: hsl(var(--card) / 0.85);
     backdrop-filter: blur(10px);
-    border: 1px solid oklch(90% 0.012 220 / 0.5);
-  }
-  :is(.midnight, .obsidian) .glass {
-    background: oklch(15% 0.02 250 / 0.75);
-    backdrop-filter: blur(12px);
-    border: 1px solid oklch(100% 0 0 / 0.05);
+    border: 1px solid hsl(var(--border) / 0.6);
   }
 
   /* Background dots pattern */
   .bg-dots {
-    background-image: radial-gradient(circle, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+    background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.18) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -185,52 +191,32 @@
     background: transparent;
   }
   .scrollbar-custom::-webkit-scrollbar-thumb {
-    background: rgb(148, 163, 184, 0.3);
+    background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 4px;
   }
   .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background: rgb(148, 163, 184, 0.5);
+    background: hsl(var(--muted-foreground) / 0.5);
   }
 
   /* Focus ring */
   .focus-visible-ring:focus-visible {
-    outline: 2px solid #2563eb;
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-  }
-  :is(.midnight, .obsidian) .focus-visible-ring:focus-visible {
-    outline-color: #60a5fa;
   }
 
   .focus-visible-high:focus-visible {
-    outline: 3px solid #1d4ed8;
+    outline: 3px solid hsl(var(--ring));
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 0 0 4px hsl(var(--ring) / 0.3);
   }
 
   /* Content visibility (performance) */
-  .cv-auto {
-    content-visibility: auto;
-  }
-  .cv-row-sm {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 40px;
-  }
-  .cv-row-md {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 60px;
-  }
-  .cv-row-lg {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 80px;
-  }
-  .cv-card {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 120px;
-  }
-  .cv-card-lg {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 200px;
-  }
+  .cv-auto { content-visibility: auto; }
+  .cv-row-sm { content-visibility: auto; contain-intrinsic-size: auto 40px; }
+  .cv-row-md { content-visibility: auto; contain-intrinsic-size: auto 60px; }
+  .cv-row-lg { content-visibility: auto; contain-intrinsic-size: auto 80px; }
+  .cv-card { content-visibility: auto; contain-intrinsic-size: auto 120px; }
+  .cv-card-lg { content-visibility: auto; contain-intrinsic-size: auto 200px; }
 }
 
 /* Reduced motion */
@@ -282,16 +268,64 @@
   opacity: 0.8;
 }
 
-/* Handle de resize mais visível em modo edição */
+/* ── Handles de resize em todos os lados/cantos (modo edição) ──────────
+   O default do react-resizable só estiliza o handle 'se'. Como agora
+   habilitamos 8 handles em EditableDashboard, precisamos posicionar e dar
+   feedback visual a cada um. */
+
 .layout.is-editing .react-resizable-handle {
   background-image: none;
-  width: 18px;
-  height: 18px;
-  right: 4px;
-  bottom: 4px;
+  position: absolute;
+  z-index: 5;
 }
 
-.layout.is-editing .react-resizable-handle::after {
+/* Faixa de hover comum nos 8 handles — fica visível só no hover */
+.layout.is-editing .react-resizable-handle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--primary) / 0.18);
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.layout.is-editing .react-resizable-handle:hover::before {
+  opacity: 1;
+}
+
+/* ─── 4 cantos ───────────────────────────────────────────────────────── */
+.layout.is-editing .react-resizable-handle-se,
+.layout.is-editing .react-resizable-handle-sw,
+.layout.is-editing .react-resizable-handle-ne,
+.layout.is-editing .react-resizable-handle-nw {
+  width: 18px;
+  height: 18px;
+}
+
+.layout.is-editing .react-resizable-handle-se {
+  right: 4px;
+  bottom: 4px;
+  cursor: se-resize;
+}
+.layout.is-editing .react-resizable-handle-sw {
+  left: 4px;
+  bottom: 4px;
+  cursor: sw-resize;
+}
+.layout.is-editing .react-resizable-handle-ne {
+  right: 4px;
+  top: 4px;
+  cursor: ne-resize;
+}
+.layout.is-editing .react-resizable-handle-nw {
+  left: 4px;
+  top: 4px;
+  cursor: nw-resize;
+}
+
+/* Indicador "L" nos cantos (linhas grossas) */
+.layout.is-editing .react-resizable-handle-se::after {
   content: "";
   position: absolute;
   right: 2px;
@@ -301,4 +335,98 @@
   border-right: 2px solid hsl(var(--primary));
   border-bottom: 2px solid hsl(var(--primary));
   border-bottom-right-radius: 2px;
+}
+.layout.is-editing .react-resizable-handle-sw::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid hsl(var(--primary));
+  border-bottom: 2px solid hsl(var(--primary));
+  border-bottom-left-radius: 2px;
+}
+.layout.is-editing .react-resizable-handle-ne::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid hsl(var(--primary));
+  border-top: 2px solid hsl(var(--primary));
+  border-top-right-radius: 2px;
+}
+.layout.is-editing .react-resizable-handle-nw::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid hsl(var(--primary));
+  border-top: 2px solid hsl(var(--primary));
+  border-top-left-radius: 2px;
+}
+
+/* ─── 4 lados ────────────────────────────────────────────────────────── */
+/* Faixa horizontal (top/bottom) */
+.layout.is-editing .react-resizable-handle-n,
+.layout.is-editing .react-resizable-handle-s {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 8px;
+}
+.layout.is-editing .react-resizable-handle-n {
+  top: 0;
+  cursor: n-resize;
+}
+.layout.is-editing .react-resizable-handle-s {
+  bottom: 0;
+  cursor: s-resize;
+}
+/* Faixa vertical (left/right) */
+.layout.is-editing .react-resizable-handle-e,
+.layout.is-editing .react-resizable-handle-w {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 36px;
+}
+.layout.is-editing .react-resizable-handle-e {
+  right: 0;
+  cursor: e-resize;
+}
+.layout.is-editing .react-resizable-handle-w {
+  left: 0;
+  cursor: w-resize;
+}
+
+/* Pílula sutil no centro de cada lado pra indicar "arrastável" */
+.layout.is-editing .react-resizable-handle-n::after,
+.layout.is-editing .react-resizable-handle-s::after,
+.layout.is-editing .react-resizable-handle-e::after,
+.layout.is-editing .react-resizable-handle-w::after {
+  content: "";
+  position: absolute;
+  background: hsl(var(--primary) / 0.6);
+  border-radius: 9999px;
+}
+.layout.is-editing .react-resizable-handle-n::after,
+.layout.is-editing .react-resizable-handle-s::after {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 3px;
+}
+.layout.is-editing .react-resizable-handle-e::after,
+.layout.is-editing .react-resizable-handle-w::after {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 24px;
 }

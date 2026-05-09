@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ImpersonationProvider } from '@/context/ImpersonationContext';
 import { AuthHandler } from '@/components/auth/AuthHandler';
+import { ThemeSync } from '@/components/ThemeSync';
 import { Loader2 } from 'lucide-react';
 import { setActivityLogQueryClient } from '@/lib/activityLog';
 
@@ -27,6 +28,7 @@ import CamposCampanha from '@/pages/CamposCampanha';
 import Settings from '@/pages/Settings';
 import Board from '@/pages/Board';
 import Tarefas from '@/pages/Tarefas';
+import DesignSystem from '@/pages/DesignSystem';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -213,6 +215,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/design-system"
+          element={
+            <ProtectedRoute>
+              <DesignSystem />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
@@ -226,11 +236,12 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="navy"
-        themes={['navy', 'midnight', 'obsidian']}
+        defaultTheme="burgundy-institucional"
+        themes={['navy-institucional', 'burgundy-institucional']}
       >
         <BrowserRouter>
           <AuthProvider>
+            <ThemeSync />
             <ImpersonationProvider>
               <TooltipProvider>
                 <Toaster richColors position="top-right" />
