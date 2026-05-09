@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GripVertical, Plus, Trash2, Loader2, Check, X, Pencil, ListChecks } from 'lucide-react';
 import {
   useBoardStages,
@@ -38,7 +39,8 @@ import {
   type BoardStage,
 } from '@/hooks/useBoardStages';
 import { useBoardItemCounts } from '@/hooks/useBoardItems';
-import { STAGE_COLORS, nextStageColor, stageDotClass } from './stageColors';
+import { nextStageColor, stageColorStyle, STAGE_HEX_PRESETS } from './stageColors';
+import { ColorPicker } from '@/components/ui-system';
 import { StageChecklistEditor } from './StageChecklistEditor';
 
 interface Props {
@@ -222,7 +224,6 @@ function SortableStageRow({
 
   const [isEditing, setIsEditing] = useState(false);
   const [nome, setNome] = useState(stage.nome);
-  const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
   useEffect(() => {
     setNome(stage.nome);
@@ -263,30 +264,25 @@ function SortableStageRow({
         <GripVertical className="h-5 w-5" />
       </button>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setColorPickerOpen((v) => !v)}
-          className={`h-6 w-6 rounded-full border-2 border-border hover:scale-110 transition-transform ${stageDotClass(stage.cor)}`}
-          aria-label="Mudar cor"
-        />
-        {colorPickerOpen && (
-          <div className="absolute z-50 top-8 left-0 flex gap-1 rounded-md border bg-popover p-2 shadow-md">
-            {STAGE_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => {
-                  onSave({ cor: c });
-                  setColorPickerOpen(false);
-                }}
-                className={`h-6 w-6 rounded-full hover:ring-2 hover:ring-primary ${stageDotClass(c)}`}
-                aria-label={c}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="h-6 w-6 rounded-full border-2 border-border hover:scale-110 transition-transform shrink-0"
+            style={stageColorStyle(stage.cor)}
+            aria-label="Mudar cor"
+          />
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-72 p-3">
+          <ColorPicker
+            label="Cor do estágio"
+            value={stage.cor ?? '#94A3B8'}
+            onChange={(c) => onSave({ cor: c })}
+            presets={STAGE_HEX_PRESETS}
+            swatchSize="sm"
+          />
+        </PopoverContent>
+      </Popover>
 
       <div className="flex-1 min-w-0">
         {isEditing ? (

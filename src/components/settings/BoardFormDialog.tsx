@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import {
   useCreateBoard,
@@ -19,7 +20,8 @@ import {
   type Board,
 } from '@/hooks/useBoards';
 import { useCreateBoardStage } from '@/hooks/useBoardStages';
-import { STAGE_COLORS, nextStageColor, stageDotClass } from './stageColors';
+import { nextStageColor, stageColorStyle, STAGE_HEX_PRESETS } from './stageColors';
+import { ColorPicker } from '@/components/ui-system';
 
 interface Props {
   open: boolean;
@@ -39,8 +41,8 @@ export function BoardFormDialog({ open, onOpenChange, board }: Props) {
   const [descricao, setDescricao] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [stages, setStages] = useState<InitialStage[]>([
-    { nome: '', cor: STAGE_COLORS[0] },
-    { nome: '', cor: STAGE_COLORS[1] },
+    { nome: '', cor: STAGE_HEX_PRESETS[0] },
+    { nome: '', cor: STAGE_HEX_PRESETS[1] },
   ]);
 
   const createBoard = useCreateBoard();
@@ -60,8 +62,8 @@ export function BoardFormDialog({ open, onOpenChange, board }: Props) {
       setDescricao('');
       setIsDefault(false);
       setStages([
-        { nome: '', cor: STAGE_COLORS[0] },
-        { nome: '', cor: STAGE_COLORS[1] },
+        { nome: '', cor: STAGE_HEX_PRESETS[0] },
+        { nome: '', cor: STAGE_HEX_PRESETS[1] },
       ]);
     }
   }, [open, board]);
@@ -257,33 +259,27 @@ function ColorDot({
   onSelect: (c: string) => void;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <div className="relative">
-      <button
-        type="button"
-        aria-label="Escolher cor"
-        onClick={() => !disabled && setOpen((v) => !v)}
-        disabled={disabled}
-        className={`h-8 w-8 rounded-full border-2 border-border hover:scale-105 transition-transform disabled:opacity-50 ${stageDotClass(cor)}`}
-      />
-      {open && (
-        <div className="absolute z-50 top-10 left-0 flex gap-1 rounded-md border bg-popover p-2 shadow-md">
-          {STAGE_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => {
-                onSelect(c);
-                setOpen(false);
-              }}
-              className={`h-6 w-6 rounded-full ring-offset-2 hover:ring-2 hover:ring-primary ${stageDotClass(c)}`}
-              aria-label={c}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Escolher cor"
+          disabled={disabled}
+          className="h-8 w-8 rounded-full border-2 border-border hover:scale-105 transition-transform disabled:opacity-50 shrink-0"
+          style={stageColorStyle(cor)}
+        />
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-3">
+        <ColorPicker
+          label="Cor do estágio"
+          value={cor}
+          onChange={onSelect}
+          presets={STAGE_HEX_PRESETS}
+          disabled={disabled}
+          swatchSize="sm"
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

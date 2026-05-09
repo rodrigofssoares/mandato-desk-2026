@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useState } from 'react';
 import {
   PageHeader,
   PanelHeader,
@@ -23,6 +24,7 @@ import {
   SectionEyebrow,
   StatusChip,
   EmptyState,
+  ColorPicker,
   type IconBubbleVariant,
   type StatusChipVariant,
 } from '@/components/ui-system';
@@ -33,6 +35,8 @@ import {
  * todos os primitives disponíveis com exemplo de uso.
  */
 export default function DesignSystem() {
+  const [demoColor, setDemoColor] = useState('#7B1E2E');
+
   return (
     <div className="p-6 lg:p-8 space-y-10 max-w-6xl">
       <PageHeader
@@ -296,6 +300,46 @@ export default function DesignSystem() {
                 <Input placeholder="Buscar contatos..." className="pl-9" />
               </div>
             </PageHeader>
+          </CardContent>
+        </Card>
+      </Section>
+
+      {/* === ColorPicker === */}
+      <Section
+        eyebrow="Primitivo"
+        title="ColorPicker"
+        description="Seletor de cor com paleta sugerida do design system + roda de cores nativa pra qualquer hex. Em uso em Etiquetas, estágios de funil e qualquer campo de cor do app."
+        codeSample={`<ColorPicker
+  label="Cor da etiqueta"
+  value={color}
+  onChange={setColor}
+  // presets={STAGE_HEX_PRESETS}  // opcional — paleta customizada
+  // allowCustom={false}          // opcional — desabilita roda nativa
+/>`}
+      >
+        <Card>
+          <CardContent className="p-6 space-y-6">
+            <ColorPicker
+              label="Escolha uma cor"
+              value={demoColor}
+              onChange={setDemoColor}
+            />
+            <div className="flex items-center gap-3 pt-4 border-t border-border">
+              <span className="text-xs text-muted-foreground">Preview:</span>
+              <div
+                className="w-10 h-10 rounded-full border-2 border-border"
+                style={{ backgroundColor: demoColor }}
+              />
+              <code className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
+                {demoColor}
+              </code>
+              <span
+                className="ml-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                style={{ backgroundColor: demoColor + '20', color: demoColor }}
+              >
+                Aplicado em chip
+              </span>
+            </div>
           </CardContent>
         </Card>
       </Section>

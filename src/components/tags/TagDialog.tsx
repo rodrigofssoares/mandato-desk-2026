@@ -30,11 +30,7 @@ import { Loader2, Plus, X } from 'lucide-react';
 import { useCreateTag, useUpdateTag } from '@/hooks/useTags';
 import { useTagGroups, useCreateTagGroup, MAX_TAG_GROUPS } from '@/hooks/useTagGroups';
 import type { Tag } from '@/hooks/useTags';
-
-const PRESET_COLORS = [
-  '#EF4444', '#F97316', '#EAB308', '#22C55E',
-  '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280',
-];
+import { ColorPicker } from '@/components/ui-system';
 
 const NEW_GROUP_VALUE = '__new_group__';
 
@@ -245,37 +241,12 @@ export function TagDialog({ open, onOpenChange, tag, defaultGroupId }: TagDialog
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tag-color">Cor</Label>
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-full border-2 border-border shrink-0"
-                style={{ backgroundColor: watchColor }}
-              />
-              <Input
-                id="tag-color"
-                {...register('color')}
-                placeholder="#6B7280"
-                className="font-mono"
-              />
-            </div>
-            {errors.color && (
-              <p className="text-sm text-destructive">{errors.color.message}</p>
-            )}
-            <div className="flex gap-2 mt-2">
-              {PRESET_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                    watchColor === color ? 'border-foreground scale-110' : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setValue('color', color)}
-                />
-              ))}
-            </div>
-          </div>
+          <ColorPicker
+            label="Cor"
+            value={watchColor}
+            onChange={(c) => setValue('color', c, { shouldValidate: true })}
+            error={errors.color?.message}
+          />
 
           {isEdit && tag && (
             <div className="space-y-2">
