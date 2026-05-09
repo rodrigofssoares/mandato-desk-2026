@@ -265,28 +265,34 @@ export type Database = {
           created_at: string
           id: string
           mandate_name: string
+          meta_votos: number | null
           politician_name: string
           politician_photo_url: string | null
           primary_color: string
           updated_at: string
+          vote_goal: number | null
         }
         Insert: {
           created_at?: string
           id?: string
           mandate_name?: string
+          meta_votos?: number | null
           politician_name?: string
           politician_photo_url?: string | null
           primary_color?: string
           updated_at?: string
+          vote_goal?: number | null
         }
         Update: {
           created_at?: string
           id?: string
           mandate_name?: string
+          meta_votos?: number | null
           politician_name?: string
           politician_photo_url?: string | null
           primary_color?: string
           updated_at?: string
+          vote_goal?: number | null
         }
         Relationships: []
       }
@@ -681,6 +687,8 @@ export type Database = {
           pin_color: string | null
           profissao: string | null
           ranking: number | null
+          ranking_manual_legado: number | null
+          ranking_manual_override: boolean
           secao_eleitoral: string | null
           telefone: string | null
           tiktok: string | null
@@ -734,6 +742,8 @@ export type Database = {
           pin_color?: string | null
           profissao?: string | null
           ranking?: number | null
+          ranking_manual_legado?: number | null
+          ranking_manual_override?: boolean
           secao_eleitoral?: string | null
           telefone?: string | null
           tiktok?: string | null
@@ -787,6 +797,8 @@ export type Database = {
           pin_color?: string | null
           profissao?: string | null
           ranking?: number | null
+          ranking_manual_legado?: number | null
+          ranking_manual_override?: boolean
           secao_eleitoral?: string | null
           telefone?: string | null
           tiktok?: string | null
@@ -1174,6 +1186,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      oauth_state_nonces: {
+        Row: {
+          consumed: boolean
+          created_at: string
+          expires_at: string
+          nonce: string
+          user_id: string
+        }
+        Insert: {
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          nonce: string
+          user_id: string
+        }
+        Update: {
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          nonce?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       permissions: {
         Row: {
@@ -1774,10 +1810,43 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      google_oauth_tokens_safe: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          google_email: string | null
+          id: string | null
+          is_active: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          google_email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          google_email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _api_assert_resource: { Args: { p_resource: string }; Returns: undefined }
+      _calc_ranking_from_row: {
+        Args: { p_contact: Database["public"]["Tables"]["contacts"]["Row"] }
+        Returns: number
+      }
       api_delete: {
         Args: { p_id: string; p_resource: string; p_user_id: string }
         Returns: Json
@@ -1825,6 +1894,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      calc_contact_ranking_score: {
+        Args: { p_contact_id: string }
+        Returns: number
       }
       dispatch_webhooks: {
         Args: { p_event: string; p_payload: Json }
@@ -2053,3 +2126,4 @@ export const Constants = {
     },
   },
 } as const
+<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />
