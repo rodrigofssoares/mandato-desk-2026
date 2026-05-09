@@ -68,7 +68,7 @@ export function ActivityFeed() {
         eyebrow="Tempo real"
         title="Atividades Recentes"
         icon={Activity}
-        iconBubbleClassName="bg-sky-500/10 text-sky-600"
+        iconVariant="info"
         actions={can.exportData() ? <ActivitiesExportMenu /> : undefined}
       />
       <div className="px-6 pb-3 flex flex-col sm:flex-row gap-2 shrink-0">

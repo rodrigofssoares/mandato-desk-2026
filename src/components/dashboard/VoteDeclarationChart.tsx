@@ -66,7 +66,7 @@ export function VoteDeclarationChart({
         eyebrow="Distribuição"
         title="Declaração de Voto"
         icon={CheckCircle2}
-        iconBubbleClassName="bg-emerald-500/10 text-emerald-600"
+        iconVariant="success"
         actions={
           onChangeViewType ? (
             <ChartViewToggle value={viewType} onChange={onChangeViewType} />

@@ -2,6 +2,7 @@ import { Cake } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBirthdays } from '@/hooks/useDashboard';
+import { StatusChip } from '@/components/ui-system';
 import { WidgetHeader } from './WidgetHeader';
 
 export function BirthdaySection() {
@@ -15,12 +16,10 @@ export function BirthdaySection() {
         eyebrow="Esta semana"
         title="Aniversariantes"
         icon={Cake}
-        iconBubbleClassName="bg-pink-500/10 text-pink-500"
+        iconVariant="accent"
         actions={
           totalToday + totalNext7 > 0 ? (
-            <span className="px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-600 text-xs font-semibold">
-              {totalToday + totalNext7}
-            </span>
+            <StatusChip variant="accent">{totalToday + totalNext7}</StatusChip>
           ) : undefined
         }
       />

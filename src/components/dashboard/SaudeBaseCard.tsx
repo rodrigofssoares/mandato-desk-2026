@@ -24,7 +24,7 @@ export function SaudeBaseCard({ data, isLoading }: SaudeBaseCardProps) {
         eyebrow="Diagnóstico"
         title="Saúde da Base"
         icon={Activity}
-        iconBubbleClassName="bg-emerald-500/10 text-emerald-600"
+        iconVariant="success"
       />
       <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-4">
         {isLoading ? (
@@ -40,21 +40,21 @@ export function SaudeBaseCard({ data, isLoading }: SaudeBaseCardProps) {
               hint="Atualizados nos últimos 30d"
               count={ativos}
               pct={pct(ativos)}
-              barClass="[&>div]:bg-emerald-500"
+              barClass="[&>div]:bg-success"
             />
             <SaudeRow
               label="Inativos"
               hint="30–90 dias"
               count={inativos}
               pct={pct(inativos)}
-              barClass="[&>div]:bg-amber-500"
+              barClass="[&>div]:bg-warning"
             />
             <SaudeRow
               label="Perdidos"
               hint="90+ dias sem atualização"
               count={perdidos}
               pct={pct(perdidos)}
-              barClass="[&>div]:bg-red-500"
+              barClass="[&>div]:bg-danger"
             />
           </>
         )}

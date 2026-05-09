@@ -55,7 +55,7 @@ export function TagDistributionChart({
         eyebrow="Distribuição"
         title="Etiquetas"
         icon={Tag}
-        iconBubbleClassName="bg-amber-500/10 text-amber-600"
+        iconVariant="warning"
         actions={
           onChangeViewType ? (
             <ChartViewToggle value={viewType} onChange={onChangeViewType} />
