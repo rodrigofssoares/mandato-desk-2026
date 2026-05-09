@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activities: {
@@ -841,6 +866,7 @@ export type Database = {
           alert_title: string | null
           alert_type: string
           dismissed_at: string
+          expires_at: string
           id: string
           user_id: string
         }
@@ -850,6 +876,7 @@ export type Database = {
           alert_title?: string | null
           alert_type?: string
           dismissed_at?: string
+          expires_at?: string
           id?: string
           user_id: string
         }
@@ -859,6 +886,7 @@ export type Database = {
           alert_title?: string | null
           alert_type?: string
           dismissed_at?: string
+          expires_at?: string
           id?: string
           user_id?: string
         }
@@ -1841,6 +1869,217 @@ export type Database = {
         }
         Relationships: []
       }
+      zapi_accounts: {
+        Row: {
+          client_token: string
+          created_at: string
+          created_by: string | null
+          id: string
+          instance_id: string
+          instance_token: string
+          name: string
+          status: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          client_token: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_id: string
+          instance_token: string
+          name: string
+          status?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          client_token?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_id?: string
+          instance_token?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
+      zapi_chats: {
+        Row: {
+          account_id: string
+          contact_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          phone: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          phone: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          phone?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_chats_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_chats_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_messages: {
+        Row: {
+          account_id: string
+          body: string | null
+          chat_id: string
+          created_at: string
+          direction: string
+          id: string
+          message_id: string
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          account_id: string
+          body?: string | null
+          chat_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          message_id: string
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          account_id?: string
+          body?: string | null
+          chat_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message_id?: string
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_panel_passwords: {
+        Row: {
+          account_id: string
+          id: string
+          password_hash: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id: string
+          id?: string
+          password_hash: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_panel_passwords_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_webhook_log: {
+        Row: {
+          account_id: string | null
+          error_detail: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processing_status: string
+          received_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          error_detail?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          processing_status?: string
+          received_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          error_detail?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processing_status?: string
+          received_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_webhook_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       google_oauth_tokens_safe: {
@@ -1969,6 +2208,10 @@ export type Database = {
           token_id: string
           user_id: string
         }[]
+      }
+      zapi_get_webhook_secret: {
+        Args: { _account_id: string }
+        Returns: string
       }
     }
     Enums: {
@@ -2124,6 +2367,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       activity_type: [
@@ -2159,4 +2405,3 @@ export const Constants = {
     },
   },
 } as const
-

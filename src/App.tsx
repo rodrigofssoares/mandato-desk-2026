@@ -29,6 +29,7 @@ import Settings from '@/pages/Settings';
 import Board from '@/pages/Board';
 import Tarefas from '@/pages/Tarefas';
 import DesignSystem from '@/pages/DesignSystem';
+import Whatsapp from '@/pages/Whatsapp';
 
 // Extrai mensagem legível de qualquer formato de erro — Error nativo, PostgrestError
 // do Supabase (objeto plano `{ code, message, details, hint }`), ou string. Sem essa
@@ -234,6 +235,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <DesignSystem />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/integracoes/whatsapp"
+          element={
+            <ProtectedRoute>
+              <Whatsapp />
             </ProtectedRoute>
           }
         />

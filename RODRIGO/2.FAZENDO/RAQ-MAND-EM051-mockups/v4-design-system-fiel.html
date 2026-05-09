@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="burgundy-institucional">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>V4 — Fiel ao DS Mandato Desk · WhatsApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     EXTRAÍDO 1:1 de src/index.css (linhas 16-154 do projeto real)
+     ============================================================ */
+  :root, .burgundy-institucional {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 353 35% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 353 35% 13%;
+    --primary: 351 61% 30%;            /* #7B1E2E vinho */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --secondary-foreground: 353 35% 13%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;              /* #D4A446 gold warm */
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 35% 84%;
+    --input: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --sidebar-background: 40 47% 98%;
+    --sidebar-foreground: 354 12% 43%;
+    --sidebar-primary: 351 61% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 36 35% 90%;
+    --sidebar-accent-foreground: 353 35% 13%;
+    --sidebar-border: 36 35% 84%;
+    --sidebar-ring: 351 61% 30%;
+  }
+  .navy-institucional {
+    --background: 220 27% 97%;
+    --foreground: 216 60% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 216 60% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 60% 14%;
+    --primary: 214 60% 26%;            /* #1B3A6B navy */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 25% 95%;
+    --secondary-foreground: 216 60% 14%;
+    --muted: 217 25% 95%;
+    --muted-foreground: 218 18% 40%;
+    --accent: 38 56% 52%;              /* #C99A3D gold institucional */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 65% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 218 24% 89%;
+    --input: 218 24% 89%;
+    --ring: 214 60% 26%;
+    --radius: 0.875rem;
+
+    --sidebar-background: 220 50% 98%;
+    --sidebar-foreground: 218 18% 40%;
+    --sidebar-primary: 214 60% 26%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 25% 95%;
+    --sidebar-accent-foreground: 216 60% 14%;
+    --sidebar-border: 218 24% 89%;
+    --sidebar-ring: 214 60% 26%;
+  }
+  /* tokens semânticos (iguais nos 2 temas) */
+  :root {
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 142 76% 95%;
+    --success-soft-foreground: 142 72% 26%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-foreground: 26 83% 30%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    --info-soft: 204 94% 94%;
+    --info-soft-foreground: 200 98% 28%;
+    --danger: 0 73% 51%;
+    --danger-foreground: 0 0% 100%;
+    --danger-soft: 0 86% 97%;
+    --danger-soft-foreground: 0 70% 35%;
+  }
+
+  /* ============== Reset + base ============== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: hsl(var(--foreground));
+    background: hsl(var(--background));
+    overflow: hidden;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+  .font-display { font-family: 'Space Grotesk', sans-serif; }
+  .font-serif { font-family: 'Cinzel', serif; }
+
+  /* utility: glass + bg-dots como no projeto */
+  .glass {
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--border) / 0.6);
+  }
+  .bg-dots {
+    background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.18) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ============== Layout shell ============== */
+  .app {
+    display: grid;
+    grid-template-columns: 244px 1fr;
+    height: 100vh;
+  }
+
+  /* SIDEBAR (mimic do AppSidebar shadcn) */
+  .sidebar {
+    background: hsl(var(--sidebar-background));
+    border-right: 1px solid hsl(var(--sidebar-border));
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sb-header {
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid hsl(var(--sidebar-border));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sb-mark {
+    width: 36px; height: 36px;
+    border-radius: var(--radius);
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    display: grid; place-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -.5px;
+  }
+  .sb-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: hsl(var(--foreground));
+    line-height: 1.1;
+  }
+  .sb-sub {
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 2px;
+  }
+  .sb-section {
+    padding: 12px 12px 4px;
+  }
+  .sb-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: hsl(var(--muted-foreground));
+    padding: 8px 10px 6px;
+    font-weight: 600;
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: calc(var(--radius) - 4px);
+    color: hsl(var(--sidebar-foreground));
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 1px;
+    transition: background .15s, color .15s;
+  }
+  .sb-item:hover {
+    background: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-accent-foreground));
+  }
+  .sb-item.active {
+    background: hsl(var(--sidebar-primary));
+    color: hsl(var(--sidebar-primary-foreground));
+    font-weight: 600;
+  }
+  .sb-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .sb-item .badge {
+    margin-left: auto;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 9px;
+  }
+  .sb-item.active .badge {
+    background: hsl(var(--primary-foreground) / 0.2);
+    color: hsl(var(--primary-foreground));
+  }
+  .sb-divider {
+    height: 1px;
+    background: hsl(var(--sidebar-border));
+    margin: 8px 12px;
+  }
+  .sb-footer {
+    margin-top: auto;
+    padding: 12px 14px;
+    border-top: 1px solid hsl(var(--sidebar-border));
+  }
+  .sb-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: calc(var(--radius) - 4px);
+  }
+  .sb-user-mark {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    display: grid; place-items: center;
+    font-weight: 700;
+    font-size: 12px;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .sb-user-info { font-size: 12.5px; color: hsl(var(--foreground)); font-weight: 500; }
+  .sb-user-info small { display: block; color: hsl(var(--muted-foreground)); font-weight: 400; font-size: 11px; }
+  .sb-version {
+    margin-top: 8px;
+    font-size: 10px;
+    color: hsl(var(--muted-foreground));
+    text-align: center;
+    letter-spacing: .5px;
+  }
+
+  /* MAIN COLUMN */
+  .col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: hsl(var(--background));
+  }
+  /* Top header bar */
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    justify-content: space-between;
+    background: hsl(var(--background));
+  }
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: hsl(var(--muted-foreground));
+  }
+  .crumbs .sep { opacity: .4; }
+  .crumbs .current { color: hsl(var(--foreground)); font-weight: 600; }
+  .topbar-right {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .session-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px;
+    background: hsl(var(--success-soft));
+    color: hsl(var(--success-soft-foreground));
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px solid hsl(var(--success) / .2);
+  }
+  .session-pill::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: hsl(var(--success));
+    box-shadow: 0 0 6px hsl(var(--success));
+  }
+  .theme-toggle {
+    display: inline-flex;
+    background: hsl(var(--secondary));
+    border-radius: 999px;
+    padding: 3px;
+    border: 1px solid hsl(var(--border));
+  }
+  .theme-toggle button {
+    background: transparent;
+    border: none;
+    padding: 5px 12px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    border-radius: 999px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .theme-toggle button.on {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  /* PAGE CONTENT */
+  .page {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  /* PageHeader (mimic do componente real) */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .page-header-left { display: flex; gap: 16px; align-items: flex-start; }
+  .ph-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--radius);
+    background: hsl(var(--info-soft));
+    color: hsl(var(--info-soft-foreground));
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .ph-icon svg { width: 20px; height: 20px; }
+  .ph-content .eyebrow {
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 4px;
+  }
+  .ph-content h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    color: hsl(var(--foreground));
+    line-height: 1.1;
+    letter-spacing: -.4px;
+  }
+  .ph-content p {
+    font-size: 14px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 6px;
+    max-width: 56ch;
+    line-height: 1.5;
+  }
+
+  /* Buttons (mimic shadcn) */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: calc(var(--radius) - 2px);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background .15s, color .15s, border-color .15s, transform .1s;
+    line-height: 1;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .btn-primary:hover { background: hsl(var(--primary) / .9); }
+  .btn-outline { background: transparent; color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+  .btn-outline:hover { background: hsl(var(--muted)); }
+  .btn-ghost { background: transparent; color: hsl(var(--foreground)); }
+  .btn-ghost:hover { background: hsl(var(--muted)); }
+  .btn-destructive-outline { background: transparent; color: hsl(var(--destructive)); border-color: hsl(var(--destructive) / .3); }
+  .btn-destructive-outline:hover { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); border-color: hsl(var(--destructive)); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn svg { width: 14px; height: 14px; }
+
+  /* TABS (mimic shadcn) */
+  .tabs-list {
+    display: inline-flex;
+    background: hsl(var(--muted));
+    padding: 4px;
+    border-radius: calc(var(--radius) - 2px);
+    margin-bottom: 20px;
+    gap: 2px;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    color: hsl(var(--muted-foreground));
+    padding: 7px 14px;
+    border-radius: calc(var(--radius) - 4px);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .15s;
+  }
+  .tab:hover { color: hsl(var(--foreground)); }
+  .tab.active {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 3px hsl(var(--foreground) / .08);
+  }
+  .tab .count {
+    background: hsl(var(--secondary));
+    color: hsl(var(--muted-foreground));
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+  .tab.active .count { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+
+  /* CARD (mimic shadcn) */
+  .card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card-header { padding: 18px 20px 14px; border-bottom: 1px solid hsl(var(--border)); }
+  .card-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px; color: hsl(var(--foreground)); }
+  .card-desc { font-size: 13px; color: hsl(var(--muted-foreground)); margin-top: 4px; }
+  .card-body { padding: 18px 20px; }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ============================================================
+     CONVERSAS (WhatsApp Web no DS Mandato)
+     ============================================================ */
+  .panel.conv-panel { padding: 0; height: calc(100vh - 56px - 24px - 24px); display: none; }
+  .panel.conv-panel.active { display: flex; }
+  .ws {
+    display: grid;
+    grid-template-columns: 240px 320px 1fr;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  /* Coluna 1 — accounts */
+  .ws-accounts {
+    background: hsl(var(--secondary) / .5);
+    border-right: 1px solid hsl(var(--border));
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+  .ws-col-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: hsl(var(--muted-foreground));
+    font-weight: 700;
+    padding: 0 8px 8px;
+    margin-bottom: 6px;
+  }
+  .ws-acc {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 10px;
+    border-radius: calc(var(--radius) - 4px);
+    cursor: pointer;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+  }
+  .ws-acc:hover { background: hsl(var(--card)); }
+  .ws-acc.active {
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(var(--foreground) / .06);
+  }
+  .ws-acc-mark {
+    width: 36px; height: 36px;
+    border-radius: calc(var(--radius) - 4px);
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    display: grid; place-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .ws-acc-info { flex: 1; min-width: 0; }
+  .ws-acc-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ws-acc-status {
+    font-size: 11px;
+    color: hsl(var(--success-soft-foreground));
+    display: flex; align-items: center; gap: 4px;
+  }
+  .ws-acc-status::before {
+    content: ""; width: 5px; height: 5px;
+    border-radius: 50%; background: hsl(var(--success));
+  }
+  .ws-add {
+    width: 100%;
+    margin-top: 4px;
+    padding: 9px;
+    border: 1px dashed hsl(var(--border));
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    border-radius: calc(var(--radius) - 4px);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .ws-add:hover { border-color: hsl(var(--primary)); color: hsl(var(--primary)); }
+
+  /* Coluna 2 — chats */
+  .ws-chats {
+    border-right: 1px solid hsl(var(--border));
+    display: flex; flex-direction: column;
+    background: hsl(var(--card));
+  }
+  .ws-chats-head {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .ws-search {
+    width: 100%;
+    padding: 9px 14px;
+    border: 1px solid hsl(var(--input));
+    border-radius: calc(var(--radius) - 2px);
+    background: hsl(var(--background));
+    font-family: inherit;
+    font-size: 13px;
+    color: hsl(var(--foreground));
+  }
+  .ws-search:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; border-color: transparent; }
+  .ws-search::placeholder { color: hsl(var(--muted-foreground)); }
+  .ws-chips {
+    display: flex; gap: 6px; margin-top: 10px;
+    overflow-x: auto;
+  }
+  .ws-chip {
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .ws-chip.on { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: transparent; }
+  .ws-chips-list { flex: 1; overflow-y: auto; }
+  .ws-chat {
+    display: flex; gap: 11px; align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid hsl(var(--border) / .5);
+    transition: background .12s;
+  }
+  .ws-chat:hover { background: hsl(var(--secondary) / .5); }
+  .ws-chat.active {
+    background: hsl(var(--primary) / .08);
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 13px;
+  }
+  .ws-chat-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    display: grid; place-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .ws-chat-meta { flex: 1; min-width: 0; }
+  .ws-chat-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .ws-chat-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ws-chat-time {
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
+  .ws-chat-preview {
+    font-size: 12.5px;
+    color: hsl(var(--muted-foreground));
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    margin-top: 2px;
+  }
+  .ws-chat-tags {
+    display: flex; align-items: center; gap: 6px; margin-top: 4px;
+  }
+  .ws-chat-tag {
+    font-size: 9.5px;
+    background: hsl(var(--info-soft));
+    color: hsl(var(--info-soft-foreground));
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .ws-chat-tag.warn { background: hsl(var(--warning-soft)); color: hsl(var(--warning-soft-foreground)); }
+  .ws-chat-tag.acc { background: hsl(var(--accent) / .2); color: hsl(var(--accent-foreground)); }
+  .ws-chat-unread {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    padding: 2px 7px;
+  }
+
+  /* Coluna 3 — conversation */
+  .ws-conv {
+    display: flex; flex-direction: column;
+    background: hsl(var(--background));
+    min-width: 0;
+  }
+  .ws-conv-head {
+    padding: 14px 22px;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    display: flex; align-items: center; gap: 14px;
+  }
+  .ws-conv-info { flex: 1; }
+  .ws-conv-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: hsl(var(--foreground));
+    display: flex; align-items: center; gap: 12px;
+  }
+  .ws-conv-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: hsl(var(--primary));
+    text-decoration: none;
+    border: 1px solid hsl(var(--primary) / .25);
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .ws-conv-link:hover { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: hsl(var(--primary)); }
+  .ws-conv-link svg { width: 11px; height: 11px; }
+  .ws-conv-sub {
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 3px;
+  }
+  .ws-icon-btn {
+    width: 34px; height: 34px;
+    border-radius: calc(var(--radius) - 4px);
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    display: grid; place-items: center;
+    cursor: pointer;
+  }
+  .ws-icon-btn:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .ws-icon-btn svg { width: 14px; height: 14px; }
+
+  .ws-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: hsl(var(--background));
+    background-image: radial-gradient(circle, hsl(var(--muted-foreground) / .08) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .ws-day {
+    text-align: center;
+    margin: 14px 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: hsl(var(--muted-foreground));
+    font-weight: 600;
+  }
+  .ws-day span {
+    background: hsl(var(--card));
+    padding: 4px 14px;
+    border-radius: 999px;
+    border: 1px solid hsl(var(--border));
+  }
+  .ws-msg {
+    max-width: 64%;
+    padding: 10px 14px 8px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.5;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / .03);
+  }
+  .ws-msg.in {
+    align-self: flex-start;
+    border-top-left-radius: 4px;
+  }
+  .ws-msg.out {
+    align-self: flex-end;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+    border-top-right-radius: 4px;
+  }
+  .ws-msg-foot {
+    display: flex; justify-content: flex-end; align-items: center; gap: 4px;
+    margin-top: 5px;
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+  }
+  .ws-msg.out .ws-msg-foot { color: hsl(var(--primary-foreground) / .7); }
+  .ws-msg-foot svg { width: 14px; height: 14px; }
+  .ws-msg-foot .read { color: hsl(var(--info)); }
+  .ws-msg.out .ws-msg-foot .read { color: hsl(var(--accent)); }
+
+  .ws-composer {
+    padding: 14px 22px;
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ws-composer-input {
+    flex: 1;
+    border: 1px solid hsl(var(--input));
+    background: hsl(var(--background));
+    border-radius: calc(var(--radius) - 2px);
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: hsl(var(--foreground));
+  }
+  .ws-composer-input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; border-color: transparent; }
+
+  /* CONTAS, WEBHOOKS, LOGS — usar Card padrão */
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 16px;
+  }
+  dl.kv {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 8px 14px;
+    font-size: 13px;
+    margin: 14px 0;
+    padding: 14px 0;
+    border-top: 1px solid hsl(var(--border));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  dl.kv dt {
+    color: hsl(var(--muted-foreground));
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    font-weight: 700;
+    align-self: center;
+  }
+  dl.kv dd {
+    color: hsl(var(--foreground));
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .vault-tag {
+    color: hsl(var(--info-soft-foreground));
+    background: hsl(var(--info-soft));
+    font-size: 9.5px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-family: 'Inter', sans-serif;
+  }
+  .card-actions {
+    display: flex; gap: 8px;
+  }
+
+  /* Webhook field */
+  .wh-field { margin-bottom: 14px; }
+  .wh-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .wh-input-wrap {
+    display: flex;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--input));
+    border-radius: calc(var(--radius) - 2px);
+    overflow: hidden;
+  }
+  .wh-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 11px 14px;
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+    color: hsl(var(--foreground));
+  }
+  .wh-action {
+    background: transparent;
+    border: none;
+    border-left: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+    padding: 0 16px;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .wh-action:hover { background: hsl(var(--muted)); }
+  .wh-events {
+    margin-top: 12px;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .wh-events .pill {
+    font-family: ui-monospace, monospace;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  /* LOGS table */
+  .filters {
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .filters select, .filters input {
+    padding: 9px 12px;
+    border: 1px solid hsl(var(--input));
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    font-family: inherit;
+    font-size: 12.5px;
+    border-radius: calc(var(--radius) - 2px);
+  }
+  .filters input { flex: 1; max-width: 320px; }
+  .filters select:focus, .filters input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; border-color: transparent; }
+
+  .ltable {
+    width: 100%;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+  }
+  .ltable th {
+    background: hsl(var(--secondary));
+    color: hsl(var(--muted-foreground));
+    text-align: left;
+    padding: 11px 16px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .ltable td {
+    padding: 12px 16px;
+    border-bottom: 1px solid hsl(var(--border));
+    font-size: 13px;
+    color: hsl(var(--foreground));
+  }
+  .ltable tr:last-child td { border-bottom: none; }
+  .ltable tr:hover td { background: hsl(var(--secondary) / .4); }
+  .ltable td.mono { font-family: ui-monospace, monospace; font-size: 11.5px; color: hsl(var(--muted-foreground)); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ltable td.time { font-family: ui-monospace, monospace; font-size: 12px; color: hsl(var(--muted-foreground)); }
+
+  .log-pill {
+    display: inline-flex; align-items: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .log-pill.ok { background: hsl(var(--success-soft)); color: hsl(var(--success-soft-foreground)); }
+  .log-pill.err { background: hsl(var(--danger-soft)); color: hsl(var(--danger-soft-foreground)); }
+
+  .pagination {
+    margin-top: 12px;
+    text-align: right;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Mockup tag */
+  .mockup-tag {
+    position: fixed; top: 14px; right: 16px;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-tag">V4 · Fiel ao DS</div>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR (mimic AppSidebar) ============ -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-mark">M</div>
+      <div>
+        <div class="sb-title">Mandato Desk</div>
+        <div class="sb-sub">Gabinete Raquel Sá</div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-label">Operação</div>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Contatos
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+        Articuladores
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+        Funil
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Tarefas
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11H5a2 2 0 0 0-2 2v7h18v-7a2 2 0 0 0-2-2h-4M12 2v9M9 5l3-3 3 3"/></svg>
+        Demandas
+      </a>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-label">Integrações</div>
+      <a class="sb-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        WhatsApp <span class="badge">14</span>
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Google
+      </a>
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+        Webhooks gerais
+      </a>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <a class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configurações
+      </a>
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-user-mark">RS</div>
+        <div class="sb-user-info">
+          Rodrigo Soares
+          <small>Administrador</small>
+        </div>
+      </div>
+      <div class="sb-version">Mandato Desk v1.2.1</div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN COLUMN ============ -->
+  <div class="col">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="crumbs">
+        <span>Integrações</span>
+        <span class="sep">/</span>
+        <span class="current">WhatsApp</span>
+      </div>
+      <div class="topbar-right">
+        <span class="session-pill">Sessão protegida · 28 min restantes</span>
+        <div class="theme-toggle" title="Trocar tema do projeto">
+          <button id="t-burgundy" class="on">Burgundy</button>
+          <button id="t-navy">Navy</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- PAGE -->
+    <main class="page">
+
+      <!-- PageHeader (mimic do componente real) -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="ph-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </div>
+          <div class="ph-content">
+            <div class="eyebrow">Integrações</div>
+            <h1>WhatsApp · Z-API</h1>
+            <p>Conecte instâncias Z-API ao Mandato Desk e atenda eleitores em tempo real, com vinculação automática a contatos cadastrados.</p>
+          </div>
+        </div>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova conta
+        </button>
+      </div>
+
+      <!-- TABS (shadcn pill style) -->
+      <div class="tabs-list">
+        <button class="tab" data-tab="contas">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Contas <span class="count">2</span>
+        </button>
+        <button class="tab active" data-tab="conversas">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Conversas <span class="count">14</span>
+        </button>
+        <button class="tab" data-tab="webhooks">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+          Webhooks
+        </button>
+        <button class="tab" data-tab="logs">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Logs <span class="count">347</span>
+        </button>
+      </div>
+
+      <!-- ============ CONVERSAS PANEL ============ -->
+      <section class="panel conv-panel active" id="panel-conversas">
+        <div class="ws">
+          <!-- col 1 — accounts -->
+          <aside class="ws-accounts">
+            <div class="ws-col-label">Painéis</div>
+            <div class="ws-acc active">
+              <div class="ws-acc-mark">RS</div>
+              <div class="ws-acc-info">
+                <div class="ws-acc-name">Raquel · Gabinete</div>
+                <div class="ws-acc-status">conectado</div>
+              </div>
+            </div>
+            <div class="ws-acc">
+              <div class="ws-acc-mark" style="background: hsl(var(--accent)); color: hsl(var(--accent-foreground));">MB</div>
+              <div class="ws-acc-info">
+                <div class="ws-acc-name">Mobiliza Bahia</div>
+                <div class="ws-acc-status">conectado</div>
+              </div>
+            </div>
+            <button class="ws-add">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Adicionar
+            </button>
+          </aside>
+
+          <!-- col 2 — chats -->
+          <aside class="ws-chats">
+            <div class="ws-chats-head">
+              <input class="ws-search" placeholder="Buscar conversa, número ou texto…" />
+              <div class="ws-chips">
+                <button class="ws-chip on">Todas</button>
+                <button class="ws-chip">Não lidas</button>
+                <button class="ws-chip">Vinculadas</button>
+                <button class="ws-chip">Erros</button>
+              </div>
+            </div>
+            <div class="ws-chips-list">
+              <div class="ws-chat active">
+                <div class="ws-chat-avatar">JM</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">Joana Mendes</span>
+                    <span class="ws-chat-time">14:32</span>
+                  </div>
+                  <div class="ws-chat-preview">Pode me passar o link aqui mesmo, por favor?</div>
+                </div>
+                <span class="ws-chat-unread">3</span>
+              </div>
+              <div class="ws-chat">
+                <div class="ws-chat-avatar" style="background: hsl(var(--info)); color: hsl(var(--info-foreground));">+55</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">71 9 8341-7720</span>
+                    <span class="ws-chat-time">14:18</span>
+                  </div>
+                  <div class="ws-chat-preview">Gostaria de saber sobre o programa de…</div>
+                </div>
+                <span class="ws-chat-unread">1</span>
+              </div>
+              <div class="ws-chat">
+                <div class="ws-chat-avatar" style="background: hsl(var(--primary)); color: hsl(var(--primary-foreground));">MA</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">Marcos Almeida</span>
+                    <span class="ws-chat-time">13:55</span>
+                  </div>
+                  <div class="ws-chat-preview">Confirmado pra reunião amanhã.</div>
+                  <div class="ws-chat-tags">
+                    <span class="ws-chat-tag acc">Liderança</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-chat">
+                <div class="ws-chat-avatar" style="background: hsl(var(--success)); color: hsl(var(--success-foreground));">CB</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">Coordenação Bairro</span>
+                    <span class="ws-chat-time">12:40</span>
+                  </div>
+                  <div class="ws-chat-preview">Agendamos a vistoria pra sexta.</div>
+                </div>
+              </div>
+              <div class="ws-chat">
+                <div class="ws-chat-avatar">LV</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">Luiza Veiga</span>
+                    <span class="ws-chat-time">11:09</span>
+                  </div>
+                  <div class="ws-chat-preview">Obrigada pela atenção, deputada!</div>
+                  <div class="ws-chat-tags">
+                    <span class="ws-chat-tag">Cidadão</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-chat">
+                <div class="ws-chat-avatar" style="background: hsl(var(--warning)); color: hsl(var(--warning-foreground));">CN</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">Carlos Nogueira</span>
+                    <span class="ws-chat-time">Ontem</span>
+                  </div>
+                  <div class="ws-chat-preview">Encaminhei o ofício pra Câmara.</div>
+                </div>
+              </div>
+              <div class="ws-chat">
+                <div class="ws-chat-avatar">DF</div>
+                <div class="ws-chat-meta">
+                  <div class="ws-chat-row">
+                    <span class="ws-chat-name">Dona Filó · Vila Esperança</span>
+                    <span class="ws-chat-time">Ontem</span>
+                  </div>
+                  <div class="ws-chat-preview">Posso passar segunda-feira no gabinete?</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- col 3 — conv -->
+          <section class="ws-conv">
+            <header class="ws-conv-head">
+              <div class="ws-chat-avatar">JM</div>
+              <div class="ws-conv-info">
+                <div class="ws-conv-name">
+                  Joana Mendes
+                  <a class="ws-conv-link" href="#">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    Ver no CRM
+                  </a>
+                </div>
+                <div class="ws-conv-sub">+55 71 9 9123-0044 · cidadã · vinculado a contato #2473</div>
+              </div>
+              <button class="ws-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+              <button class="ws-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+              <button class="ws-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+            </header>
+
+            <div class="ws-messages">
+              <div class="ws-day"><span>9 de maio</span></div>
+
+              <div class="ws-msg in">
+                Bom dia! Vi a publicação da deputada sobre a feira do Itapuã. Vão ter barracas pra artesanato local?
+                <div class="ws-msg-foot">10:14</div>
+              </div>
+              <div class="ws-msg out">
+                Bom dia, Joana! Vão sim, inclusive temos um espaço reservado pra cooperativas. Posso te encaminhar o formulário de inscrição?
+                <div class="ws-msg-foot">
+                  10:18
+                  <svg class="read" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 13l4 4L14 7"/><path d="M9 17l4-4"/></svg>
+                </div>
+              </div>
+              <div class="ws-msg in">
+                Por favor! Tenho uma cooperativa de bordadeiras lá no bairro.
+                <div class="ws-msg-foot">10:22</div>
+              </div>
+              <div class="ws-msg out">
+                Perfeito. Vou te enviar agora pelo WhatsApp e também por email se preferir.
+                <div class="ws-msg-foot">
+                  14:30
+                  <svg class="read" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 13l4 4L14 7"/><path d="M9 17l4-4"/></svg>
+                </div>
+              </div>
+              <div class="ws-msg in">
+                Pode me passar o link aqui mesmo, por favor?
+                <div class="ws-msg-foot">14:32</div>
+              </div>
+            </div>
+
+            <div class="ws-composer">
+              <button class="ws-icon-btn" title="Anexar (mídia chega na próxima entrega)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              </button>
+              <input class="ws-composer-input" placeholder="Escreva uma resposta…" />
+              <button class="btn btn-primary">
+                Enviar
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ============ CONTAS PANEL ============ -->
+      <section class="panel" id="panel-contas">
+        <div class="grid-cards">
+          <article class="card">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div class="ws-acc-mark" style="width:44px;height:44px;font-size:14px;">RS</div>
+                <div>
+                  <div class="card-title">Raquel · Gabinete</div>
+                  <div class="ws-acc-status" style="margin-top:4px;">conectado · há 2 min</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <dl class="kv">
+                <dt>Instance ID</dt><dd>3DCC51B4FE...A9F2</dd>
+                <dt>Token</dt><dd>•••••••••••••••• <span class="vault-tag">vault</span></dd>
+                <dt>Client-Token</dt><dd>•••••••••••••••• <span class="vault-tag">vault</span></dd>
+                <dt>Senha painel</dt><dd>bcrypt $2b$12$… · 3d</dd>
+                <dt>Mensagens 90d</dt><dd>847 enviadas · 1.234 recebidas</dd>
+              </dl>
+              <div class="card-actions">
+                <button class="btn btn-outline btn-sm">Editar</button>
+                <button class="btn btn-outline btn-sm">Resetar senha</button>
+                <button class="btn btn-destructive-outline btn-sm">Excluir</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div class="ws-acc-mark" style="width:44px;height:44px;font-size:14px;background:hsl(var(--accent));color:hsl(var(--accent-foreground));">MB</div>
+                <div>
+                  <div class="card-title">Mobiliza Bahia</div>
+                  <div class="ws-acc-status" style="margin-top:4px;">conectado · agora</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <dl class="kv">
+                <dt>Instance ID</dt><dd>4F88AA22BC...1E07</dd>
+                <dt>Token</dt><dd>•••••••••••••••• <span class="vault-tag">vault</span></dd>
+                <dt>Client-Token</dt><dd>•••••••••••••••• <span class="vault-tag">vault</span></dd>
+                <dt>Senha painel</dt><dd>bcrypt $2b$12$… · 12d</dd>
+                <dt>Mensagens 90d</dt><dd>421 enviadas · 658 recebidas</dd>
+              </dl>
+              <div class="card-actions">
+                <button class="btn btn-outline btn-sm">Editar</button>
+                <button class="btn btn-outline btn-sm">Resetar senha</button>
+                <button class="btn btn-destructive-outline btn-sm">Excluir</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ WEBHOOKS PANEL ============ -->
+      <section class="panel" id="panel-webhooks">
+        <article class="card" style="margin-bottom:14px;">
+          <div class="card-header">
+            <div class="card-title">Raquel · Gabinete</div>
+            <div class="card-desc">Cole esta URL em "Receber notificação webhook" no painel da Z-API.</div>
+          </div>
+          <div class="card-body">
+            <div class="wh-field">
+              <span class="wh-label">URL pública</span>
+              <div class="wh-input-wrap">
+                <input value="https://uhqkcyuwddpxbttsigdc.functions.supabase.co/zapi-webhook?account=a3f8e2b1-4c5d" readonly />
+                <button class="wh-action">Copiar</button>
+              </div>
+            </div>
+            <div class="wh-field">
+              <span class="wh-label">Segredo HMAC</span>
+              <div class="wh-input-wrap">
+                <input value="••••••••••••••••••••••••••••••••" readonly />
+                <button class="wh-action">Mostrar</button>
+              </div>
+            </div>
+            <div class="wh-events">
+              Eventos suportados:
+              <span class="pill">message-received</span>
+              <span class="pill">message-status</span>
+              <span class="pill">disconnected</span>
+              <span class="pill">qr-code</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title">Mobiliza Bahia</div>
+            <div class="card-desc">Cole esta URL em "Receber notificação webhook" no painel da Z-API.</div>
+          </div>
+          <div class="card-body">
+            <div class="wh-field">
+              <span class="wh-label">URL pública</span>
+              <div class="wh-input-wrap">
+                <input value="https://uhqkcyuwddpxbttsigdc.functions.supabase.co/zapi-webhook?account=b7c1d4e9-2f8a" readonly />
+                <button class="wh-action">Copiar</button>
+              </div>
+            </div>
+            <div class="wh-field">
+              <span class="wh-label">Segredo HMAC</span>
+              <div class="wh-input-wrap">
+                <input value="••••••••••••••••••••••••••••••••" readonly />
+                <button class="wh-action">Mostrar</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============ LOGS PANEL ============ -->
+      <section class="panel" id="panel-logs">
+        <div class="filters">
+          <select>
+            <option>Todas as contas</option>
+            <option>Raquel · Gabinete</option>
+            <option>Mobiliza Bahia</option>
+          </select>
+          <select>
+            <option>Todos os tipos</option>
+            <option>message-received</option>
+            <option>message-status</option>
+            <option>disconnected</option>
+          </select>
+          <input placeholder="Buscar por número, messageId…" />
+        </div>
+
+        <table class="ltable">
+          <thead>
+            <tr>
+              <th>Conta</th>
+              <th>Tipo</th>
+              <th>Quando</th>
+              <th>Status</th>
+              <th>Payload</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Raquel · Gabinete</td><td>message-received</td><td class="time">14:32:08</td><td><span class="log-pill ok">processado</span></td><td class="mono">{"phone":"5571991230044","text":"Pode me passar..."}</td></tr>
+            <tr><td>Raquel · Gabinete</td><td>message-status</td><td class="time">14:30:11</td><td><span class="log-pill ok">processado</span></td><td class="mono">{"messageId":"BAE5...","status":"read"}</td></tr>
+            <tr><td>Mobiliza Bahia</td><td>message-received</td><td class="time">14:18:55</td><td><span class="log-pill ok">processado</span></td><td class="mono">{"phone":"5571983417720","text":"Gostaria de..."}</td></tr>
+            <tr><td>Raquel · Gabinete</td><td>message-status</td><td class="time">14:18:20</td><td><span class="log-pill ok">processado</span></td><td class="mono">{"messageId":"BAE4...","status":"delivered"}</td></tr>
+            <tr><td>Mobiliza Bahia</td><td>message-received</td><td class="time">13:55:42</td><td><span class="log-pill err">assinatura inválida</span></td><td class="mono">payload rejeitado · HMAC mismatch</td></tr>
+            <tr><td>Raquel · Gabinete</td><td>message-received</td><td class="time">13:55:01</td><td><span class="log-pill ok">processado</span></td><td class="mono">{"phone":"5571992830111","text":"Confirmado..."}</td></tr>
+            <tr><td>Raquel · Gabinete</td><td>disconnected</td><td class="time">09:22:14</td><td><span class="log-pill err">reconexão necessária</span></td><td class="mono">{"reason":"qr-expired","autoReconnect":true}</td></tr>
+            <tr><td>Mobiliza Bahia</td><td>message-received</td><td class="time">09:14:08</td><td><span class="log-pill ok">processado</span></td><td class="mono">{"phone":"5571984050112","text":"Bom dia, doutora..."}</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination">página 1 de 7 · 347 registros</div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Tab switch
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const id = 'panel-' + btn.dataset.tab;
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    });
+  });
+  // Chat select
+  document.querySelectorAll('.ws-chat').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.ws-chat').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+  }));
+  document.querySelectorAll('.ws-acc').forEach(a => a.addEventListener('click', () => {
+    document.querySelectorAll('.ws-acc').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+  }));
+  // Theme toggle
+  const html = document.documentElement;
+  const tBur = document.getElementById('t-burgundy');
+  const tNavy = document.getElementById('t-navy');
+  function setTheme(name) {
+    html.classList.remove('burgundy-institucional', 'navy-institucional');
+    html.classList.add(name);
+    tBur.classList.toggle('on', name === 'burgundy-institucional');
+    tNavy.classList.toggle('on', name === 'navy-institucional');
+  }
+  tBur.addEventListener('click', () => setTheme('burgundy-institucional'));
+  tNavy.addEventListener('click', () => setTheme('navy-institucional'));
+</script>
+</body>
+</html>

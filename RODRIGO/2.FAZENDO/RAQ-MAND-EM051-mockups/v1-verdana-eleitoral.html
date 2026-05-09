@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>V1 — Verdana Eleitoral · Mandato Desk · WhatsApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a3328;
+    --moss: #0d4a3e;
+    --moss-deep: #06302a;
+    --moss-soft: #2a6b5a;
+    --cream: #fdf8e8;
+    --paper: #f5edd6;
+    --paper-2: #ede2c3;
+    --terracotta: #c95942;
+    --terracotta-soft: #e88c75;
+    --rust: #8b3a1f;
+    --gold: #c8a951;
+    --gold-soft: #e8d28a;
+    --shadow: 0 1px 0 rgba(26,51,40,.08), 0 6px 24px rgba(26,51,40,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Atkinson Hyperlegible", -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--cream);
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(200,169,81,.05) 0, transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(201,89,66,.04) 0, transparent 40%);
+    overflow: hidden;
+    height: 100vh;
+    /* Subtle paper grain via SVG noise */
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: .35;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .2 0 0 0 0 .15 0 0 0 .15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 1;
+  }
+  .app {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    height: 100vh;
+    position: relative;
+    z-index: 2;
+  }
+  /* === HEADER === */
+  .topbar {
+    background: var(--moss-deep);
+    color: var(--cream);
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px double var(--gold);
+    position: relative;
+  }
+  .topbar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -7px;
+    height: 1px;
+    background: var(--terracotta);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--terracotta) 100%);
+    display: grid; place-items: center;
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    color: var(--moss-deep);
+    font-size: 18px;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,.2);
+  }
+  .brand-text h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: .3px;
+    line-height: 1;
+  }
+  .brand-text small {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: .7;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 13px;
+  }
+  .session-badge {
+    background: rgba(255,255,255,.08);
+    padding: 6px 12px;
+    border: 1px solid rgba(200,169,81,.4);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .session-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(.85); }
+  }
+  .user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    color: var(--cream);
+    display: grid; place-items: center;
+    font-weight: 700;
+    border: 2px solid var(--gold);
+  }
+  /* === TABS (subabas) === */
+  .tabs {
+    background: var(--paper);
+    border-bottom: 1px solid var(--paper-2);
+    display: flex;
+    padding: 0 28px;
+    gap: 4px;
+    position: relative;
+  }
+  .tab {
+    padding: 14px 22px;
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--moss);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all .25s ease;
+  }
+  .tab:hover { color: var(--terracotta); }
+  .tab.active {
+    color: var(--terracotta);
+  }
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    left: 8px; right: 8px; bottom: 0;
+    height: 3px;
+    background: var(--terracotta);
+    border-radius: 3px 3px 0 0;
+  }
+  .tab .badge {
+    background: var(--moss);
+    color: var(--cream);
+    font-family: "Atkinson Hyperlegible", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+  .tab.active .badge {
+    background: var(--terracotta);
+  }
+  /* === MAIN === */
+  .main {
+    display: flex;
+    overflow: hidden;
+    background: var(--cream);
+  }
+  .panel { display: none; height: 100%; width: 100%; }
+  .panel.active { display: flex; }
+
+  /* === CONVERSAS PANEL === */
+  .col-accounts {
+    width: 240px;
+    border-right: 1px solid var(--paper-2);
+    background: var(--paper);
+    overflow-y: auto;
+    padding: 18px 14px;
+  }
+  .col-label {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--moss-soft);
+    padding: 0 8px 10px;
+    border-bottom: 1px dashed var(--moss-soft);
+    margin-bottom: 14px;
+  }
+  .account-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    border: 1px solid transparent;
+    transition: all .2s;
+  }
+  .account-card:hover { background: var(--cream); }
+  .account-card.active {
+    background: var(--cream);
+    border-color: var(--gold);
+    box-shadow: var(--shadow);
+  }
+  .account-mark {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: var(--moss);
+    color: var(--cream);
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    display: grid; place-items: center;
+    border: 2px solid var(--gold);
+    flex-shrink: 0;
+  }
+  .account-card.active .account-mark { background: var(--terracotta); }
+  .account-info { flex: 1; min-width: 0; }
+  .account-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-status {
+    font-size: 11px;
+    color: var(--moss-soft);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-online { color: var(--moss); }
+  .status-online::before { content: "●"; color: #2a8b5a; }
+  .status-offline::before { content: "●"; color: #999; }
+
+  .col-chats {
+    width: 340px;
+    border-right: 1px solid var(--paper-2);
+    background: var(--cream);
+    display: flex;
+    flex-direction: column;
+  }
+  .chats-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--paper-2);
+  }
+  .chats-search {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 24px;
+    border: 1px solid var(--paper-2);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .chats-search::placeholder { color: var(--moss-soft); font-style: italic; }
+  .chats-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+  .chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--paper-2);
+    position: relative;
+    transition: background .15s;
+  }
+  .chat-item:hover { background: var(--paper); }
+  .chat-item.active {
+    background: var(--paper);
+  }
+  .chat-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--terracotta);
+  }
+  .chat-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--moss-soft), var(--moss));
+    color: var(--cream);
+    display: grid; place-items: center;
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    font-size: 16px;
+    border: 2px solid var(--gold);
+    flex-shrink: 0;
+  }
+  .chat-meta { flex: 1; min-width: 0; }
+  .chat-meta-row {
+    display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+  }
+  .chat-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chat-time {
+    font-size: 11px;
+    color: var(--moss-soft);
+    flex-shrink: 0;
+  }
+  .chat-preview {
+    font-size: 13px;
+    color: var(--moss-soft);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chat-unread {
+    background: var(--terracotta);
+    color: var(--cream);
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 2px 7px;
+    margin-top: 4px;
+  }
+  .badge-cidadao {
+    background: var(--gold-soft);
+    color: var(--rust);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  /* === CONVERSATION PANE === */
+  .col-conv {
+    flex: 1;
+    background: var(--paper);
+    background-image:
+      repeating-linear-gradient(45deg, transparent, transparent 60px, rgba(13,74,62,.015) 60px, rgba(13,74,62,.015) 61px);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .conv-header {
+    background: var(--cream);
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--paper-2);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  }
+  .conv-info { flex: 1; }
+  .conv-name {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .conv-name a {
+    font-size: 11px;
+    color: var(--terracotta);
+    text-decoration: none;
+    border: 1px solid var(--terracotta-soft);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: "Atkinson Hyperlegible", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .conv-name a:hover { background: var(--terracotta); color: var(--cream); }
+  .conv-sub {
+    font-size: 12px;
+    color: var(--moss-soft);
+    margin-top: 2px;
+  }
+  .conv-actions {
+    display: flex; gap: 8px;
+  }
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--paper-2);
+    color: var(--moss);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .icon-btn:hover { background: var(--moss); color: var(--cream); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .day-divider {
+    text-align: center;
+    margin: 18px 0;
+    position: relative;
+  }
+  .day-divider span {
+    background: var(--cream);
+    color: var(--moss-soft);
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-size: 12px;
+    padding: 4px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--paper-2);
+  }
+  .msg {
+    max-width: 64%;
+    padding: 10px 14px 8px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.45;
+    box-shadow: 0 1px 1px rgba(26,51,40,.05);
+    position: relative;
+  }
+  .msg.in {
+    background: var(--cream);
+    align-self: flex-start;
+    border: 1px solid var(--paper-2);
+    border-top-left-radius: 4px;
+  }
+  .msg.out {
+    background: linear-gradient(180deg, #cce8d8 0%, #b9e0c8 100%);
+    align-self: flex-end;
+    border: 1px solid #9bcfae;
+    border-top-right-radius: 4px;
+  }
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    margin-top: 4px;
+    font-size: 10.5px;
+    color: var(--moss-soft);
+  }
+  .msg .check {
+    width: 14px; height: 14px;
+  }
+  .msg .check.read { color: #1a8cff; }
+  .msg .check.error { color: var(--rust); }
+
+  .composer {
+    background: var(--cream);
+    border-top: 1px solid var(--paper-2);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .composer input {
+    flex: 1;
+    border: 1px solid var(--paper-2);
+    background: var(--paper);
+    border-radius: 24px;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .composer input::placeholder { color: var(--moss-soft); font-style: italic; }
+  .composer .send {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    color: var(--cream);
+    border: none;
+    cursor: pointer;
+    display: grid; place-items: center;
+    box-shadow: var(--shadow);
+    transition: all .15s;
+  }
+  .composer .send:hover {
+    background: var(--rust);
+    transform: scale(1.05);
+  }
+
+  /* === CONTAS PANEL === */
+  .contas-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 48px;
+    background: var(--cream);
+  }
+  .contas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--moss);
+    padding-bottom: 18px;
+  }
+  .contas-header h2 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 32px;
+    color: var(--moss-deep);
+    line-height: 1;
+  }
+  .contas-header p {
+    color: var(--moss-soft);
+    margin-top: 6px;
+    font-size: 13px;
+    font-style: italic;
+  }
+  .btn-primary {
+    background: var(--terracotta);
+    color: var(--cream);
+    border: none;
+    padding: 12px 22px;
+    border-radius: 6px;
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover {
+    background: var(--rust);
+    transform: translateY(-1px);
+  }
+  .conta-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 22px;
+  }
+  .conta-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-2);
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .conta-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 22px; right: 22px;
+    height: 4px;
+    background: var(--terracotta);
+    border-radius: 0 0 4px 4px;
+  }
+  .conta-top {
+    display: flex; gap: 14px; margin-bottom: 18px;
+  }
+  .conta-top .account-mark { width: 52px; height: 52px; font-size: 18px; }
+  .conta-top h3 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 19px;
+    color: var(--ink);
+  }
+  .conta-rows {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 8px 12px;
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .conta-rows dt {
+    color: var(--moss-soft);
+    font-style: italic;
+  }
+  .conta-rows dd {
+    color: var(--ink);
+    font-family: "Atkinson Hyperlegible", monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .conta-actions {
+    display: flex;
+    gap: 8px;
+    border-top: 1px dashed var(--paper-2);
+    padding-top: 14px;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--moss-soft);
+    color: var(--moss);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .btn-ghost:hover { background: var(--moss); color: var(--cream); }
+  .btn-danger { color: var(--rust); border-color: var(--rust); }
+  .btn-danger:hover { background: var(--rust); color: var(--cream); }
+
+  /* === WEBHOOKS PANEL === */
+  .webhooks-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 48px;
+    background: var(--cream);
+  }
+  .webhook-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-2);
+    border-radius: 10px;
+    padding: 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .webhook-title {
+    font-family: "Fraunces", serif;
+    font-size: 17px;
+    color: var(--moss-deep);
+    margin-bottom: 4px;
+  }
+  .webhook-help {
+    font-size: 12px;
+    color: var(--moss-soft);
+    font-style: italic;
+    margin-bottom: 18px;
+  }
+  .webhook-field {
+    margin-bottom: 14px;
+  }
+  .webhook-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--moss-soft);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .webhook-input-wrap {
+    display: flex;
+    gap: 0;
+    background: var(--cream);
+    border: 1px solid var(--paper-2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .webhook-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 14px;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .webhook-copy {
+    background: var(--moss);
+    color: var(--cream);
+    border: none;
+    padding: 0 18px;
+    cursor: pointer;
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .webhook-copy:hover { background: var(--moss-deep); }
+
+  /* === LOGS PANEL === */
+  .logs-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 48px;
+    background: var(--cream);
+  }
+  .logs-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .logs-filters select, .logs-filters input {
+    padding: 9px 14px;
+    border: 1px solid var(--paper-2);
+    background: var(--paper);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .logs-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--paper);
+    border: 1px solid var(--paper-2);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .logs-table th {
+    background: var(--moss);
+    color: var(--cream);
+    text-align: left;
+    padding: 11px 16px;
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .logs-table td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--paper-2);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .logs-table tr:last-child td { border-bottom: none; }
+  .logs-table tr:hover td { background: var(--cream); }
+  .log-status {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: .5px;
+  }
+  .log-status.ok { background: rgba(13,74,62,.12); color: var(--moss); }
+  .log-status.err { background: rgba(139,58,31,.12); color: var(--rust); }
+  .log-payload {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--moss-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+    display: inline-block;
+  }
+
+  /* === FOOTER === */
+  .footer {
+    background: var(--moss-deep);
+    color: var(--cream);
+    padding: 8px 28px;
+    font-size: 11.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--gold);
+    letter-spacing: .3px;
+  }
+  .footer .versao {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    opacity: .7;
+  }
+
+  /* mockup label */
+  .mockup-tag {
+    position: fixed;
+    top: 14px;
+    right: 320px;
+    background: var(--gold);
+    color: var(--moss-deep);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    z-index: 10;
+    box-shadow: var(--shadow);
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-tag">Mockup V1 · Verdana Eleitoral</div>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div class="brand-text">
+        <h1>Mandato Desk</h1>
+        <small>Gabinete Digital · Raquel Sá</small>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="session-badge">
+        <span class="session-dot"></span>
+        Sessão protegida · 28 min restantes
+      </div>
+      <div class="user-avatar">RS</div>
+    </div>
+  </header>
+
+  <!-- SUBABAS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab" data-tab="contas" role="tab">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Contas <span class="badge">2</span>
+    </button>
+    <button class="tab active" data-tab="conversas" role="tab" aria-selected="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Conversas <span class="badge">14</span>
+    </button>
+    <button class="tab" data-tab="webhooks" role="tab">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+      Webhooks
+    </button>
+    <button class="tab" data-tab="logs" role="tab">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Logs <span class="badge">347</span>
+    </button>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ========== CONVERSAS ========== -->
+    <section class="panel active" id="panel-conversas">
+      <!-- accounts column -->
+      <aside class="col-accounts">
+        <div class="col-label">Painéis</div>
+        <div class="account-card active">
+          <div class="account-mark">RS</div>
+          <div class="account-info">
+            <div class="account-name">Raquel · Gabinete</div>
+            <div class="account-status status-online">Conectado</div>
+          </div>
+        </div>
+        <div class="account-card">
+          <div class="account-mark">MB</div>
+          <div class="account-info">
+            <div class="account-name">Mobiliza Bahia</div>
+            <div class="account-status status-online">Conectado</div>
+          </div>
+        </div>
+
+        <div class="col-label" style="margin-top: 24px;">Filtros</div>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" checked /> Não lidos
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" /> Vinculados a contato
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" /> Erros de envio
+        </label>
+      </aside>
+
+      <!-- chats column -->
+      <aside class="col-chats">
+        <div class="chats-header">
+          <input class="chats-search" placeholder="Buscar conversa…" />
+        </div>
+        <div class="chats-list">
+          <div class="chat-item active">
+            <div class="chat-avatar">JM</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">Joana Mendes <span class="badge-cidadao">Cidadão</span></span>
+                <span class="chat-time">14:32</span>
+              </div>
+              <div class="chat-preview">Bom dia! Vi a publicação sobre a feira…</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="chat-unread">3</span>
+            </div>
+          </div>
+          <div class="chat-item">
+            <div class="chat-avatar">PS</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">+55 71 9 8341-7720</span>
+                <span class="chat-time">14:18</span>
+              </div>
+              <div class="chat-preview">Gostaria de saber sobre o programa de…</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="chat-unread">1</span>
+            </div>
+          </div>
+          <div class="chat-item">
+            <div class="chat-avatar">MA</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">Marcos Almeida <span class="badge-cidadao">Liderança</span></span>
+                <span class="chat-time">13:55</span>
+              </div>
+              <div class="chat-preview">Confirmado pra reunião amanhã.</div>
+            </div>
+          </div>
+          <div class="chat-item">
+            <div class="chat-avatar">CR</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">Coordenação Bairro</span>
+                <span class="chat-time">12:40</span>
+              </div>
+              <div class="chat-preview">Agendamos a vistoria pra sexta.</div>
+            </div>
+          </div>
+          <div class="chat-item">
+            <div class="chat-avatar">LV</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">Luiza Veiga <span class="badge-cidadao">Cidadão</span></span>
+                <span class="chat-time">11:09</span>
+              </div>
+              <div class="chat-preview">Obrigada pela atenção, deputada!</div>
+            </div>
+          </div>
+          <div class="chat-item">
+            <div class="chat-avatar">CN</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">Carlos Nogueira</span>
+                <span class="chat-time">Ontem</span>
+              </div>
+              <div class="chat-preview">Encaminhei o ofício pra Câmara.</div>
+            </div>
+          </div>
+          <div class="chat-item">
+            <div class="chat-avatar">DF</div>
+            <div class="chat-meta">
+              <div class="chat-meta-row">
+                <span class="chat-name">Dona Filó (Vila Esperança)</span>
+                <span class="chat-time">Ontem</span>
+              </div>
+              <div class="chat-preview">Posso passar segunda-feira no…</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- conversation pane -->
+      <section class="col-conv">
+        <header class="conv-header">
+          <div class="chat-avatar">JM</div>
+          <div class="conv-info">
+            <div class="conv-name">
+              Joana Mendes
+              <a href="#">Ver no CRM →</a>
+            </div>
+            <div class="conv-sub">+55 71 9 9123-0044 · cidadã · contato vinculado</div>
+          </div>
+          <div class="conv-actions">
+            <button class="icon-btn" title="Buscar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </button>
+            <button class="icon-btn" title="Anexar (em breve)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="messages">
+          <div class="day-divider"><span>Hoje · 9 de maio</span></div>
+
+          <div class="msg in">
+            Bom dia! Vi a publicação da deputada sobre a feira do Itapuã. Vão ter barracas pra artesanato local?
+            <div class="msg-meta">10:14</div>
+          </div>
+          <div class="msg out">
+            Bom dia, Joana! Vão sim, inclusive temos um espaço reservado pra cooperativas. Posso te encaminhar o formulário de inscrição?
+            <div class="msg-meta">
+              10:18
+              <svg class="check read" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7"/><path d="M8 11l1 1 7-7" opacity=".5"/></svg>
+            </div>
+          </div>
+          <div class="msg in">
+            Por favor! Tenho uma cooperativa de bordadeiras lá no bairro.
+            <div class="msg-meta">10:22</div>
+          </div>
+          <div class="msg out">
+            Perfeito. Vou te enviar agora pelo WhatsApp e também por email se preferir.
+            <div class="msg-meta">
+              14:30
+              <svg class="check read" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7"/><path d="M8 11l1 1 7-7" opacity=".5"/></svg>
+            </div>
+          </div>
+          <div class="msg in">
+            Pode me passar o link aqui mesmo, por favor?
+            <div class="msg-meta">14:32</div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <button class="icon-btn" title="Anexar (mídia chega na próxima entrega)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <input placeholder="Escreva uma resposta…" />
+          <button class="send" title="Enviar (Enter)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </section>
+    </section>
+
+    <!-- ========== CONTAS ========== -->
+    <section class="panel" id="panel-contas">
+      <div class="contas-wrap">
+        <div class="contas-header">
+          <div>
+            <h2>Contas Z-API</h2>
+            <p>Gerencie as instâncias WhatsApp do gabinete · 2 de 15 painéis em uso</p>
+          </div>
+          <button class="btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar conta
+          </button>
+        </div>
+
+        <div class="conta-cards">
+          <article class="conta-card">
+            <div class="conta-top">
+              <div class="account-mark">RS</div>
+              <div>
+                <h3>Raquel · Gabinete</h3>
+                <div style="font-size:12px;color:var(--moss-soft);margin-top:4px;">
+                  <span class="status-online">●</span> Conectado · última atividade há 2 min
+                </div>
+              </div>
+            </div>
+            <dl class="conta-rows">
+              <dt>Instance ID</dt><dd>3DCC51B4FE...A9F2</dd>
+              <dt>Token</dt><dd>•••••••••••••••• <span style="color:var(--moss-soft);font-size:11px;">(criptografado)</span></dd>
+              <dt>Client-Token</dt><dd>•••••••••••••••• <span style="color:var(--moss-soft);font-size:11px;">(Vault)</span></dd>
+              <dt>Senha painel</dt><dd>bcrypt $2b$12$… · resetada há 3d</dd>
+              <dt>Mensagens (90d)</dt><dd>847 enviadas · 1.234 recebidas</dd>
+            </dl>
+            <div class="conta-actions">
+              <button class="btn-ghost">Editar</button>
+              <button class="btn-ghost">Resetar senha</button>
+              <button class="btn-ghost btn-danger">Excluir</button>
+            </div>
+          </article>
+
+          <article class="conta-card">
+            <div class="conta-top">
+              <div class="account-mark">MB</div>
+              <div>
+                <h3>Mobiliza Bahia</h3>
+                <div style="font-size:12px;color:var(--moss-soft);margin-top:4px;">
+                  <span class="status-online">●</span> Conectado · última atividade agora
+                </div>
+              </div>
+            </div>
+            <dl class="conta-rows">
+              <dt>Instance ID</dt><dd>4F88AA22BC...1E07</dd>
+              <dt>Token</dt><dd>•••••••••••••••• <span style="color:var(--moss-soft);font-size:11px;">(criptografado)</span></dd>
+              <dt>Client-Token</dt><dd>•••••••••••••••• <span style="color:var(--moss-soft);font-size:11px;">(Vault)</span></dd>
+              <dt>Senha painel</dt><dd>bcrypt $2b$12$… · resetada há 12d</dd>
+              <dt>Mensagens (90d)</dt><dd>421 enviadas · 658 recebidas</dd>
+            </dl>
+            <div class="conta-actions">
+              <button class="btn-ghost">Editar</button>
+              <button class="btn-ghost">Resetar senha</button>
+              <button class="btn-ghost btn-danger">Excluir</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== WEBHOOKS ========== -->
+    <section class="panel" id="panel-webhooks">
+      <div class="webhooks-wrap">
+        <div class="contas-header" style="margin-bottom:24px;">
+          <div>
+            <h2>Webhooks por conta</h2>
+            <p>URL pública e segredo de validação para configurar no painel da Z-API</p>
+          </div>
+        </div>
+
+        <article class="webhook-card">
+          <h3 class="webhook-title">Raquel · Gabinete</h3>
+          <p class="webhook-help">Cole esta URL no painel Z-API em "Receber notificação webhook"</p>
+          <div class="webhook-field">
+            <label class="webhook-label">URL</label>
+            <div class="webhook-input-wrap">
+              <input value="https://uhqkcyuwddpxbttsigdc.functions.supabase.co/zapi-webhook?account=a3f8e2b1-4c5d" readonly />
+              <button class="webhook-copy">Copiar</button>
+            </div>
+          </div>
+          <div class="webhook-field">
+            <label class="webhook-label">Segredo de validação (HMAC)</label>
+            <div class="webhook-input-wrap">
+              <input value="••••••••••••••••••••••••••••••••" readonly />
+              <button class="webhook-copy">Mostrar</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--moss-soft);font-style:italic;">
+            Eventos suportados: message-received · message-status · disconnected · qr-code
+          </div>
+        </article>
+
+        <article class="webhook-card">
+          <h3 class="webhook-title">Mobiliza Bahia</h3>
+          <p class="webhook-help">Cole esta URL no painel Z-API em "Receber notificação webhook"</p>
+          <div class="webhook-field">
+            <label class="webhook-label">URL</label>
+            <div class="webhook-input-wrap">
+              <input value="https://uhqkcyuwddpxbttsigdc.functions.supabase.co/zapi-webhook?account=b7c1d4e9-2f8a" readonly />
+              <button class="webhook-copy">Copiar</button>
+            </div>
+          </div>
+          <div class="webhook-field">
+            <label class="webhook-label">Segredo de validação (HMAC)</label>
+            <div class="webhook-input-wrap">
+              <input value="••••••••••••••••••••••••••••••••" readonly />
+              <button class="webhook-copy">Mostrar</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ========== LOGS ========== -->
+    <section class="panel" id="panel-logs">
+      <div class="logs-wrap">
+        <div class="contas-header" style="margin-bottom:24px;">
+          <div>
+            <h2>Logs de webhook</h2>
+            <p>Eventos recebidos da Z-API · retenção 90 dias</p>
+          </div>
+        </div>
+        <div class="logs-filters">
+          <select>
+            <option>Todas as contas</option>
+            <option>Raquel · Gabinete</option>
+            <option>Mobiliza Bahia</option>
+          </select>
+          <select>
+            <option>Todos os tipos</option>
+            <option>message-received</option>
+            <option>message-status</option>
+            <option>disconnected</option>
+          </select>
+          <input placeholder="Buscar por número ou messageId…" />
+        </div>
+
+        <table class="logs-table">
+          <thead>
+            <tr>
+              <th>Conta</th>
+              <th>Tipo</th>
+              <th>Quando</th>
+              <th>Status</th>
+              <th>Payload</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Raquel · Gabinete</td><td>message-received</td><td>14:32:08</td><td><span class="log-status ok">processado</span></td><td><span class="log-payload">{"phone":"5571991230044","text":"Pode me passar o link..."}</span></td></tr>
+            <tr><td>Raquel · Gabinete</td><td>message-status</td><td>14:30:11</td><td><span class="log-status ok">processado</span></td><td><span class="log-payload">{"messageId":"BAE5...","status":"read"}</span></td></tr>
+            <tr><td>Mobiliza Bahia</td><td>message-received</td><td>14:18:55</td><td><span class="log-status ok">processado</span></td><td><span class="log-payload">{"phone":"5571983417720","text":"Gostaria de saber..."}</span></td></tr>
+            <tr><td>Raquel · Gabinete</td><td>message-status</td><td>14:18:20</td><td><span class="log-status ok">processado</span></td><td><span class="log-payload">{"messageId":"BAE4...","status":"delivered"}</span></td></tr>
+            <tr><td>Mobiliza Bahia</td><td>message-received</td><td>13:55:42</td><td><span class="log-status err">assinatura inválida</span></td><td><span class="log-payload">payload rejeitado · HMAC mismatch</span></td></tr>
+            <tr><td>Raquel · Gabinete</td><td>message-received</td><td>13:55:01</td><td><span class="log-status ok">processado</span></td><td><span class="log-payload">{"phone":"5571992830111","text":"Confirmado pra reunião..."}</span></td></tr>
+            <tr><td>Raquel · Gabinete</td><td>disconnected</td><td>09:22:14</td><td><span class="log-status err">reconexão necessária</span></td><td><span class="log-payload">{"reason":"qr-expired","autoReconnect":true}</span></td></tr>
+            <tr><td>Mobiliza Bahia</td><td>message-received</td><td>09:14:08</td><td><span class="log-status ok">processado</span></td><td><span class="log-payload">{"phone":"5571984050112","text":"Bom dia, doutora..."}</span></td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:16px;font-size:12px;color:var(--moss-soft);text-align:right;">Página 1 de 7 · 347 registros</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>RAQ-MAND-EM051 · Z-API integration · MVP enxuto</div>
+    <div class="versao">"O gabinete digital do mandato" · v0.1 mockup</div>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const id = 'panel-' + btn.dataset.tab;
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    });
+  });
+  document.querySelectorAll('.chat-item').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.chat-item').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+  }));
+</script>
+</body>
+</html>
