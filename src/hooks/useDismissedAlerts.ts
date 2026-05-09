@@ -13,6 +13,7 @@ export interface DismissedAlert {
   alert_title: string | null;
   alert_subtitle: string | null;
   dismissed_at: string;
+  expires_at: string;
 }
 
 export interface UseDismissedAlertsReturn {
@@ -28,6 +29,12 @@ export interface UseDismissedAlertsReturn {
   restoreOne: (alertKey: string) => Promise<void>;
   /** Restaura todos os alertas dispensados do usuário. */
   restoreAll: () => Promise<void>;
+  /** Apaga um único dismissal permanentemente. */
+  deleteOne: (alertKey: string) => Promise<void>;
+  /** Apaga todos os dismissals do usuário permanentemente. */
+  deleteAll: () => Promise<void>;
+  /** Apaga apenas dismissals expirados (expires_at <= NOW()). */
+  deleteExpired: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -59,7 +66,7 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('dashboard_alert_dismissals')
-        .select('id, alert_key, alert_type, alert_title, alert_subtitle, dismissed_at')
+        .select('id, alert_key, alert_type, alert_title, alert_subtitle, dismissed_at, expires_at')
         .order('dismissed_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as DismissedAlert[];
@@ -67,12 +74,19 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     staleTime: 30_000,
   });
 
-  // useMemo garante referência estável do Set entre renders quando rows não muda
-  // — evita invalidação desnecessária de useMemo/useCallback em consumers (CR should-fix).
-  const dismissedKeys = useMemo(
-    () => new Set(rows.map((r) => r.alert_key)),
-    [rows]
-  );
+  // useMemo garante referência estável do Set entre renders quando rows não muda.
+  // Filtra apenas dismissals ATIVOS (expires_at > NOW()) — registros expirados são
+  // excluídos do Set para que o alerta volte a aparecer no dashboard naturalmente.
+  // O filtro é calculado uma vez no render via Date.now(); atualiza na próxima
+  // revalidação da query (staleTime: 30s). NÃO há setInterval — simples e suficiente.
+  const dismissedKeys = useMemo(() => {
+    const now = Date.now();
+    return new Set(
+      rows
+        .filter((r) => new Date(r.expires_at).getTime() > now)
+        .map((r) => r.alert_key)
+    );
+  }, [rows]);
 
   // ── Mutation: dismissOne ─────────────────────────────────────────────────
   const dismissOneMutation = useMutation({
@@ -174,6 +188,69 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     },
   });
 
+  // ── Mutation: deleteOne ──────────────────────────────────────────────────
+  const deleteOneMutation = useMutation({
+    mutationFn: async (alertKey: string) => {
+      const userId = await getCurrentUserId();
+      const { error } = await supabase
+        .from('dashboard_alert_dismissals')
+        .delete()
+        .eq('user_id', userId)
+        .eq('alert_key', alertKey);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: DISMISSED_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'metrics'] });
+      toast.success('Alerta apagado');
+    },
+    onError: () => {
+      toast.error('Falha ao apagar alerta');
+    },
+  });
+
+  // ── Mutation: deleteAll ──────────────────────────────────────────────────
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const userId = await getCurrentUserId();
+      const { error } = await supabase
+        .from('dashboard_alert_dismissals')
+        .delete()
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: DISMISSED_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'metrics'] });
+      toast.success('Todos os alertas apagados');
+    },
+    onError: () => {
+      toast.error('Falha ao apagar alertas');
+    },
+  });
+
+  // ── Mutation: deleteExpired ──────────────────────────────────────────────
+  const deleteExpiredMutation = useMutation({
+    mutationFn: async () => {
+      const userId = await getCurrentUserId();
+      const { error, count } = await supabase
+        .from('dashboard_alert_dismissals')
+        .delete({ count: 'exact' })
+        .eq('user_id', userId)
+        .lte('expires_at', new Date().toISOString());
+      if (error) throw error;
+      return count ?? 0;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: DISMISSED_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'metrics'] });
+      toast.success(`${count} alerta${count === 1 ? '' : 's'} antigo${count === 1 ? '' : 's'} apagado${count === 1 ? '' : 's'}`);
+    },
+    onError: () => {
+      toast.error('Falha ao apagar alertas expirados');
+    },
+  });
+
   return {
     dismissedKeys,
     dismissedList: rows,
@@ -181,6 +258,11 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     dismissMany: (alerts) => dismissManyMutation.mutateAsync(alerts),
     restoreOne: (key) => restoreOneMutation.mutateAsync(key),
     restoreAll: () => restoreAllMutation.mutateAsync(),
+    deleteOne: (key) => deleteOneMutation.mutateAsync(key),
+    deleteAll: () => deleteAllMutation.mutateAsync(),
+    deleteExpired: async () => {
+      await deleteExpiredMutation.mutateAsync();
+    },
     isLoading,
   };
 }
