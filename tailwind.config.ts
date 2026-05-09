@@ -76,15 +76,42 @@ export default {
   				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))'
   			},
+  			/* === Cores semânticas — sempre via tokens, nunca hardcoded === */
+  			success: {
+  				DEFAULT: 'hsl(var(--success))',
+  				foreground: 'hsl(var(--success-foreground))',
+  				soft: 'hsl(var(--success-soft))',
+  				'soft-foreground': 'hsl(var(--success-soft-foreground))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				foreground: 'hsl(var(--warning-foreground))',
+  				soft: 'hsl(var(--warning-soft))',
+  				'soft-foreground': 'hsl(var(--warning-soft-foreground))'
+  			},
+  			info: {
+  				DEFAULT: 'hsl(var(--info))',
+  				foreground: 'hsl(var(--info-foreground))',
+  				soft: 'hsl(var(--info-soft))',
+  				'soft-foreground': 'hsl(var(--info-soft-foreground))'
+  			},
+  			danger: {
+  				DEFAULT: 'hsl(var(--danger))',
+  				foreground: 'hsl(var(--danger-foreground))',
+  				soft: 'hsl(var(--danger-soft))',
+  				'soft-foreground': 'hsl(var(--danger-soft-foreground))'
+  			},
+  			/* Mantidos pra compat com legado (status/prioridade hardcoded) —
+  			   migrar futuramente pros tokens semânticos acima. */
   			status: {
-  				open: '#f59e0b',
-  				progress: '#3b82f6',
-  				resolved: '#22c55e'
+  				open: 'hsl(var(--warning))',
+  				progress: 'hsl(var(--info))',
+  				resolved: 'hsl(var(--success))'
   			},
   			priority: {
-  				low: '#22c55e',
-  				medium: '#f59e0b',
-  				high: '#ef4444'
+  				low: 'hsl(var(--success))',
+  				medium: 'hsl(var(--warning))',
+  				high: 'hsl(var(--danger))'
   			},
   			dark: {
   				bg: '#06091A',

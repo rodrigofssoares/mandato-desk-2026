@@ -109,6 +109,50 @@
     --color-text-subtle: oklch(62% 0.018 220);
   }
 
+  /*
+   * Tokens semânticos — iguais nos 2 temas.
+   *
+   * Use em qualquer status visual ao invés de cores Tailwind hardcoded
+   * (`bg-emerald-500/10`, `text-amber-600`, etc):
+   *   - success: ações concluídas, deltas positivos, "ativo", "ok"
+   *   - warning: atenção, status médio, alertas não-críticos
+   *   - info:    informação neutra, links, destaque sem peso
+   *   - danger:  destrutivo, deltas negativos, erros (alias semântico
+   *              do destructive do shadcn — destructive permanece pra
+   *              componentes que esperam ele)
+   *
+   * Cada um tem 4 variantes:
+   *   --foo               — fill principal (forte, alta saturação)
+   *   --foo-foreground    — texto sobre o fill
+   *   --foo-soft          — bg sutil (~tint pra chips, badges)
+   *   --foo-soft-foreground — texto sobre o soft (cor escura legível)
+   */
+  :root {
+    /* Success (verde) */
+    --success: 142 71% 45%;             /* #22c55e */
+    --success-foreground: 0 0% 100%;
+    --success-soft: 142 76% 95%;        /* #dcfce7 */
+    --success-soft-foreground: 142 72% 26%;  /* #14532d */
+
+    /* Warning (amber) */
+    --warning: 38 92% 50%;              /* #f59e0b */
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 48 96% 89%;         /* #fef3c7 */
+    --warning-soft-foreground: 26 83% 30%;   /* #92400e */
+
+    /* Info (sky) */
+    --info: 199 89% 48%;                /* #0ea5e9 */
+    --info-foreground: 0 0% 100%;
+    --info-soft: 204 94% 94%;           /* #e0f2fe */
+    --info-soft-foreground: 200 98% 28%;     /* #075985 */
+
+    /* Danger */
+    --danger: 0 73% 51%;                /* #dc2626 */
+    --danger-foreground: 0 0% 100%;
+    --danger-soft: 0 86% 97%;           /* #fef2f2 */
+    --danger-soft-foreground: 0 70% 35%;     /* #991b1b */
+  }
+
   * {
     @apply border-border;
   }
