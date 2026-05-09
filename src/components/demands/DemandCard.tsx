@@ -7,16 +7,17 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Demand } from '@/hooks/useDemands';
 import { getContactDisplayName } from '@/lib/contactDisplay';
+import { StatusChip, type StatusChipVariant } from '@/components/ui-system';
 
 interface DemandCardProps {
   demand: Demand;
   onClick: () => void;
 }
 
-const priorityConfig = {
-  low: { label: 'Baixa', className: 'bg-success-soft text-success-soft-foreground hover:bg-success-soft' },
-  medium: { label: 'Media', className: 'bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft' },
-  high: { label: 'Alta', className: 'bg-danger-soft text-danger-soft-foreground hover:bg-danger-soft' },
+const priorityConfig: Record<'low' | 'medium' | 'high', { label: string; chipVariant: StatusChipVariant }> = {
+  low:    { label: 'Baixa', chipVariant: 'success' },
+  medium: { label: 'Media', chipVariant: 'warning' },
+  high:   { label: 'Alta',  chipVariant: 'danger' },
 };
 
 export function DemandCard({ demand, onClick }: DemandCardProps) {
@@ -48,9 +49,9 @@ export function DemandCard({ demand, onClick }: DemandCardProps) {
             <h4 className="font-semibold text-sm leading-tight line-clamp-2">
               {demand.title}
             </h4>
-            <Badge variant="secondary" className={priority.className}>
+            <StatusChip variant={priority.chipVariant}>
               {priority.label}
-            </Badge>
+            </StatusChip>
           </div>
 
           {demand.contact && (

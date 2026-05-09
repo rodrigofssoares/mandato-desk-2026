@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { StatusChip, type StatusChipVariant } from '@/components/ui-system';
 import { Avatar } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -24,18 +24,18 @@ interface UserCardProps {
   user: UserProfile;
 }
 
-const statusConfig = {
-  ATIVO:    { label: 'Ativo',    variant: 'default' as const, className: 'bg-success-soft text-success-soft-foreground hover:bg-success-soft' },
-  PENDENTE: { label: 'Pendente', variant: 'default' as const, className: 'bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft' },
-  INATIVO:  { label: 'Inativo',  variant: 'default' as const, className: 'bg-danger-soft text-danger-soft-foreground hover:bg-danger-soft' },
+const statusConfig: Record<string, { label: string; chipVariant: StatusChipVariant }> = {
+  ATIVO:    { label: 'Ativo',    chipVariant: 'success' },
+  PENDENTE: { label: 'Pendente', chipVariant: 'warning' },
+  INATIVO:  { label: 'Inativo',  chipVariant: 'danger' },
 };
 
-const roleColorMap: Record<Role, string> = {
-  admin:        'bg-primary/10 text-primary',
-  proprietario: 'bg-info-soft text-info-soft-foreground',
-  assessor:     'bg-accent/15 text-accent',
-  assistente:   'bg-muted text-muted-foreground',
-  estagiario:   'bg-warning-soft text-warning-soft-foreground',
+const roleChipVariant: Record<Role, StatusChipVariant> = {
+  admin:        'primary',
+  proprietario: 'info',
+  assessor:     'accent',
+  assistente:   'neutral',
+  estagiario:   'warning',
 };
 
 function getInitials(name: string): string {
@@ -82,12 +82,12 @@ export function UserCard({ user }: UserCardProps) {
                 </p>
               )}
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="default" className={roleColorMap[user.role] ?? 'bg-gray-100 text-gray-700'}>
+                <StatusChip variant={roleChipVariant[user.role] ?? 'neutral'}>
                   {ROLE_LABELS[user.role] ?? user.role}
-                </Badge>
-                <Badge variant={status.variant} className={status.className}>
+                </StatusChip>
+                <StatusChip variant={status.chipVariant}>
                   {status.label}
-                </Badge>
+                </StatusChip>
               </div>
             </div>
 

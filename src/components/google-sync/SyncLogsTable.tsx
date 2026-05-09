@@ -6,8 +6,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import type { GoogleSyncLog } from '@/hooks/useGoogleSync';
+import { StatusChip } from '@/components/ui-system';
 
 interface SyncLogsTableProps {
   logs: GoogleSyncLog[];
@@ -32,12 +32,12 @@ function operationLabel(op: string): string {
 
 function statusBadge(status: string) {
   if (status === 'success') {
-    return <Badge variant="default" className="bg-success-soft text-success-soft-foreground hover:bg-success-soft">Sucesso</Badge>;
+    return <StatusChip variant="success">Sucesso</StatusChip>;
   }
   if (status === 'error') {
-    return <Badge variant="destructive">Erro</Badge>;
+    return <StatusChip variant="danger" tone="solid">Erro</StatusChip>;
   }
-  return <Badge variant="secondary">{status}</Badge>;
+  return <StatusChip variant="neutral">{status}</StatusChip>;
 }
 
 export function SyncLogsTable({ logs, isLoading }: SyncLogsTableProps) {

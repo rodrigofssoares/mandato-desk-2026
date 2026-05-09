@@ -5,6 +5,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import { StatusChip } from '@/components/ui-system';
 import {
   Table,
   TableBody,
@@ -24,10 +25,10 @@ interface WebhookLogsProps {
 }
 
 function StatusBadge({ code }: { code: number | null }) {
-  if (code === null) return <Badge variant="secondary">-</Badge>;
-  if (code >= 200 && code < 300) return <Badge className="bg-success-soft text-success-soft-foreground hover:bg-success-soft">{code}</Badge>;
-  if (code >= 400 && code < 500) return <Badge className="bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft">{code}</Badge>;
-  return <Badge className="bg-danger-soft text-danger-soft-foreground hover:bg-danger-soft">{code}</Badge>;
+  if (code === null) return <StatusChip variant="neutral">-</StatusChip>;
+  if (code >= 200 && code < 300) return <StatusChip variant="success">{code}</StatusChip>;
+  if (code >= 400 && code < 500) return <StatusChip variant="warning">{code}</StatusChip>;
+  return <StatusChip variant="danger">{code}</StatusChip>;
 }
 
 export function WebhookLogs({ webhookId, webhookName, open, onOpenChange }: WebhookLogsProps) {
