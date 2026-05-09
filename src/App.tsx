@@ -30,11 +30,25 @@ import Board from '@/pages/Board';
 import Tarefas from '@/pages/Tarefas';
 import DesignSystem from '@/pages/DesignSystem';
 
+// Extrai mensagem legível de qualquer formato de erro — Error nativo, PostgrestError
+// do Supabase (objeto plano `{ code, message, details, hint }`), ou string. Sem essa
+// normalização, `String(postgrestError)` vira "[object Object]" no toast.
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const e = error as { message?: unknown; details?: unknown; hint?: unknown };
+    if (typeof e.message === 'string' && e.message) return e.message;
+    if (typeof e.details === 'string' && e.details) return e.details;
+    if (typeof e.hint === 'string' && e.hint) return e.hint;
+  }
+  return 'erro desconhecido';
+}
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error(`Erro ao carregar dados: ${message}`);
+      toast.error(`Erro ao carregar dados: ${extractErrorMessage(error)}`);
     },
   }),
   defaultOptions: {
