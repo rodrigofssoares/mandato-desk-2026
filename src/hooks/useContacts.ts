@@ -150,6 +150,7 @@ export interface Contact {
   youtube?: string | null;
   declarou_voto?: boolean;
   ranking?: number;
+  ranking_manual_override?: boolean;
   leader_id?: string | null;
   origem?: string | null;
   observacoes?: string | null;

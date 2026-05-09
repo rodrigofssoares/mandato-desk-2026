@@ -77,6 +77,8 @@ const EMPTY_CONTACT_FORM: ContactFormData = {
   tiktok: '',
   youtube: '',
   declarou_voto: false,
+  ranking: null,
+  ranking_manual_override: false,
   leader_id: '',
   origem: '',
   observacoes: '',
@@ -137,6 +139,8 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         tiktok: contact.tiktok ?? '',
         youtube: contact.youtube ?? '',
         declarou_voto: contact.declarou_voto ?? false,
+        ranking: contact.ranking ?? null,
+        ranking_manual_override: (contact as { ranking_manual_override?: boolean }).ranking_manual_override ?? false,
         leader_id: contact.leader_id ?? '',
         origem: contact.origem ?? '',
         observacoes: contact.observacoes ?? '',
@@ -432,12 +436,24 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </label>
                   </div>
 
-                  {/* Ranking calculado automaticamente (preview otimista) */}
+                  {/* Ranking: cálculo automático + botões 0-10 pra override manual */}
                   <div>
                     <RankingBadge
                       contact={rankingPreview}
                       campaignValues={isEditing ? dbCampaignValues : pendingCampaignValues}
                       totalCampaignFields={campaignFields.length}
+                      manualValue={form.watch('ranking')}
+                      manualOverride={form.watch('ranking_manual_override') ?? false}
+                      onSelectManual={(value) => {
+                        form.setValue('ranking', value, { shouldDirty: true });
+                        form.setValue('ranking_manual_override', true, { shouldDirty: true });
+                      }}
+                      onClearOverride={() => {
+                        // Volta ao automático: o trigger SQL recalcula no próximo save
+                        // (ranking_manual_override muda → entra no IF de campos relevantes).
+                        form.setValue('ranking_manual_override', false, { shouldDirty: true });
+                        form.setValue('ranking', null, { shouldDirty: true });
+                      }}
                     />
                   </div>
 
