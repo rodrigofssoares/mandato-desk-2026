@@ -53,8 +53,8 @@ export function CampaignFieldsList({
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-7 h-7 rounded-md bg-purple-500/10 flex items-center justify-center">
-          <ListChecks className="h-3.5 w-3.5 text-purple-400" />
+        <div className="w-7 h-7 rounded-md bg-accent/15 flex items-center justify-center">
+          <ListChecks className="h-3.5 w-3.5 text-accent" />
         </div>
         <span className="text-xs font-semibold text-muted-foreground">
           Campos de Campanha
@@ -83,7 +83,7 @@ export function CampaignFieldsList({
                 className={cn(
                   'flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors',
                   checked
-                    ? 'border-purple-500/50 bg-purple-500/5'
+                    ? 'border-accent/60 bg-accent/10'
                     : 'border-border hover:border-muted-foreground/30',
                 )}
               >

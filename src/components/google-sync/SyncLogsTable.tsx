@@ -32,7 +32,7 @@ function operationLabel(op: string): string {
 
 function statusBadge(status: string) {
   if (status === 'success') {
-    return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Sucesso</Badge>;
+    return <Badge variant="default" className="bg-success-soft text-success-soft-foreground hover:bg-success-soft">Sucesso</Badge>;
   }
   if (status === 'error') {
     return <Badge variant="destructive">Erro</Badge>;

@@ -25,9 +25,9 @@ interface WebhookLogsProps {
 
 function StatusBadge({ code }: { code: number | null }) {
   if (code === null) return <Badge variant="secondary">-</Badge>;
-  if (code >= 200 && code < 300) return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{code}</Badge>;
-  if (code >= 400 && code < 500) return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{code}</Badge>;
-  return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">{code}</Badge>;
+  if (code >= 200 && code < 300) return <Badge className="bg-success-soft text-success-soft-foreground hover:bg-success-soft">{code}</Badge>;
+  if (code >= 400 && code < 500) return <Badge className="bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft">{code}</Badge>;
+  return <Badge className="bg-danger-soft text-danger-soft-foreground hover:bg-danger-soft">{code}</Badge>;
 }
 
 export function WebhookLogs({ webhookId, webhookName, open, onOpenChange }: WebhookLogsProps) {

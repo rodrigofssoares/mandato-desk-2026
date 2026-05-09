@@ -120,7 +120,7 @@ export function CustomFieldsManager() {
                   </TableCell>
                   <TableCell>
                     {campo.filtravel ? (
-                      <Badge variant="outline" className="border-emerald-500 text-emerald-600">
+                      <Badge variant="outline" className="border-success text-success">
                         Sim
                       </Badge>
                     ) : (

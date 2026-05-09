@@ -140,11 +140,11 @@ export function PrintLabelsModal({ open, onOpenChange, filters }: PrintLabelsMod
           <div className="space-y-4">
             {/* Resumo */}
             <div className="flex items-center gap-3 flex-wrap">
-              <Badge variant="default" className="bg-green-100 text-green-800">
+              <Badge variant="default" className="bg-success-soft text-success-soft-foreground hover:bg-success-soft">
                 {validContacts.length} com endereço completo
               </Badge>
               {invalidContacts.length > 0 && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                <Badge variant="secondary" className="bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft">
                   {invalidContacts.length} ignorados
                 </Badge>
               )}
@@ -166,7 +166,7 @@ export function PrintLabelsModal({ open, onOpenChange, filters }: PrintLabelsMod
             {invalidContacts.length > 0 && (
               <Collapsible open={showInvalid} onOpenChange={setShowInvalid}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 text-yellow-700">
+                  <Button variant="ghost" size="sm" className="gap-2 text-warning-soft-foreground">
                     <AlertTriangle className="h-4 w-4" />
                     {showInvalid ? 'Ocultar' : 'Ver'} contatos ignorados ({invalidContacts.length})
                   </Button>

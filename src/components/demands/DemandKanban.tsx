@@ -33,9 +33,9 @@ interface ColumnConfig {
 }
 
 const columns: ColumnConfig[] = [
-  { status: 'open', title: 'Aberta', color: 'bg-yellow-500', bgColor: 'bg-yellow-50' },
-  { status: 'in_progress', title: 'Em Andamento', color: 'bg-blue-500', bgColor: 'bg-blue-50' },
-  { status: 'resolved', title: 'Resolvida', color: 'bg-green-500', bgColor: 'bg-green-50' },
+  { status: 'open', title: 'Aberta', color: 'bg-warning', bgColor: 'bg-warning-soft' },
+  { status: 'in_progress', title: 'Em Andamento', color: 'bg-info', bgColor: 'bg-info-soft' },
+  { status: 'resolved', title: 'Resolvida', color: 'bg-success', bgColor: 'bg-success-soft' },
 ];
 
 function KanbanColumn({

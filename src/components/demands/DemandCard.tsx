@@ -14,9 +14,9 @@ interface DemandCardProps {
 }
 
 const priorityConfig = {
-  low: { label: 'Baixa', className: 'bg-green-100 text-green-800 hover:bg-green-100' },
-  medium: { label: 'Media', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' },
-  high: { label: 'Alta', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+  low: { label: 'Baixa', className: 'bg-success-soft text-success-soft-foreground hover:bg-success-soft' },
+  medium: { label: 'Media', className: 'bg-warning-soft text-warning-soft-foreground hover:bg-warning-soft' },
+  high: { label: 'Alta', className: 'bg-danger-soft text-danger-soft-foreground hover:bg-danger-soft' },
 };
 
 export function DemandCard({ demand, onClick }: DemandCardProps) {

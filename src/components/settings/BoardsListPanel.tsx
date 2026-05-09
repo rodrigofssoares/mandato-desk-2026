@@ -221,7 +221,7 @@ function BoardCard({
                 title={board.is_default ? 'Já é o padrão' : 'Marcar como padrão'}
               >
                 <Star
-                  className={`h-4 w-4 ${board.is_default ? 'fill-amber-500 text-amber-500' : ''}`}
+                  className={`h-4 w-4 ${board.is_default ? 'fill-warning text-warning' : ''}`}
                 />
               </Button>
               <Button variant="ghost" size="icon" onClick={onEdit} title="Editar funil">

@@ -111,7 +111,7 @@ export function SyncErrorsList({ errors, isLoading }: SyncErrorsListProps) {
           <div key={err.contact_id} className="flex items-start justify-between gap-3 p-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                <AlertCircle className="h-4 w-4 text-danger shrink-0" />
                 <span className="font-medium text-sm truncate">
                   {err.contacts?.nome ?? err.contact_id}
                 </span>

@@ -222,11 +222,11 @@ const endpointGroups: { title: string; endpoints: Endpoint[] }[] = [
 ];
 
 const methodColors: Record<string, string> = {
-  GET: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  POST: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  PUT: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  PATCH: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  DELETE: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  GET:    'bg-success-soft text-success-soft-foreground',
+  POST:   'bg-info-soft text-info-soft-foreground',
+  PUT:    'bg-warning-soft text-warning-soft-foreground',
+  PATCH:  'bg-warning-soft text-warning-soft-foreground',
+  DELETE: 'bg-danger-soft text-danger-soft-foreground',
 };
 
 const contactFields = [
@@ -301,11 +301,11 @@ const contactFieldsMeta: FieldMeta[] = contactFields.map((f) => ({
 }));
 
 const fieldTypeBadgeClass: Record<FieldType, string> = {
-  string: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
-  number: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-  boolean: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-  date: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  uuid: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  string:  'bg-muted text-muted-foreground',
+  number:  'bg-info-soft text-info-soft-foreground',
+  boolean: 'bg-success-soft text-success-soft-foreground',
+  date:    'bg-warning-soft text-warning-soft-foreground',
+  uuid:    'bg-accent/15 text-accent',
 };
 
 function defaultValueFor(type: FieldType): string | number | boolean {
