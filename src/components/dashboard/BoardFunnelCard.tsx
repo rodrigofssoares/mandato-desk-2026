@@ -11,7 +11,7 @@ import {
   Legend,
 } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -21,10 +21,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Filter } from 'lucide-react';
 import type { FunilStage } from '@/hooks/useDashboardMetrics';
 import type { Board } from '@/hooks/useBoards';
 import { ChartViewToggle } from './ChartViewToggle';
+import { WidgetHeader } from './WidgetHeader';
 import type { ChartViewType } from '@/lib/dashboardLayout';
 
 interface BoardFunnelCardProps {
@@ -40,8 +41,9 @@ interface BoardFunnelCardProps {
 const TOOLTIP_STYLE = {
   backgroundColor: 'hsl(var(--card))',
   border: '1px solid hsl(var(--border))',
-  borderRadius: '8px',
+  borderRadius: '12px',
   color: 'hsl(var(--card-foreground))',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 };
 
 export function BoardFunnelCard({
@@ -62,38 +64,41 @@ export function BoardFunnelCard({
   }));
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-        <div className="min-w-0 flex-1">
-          <CardTitle className="text-lg">Funil</CardTitle>
-        </div>
-        <div className="flex items-center gap-2">
-          {hasBoards && activeBoardId && (
-            <Select value={activeBoardId} onValueChange={onChangeBoard}>
-              <SelectTrigger className="h-8 w-[160px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {boards.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.nome}
-                    {b.is_default ? ' (padrão)' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {onChangeViewType && (
-            <ChartViewToggle value={viewType} onChange={onChangeViewType} />
-          )}
-          <Button variant="ghost" size="sm" asChild className="h-8 px-2">
-            <Link to={activeBoardId ? `/board?board=${activeBoardId}` : '/board'}>
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1 min-h-0">
+    <Card className="h-full flex flex-col overflow-hidden">
+      <WidgetHeader
+        eyebrow="Funil de conversão"
+        title="Funil"
+        icon={Filter}
+        iconBubbleClassName="bg-primary/10 text-primary"
+        actions={
+          <>
+            {hasBoards && activeBoardId && (
+              <Select value={activeBoardId} onValueChange={onChangeBoard}>
+                <SelectTrigger className="h-8 w-[160px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {boards.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.nome}
+                      {b.is_default ? ' (padrão)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {onChangeViewType && (
+              <ChartViewToggle value={viewType} onChange={onChangeViewType} />
+            )}
+            <Button variant="ghost" size="sm" asChild className="h-8 px-2">
+              <Link to={activeBoardId ? `/board?board=${activeBoardId}` : '/board'}>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </>
+        }
+      />
+      <CardContent className="flex-1 min-h-0 pb-4">
         {isLoading ? (
           <Skeleton className="h-full min-h-[240px] w-full" />
         ) : !hasBoards ? (

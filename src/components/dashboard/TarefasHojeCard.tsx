@@ -2,30 +2,33 @@ import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarClock, ArrowRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useTarefasHoje } from '@/hooks/useTarefas';
 import { TarefaIcon } from '@/components/tarefas/TarefaIcon';
+import { WidgetHeader } from './WidgetHeader';
 
 export function TarefasHojeCard() {
   const { data, isLoading } = useTarefasHoje(5);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <CalendarClock className="h-5 w-5 text-primary" />
-          Tarefas de hoje
-        </CardTitle>
-        <Button variant="ghost" size="sm" asChild className="h-8">
-          <Link to="/tarefas" className="text-xs">
-            Ver todas
-            <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Link>
-        </Button>
-      </CardHeader>
-      <CardContent className="flex-1">
+    <Card className="h-full flex flex-col overflow-hidden">
+      <WidgetHeader
+        eyebrow="Hoje"
+        title="Tarefas do dia"
+        icon={CalendarClock}
+        iconBubbleClassName="bg-primary/10 text-primary"
+        actions={
+          <Button variant="ghost" size="sm" asChild className="h-8">
+            <Link to="/tarefas" className="text-xs">
+              Ver todas
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Link>
+          </Button>
+        }
+      />
+      <CardContent className="flex-1 min-h-0 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-10 w-full" />
@@ -41,9 +44,9 @@ export function TarefasHojeCard() {
             {data.map((t) => (
               <li
                 key={t.id}
-                className="flex items-center gap-3 rounded-md border bg-card/50 px-3 py-2 text-sm"
+                className="flex items-center gap-3 rounded-xl border border-border bg-card/60 px-3 py-2.5 text-sm hover:border-primary/40 hover:bg-accent/5 transition-colors"
               >
-                <TarefaIcon tipo={t.tipo} className="h-4 w-4 shrink-0" />
+                <TarefaIcon tipo={t.tipo} className="h-4 w-4 shrink-0 text-primary" />
                 <span className="flex-1 truncate font-medium">{t.titulo}</span>
                 {t.data_agendada && (
                   <span className="text-xs text-muted-foreground shrink-0 tabular-nums">

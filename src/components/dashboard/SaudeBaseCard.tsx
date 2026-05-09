@@ -1,8 +1,9 @@
 import { Activity } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import type { SaudeBase } from '@/hooks/useDashboardMetrics';
+import { WidgetHeader } from './WidgetHeader';
 
 interface SaudeBaseCardProps {
   data?: SaudeBase;
@@ -16,19 +17,16 @@ export function SaudeBaseCard({ data, isLoading }: SaudeBaseCardProps) {
   const perdidos = data?.perdidos ?? 0;
 
   const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
-  const pctAtivos = pct(ativos);
-  const pctInativos = pct(inativos);
-  const pctPerdidos = pct(perdidos);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Activity className="h-5 w-5 text-emerald-600" />
-          Saúde da Base
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card className="h-full flex flex-col overflow-hidden">
+      <WidgetHeader
+        eyebrow="Diagnóstico"
+        title="Saúde da Base"
+        icon={Activity}
+        iconBubbleClassName="bg-emerald-500/10 text-emerald-600"
+      />
+      <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-4">
         {isLoading ? (
           <>
             <Skeleton className="h-6 w-full" />
@@ -41,21 +39,21 @@ export function SaudeBaseCard({ data, isLoading }: SaudeBaseCardProps) {
               label="Ativos"
               hint="Atualizados nos últimos 30d"
               count={ativos}
-              pct={pctAtivos}
+              pct={pct(ativos)}
               barClass="[&>div]:bg-emerald-500"
             />
             <SaudeRow
               label="Inativos"
               hint="30–90 dias"
               count={inativos}
-              pct={pctInativos}
+              pct={pct(inativos)}
               barClass="[&>div]:bg-amber-500"
             />
             <SaudeRow
               label="Perdidos"
               hint="90+ dias sem atualização"
               count={perdidos}
-              pct={pctPerdidos}
+              pct={pct(perdidos)}
               barClass="[&>div]:bg-red-500"
             />
           </>
@@ -80,12 +78,12 @@ function SaudeRow({
 }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-1.5">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-medium">{label}</span>
-          <span className="text-xs text-muted-foreground">{hint}</span>
+      <div className="flex items-baseline justify-between mb-1.5 gap-2">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="text-sm font-semibold">{label}</span>
+          <span className="text-xs text-muted-foreground truncate">{hint}</span>
         </div>
-        <span className="text-sm tabular-nums">
+        <span className="text-sm tabular-nums shrink-0">
           <span className="font-semibold">{count}</span>
           <span className="text-muted-foreground ml-1">({pct.toFixed(0)}%)</span>
         </span>
