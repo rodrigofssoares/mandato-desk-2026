@@ -28,6 +28,7 @@ import CamposCampanha from '@/pages/CamposCampanha';
 import Settings from '@/pages/Settings';
 import Board from '@/pages/Board';
 import Tarefas from '@/pages/Tarefas';
+import DesignSystem from '@/pages/DesignSystem';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -211,6 +212,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Tarefas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/design-system"
+          element={
+            <ProtectedRoute>
+              <DesignSystem />
             </ProtectedRoute>
           }
         />
