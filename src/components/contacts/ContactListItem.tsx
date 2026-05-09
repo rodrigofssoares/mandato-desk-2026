@@ -71,7 +71,7 @@ export function ContactListItem({
         <Star
           className={cn(
             'h-4 w-4',
-            contact.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+            contact.is_favorite ? 'fill-warning text-warning' : 'text-muted-foreground'
           )}
         />
       </Button>
@@ -83,7 +83,7 @@ export function ContactListItem({
           {contact.declarou_voto && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Check className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                <Check className="h-3.5 w-3.5 text-success shrink-0" />
               </TooltipTrigger>
               <TooltipContent>Declarou voto</TooltipContent>
             </Tooltip>
