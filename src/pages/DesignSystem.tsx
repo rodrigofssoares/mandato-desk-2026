@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   PageHeader,
+  PanelHeader,
   IconBubble,
   SectionEyebrow,
   StatusChip,
@@ -295,6 +296,41 @@ export default function DesignSystem() {
                 <Input placeholder="Buscar contatos..." className="pl-9" />
               </div>
             </PageHeader>
+          </CardContent>
+        </Card>
+      </Section>
+
+      {/* === PanelHeader === */}
+      <Section
+        eyebrow="Primitivo"
+        title="PanelHeader"
+        description="Versão card-internal do PageHeader. Use em Cards aninhados (painéis dentro de Settings, sub-cards em listagens). Por baixo é um <CardHeader>."
+        codeSample={`<Card>
+  <PanelHeader
+    title="Lista de Funis"
+    description="Funis ativos no projeto"
+    icon={KanbanSquare}
+    iconVariant="primary"
+    actions={<Button>Novo</Button>}
+  />
+  <CardContent>...</CardContent>
+</Card>`}
+      >
+        <Card>
+          <PanelHeader
+            title="Campos Personalizados"
+            description="Adicione campos extras pra classificar seus contatos com informações específicas do seu mandato."
+            icon={Sparkles}
+            iconVariant="accent"
+            actions={
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo
+              </Button>
+            }
+          />
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Conteúdo do painel aqui…</p>
           </CardContent>
         </Card>
       </Section>

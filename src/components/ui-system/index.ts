@@ -15,6 +15,7 @@
 export { IconBubble, type IconBubbleSize, type IconBubbleVariant } from './IconBubble';
 export { SectionEyebrow, type SectionEyebrowTone } from './SectionEyebrow';
 export { PageHeader } from './PageHeader';
+export { PanelHeader } from './PanelHeader';
 export {
   StatusChip,
   type StatusChipVariant,

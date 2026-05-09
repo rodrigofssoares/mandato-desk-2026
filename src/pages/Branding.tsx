@@ -9,6 +9,7 @@ import { useTheme } from 'next-themes';
 import { useBranding, useUpdateBranding, useUploadPoliticianPhoto } from '@/hooks/useBranding';
 import { useUpdateThemePreference } from '@/hooks/useUpdateThemePreference';
 import type { ThemePreference } from '@/context/AuthContext';
+import { PageHeader, PanelHeader } from '@/components/ui-system';
 
 export default function Branding() {
   const { data: branding, isLoading } = useBranding();
@@ -92,20 +93,22 @@ export default function Branding() {
 
   return (
     <div className="p-6 space-y-6 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <Paintbrush className="h-6 w-6" />
-        <div>
-          <h1 className="text-2xl font-bold">Personalização</h1>
-          <p className="text-sm text-muted-foreground">Configure a aparência do sistema</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Configuração"
+        title="Personalização"
+        description="Configure a aparência do sistema."
+        icon={Paintbrush}
+        iconVariant="accent"
+      />
 
       {/* Tema */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Tema</CardTitle>
-          <CardDescription>Escolha a aparência do sistema</CardDescription>
-        </CardHeader>
+        <PanelHeader
+          title="Tema"
+          description="Escolha a aparência do sistema."
+          icon={Paintbrush}
+          iconVariant="primary"
+        />
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {themeOptions.map((opt) => {
@@ -163,12 +166,12 @@ export default function Branding() {
 
       {/* Foto e Nome do Político */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Identificação do Mandato</CardTitle>
-          <CardDescription>
-            A foto e o nome do político serão exibidos no topo da barra lateral, substituindo o ícone padrão
-          </CardDescription>
-        </CardHeader>
+        <PanelHeader
+          title="Identificação do Mandato"
+          description="A foto e o nome do político serão exibidos no topo da barra lateral, substituindo o ícone padrão."
+          icon={User}
+          iconVariant="primary"
+        />
         <CardContent className="space-y-6">
           {/* Upload de foto */}
           <div className="space-y-3">
