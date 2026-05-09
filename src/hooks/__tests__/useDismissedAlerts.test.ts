@@ -78,7 +78,7 @@ describe('dismissMany com array vazio', () => {
   it('não chama o cliente Supabase quando alerts é []', async () => {
     // Arrange
     const mockUpsert = vi.fn();
-    const mockFrom = vi.fn(() => ({ upsert: mockUpsert }));
+    const mockFrom = vi.fn((_tableName: string) => ({ upsert: mockUpsert }));
 
     // Act: simula a lógica da mutation (early return em alerts.length === 0)
     const dismissManyLogic = async (
@@ -86,7 +86,7 @@ describe('dismissMany com array vazio', () => {
       supabaseFrom: typeof mockFrom
     ) => {
       if (alerts.length === 0) return; // early return — não faz request
-      await supabaseFrom('dashboard_alert_dismissals');
+      supabaseFrom('dashboard_alert_dismissals');
     };
 
     await dismissManyLogic([], mockFrom);
@@ -99,7 +99,7 @@ describe('dismissMany com array vazio', () => {
   it('chama Supabase quando alerts tem 1+ itens', async () => {
     // Arrange
     const mockUpsert = vi.fn().mockResolvedValue({ error: null });
-    const mockFrom = vi.fn(() => ({ upsert: mockUpsert }));
+    const mockFrom = vi.fn((_tableName: string) => ({ upsert: mockUpsert }));
 
     const alerts = [{ id: 'parado-1', type: 'contato_parado', title: 'João', subtitle: 'Parado há 5 dias' }];
 
