@@ -138,6 +138,7 @@
           <button data-view-btn="dashboard" class="active">Dashboard</button>
           <button data-view-btn="contatos">Contatos</button>
           <button data-view-btn="detalhes">Detalhes Contato</button>
+          <button data-view-btn="caixa">Caixa Contato</button>
         </div>
       </div>
     </div>
@@ -470,6 +471,121 @@
       <div class="hidden grid grid-cols-1 gap-5" data-subcontent="redes"><div class="card card-elev p-6 text-center text-ink-500">📋 Conteúdo de "Redes Sociais" segue o mesmo padrão visual.</div></div>
       <div class="hidden grid grid-cols-1 gap-5" data-subcontent="obs"><div class="card card-elev p-6 text-center text-ink-500">📋 "Observações" agora vive na mesma fileira de subabas, integrada visualmente.</div></div>
     </section>
+
+    <!-- =================================================================== -->
+    <!-- ============================ CAIXA (MODAL) ======================== -->
+    <!-- =================================================================== -->
+    <section data-view="caixa" class="min-h-[calc(100vh-104px)] flex flex-col items-center px-6 py-8 lg:py-10 gap-5" style="background: linear-gradient(180deg, #FAF6F0 0%, #F2EBDB 100%);">
+
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Modo:</span>
+        <div class="tab-pill-list" style="background:#fff;">
+          <span class="tab-pill active" data-caixa-modo="editar">📝 Editar Contato</span>
+          <span class="tab-pill" data-caixa-modo="novo">＋ Novo Contato</span>
+        </div>
+      </div>
+
+      <div class="w-full max-w-2xl bg-white border border-warm-200 rounded-3xl flex flex-col overflow-hidden" style="box-shadow: 0 24px 60px -16px rgba(86,16,25,0.28);">
+
+        <div class="px-6 py-5 border-b border-warm-200 flex items-start gap-4">
+          <div data-caixa-content="editar" class="flex items-start gap-4 flex-1 min-w-0">
+            <div class="avatar avatar-lg" style="width:56px;height:56px;font-size:1.05rem;background:linear-gradient(135deg,#7B1E2E,#561019)">ME</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="h-display text-xl text-ink-900">Maria Eduarda Cavalcanti</h2>
+                <span class="chip bg-wine-700 text-white font-semibold">Voto Declarado</span>
+              </div>
+              <p class="text-xs text-ink-500 mt-1">Editar contato · Atualizada há 4 dias</p>
+            </div>
+          </div>
+          <div data-caixa-content="novo" class="hidden flex items-center gap-4 flex-1 min-w-0">
+            <div class="w-14 h-14 rounded-2xl bg-wine-50 grid place-items-center text-wine-700 shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8 1.5 0 2.9.4 4.1 1.1"/><path d="M19 14v6M16 17h6"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h2 class="h-display text-xl text-ink-900">Novo Contato</h2>
+              <p class="text-xs text-ink-500 mt-1">Preencha os dados básicos pra começar</p>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full bg-warm-100 hover:bg-warm-200 grid place-items-center text-ink-500 hover:text-ink-900 transition-colors shrink-0" aria-label="Fechar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="px-6 pt-4">
+          <div class="tab-pill-list">
+            <span class="tab-pill active">Pessoais</span>
+            <span class="tab-pill">Personalizados</span>
+            <span class="tab-pill">Tarefas <span class="bg-wine-700 text-white text-[0.6rem] font-bold rounded-full px-1.5 leading-none py-0.5 ml-0.5">3</span></span>
+            <span class="tab-pill">Funis</span>
+            <span class="tab-pill">Campanha</span>
+            <span class="tab-pill">Etiquetas</span>
+            <span class="tab-pill">Endereço</span>
+            <span class="tab-pill">Redes</span>
+            <span class="tab-pill">Obs</span>
+          </div>
+        </div>
+
+        <div class="px-6 py-5 overflow-y-auto" style="max-height: 55vh;">
+          <div data-caixa-content="editar" class="space-y-4">
+            <div><label class="field-label">Nome completo *</label><input class="input" value="Maria Eduarda Cavalcanti" /></div>
+            <div><label class="field-label">Nome no WhatsApp</label><input class="input" value="Maria Eduarda" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">WhatsApp</label><input class="input" value="(81) 99876-1234" /></div>
+              <div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div>
+            </div>
+            <div><label class="field-label">E-mail</label><input class="input" value="maria.e@email.com" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Data de nascimento</label><input class="input" type="date" value="1972-08-15" /></div>
+              <div><label class="field-label">Gênero</label><select class="input"><option>Feminino</option></select></div>
+            </div>
+            <div><label class="field-label">Último contato</label><input class="input" type="datetime-local" value="2026-05-05T14:30" /></div>
+            <div class="flex items-center gap-2.5 p-3 rounded-xl bg-warm-100 text-xs text-ink-500 border border-warm-200">
+              <svg class="text-ink-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Atualizado em <strong class="text-ink-900">05/05/2026 às 14:30</strong> por <strong class="text-ink-900">Camila Souza</strong></span>
+            </div>
+          </div>
+          <div data-caixa-content="novo" class="hidden space-y-4">
+            <div><label class="field-label">Nome completo *</label><input class="input" placeholder="Ex: Maria Eduarda Cavalcanti" /></div>
+            <div><label class="field-label">Nome no WhatsApp</label><input class="input" placeholder="Como aparece no WhatsApp" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">WhatsApp</label><input class="input" placeholder="(00) 00000-0000" /></div>
+              <div><label class="field-label">Telefone fixo</label><input class="input" placeholder="(00) 0000-0000" /></div>
+            </div>
+            <div><label class="field-label">E-mail</label><input class="input" placeholder="email@exemplo.com" /></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="field-label">Data de nascimento</label><input class="input" type="date" /></div>
+              <div><label class="field-label">Gênero</label><select class="input"><option>Selecione</option><option>Masculino</option><option>Feminino</option><option>Outro</option></select></div>
+            </div>
+            <div class="flex items-start gap-2.5 p-3 rounded-xl bg-wine-50 text-xs text-ink-700 border border-wine-100">
+              <svg class="text-wine-700 shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Após criar, você pode adicionar campos personalizados, etiquetas, funis e tarefas vinculadas.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-warm-200 flex items-center justify-between gap-3 bg-warm-50">
+          <div class="flex-1 min-w-0">
+            <button data-caixa-content="editar" class="btn-pill btn-ghost text-xs h-9">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18l-2 13H5L3 6zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Excluir
+            </button>
+            <span data-caixa-content="novo" class="hidden text-xs text-ink-500">Os campos com * são obrigatórios</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="btn-pill btn-secondary">Cancelar</button>
+            <button class="btn-pill btn-primary">
+              <span data-caixa-content="editar">Salvar alterações</span>
+              <span data-caixa-content="novo" class="hidden">Criar contato</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-ink-500 text-center max-w-md mt-1">
+        Esta é a <strong class="text-ink-900">caixa</strong> do contato — Dialog modal que abre sobre a tela atual. Subabas em fileira única (rolagem horizontal), conteúdo com scroll interno, ações fixas no rodapé.
+      </p>
+    </section>
   </main>
 </div>
 
@@ -493,6 +609,12 @@
     document.querySelectorAll('.tab-pill[data-subtab]').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     document.querySelectorAll('[data-subcontent]').forEach(c => c.classList.toggle('hidden', c.dataset.subcontent !== target));
+  }));
+  // Caixa (modal) — toggle Editar/Novo
+  document.querySelectorAll('[data-caixa-modo]').forEach(btn => btn.addEventListener('click', () => {
+    const modo = btn.dataset.caixaModo;
+    document.querySelectorAll('[data-caixa-modo]').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('[data-caixa-content]').forEach(c => c.classList.toggle('hidden', c.dataset.caixaContent !== modo));
   }));
 </script>
 </body>
