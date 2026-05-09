@@ -15,6 +15,7 @@ import {
 import { Plus, Loader2, ClipboardList, List, Calendar as CalendarIcon } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui-system';
 
 import {
   useTarefas,
@@ -155,42 +156,45 @@ export default function Tarefas() {
 
   return (
     <div className="p-6 space-y-6 pb-24">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <ClipboardList className="h-6 w-6 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Tarefas</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-md border p-0.5 bg-muted/40">
-            <Button
-              variant={view === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setView('list')}
-              className="h-7 px-2"
-              aria-pressed={view === 'list'}
-            >
-              <List className="h-4 w-4 mr-1" />
-              Lista
-            </Button>
-            <Button
-              variant={view === 'calendar' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setView('calendar')}
-              className="h-7 px-2"
-              aria-pressed={view === 'calendar'}
-            >
-              <CalendarIcon className="h-4 w-4 mr-1" />
-              Calendário
-            </Button>
-          </div>
-          {canCreate && (
-            <Button onClick={handleNew} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova tarefa
-            </Button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Tarefas"
+        description="Acompanhe e priorize suas pendências do dia."
+        icon={ClipboardList}
+        iconVariant="primary"
+        actions={
+          <>
+            <div className="inline-flex rounded-md border p-0.5 bg-muted/40">
+              <Button
+                variant={view === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('list')}
+                className="h-7 px-2"
+                aria-pressed={view === 'list'}
+              >
+                <List className="h-4 w-4 mr-1" />
+                Lista
+              </Button>
+              <Button
+                variant={view === 'calendar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('calendar')}
+                className="h-7 px-2"
+                aria-pressed={view === 'calendar'}
+              >
+                <CalendarIcon className="h-4 w-4 mr-1" />
+                Calendário
+              </Button>
+            </div>
+            {canCreate && (
+              <Button onClick={handleNew} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Nova tarefa
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <TarefasFilters filters={filters} onChange={setFilters} />
 

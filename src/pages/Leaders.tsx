@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search } from 'lucide-react';
+import { Loader2, Plus, Search, Crown } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useLeaders, useDeleteLeader } from '@/hooks/useLeaders';
 import { useLeaderTypes } from '@/hooks/useLeaderTypes';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -49,15 +50,21 @@ export default function Leaders() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Articuladores</h1>
-        {can.createLeader() && (
-          <Button onClick={handleNewLeader}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Articulador
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Articuladores"
+        description="Lideranças que mobilizam grupos da sua base."
+        icon={Crown}
+        iconVariant="accent"
+        actions={
+          can.createLeader() ? (
+            <Button onClick={handleNewLeader}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Articulador
+            </Button>
+          ) : undefined
+        }
+      />
 
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">

@@ -26,6 +26,7 @@ import {
 
 import { Card, CardContent } from '@/components/ui/card';
 
+import { PageHeader } from '@/components/ui-system';
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
 import {
@@ -260,26 +261,29 @@ export default function Board() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col items-start gap-2">
-        <div className="flex items-center gap-3">
-          <KanbanSquare className="h-6 w-6 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Funis</h1>
-        </div>
-        {canCreate && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/settings?tab=funis">
-                <SettingsIcon className="h-4 w-4 mr-2" />
-                Gerenciar funis
-              </Link>
-            </Button>
-            <Button onClick={() => setCreateBoardOpen(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo funil
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Funis"
+        description="Organize contatos por estágio em pipelines visuais."
+        icon={KanbanSquare}
+        iconVariant="primary"
+        actions={
+          canCreate ? (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/settings?tab=funis">
+                  <SettingsIcon className="h-4 w-4 mr-2" />
+                  Gerenciar funis
+                </Link>
+              </Button>
+              <Button onClick={() => setCreateBoardOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo funil
+              </Button>
+            </>
+          ) : undefined
+        }
+      />
 
       {boardsLoading ? (
         <div className="flex items-center justify-center py-20">
