@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin, MapPinOff, Clock, Navigation } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useMapContacts, useMapStats, useGeocodeContacts } from '@/hooks/useMapData';
 import type { MapFilters as MapFiltersType } from '@/hooks/useMapData';
 import { LeafletMap } from '@/components/map/LeafletMap';
@@ -27,21 +28,26 @@ export default function LeadsMap() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Mapa de Leads</h1>
-        <Button
-          onClick={handleGeocode}
-          disabled={geocode.isPending || geocode.progress.status === 'running'}
-        >
-          {geocode.progress.status === 'running' ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Navigation className="h-4 w-4 mr-2" />
-          )}
-          Geocodificar
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Operação"
+        title="Mapa de Leads"
+        description="Visualize a distribuição geográfica da sua base."
+        icon={MapPin}
+        iconVariant="info"
+        actions={
+          <Button
+            onClick={handleGeocode}
+            disabled={geocode.isPending || geocode.progress.status === 'running'}
+          >
+            {geocode.progress.status === 'running' ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Navigation className="h-4 w-4 mr-2" />
+            )}
+            Geocodificar
+          </Button>
+        }
+      />
 
       {/* Stats cards */}
       {stats && (

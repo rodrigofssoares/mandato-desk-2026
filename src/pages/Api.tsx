@@ -26,6 +26,7 @@ import {
   Copy, Key, Loader2, RefreshCw, Trash2, Check, Clock,
   Play, Send, Terminal, FileJson, CheckCircle2, XCircle, AlertCircle,
 } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { useApiToken, useGenerateToken, useRevokeToken } from '@/hooks/useApiTokens';
 import { toast } from 'sonner';
 
@@ -351,7 +352,7 @@ function CopyButton({ text }: { text: string }) {
 function StatusBadge({ status }: { status: number }) {
   if (status >= 200 && status < 300) {
     return (
-      <div className="flex items-center gap-1.5 text-green-600">
+      <div className="flex items-center gap-1.5 text-success">
         <CheckCircle2 className="h-4 w-4" />
         <span className="font-mono font-bold">{status}</span>
         <span className="text-xs">Sucesso</span>
@@ -360,7 +361,7 @@ function StatusBadge({ status }: { status: number }) {
   }
   if (status >= 400 && status < 500) {
     return (
-      <div className="flex items-center gap-1.5 text-yellow-600">
+      <div className="flex items-center gap-1.5 text-warning">
         <AlertCircle className="h-4 w-4" />
         <span className="font-mono font-bold">{status}</span>
         <span className="text-xs">{status === 401 ? 'Não autorizado' : status === 404 ? 'Não encontrado' : 'Erro do cliente'}</span>
@@ -368,7 +369,7 @@ function StatusBadge({ status }: { status: number }) {
     );
   }
   return (
-    <div className="flex items-center gap-1.5 text-red-600">
+    <div className="flex items-center gap-1.5 text-danger">
       <XCircle className="h-4 w-4" />
       <span className="font-mono font-bold">{status}</span>
       <span className="text-xs">Erro do servidor</span>
@@ -1065,10 +1066,13 @@ export default function Api() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Key className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">API</h1>
-      </div>
+      <PageHeader
+        eyebrow="Integrações"
+        title="API"
+        description="Token e endpoints REST pra integrar com outros sistemas."
+        icon={Key}
+        iconVariant="info"
+      />
 
       {/* Token section */}
       <Card>

@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Settings as SettingsIcon } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import { GeneralTab } from '@/components/settings/GeneralTab';
 import { FunisTab } from '@/components/settings/FunisTab';
 import { TeamTab } from '@/components/settings/TeamTab';
@@ -71,10 +72,13 @@ export default function Settings() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <SettingsIcon className="h-6 w-6 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Configurações</h1>
-      </div>
+      <PageHeader
+        eyebrow="Sistema"
+        title="Configurações"
+        description="Personalize seu mandato, equipe, integrações e permissões."
+        icon={SettingsIcon}
+        iconVariant="primary"
+      />
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="h-auto flex-wrap justify-start">

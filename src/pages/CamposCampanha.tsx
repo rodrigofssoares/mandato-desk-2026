@@ -52,6 +52,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
+import { PageHeader } from '@/components/ui-system';
 import {
   useCampaignFields,
   useCreateCampaignField,
@@ -252,15 +253,13 @@ export default function CamposCampanha() {
 
   return (
     <div className="p-6 space-y-6 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <ClipboardCheck className="h-6 w-6" />
-        <div>
-          <h1 className="text-2xl font-bold">Campos de Campanha</h1>
-          <p className="text-sm text-muted-foreground">
-            Crie checkboxes customizados que aparecem na aba Campanha de cada contato
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Configuração"
+        title="Campos de Campanha"
+        description="Crie checkboxes customizados que aparecem na aba Campanha de cada contato."
+        icon={ClipboardCheck}
+        iconVariant="primary"
+      />
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
