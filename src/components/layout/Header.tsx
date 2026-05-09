@@ -6,6 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
+import { useUpdateThemePreference } from '@/hooks/useUpdateThemePreference';
+import type { ThemePreference } from '@/context/AuthContext';
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
@@ -25,9 +27,10 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function Header() {
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  const { apply: applyTheme } = useUpdateThemePreference();
   const isBurgundy = theme === 'burgundy-institucional';
-  const nextTheme = isBurgundy ? 'navy-institucional' : 'burgundy-institucional';
+  const nextTheme: ThemePreference = isBurgundy ? 'navy-institucional' : 'burgundy-institucional';
   const { isImpersonating } = useImpersonation();
 
   const currentPageTitle =
@@ -58,7 +61,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTheme(nextTheme)}
+            onClick={() => applyTheme(nextTheme)}
             aria-label="Alternar tema"
             title={isBurgundy ? 'Trocar para Navy Institucional' : 'Trocar para Burgundy Institucional'}
           >

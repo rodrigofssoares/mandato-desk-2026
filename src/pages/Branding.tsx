@@ -7,12 +7,15 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Paintbrush, Save, Crown, Gem, Upload, X, User } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useBranding, useUpdateBranding, useUploadPoliticianPhoto } from '@/hooks/useBranding';
+import { useUpdateThemePreference } from '@/hooks/useUpdateThemePreference';
+import type { ThemePreference } from '@/context/AuthContext';
 
 export default function Branding() {
   const { data: branding, isLoading } = useBranding();
   const updateBranding = useUpdateBranding();
   const uploadPhoto = useUploadPoliticianPhoto();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  const { apply: applyTheme } = useUpdateThemePreference();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [politicianName, setPoliticianName] = useState('');
@@ -111,7 +114,7 @@ export default function Branding() {
               return (
                 <button
                   key={opt.value}
-                  onClick={() => setTheme(opt.value)}
+                  onClick={() => applyTheme(opt.value as ThemePreference)}
                   className={`
                     flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all
                     ${isActive

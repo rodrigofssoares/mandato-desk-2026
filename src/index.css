@@ -5,64 +5,16 @@
 @layer base {
   /*
    * Sistema com 2 temas claros disponíveis:
-   *   .navy-institucional   — default; identidade Navy + accent dourado
-   *   .burgundy-institucional — alternativa; vinho + dourado warm
-   * Removidos: navy (antigo), midnight, obsidian.
+   *   .burgundy-institucional — DEFAULT; vinho + dourado warm
+   *   .navy-institucional      — alternativa; azul profundo + dourado
+   *
+   * O :root herda de .burgundy-institucional pra que o tema default seja
+   * aplicado mesmo antes do JS rodar (e enquanto next-themes resolve o tema
+   * preferido do usuário). Removidos: navy (antigo), midnight, obsidian.
    */
 
-  :root, .navy-institucional {
-    /* shadcn HSL tokens — Navy Institucional (Light) */
-    --background: 220 27% 97%;       /* #F4F6F9 */
-    --foreground: 216 60% 14%;       /* #0E1F38 */
-    --card: 0 0% 100%;
-    --card-foreground: 216 60% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 216 60% 14%;
-    --primary: 214 60% 26%;          /* #1B3A6B */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 25% 95%;        /* #E9EDF3 */
-    --secondary-foreground: 216 60% 14%;
-    --muted: 217 25% 95%;
-    --muted-foreground: 218 18% 40%; /* #54607A */
-    --accent: 38 56% 52%;            /* #C99A3D — gold institucional */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 65% 45%;        /* #B43C2E */
-    --destructive-foreground: 0 0% 100%;
-    --border: 218 24% 89%;           /* #DCE2EC */
-    --input: 218 24% 89%;
-    --ring: 214 60% 26%;
-    --radius: 0.875rem;
-
-    /* Sidebar Navy */
-    --sidebar-background: 220 50% 98%;          /* #F8FAFD */
-    --sidebar-foreground: 218 18% 40%;
-    --sidebar-primary: 214 60% 26%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 25% 95%;
-    --sidebar-accent-foreground: 216 60% 14%;
-    --sidebar-border: 218 24% 89%;
-    --sidebar-ring: 214 60% 26%;
-
-    /* OKLCH Design tokens — Navy */
-    --color-bg: oklch(97% 0.008 220);
-    --color-surface: oklch(99% 0.004 220);
-    --color-muted: oklch(95% 0.012 220);
-    --color-border: oklch(89% 0.018 220);
-    --color-border-subtle: oklch(93% 0.012 220);
-    --color-text-primary: oklch(20% 0.04 230);
-    --color-text-secondary: oklch(40% 0.025 220);
-    --color-text-muted: oklch(55% 0.02 220);
-    --color-text-subtle: oklch(62% 0.018 220);
-
-    /* Layout */
-    --app-sidebar-width: 0px;
-    --app-safe-area-bottom: 0px;
-    --app-safe-area-top: 0px;
-    --app-bottom-nav-height: 0px;
-  }
-
-  .burgundy-institucional {
-    /* shadcn HSL tokens — Burgundy Institucional (Light) */
+  :root, .burgundy-institucional {
+    /* shadcn HSL tokens — Burgundy Institucional (Light) — DEFAULT */
     --background: 36 50% 96%;        /* #FAF6F0 — warm canvas */
     --foreground: 353 35% 13%;       /* #2C1518 */
     --card: 0 0% 100%;
@@ -104,6 +56,57 @@
     --color-text-secondary: oklch(40% 0.03 20);
     --color-text-muted: oklch(55% 0.025 20);
     --color-text-subtle: oklch(62% 0.022 20);
+
+    /* Layout */
+    --app-sidebar-width: 0px;
+    --app-safe-area-bottom: 0px;
+    --app-safe-area-top: 0px;
+    --app-bottom-nav-height: 0px;
+  }
+
+  .navy-institucional {
+    /* shadcn HSL tokens — Navy Institucional (Light) — alternativa */
+    --background: 220 27% 97%;       /* #F4F6F9 */
+    --foreground: 216 60% 14%;       /* #0E1F38 */
+    --card: 0 0% 100%;
+    --card-foreground: 216 60% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 60% 14%;
+    --primary: 214 60% 26%;          /* #1B3A6B */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 25% 95%;        /* #E9EDF3 */
+    --secondary-foreground: 216 60% 14%;
+    --muted: 217 25% 95%;
+    --muted-foreground: 218 18% 40%; /* #54607A */
+    --accent: 38 56% 52%;            /* #C99A3D — gold institucional */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 65% 45%;        /* #B43C2E */
+    --destructive-foreground: 0 0% 100%;
+    --border: 218 24% 89%;           /* #DCE2EC */
+    --input: 218 24% 89%;
+    --ring: 214 60% 26%;
+    --radius: 0.875rem;
+
+    /* Sidebar Navy */
+    --sidebar-background: 220 50% 98%;          /* #F8FAFD */
+    --sidebar-foreground: 218 18% 40%;
+    --sidebar-primary: 214 60% 26%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 25% 95%;
+    --sidebar-accent-foreground: 216 60% 14%;
+    --sidebar-border: 218 24% 89%;
+    --sidebar-ring: 214 60% 26%;
+
+    /* OKLCH Design tokens — Navy */
+    --color-bg: oklch(97% 0.008 220);
+    --color-surface: oklch(99% 0.004 220);
+    --color-muted: oklch(95% 0.012 220);
+    --color-border: oklch(89% 0.018 220);
+    --color-border-subtle: oklch(93% 0.012 220);
+    --color-text-primary: oklch(20% 0.04 230);
+    --color-text-secondary: oklch(40% 0.025 220);
+    --color-text-muted: oklch(55% 0.02 220);
+    --color-text-subtle: oklch(62% 0.018 220);
   }
 
   * {

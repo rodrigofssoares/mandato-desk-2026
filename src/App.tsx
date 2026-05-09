@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ImpersonationProvider } from '@/context/ImpersonationContext';
 import { AuthHandler } from '@/components/auth/AuthHandler';
+import { ThemeSync } from '@/components/ThemeSync';
 import { Loader2 } from 'lucide-react';
 import { setActivityLogQueryClient } from '@/lib/activityLog';
 
@@ -226,11 +227,12 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="navy-institucional"
+        defaultTheme="burgundy-institucional"
         themes={['navy-institucional', 'burgundy-institucional']}
       >
         <BrowserRouter>
           <AuthProvider>
+            <ThemeSync />
             <ImpersonationProvider>
               <TooltipProvider>
                 <Toaster richColors position="top-right" />
