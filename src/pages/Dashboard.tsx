@@ -20,6 +20,7 @@ import { EditableDashboard } from '@/components/dashboard/EditableDashboard';
 
 import { useBoards } from '@/hooks/useBoards';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
+import { useDismissedAlerts } from '@/hooks/useDismissedAlerts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { useBranding } from '@/hooks/useBranding';
@@ -50,6 +51,7 @@ export default function Dashboard() {
 
   const { data: metrics, isLoading } = useDashboardMetrics('mes', activeBoardId);
   const { data: branding } = useBranding();
+  const { dismissedKeys, dismissOne, dismissMany } = useDismissedAlerts();
 
   const setBoard = (boardId: string) => {
     const next = new URLSearchParams(searchParams);
@@ -65,6 +67,14 @@ export default function Dashboard() {
           });
         }
       : undefined;
+
+  // Filtra alertas já dispensados pelo usuário antes de exibir no badge e modal.
+  // Estratégia Opção A (recomendada no Backlog): filtro em Dashboard.tsx, mantendo
+  // useDashboardMetrics sem dependências de dismissals.
+  const alertasFiltrados = useMemo(
+    () => (metrics?.alertas ?? []).filter((a) => !dismissedKeys.has(a.id)),
+    [metrics?.alertas, dismissedKeys]
+  );
 
   const metaVotos = branding?.meta_votos ?? null;
   const temMeta = metaVotos != null && metaVotos > 0;
@@ -127,7 +137,7 @@ export default function Dashboard() {
         iconVariant="primary"
         actions={
           <AlertsBadge
-            count={metrics?.alertas.length ?? 0}
+            count={alertasFiltrados.length}
             onClick={() => setAlertsOpen(true)}
           />
         }
@@ -183,7 +193,9 @@ export default function Dashboard() {
       <AlertsModal
         open={alertsOpen}
         onOpenChange={setAlertsOpen}
-        alerts={metrics?.alertas ?? []}
+        alerts={alertasFiltrados}
+        onDismissOne={dismissOne}
+        onDismissMany={dismissMany}
       />
     </div>
   );
