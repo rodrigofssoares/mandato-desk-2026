@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
+import { Crown, Gem } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
@@ -25,8 +25,9 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function Header() {
   const location = useLocation();
-  const { theme, resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === 'midnight' || resolvedTheme === 'obsidian';
+  const { theme, setTheme } = useTheme();
+  const isBurgundy = theme === 'burgundy-institucional';
+  const nextTheme = isBurgundy ? 'navy-institucional' : 'burgundy-institucional';
   const { isImpersonating } = useImpersonation();
 
   const currentPageTitle =
@@ -57,18 +58,14 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              const order = ['navy', 'midnight', 'obsidian'];
-              const current = order.indexOf(theme ?? 'navy');
-              setTheme(order[(current + 1) % order.length]);
-            }}
+            onClick={() => setTheme(nextTheme)}
             aria-label="Alternar tema"
-            title={`Tema: ${theme ?? 'navy'}`}
+            title={isBurgundy ? 'Trocar para Navy Institucional' : 'Trocar para Burgundy Institucional'}
           >
-            {isDark ? (
-              <Moon className="h-4 w-4" />
+            {isBurgundy ? (
+              <Gem className="h-4 w-4" />
             ) : (
-              <Sun className="h-4 w-4" />
+              <Crown className="h-4 w-4" />
             )}
           </Button>
         </div>

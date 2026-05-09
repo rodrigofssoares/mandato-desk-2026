@@ -226,8 +226,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="navy"
-        themes={['navy', 'midnight', 'obsidian']}
+        defaultTheme="navy-institucional"
+        themes={['navy-institucional', 'burgundy-institucional']}
       >
         <BrowserRouter>
           <AuthProvider>
