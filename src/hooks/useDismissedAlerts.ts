@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,7 +67,12 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     staleTime: 30_000,
   });
 
-  const dismissedKeys = new Set(rows.map((r) => r.alert_key));
+  // useMemo garante referência estável do Set entre renders quando rows não muda
+  // — evita invalidação desnecessária de useMemo/useCallback em consumers (CR should-fix).
+  const dismissedKeys = useMemo(
+    () => new Set(rows.map((r) => r.alert_key)),
+    [rows]
+  );
 
   // ── Mutation: dismissOne ─────────────────────────────────────────────────
   const dismissOneMutation = useMutation({
@@ -117,7 +123,10 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     onSuccess: (_, alerts) => {
       queryClient.invalidateQueries({ queryKey: DISMISSED_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'metrics'] });
-      toast.success(`${alerts.length} alerta${alerts.length === 1 ? '' : 's'} dispensado${alerts.length === 1 ? '' : 's'}`);
+      // Usa min(alerts.length, MAX_BATCH_SIZE) — em caso de cap, reflete o que foi
+      // efetivamente persistido, não o tamanho original do array (CR should-fix).
+      const sent = Math.min(alerts.length, MAX_BATCH_SIZE);
+      toast.success(`${sent} alerta${sent === 1 ? '' : 's'} dispensado${sent === 1 ? '' : 's'}`);
     },
     onError: () => {
       toast.error('Falha ao dispensar alertas');

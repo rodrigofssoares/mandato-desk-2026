@@ -21,9 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Clock, Cake, ExternalLink, X, Loader2, Settings } from 'lucide-react';
-import { toast } from 'sonner';
 import type { Alert, AlertType } from '@/hooks/useDashboardMetrics';
-import type { DismissedAlert } from '@/hooks/useDismissedAlerts';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -33,9 +31,6 @@ interface AlertsModalProps {
   alerts: Alert[];
   onDismissOne: (alert: Pick<Alert, 'id' | 'type' | 'title' | 'subtitle'>) => Promise<void>;
   onDismissMany: (alerts: Pick<Alert, 'id' | 'type' | 'title' | 'subtitle'>[]) => Promise<void>;
-  dismissedList: DismissedAlert[];
-  onRestoreOne: (alertKey: string) => Promise<void>;
-  onRestoreAll: () => Promise<void>;
 }
 
 // ─── Mapas de ícone e cor ─────────────────────────────────────────────────────
@@ -77,7 +72,6 @@ export function AlertsModal({
   async function handleDismissOne(alert: Alert) {
     // Guard contra double-click — evita upserts duplicados em voo (Security M1)
     if (dismissingIds.has(alert.id)) return;
-    // Marca como "saindo" para animação
     setDismissingIds((prev) => new Set(prev).add(alert.id));
     try {
       await onDismissOne({
@@ -88,18 +82,13 @@ export function AlertsModal({
       });
     } catch {
       // onDismissOne já exibe toast.error via hook
+    } finally {
       setDismissingIds((prev) => {
         const next = new Set(prev);
         next.delete(alert.id);
         return next;
       });
     }
-    // Remove da lista de animação após concluir
-    setDismissingIds((prev) => {
-      const next = new Set(prev);
-      next.delete(alert.id);
-      return next;
-    });
   }
 
   // ── Dismiss todos ────────────────────────────────────────────────────────
@@ -117,7 +106,6 @@ export function AlertsModal({
       setConfirmAllOpen(false);
     } catch {
       // onDismissMany já exibe toast.error via hook — dialog permanece aberto
-      toast.error('Falha ao dispensar alertas. Tente novamente.');
     } finally {
       setIsDismissingAll(false);
     }

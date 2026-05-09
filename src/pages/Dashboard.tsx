@@ -51,14 +51,7 @@ export default function Dashboard() {
 
   const { data: metrics, isLoading } = useDashboardMetrics('mes', activeBoardId);
   const { data: branding } = useBranding();
-  const {
-    dismissedKeys,
-    dismissedList,
-    dismissOne,
-    dismissMany,
-    restoreOne,
-    restoreAll,
-  } = useDismissedAlerts();
+  const { dismissedKeys, dismissOne, dismissMany } = useDismissedAlerts();
 
   const setBoard = (boardId: string) => {
     const next = new URLSearchParams(searchParams);
@@ -203,9 +196,6 @@ export default function Dashboard() {
         alerts={alertasFiltrados}
         onDismissOne={dismissOne}
         onDismissMany={dismissMany}
-        dismissedList={dismissedList}
-        onRestoreOne={restoreOne}
-        onRestoreAll={restoreAll}
       />
     </div>
   );
