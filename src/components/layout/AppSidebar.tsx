@@ -34,6 +34,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useBranding } from '@/hooks/useBranding';
+import { useNavOrder, type NavItemKey } from '@/hooks/useNavOrder';
 import { ROLE_LABELS, type Role } from '@/types/permissions';
 import type { Secao } from '@/types/permissions';
 import type { LucideIcon } from 'lucide-react';
@@ -92,12 +93,27 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { can } = usePermissions();
   const { data: branding } = useBranding();
+  const { order } = useNavOrder();
 
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.alwaysVisible) return true;
     const checkPermission = SECAO_TO_PERMISSION[item.secao];
     return checkPermission ? checkPermission(can) : false;
   });
+
+  // Separa Configurações (sempre fixa no fim) dos demais itens visíveis.
+  const configItem = visibleItems.find((i) => i.secao === 'configuracoes');
+  const nonConfig = visibleItems.filter((i) => i.secao !== 'configuracoes');
+
+  // Reordena os itens não-Configurações conforme preferência salva em localStorage.
+  // Itens visíveis ausentes em `order` (ex: novo item adicionado ao sistema) vão ao fim.
+  const ordered = order
+    .map((key) => nonConfig.find((i) => i.secao === (key as Secao)))
+    .filter((x): x is NavItem => Boolean(x));
+  const unlisted = nonConfig.filter((i) => !order.includes(i.secao as NavItemKey));
+  const finalItems = configItem
+    ? [...ordered, ...unlisted, configItem]
+    : [...ordered, ...unlisted];
 
   const roleLabel = profile?.role
     ? ROLE_LABELS[profile.role as Role] ?? profile.role
@@ -150,7 +166,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {visibleItems.map((item, index) => {
+            {finalItems.map((item, index) => {
               const isActive =
                 item.href === '/'
                   ? location.pathname === '/'
