@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       activities: {
@@ -858,6 +833,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      dashboard_alert_dismissals: {
+        Row: {
+          alert_key: string
+          alert_subtitle: string | null
+          alert_title: string | null
+          alert_type: string
+          dismissed_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          alert_key: string
+          alert_subtitle?: string | null
+          alert_title?: string | null
+          alert_type?: string
+          dismissed_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          alert_key?: string
+          alert_subtitle?: string | null
+          alert_title?: string | null
+          alert_type?: string
+          dismissed_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       demand_tags: {
         Row: {
@@ -2119,9 +2124,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       activity_type: [
@@ -2157,3 +2159,4 @@ export const Constants = {
     },
   },
 } as const
+
