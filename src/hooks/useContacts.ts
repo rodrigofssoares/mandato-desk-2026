@@ -92,7 +92,7 @@ export interface ContactFilters {
   custom_fields?: Record<string, CustomFieldFilterValue>;
   date_from?: string;
   date_to?: string;
-  sort_by?: 'name_asc' | 'name_desc' | 'created_desc' | 'created_asc' | 'favorites_first';
+  sort_by?: 'name_asc' | 'name_desc' | 'created_desc' | 'created_asc' | 'favorites_first' | 'ranking_desc';
   page?: number;
   per_page?: number;
   /** Filtro de cidade (ILIKE case-insensitive) */
@@ -150,6 +150,7 @@ export interface Contact {
   youtube?: string | null;
   declarou_voto?: boolean;
   ranking?: number;
+  ranking_manual_override?: boolean;
   leader_id?: string | null;
   origem?: string | null;
   observacoes?: string | null;
@@ -554,6 +555,10 @@ export function useContacts(filters: ContactFilters = {}) {
           break;
         case 'favorites_first':
           query = query.order('is_favorite', { ascending: false }).order('nome', { ascending: true });
+          break;
+        // Mais engajados primeiro: ranking decrescente, desempate por nome
+        case 'ranking_desc':
+          query = query.order('ranking', { ascending: false }).order('nome', { ascending: true });
           break;
         case 'created_desc':
         default:

@@ -5,13 +5,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Loader2, User, CheckSquare, Tag, Clock } from 'lucide-react';
 import { CampaignFieldsList } from '@/components/contacts/CampaignFieldsList';
+import { RankingBadge } from '@/components/contacts/RankingBadge';
+import { useCampaignFields } from '@/hooks/useCampaignFields';
 import { CustomFieldsPanel } from '@/components/contacts/CustomFieldsPanel';
 import {
   ContactTarefasPanel,
   ContactTarefasPendenteBadge,
 } from '@/components/contacts/ContactTarefasPanel';
 import { ContactBoardsPanel } from '@/components/contacts/ContactBoardsPanel';
-import { useSetContactCampaignValues } from '@/hooks/useCampaignFields';
+import { useSetContactCampaignValues, useContactCampaignValues } from '@/hooks/useCampaignFields';
 import {
   Dialog,
   DialogContent,
@@ -46,8 +48,6 @@ const ESTADOS = [
   'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
 ];
 
-const RANKING_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
 // Form em branco — usado tanto na inicializacao quanto no reset ao abrir em
 // modo "criar". Importante: no RHF, `form.reset({...x})` substitui os
 // defaultValues internos por x, entao `form.reset()` sem args volta pra x —
@@ -77,7 +77,8 @@ const EMPTY_CONTACT_FORM: ContactFormData = {
   tiktok: '',
   youtube: '',
   declarou_voto: false,
-  ranking: 0,
+  ranking: null,
+  ranking_manual_override: false,
   leader_id: '',
   origem: '',
   observacoes: '',
@@ -92,6 +93,9 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   const setCampaignValues = useSetContactCampaignValues();
   const { data: allTags = [] } = useContactTags();
   const { data: leaders = [] } = useLeaders();
+  const { data: campaignFields = [] } = useCampaignFields();
+  // Em modo edição, busca os valores do banco para o preview do ranking
+  const { data: dbCampaignValues = {} } = useContactCampaignValues(contact?.id);
 
   // Valores pendentes dos campos de campanha (apenas em modo criação)
   const [pendingCampaignValues, setPendingCampaignValues] = useState<Record<string, boolean>>({});
@@ -135,7 +139,8 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         tiktok: contact.tiktok ?? '',
         youtube: contact.youtube ?? '',
         declarou_voto: contact.declarou_voto ?? false,
-        ranking: contact.ranking ?? 0,
+        ranking: contact.ranking ?? null,
+        ranking_manual_override: (contact as { ranking_manual_override?: boolean }).ranking_manual_override ?? false,
         leader_id: contact.leader_id ?? '',
         origem: contact.origem ?? '',
         observacoes: contact.observacoes ?? '',
@@ -177,7 +182,30 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const selectedTagIds = form.watch('tag_ids') ?? [];
-  const currentRanking = form.watch('ranking') ?? 0;
+
+  // Campos observados para o preview otimista do ranking. Usamos watch por
+  // nome (não por array posicional) pra evitar mapeamento frágil — adicionar
+  // um campo no meio do array deslocava o índice silenciosamente.
+  const rankingPreview = {
+    declarou_voto:     form.watch('declarou_voto') ?? false,
+    e_multiplicador:   form.watch('e_multiplicador') ?? false,
+    aceita_whatsapp:   form.watch('aceita_whatsapp') ?? false,
+    em_canal_whatsapp: form.watch('em_canal_whatsapp') ?? false,
+    whatsapp:          form.watch('whatsapp') ?? null,
+    leader_id:         form.watch('leader_id') ?? null,
+    email:             form.watch('email') ?? null,
+    data_nascimento:   form.watch('data_nascimento') ?? null,
+    telefone:          form.watch('telefone') ?? null,
+    bairro:            form.watch('bairro') ?? null,
+    cidade:            form.watch('cidade') ?? null,
+    cep:               form.watch('cep') ?? null,
+    estado:            form.watch('estado') ?? null,
+    logradouro:        form.watch('logradouro') ?? null,
+    instagram:         form.watch('instagram') ?? null,
+    twitter:           form.watch('twitter') ?? null,
+    tiktok:            form.watch('tiktok') ?? null,
+    youtube:           form.watch('youtube') ?? null,
+  };
 
   function toggleTag(tagId: string) {
     const current = form.getValues('tag_ids') ?? [];
@@ -408,26 +436,25 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
                     </label>
                   </div>
 
-                  {/* Ranking com botões */}
+                  {/* Ranking: cálculo automático + botões 0-10 pra override manual */}
                   <div>
-                    <Label>Ranking</Label>
-                    <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5 mt-2">
-                      {RANKING_VALUES.map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => form.setValue('ranking', val, { shouldDirty: true })}
-                          className={cn(
-                            "h-9 w-full rounded-md text-xs font-semibold border transition-colors",
-                            currentRanking === val
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-background border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground"
-                          )}
-                        >
-                          {val}
-                        </button>
-                      ))}
-                    </div>
+                    <RankingBadge
+                      contact={rankingPreview}
+                      campaignValues={isEditing ? dbCampaignValues : pendingCampaignValues}
+                      totalCampaignFields={campaignFields.length}
+                      manualValue={form.watch('ranking')}
+                      manualOverride={form.watch('ranking_manual_override') ?? false}
+                      onSelectManual={(value) => {
+                        form.setValue('ranking', value, { shouldDirty: true });
+                        form.setValue('ranking_manual_override', true, { shouldDirty: true });
+                      }}
+                      onClearOverride={() => {
+                        // Volta ao automático: o trigger SQL recalcula no próximo save
+                        // (ranking_manual_override muda → entra no IF de campos relevantes).
+                        form.setValue('ranking_manual_override', false, { shouldDirty: true });
+                        form.setValue('ranking', null, { shouldDirty: true });
+                      }}
+                    />
                   </div>
 
                   {/* Articulador vinculado */}

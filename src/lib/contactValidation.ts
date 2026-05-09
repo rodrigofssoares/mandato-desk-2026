@@ -31,7 +31,12 @@ export const contactSchema = z.object({
 
   // Político
   declarou_voto: z.boolean().optional().default(false),
-  ranking: z.number().min(0).max(10).optional().default(0),
+  // Ranking manual: aceito no schema com range estrito 0-10 (mass-assignment
+  // mitigado pelo z.number().int().min(0).max(10)). O trigger SQL respeita
+  // `ranking_manual_override`: TRUE preserva o valor manual; FALSE recalcula
+  // automaticamente via _calc_ranking_from_row. Migration 038 introduziu o flag.
+  ranking: z.number().int().min(0).max(10).optional().nullable(),
+  ranking_manual_override: z.boolean().optional().default(false),
   leader_id: z.string().uuid().optional().nullable().or(z.literal('')),
 
   // Observações

@@ -65,7 +65,7 @@ const SYSTEM_FIELDS: { value: string; label: string }[] = [
   { value: 'tiktok', label: 'TikTok' },
   { value: 'youtube', label: 'YouTube' },
   { value: 'declarou_voto', label: 'Declarou voto (sim/não)' },
-  { value: 'ranking', label: 'Ranking (0 a 10)' },
+  // 'ranking' removido: calculado automaticamente pelo trigger SQL (migration 037)
   { value: 'leader_id', label: 'ID da liderança' },
   { value: 'is_favorite', label: 'Favorito (sim/não)' },
   { value: 'origem', label: 'Origem' },
@@ -125,7 +125,7 @@ const FIELD_MAP: { row: string; db: string; type: 'text' | 'bool' | 'number'; la
   { row: 'twitter', db: 'twitter', type: 'text', label: 'Twitter' },
   { row: 'tiktok', db: 'tiktok', type: 'text', label: 'TikTok' },
   { row: 'youtube', db: 'youtube', type: 'text', label: 'YouTube' },
-  { row: 'ranking', db: 'ranking', type: 'number', label: 'Ranking' },
+  // 'ranking' removido: calculado automaticamente pelo trigger SQL (migration 037)
   { row: 'leader_id', db: 'leader_id', type: 'text', label: 'Liderança' },
   { row: 'is_favorite', db: 'is_favorite', type: 'bool', label: 'Favorito' },
   { row: 'ultimo_contato', db: 'ultimo_contato', type: 'text', label: 'Último contato' },
@@ -208,7 +208,7 @@ const HEADER_MAP: Record<string, string> = {
   twitter: 'twitter',
   tiktok: 'tiktok',
   youtube: 'youtube',
-  ranking: 'ranking',
+  // 'ranking' removido: colunas "ranking" no CSV são ignoradas (calculado automaticamente)
   leader_id: 'leader_id',
   lideranca_id: 'leader_id',
   liderança_id: 'leader_id',
@@ -338,18 +338,19 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       'multiplicador', 'email', 'telefone', 'genero', 'data_nascimento',
       'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
       'instagram', 'twitter', 'tiktok', 'youtube',
-      'declarou_voto', 'ranking', 'leader_id', 'favorito',
+      'declarou_voto', 'leader_id', 'favorito',
       'origem', 'observacoes', 'notas_assessor', 'ultimo_contato', 'etiquetas',
+      // 'ranking' removido do template de import: é calculado automaticamente
     ];
 
-    // 3 exemplos fictícios
+    // 3 exemplos fictícios (ranking removido — calculado automaticamente)
     const examples = [
       [
         'Maria da Silva', 'Maria', '5511999887766', 'sim', 'sim',
         'nao', 'maria@email.com', '5511988776655', 'feminino', '1985-03-20',
         'Rua das Flores', '123', 'Apto 4B', 'Centro', 'São Paulo', 'SP', '01001-000',
         '@mariasilva', '', '', '',
-        'sim', '8', '', 'sim',
+        'sim', '', 'sim',
         'Evento comunitário', 'Moradora ativa do bairro', 'Contato feito na reunião de março', '2026-04-01', 'Liderança, Saúde',
       ],
       [
@@ -357,7 +358,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         'sim', 'joao.santos@gmail.com', '', 'masculino', '1990-07-10',
         'Av. Brasil', '456', '', 'Copacabana', 'Rio de Janeiro', 'RJ', '22041-080',
         '', '@joaosantos', '', '',
-        'nao', '5', '', 'nao',
+        'nao', '', 'nao',
         'Indicação', '', 'Multiplicador na zona sul', '', 'Educação',
       ],
       [
@@ -365,7 +366,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         'nao', '', '5531966554433', 'feminino', '',
         'Rua Minas Gerais', '789', 'Casa 2', 'Savassi', 'Belo Horizonte', 'MG', '30130-150',
         '@anaoliveira', '', '@ana.tiktok', '',
-        'sim', '3', '', 'nao',
+        'sim', '', 'nao',
         'Redes sociais', 'Interessada em projetos de cultura', '', '2026-03-15', 'Cultura, Juventude',
       ],
     ];
@@ -406,7 +407,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       ['tiktok', 'Não', 'Usuário do TikTok (com ou sem @)', '@mariasilva'],
       ['youtube', 'Não', 'Canal ou usuário do YouTube', '@mariasilva'],
       ['declarou_voto', 'Não', 'Declarou voto? (sim/não)', 'sim'],
-      ['ranking', 'Não', 'Nota de engajamento de 0 a 10', '8'],
+      ['ranking', 'Ignorado', 'Calculado automaticamente — não precisa preencher', ''],
       ['leader_id', 'Não', 'ID (UUID) da liderança vinculada', ''],
       ['favorito', 'Não', 'Marcar como favorito? (sim/não)', 'sim'],
       ['origem', 'Não', 'Como o contato chegou ao sistema', 'Evento comunitário'],
@@ -459,6 +460,16 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
 
       setRawSheet(rawRows);
       setColumnMapping(mapping);
+
+      // Aviso quando o CSV contém coluna 'ranking' (agora calculada automaticamente)
+      const temColunaRanking = headerRow.some((h) =>
+        h.toLowerCase().replace(/\s+/g, '_') === 'ranking'
+      );
+      if (temColunaRanking) {
+        toast.warning(
+          "A coluna 'ranking' será ignorada — o ranking é calculado automaticamente com base nos dados do contato."
+        );
+      }
 
       const unmapped = mapping.filter((m) => m.systemField === '__ignore__');
       const allAutoMapped = unmapped.length === 0;
@@ -515,10 +526,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
       if (raw.receber_whatsapp) normalized.receber_whatsapp = parseBoolean(raw.receber_whatsapp);
       if (raw.multiplicador) normalized.multiplicador = parseBoolean(raw.multiplicador);
       if (raw.is_favorite) normalized.is_favorite = parseBoolean(raw.is_favorite);
-      if (raw.ranking) {
-        const r = parseInt(raw.ranking, 10);
-        if (!isNaN(r) && r >= 0 && r <= 10) normalized.ranking = r;
-      }
+      // 'ranking' não é normalizado: calculado automaticamente pelo trigger SQL (migration 037)
 
       ['nome_whatsapp', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'origem', 'observacoes', 'notas_assessor', 'etiquetas', 'data_nascimento', 'instagram', 'twitter', 'tiktok', 'youtube', 'leader_id', 'ultimo_contato'].forEach((f) => {
         if (raw[f]) normalized[f] = raw[f];
@@ -768,7 +776,7 @@ export function ContactImportDialog({ open, onOpenChange, onSuccess }: ContactIm
         if (n.twitter) obj.twitter = n.twitter;
         if (n.tiktok) obj.tiktok = n.tiktok;
         if (n.youtube) obj.youtube = n.youtube;
-        if (n.ranking !== undefined) obj.ranking = n.ranking;
+        // 'ranking' não incluído: calculado automaticamente pelo trigger SQL
         if (n.leader_id) obj.leader_id = n.leader_id;
         if (n.is_favorite !== undefined) obj.is_favorite = n.is_favorite;
         if (n.ultimo_contato) obj.ultimo_contato = n.ultimo_contato;
