@@ -34,6 +34,11 @@ export interface UseDismissedAlertsReturn {
 
 const DISMISSED_QUERY_KEY = ['dismissedAlerts'] as const;
 
+// Cap defensivo do tamanho de lote (Security M3) — protege contra DoS por
+// payload gigante. O dashboard naturalmente exibe <50 alertas, então 200 dá
+// folga sem permitir abuso.
+const MAX_BATCH_SIZE = 200;
+
 // ─── Helper: busca o user_id atual ───────────────────────────────────────────
 
 async function getCurrentUserId(): Promise<string> {
@@ -96,7 +101,8 @@ export function useDismissedAlerts(): UseDismissedAlertsReturn {
     mutationFn: async (alerts: Pick<Alert, 'id' | 'type' | 'title' | 'subtitle'>[]) => {
       if (alerts.length === 0) return;
       const userId = await getCurrentUserId();
-      const rows = alerts.map((a) => ({
+      const capped = alerts.slice(0, MAX_BATCH_SIZE);
+      const rows = capped.map((a) => ({
         user_id: userId,
         alert_key: a.id,
         alert_type: a.type,

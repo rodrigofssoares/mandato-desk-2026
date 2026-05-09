@@ -75,6 +75,8 @@ export function AlertsModal({
 
   // ── Dismiss individual ───────────────────────────────────────────────────
   async function handleDismissOne(alert: Alert) {
+    // Guard contra double-click — evita upserts duplicados em voo (Security M1)
+    if (dismissingIds.has(alert.id)) return;
     // Marca como "saindo" para animação
     setDismissingIds((prev) => new Set(prev).add(alert.id));
     try {
