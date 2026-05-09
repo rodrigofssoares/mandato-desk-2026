@@ -224,16 +224,64 @@
   opacity: 0.8;
 }
 
-/* Handle de resize mais visível em modo edição */
+/* ── Handles de resize em todos os lados/cantos (modo edição) ──────────
+   O default do react-resizable só estiliza o handle 'se'. Como agora
+   habilitamos 8 handles em EditableDashboard, precisamos posicionar e dar
+   feedback visual a cada um. */
+
 .layout.is-editing .react-resizable-handle {
   background-image: none;
-  width: 18px;
-  height: 18px;
-  right: 4px;
-  bottom: 4px;
+  position: absolute;
+  z-index: 5;
 }
 
-.layout.is-editing .react-resizable-handle::after {
+/* Faixa de hover comum nos 8 handles — fica visível só no hover */
+.layout.is-editing .react-resizable-handle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--primary) / 0.18);
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.layout.is-editing .react-resizable-handle:hover::before {
+  opacity: 1;
+}
+
+/* ─── 4 cantos ───────────────────────────────────────────────────────── */
+.layout.is-editing .react-resizable-handle-se,
+.layout.is-editing .react-resizable-handle-sw,
+.layout.is-editing .react-resizable-handle-ne,
+.layout.is-editing .react-resizable-handle-nw {
+  width: 18px;
+  height: 18px;
+}
+
+.layout.is-editing .react-resizable-handle-se {
+  right: 4px;
+  bottom: 4px;
+  cursor: se-resize;
+}
+.layout.is-editing .react-resizable-handle-sw {
+  left: 4px;
+  bottom: 4px;
+  cursor: sw-resize;
+}
+.layout.is-editing .react-resizable-handle-ne {
+  right: 4px;
+  top: 4px;
+  cursor: ne-resize;
+}
+.layout.is-editing .react-resizable-handle-nw {
+  left: 4px;
+  top: 4px;
+  cursor: nw-resize;
+}
+
+/* Indicador "L" nos cantos (linhas grossas) */
+.layout.is-editing .react-resizable-handle-se::after {
   content: "";
   position: absolute;
   right: 2px;
@@ -243,4 +291,98 @@
   border-right: 2px solid hsl(var(--primary));
   border-bottom: 2px solid hsl(var(--primary));
   border-bottom-right-radius: 2px;
+}
+.layout.is-editing .react-resizable-handle-sw::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid hsl(var(--primary));
+  border-bottom: 2px solid hsl(var(--primary));
+  border-bottom-left-radius: 2px;
+}
+.layout.is-editing .react-resizable-handle-ne::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid hsl(var(--primary));
+  border-top: 2px solid hsl(var(--primary));
+  border-top-right-radius: 2px;
+}
+.layout.is-editing .react-resizable-handle-nw::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid hsl(var(--primary));
+  border-top: 2px solid hsl(var(--primary));
+  border-top-left-radius: 2px;
+}
+
+/* ─── 4 lados ────────────────────────────────────────────────────────── */
+/* Faixa horizontal (top/bottom) */
+.layout.is-editing .react-resizable-handle-n,
+.layout.is-editing .react-resizable-handle-s {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 8px;
+}
+.layout.is-editing .react-resizable-handle-n {
+  top: 0;
+  cursor: n-resize;
+}
+.layout.is-editing .react-resizable-handle-s {
+  bottom: 0;
+  cursor: s-resize;
+}
+/* Faixa vertical (left/right) */
+.layout.is-editing .react-resizable-handle-e,
+.layout.is-editing .react-resizable-handle-w {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 36px;
+}
+.layout.is-editing .react-resizable-handle-e {
+  right: 0;
+  cursor: e-resize;
+}
+.layout.is-editing .react-resizable-handle-w {
+  left: 0;
+  cursor: w-resize;
+}
+
+/* Pílula sutil no centro de cada lado pra indicar "arrastável" */
+.layout.is-editing .react-resizable-handle-n::after,
+.layout.is-editing .react-resizable-handle-s::after,
+.layout.is-editing .react-resizable-handle-e::after,
+.layout.is-editing .react-resizable-handle-w::after {
+  content: "";
+  position: absolute;
+  background: hsl(var(--primary) / 0.6);
+  border-radius: 9999px;
+}
+.layout.is-editing .react-resizable-handle-n::after,
+.layout.is-editing .react-resizable-handle-s::after {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 3px;
+}
+.layout.is-editing .react-resizable-handle-e::after,
+.layout.is-editing .react-resizable-handle-w::after {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 24px;
 }

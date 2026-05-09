@@ -276,6 +276,10 @@ export function EditableDashboard({ widgets, canEdit }: EditableDashboardProps) 
         onLayoutChange={handleLayoutChange}
         compactType="vertical"
         preventCollision={false}
+        // Handles de resize em todos os lados e cantos. Default do RGL é só
+        // 'se' (canto inferior direito), o que impede expandir pra esquerda
+        // ou pra cima quando o widget já tá colado na borda direita do grid.
+        resizeHandles={['s', 'w', 'e', 'n', 'sw', 'nw', 'se', 'ne']}
       >
         {visibleIds.map((id) => (
           <div
