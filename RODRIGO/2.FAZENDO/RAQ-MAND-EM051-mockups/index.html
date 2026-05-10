@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAQ-MAND-EM051 · Escolha do mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f7f4ec;
+    --surface: #ffffff;
+    --ink: #181a23;
+    --ink-soft: #5a5e6e;
+    --line: #e4dfd1;
+    --accent: #c95942;
+    --gold: #c8a04a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Manrope", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 40px 24px 60px;
+    background-image:
+      radial-gradient(ellipse 800px 300px at 50% 0%, rgba(200,160,74,.05) 0%, transparent 60%);
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; }
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 14px;
+    font-family: "Manrope", sans-serif;
+  }
+  h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .lead {
+    color: var(--ink-soft);
+    font-size: 17px;
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 1.5;
+    font-family: "Fraunces", serif;
+    font-style: italic;
+  }
+  .meta {
+    margin-top: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: var(--surface);
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 1px solid var(--line);
+    font-family: ui-monospace, monospace;
+  }
+  .meta .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 28px;
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 24px 48px -32px rgba(24,26,35,.18);
+    transition: transform .25s, box-shadow .25s;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 32px 60px -28px rgba(24,26,35,.25);
+  }
+  .swatch {
+    height: 140px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .swatch.v1 {
+    background:
+      linear-gradient(180deg, transparent 60%, rgba(13,74,62,.85) 60%),
+      linear-gradient(135deg, #fdf8e8 0%, #f5edd6 100%);
+  }
+  .swatch.v1::before {
+    content: "";
+    position: absolute;
+    top: 18px; left: 18px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c8a04a, #c95942);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  }
+  .swatch.v1::after {
+    content: "Conversas · Contas · Webhooks · Logs";
+    position: absolute;
+    bottom: 14px; left: 18px;
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-size: 12px;
+    color: #fdf8e8;
+    letter-spacing: .5px;
+  }
+  .swatch.v2 {
+    background:
+      linear-gradient(180deg, #0a1f44 50%, #f6f1e8 50%);
+    position: relative;
+  }
+  .swatch.v2::before {
+    content: "MANDATO DESK";
+    position: absolute;
+    top: 14px; left: 18px;
+    color: #c8a04a;
+    font-family: "Manrope", sans-serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    font-weight: 700;
+  }
+  .swatch.v2::after {
+    content: "✦  Conversas  ✦  Contas  ✦  Webhooks  ✦  Registros";
+    position: absolute;
+    top: 38px; left: 18px;
+    color: #e6cd8c;
+    font-family: "Fraunces", serif;
+    font-size: 14px;
+    font-style: italic;
+  }
+  .swatch.v3 {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(54,228,218,.15) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(180,167,255,.12) 0%, transparent 50%),
+      #0a0c14;
+    background-size: 100% 100%, 100% 100%, auto;
+    position: relative;
+  }
+  .swatch.v3::before {
+    content: "⌘K  search…";
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #b6bbc9;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    background: rgba(20,23,31,.8);
+    padding: 8px 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(54,228,218,.3);
+    box-shadow: 0 4px 24px rgba(54,228,218,.15);
+  }
+  .swatch.v3::after {
+    content: "● ● ●  online";
+    position: absolute;
+    bottom: 14px; left: 18px;
+    color: #36e4da;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .v-tag {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .card h2 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 26px;
+    line-height: 1.05;
+    margin-bottom: 4px;
+  }
+  .card .vibe {
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
+  .attrs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 4px 0 22px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .attr {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 12px;
+    font-size: 13px;
+    align-items: baseline;
+  }
+  .attr .k {
+    color: var(--ink-soft);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+  .attr .v { color: var(--ink); font-size: 13px; }
+  .pros {
+    margin-bottom: 22px;
+  }
+  .pros li {
+    list-style: none;
+    padding: 6px 0 6px 22px;
+    position: relative;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .pros li::before {
+    content: "+";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 16px;
+    top: 4px;
+  }
+  .cons {
+    margin-bottom: 28px;
+  }
+  .cons li {
+    list-style: none;
+    padding: 6px 0 6px 22px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .cons li::before {
+    content: "−";
+    position: absolute;
+    left: 0;
+    color: var(--ink-soft);
+    font-weight: 700;
+    font-size: 16px;
+    top: 4px;
+  }
+  .open-btn {
+    margin-top: auto;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 14px 22px;
+    border-radius: 8px;
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all .2s;
+  }
+  .open-btn:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+  }
+  .open-btn svg {
+    width: 16px; height: 16px;
+  }
+  .next {
+    margin-top: 56px;
+    padding: 28px 32px;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+  }
+  .next h3 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .next p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+  .next code {
+    background: #f0ebde;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">— RAQ-MAND-EM051 · Mockups</div>
+    <h1>Três caminhos visuais para a <em>integração WhatsApp</em></h1>
+    <p class="lead">
+      O MVP é o mesmo nas três versões: 2 contas Z‑API, texto, recebimento, status e tela WhatsApp Web com 4 subabas.
+      Muda o <em>caráter</em> da interface — vibe, paleta, tipografia, densidade de informação.
+    </p>
+    <div class="meta">
+      <span class="dot"></span>
+      Todas as 3 já com tabs funcionando · clique e navegue
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- V1 -->
+    <article class="card">
+      <div class="swatch v1"></div>
+      <div class="v-tag">— Versão 01</div>
+      <h2>Verdana Eleitoral</h2>
+      <p class="vibe">"Memo de gabinete brasileiro encontra WhatsApp Web"</p>
+      <div class="attrs">
+        <div class="attr"><span class="k">Vibe</span><span class="v">Quente, cordial, gabinete físico digitalizado</span></div>
+        <div class="attr"><span class="k">Paleta</span><span class="v">Verde‑musgo · creme · terracota · ouro</span></div>
+        <div class="attr"><span class="k">Fonts</span><span class="v">Fraunces (serif) + Atkinson Hyperlegible</span></div>
+        <div class="attr"><span class="k">Densidade</span><span class="v">Confortável, espaçosa</span></div>
+      </div>
+      <ul class="pros">
+        <li>Familiar pra quem usa WhatsApp Web — adoção rápida</li>
+        <li>Caráter brasileiro político (textura papel, tipografia editorial)</li>
+        <li>Toque artesanal — não parece "dashboard genérico"</li>
+      </ul>
+      <ul class="cons">
+        <li>Pode parecer "menos sério" pra quem espera CRM corporativo</li>
+        <li>Menos densidade de informação por tela</li>
+      </ul>
+      <a class="open-btn" href="v1-verdana-eleitoral.html" target="_blank">
+        Abrir V1
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+    </article>
+
+    <!-- V2 -->
+    <article class="card">
+      <div class="swatch v2"></div>
+      <div class="v-tag">— Versão 02</div>
+      <h2>Navy Institucional</h2>
+      <p class="vibe">"Câmara dos deputados encontra workspace premium"</p>
+      <div class="attrs">
+        <div class="attr"><span class="k">Vibe</span><span class="v">Sóbrio, refinado, escritório institucional</span></div>
+        <div class="attr"><span class="k">Paleta</span><span class="v">Navy profundo · creme · dourado fino</span></div>
+        <div class="attr"><span class="k">Fonts</span><span class="v">Playfair Display (serif) + Manrope</span></div>
+        <div class="attr"><span class="k">Densidade</span><span class="v">Equilibrada, hierarquia forte</span></div>
+      </div>
+      <ul class="pros">
+        <li>Alinhado ao DS Mandato (Navy Institucional já decidido em memória)</li>
+        <li>Tom "advocacia premium" — passa autoridade política</li>
+        <li>Tipografia editorial, ornamentos sutis (numeração romana, dividers de ouro)</li>
+      </ul>
+      <ul class="cons">
+        <li>Menos calor humano que V1 — mais formal</li>
+        <li>Pode parecer "pesado" se usado o dia inteiro</li>
+      </ul>
+      <a class="open-btn" href="v2-navy-institucional.html" target="_blank">
+        Abrir V2
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+    </article>
+
+    <!-- V3 -->
+    <article class="card">
+      <div class="swatch v3"></div>
+      <div class="v-tag">— Versão 03</div>
+      <h2>Híbrido Moderno</h2>
+      <p class="vibe">"Linear / Vercel — power-user dark, command palette, ⌘K"</p>
+      <div class="attrs">
+        <div class="attr"><span class="k">Vibe</span><span class="v">Produtividade densa, dark mode, atalhos</span></div>
+        <div class="attr"><span class="k">Paleta</span><span class="v">Near-black + neon teal + violeta</span></div>
+        <div class="attr"><span class="k">Fonts</span><span class="v">Outfit + JetBrains Mono</span></div>
+        <div class="attr"><span class="k">Densidade</span><span class="v">Alta — máximo de info na tela</span></div>
+      </div>
+      <ul class="pros">
+        <li>Atendentes operam o dia todo — dark mode reduz fadiga visual</li>
+        <li>Atalhos teclado (⌘K, ⌘1..⌘4) aceleram quem pegar o jeito</li>
+        <li>Painel de contexto à direita: ficha, atalhos, atividade</li>
+        <li>Visual "engenharia/SaaS moderno"</li>
+      </ul>
+      <ul class="cons">
+        <li>Mais distante do "WhatsApp clássico" — curva de aprendizado</li>
+        <li>Dark mode pode não agradar usuários acostumados ao light</li>
+        <li>Mais elementos = mais código de manutenção</li>
+      </ul>
+      <a class="open-btn" href="v3-hibrido-moderno.html" target="_blank">
+        Abrir V3
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+    </article>
+  </div>
+
+  <div class="next">
+    <h3>Próximo passo</h3>
+    <p>
+      Abra os 3 mockups (cada um tem as 4 subabas funcionando — clique nelas pra ver Contas / Webhooks / Logs).
+      Escolha 1 — pode pedir ajustes pontuais (ex: "V2 mas com cards do V1") — e a cadeia segue:
+      <code>Backlog</code> → <code>Fullstack</code> → <code>Security</code> → <code>Code Review</code> → <code>QA</code> → <code>commit + push</code>.
+    </p>
+  </div>
+</div>
+</body>
+</html>

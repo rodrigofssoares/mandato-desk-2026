@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   User,
+  MessageCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Mapa', icon: MapPin, href: '/leads-map', secao: 'mapa' },
   { label: 'Importação', icon: Upload, href: '/bulk-import', secao: 'importacao' },
   { label: 'Campos de Campanha', icon: ClipboardCheck, href: '/campos-campanha', secao: 'campanha' },
+  { label: 'WhatsApp', icon: MessageCircle, href: '/integracoes/whatsapp', secao: 'whatsapp', dividerBefore: true },
   { label: 'Configurações', icon: Settings, href: '/settings', secao: 'configuracoes', dividerBefore: true },
 ];
 
@@ -86,6 +88,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   configuracoes: (can) => can.accessSettings(),
   // ordenacao_filtros não tem item próprio na sidebar — controle via tab de Configurações.
   ordenacao_filtros: () => false,
+  // whatsapp — gate-keepado por can.accessWhatsapp() (migration 049: somente admin por padrão).
+  whatsapp: (can) => can.accessWhatsapp(),
 };
 
 export function AppSidebar() {

@@ -70,6 +70,14 @@ export function usePermissions() {
 
     // Configurações (hub /settings como bloco único) — merge-nossocrm issue 99
     accessSettings: () => canView('configuracoes'),
+
+    // Ordenação de Filtros — restrito por padrão a admin (migration 049)
+    accessOrdenacaoFiltros: () => canView('ordenacao_filtros'),
+    editOrdenacaoFiltros: () => canEdit('ordenacao_filtros'),
+
+    // WhatsApp — restrito por padrão a admin (migration 049)
+    accessWhatsapp: () => canView('whatsapp'),
+    editWhatsapp: () => canEdit('whatsapp'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };
