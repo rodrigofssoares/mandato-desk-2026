@@ -1967,6 +1967,12 @@ export type Database = {
           created_at: string
           direction: string
           id: string
+          media_caption: string | null
+          media_filename: string | null
+          media_metadata: Json | null
+          media_mime: string | null
+          media_type: string
+          media_url: string | null
           message_id: string
           sent_at: string
           status: string
@@ -1978,6 +1984,12 @@ export type Database = {
           created_at?: string
           direction: string
           id?: string
+          media_caption?: string | null
+          media_filename?: string | null
+          media_metadata?: Json | null
+          media_mime?: string | null
+          media_type?: string
+          media_url?: string | null
           message_id: string
           sent_at?: string
           status?: string
@@ -1989,6 +2001,12 @@ export type Database = {
           created_at?: string
           direction?: string
           id?: string
+          media_caption?: string | null
+          media_filename?: string | null
+          media_metadata?: Json | null
+          media_mime?: string | null
+          media_type?: string
+          media_url?: string | null
           message_id?: string
           sent_at?: string
           status?: string

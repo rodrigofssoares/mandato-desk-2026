@@ -88,8 +88,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   configuracoes: (can) => can.accessSettings(),
   // ordenacao_filtros não tem item próprio na sidebar — controle via tab de Configurações.
   ordenacao_filtros: () => false,
-  // whatsapp — visível para qualquer usuário autenticado no MVP (senha extra protege conversas).
-  whatsapp: () => true,
+  // whatsapp — gate-keepado por can.accessWhatsapp() (migration 049: somente admin por padrão).
+  whatsapp: (can) => can.accessWhatsapp(),
 };
 
 export function AppSidebar() {

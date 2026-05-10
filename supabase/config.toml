@@ -23,3 +23,24 @@ verify_jwt = false
 # inconsistentes (404 reportado em alguns casos pelo gateway).
 [functions.google-contacts-sync]
 verify_jwt = false
+
+# zapi-send-text: envia mensagem WhatsApp via Z-API. Valida JWT manualmente em
+# requireAuth (auth-guard.ts). verify_jwt=false pra retornar erros customizados
+# em vez de respostas opacas do gateway.
+[functions.zapi-send-text]
+verify_jwt = false
+
+# zapi-webhook: endpoint público chamado pela Z-API a cada evento (mensagem
+# recebida, status, conexão). Sem JWT — autenticação é via X-Webhook-Secret
+# por conta (timing-safe compare). verify_jwt=false é OBRIGATÓRIO.
+[functions.zapi-webhook]
+verify_jwt = false
+
+# zapi-send-media: envia imagem/vídeo/áudio/documento via Z-API. Auth
+# manual via requireAuth (qualquer atendente).
+[functions.zapi-send-media]
+verify_jwt = false
+
+# zapi-send-poll: envia enquete WhatsApp.
+[functions.zapi-send-poll]
+verify_jwt = false

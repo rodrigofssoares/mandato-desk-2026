@@ -102,6 +102,38 @@ export function useZapiAccounts() {
   });
 }
 
+// ─── useZapiWebhookConfigs ──────────────────────────────────────────────────
+
+export interface ZapiWebhookConfig {
+  id: string;
+  name: string;
+  webhook_secret: string;
+}
+
+/**
+ * Retorna { id, name, webhook_secret } por conta — usado APENAS na aba
+ * Webhooks (admin only). RLS permite SELECT pra qualquer auth user, mas
+ * o componente Webhooks gate-keepa por activeRole === 'admin'.
+ *
+ * Por que separamos do useZapiAccounts: o hook principal exclui
+ * webhook_secret das colunas selecionadas pra evitar leak em telas que
+ * não precisam dele (Conversas, Logs).
+ */
+export function useZapiWebhookConfigs(enabled: boolean) {
+  return useQuery({
+    queryKey: ['zapi-webhook-configs'],
+    enabled,
+    queryFn: async (): Promise<ZapiWebhookConfig[]> => {
+      const { data, error } = await supabase
+        .from('zapi_accounts')
+        .select('id, name, webhook_secret')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ZapiWebhookConfig[];
+    },
+  });
+}
+
 // ─── useCreateZapiAccount ───────────────────────────────────────────────────
 
 /**

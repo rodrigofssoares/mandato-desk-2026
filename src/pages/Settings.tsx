@@ -42,6 +42,7 @@ export default function Settings() {
 
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessSettings();
+  const canAccessFiltros = can.accessOrdenacaoFiltros();
 
   if (isPermLoading) {
     return (
@@ -93,7 +94,9 @@ export default function Settings() {
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
           <TabsTrigger value="ia">IA</TabsTrigger>
           <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
-          <TabsTrigger value="filtros">Ordenação de Filtros</TabsTrigger>
+          {canAccessFiltros && (
+            <TabsTrigger value="filtros">Ordenação de Filtros</TabsTrigger>
+          )}
           <TabsTrigger value="nav-ordem">Ordem das Abas</TabsTrigger>
           <TabsTrigger value="alertas">Alertas</TabsTrigger>
         </TabsList>
@@ -119,9 +122,11 @@ export default function Settings() {
         <TabsContent value="personalizacao" className="mt-4">
           <BrandingTab />
         </TabsContent>
-        <TabsContent value="filtros" className="mt-4">
-          <FilterOrderTab />
-        </TabsContent>
+        {canAccessFiltros && (
+          <TabsContent value="filtros" className="mt-4">
+            <FilterOrderTab />
+          </TabsContent>
+        )}
         <TabsContent value="nav-ordem" className="mt-4">
           <NavOrderTab />
         </TabsContent>
