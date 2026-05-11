@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { BarChart2, RefreshCw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -21,8 +21,29 @@ export default function Relatorios() {
   const [selectedStageIds, setSelectedStageIds] = useState<string[]>([]);
   const [chartType, setChartType] = useState<ReportChartViewType>('bar-horizontal');
 
+  // Ref para o container do gráfico — usado na captura SVG do PDF
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
   const { data: stages = [], isLoading } = useFunnelReport(selectedBoardId, selectedStageIds);
 
+  const handleBoardChange = useCallback(
+    (boardId: string | null, boardNome?: string) => {
+      setSelectedBoardId(boardId);
+      setSelectedBoardNome(boardNome ?? '');
+    },
+    []
+  );
+
+  const handleStageIdsChange = useCallback((ids: string[]) => {
+    setSelectedStageIds(ids);
+  }, []);
+
+  function handleAtualizar() {
+    queryClient.invalidateQueries({ queryKey: ['funnel-report', selectedBoardId] });
+    toast.success('Dados atualizados');
+  }
+
+  // Guard RBAC — usar mesmo padrão de acesso negado
   if (!can.exportData()) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-3">
@@ -34,11 +55,6 @@ export default function Relatorios() {
         </p>
       </div>
     );
-  }
-
-  function handleAtualizar() {
-    queryClient.invalidateQueries({ queryKey: ['funnel-report', selectedBoardId] });
-    toast.success('Dados atualizados');
   }
 
   return (
@@ -55,7 +71,7 @@ export default function Relatorios() {
               variant="outline"
               size="sm"
               onClick={handleAtualizar}
-              disabled={!selectedBoardId}
+              disabled={!selectedBoardId || isLoading}
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
               Atualizar
@@ -64,20 +80,18 @@ export default function Relatorios() {
               stages={stages}
               boardNome={selectedBoardNome}
               isLoading={isLoading}
+              chartContainerRef={chartContainerRef.current}
             />
           </div>
         }
       >
-        {/* Seletor de funil e estágios */}
+        {/* Seletor de funil e estágios — escondido na impressão */}
         <div className="print:hidden">
           <FunnelSelector
             selectedBoardId={selectedBoardId}
             selectedStageIds={selectedStageIds}
-            onBoardChange={(boardId, boardNome) => {
-              setSelectedBoardId(boardId);
-              setSelectedBoardNome(boardNome ?? '');
-            }}
-            onStageIdsChange={setSelectedStageIds}
+            onBoardChange={handleBoardChange}
+            onStageIdsChange={handleStageIdsChange}
           />
         </div>
       </PageHeader>
@@ -86,6 +100,7 @@ export default function Relatorios() {
       <div className="grid grid-cols-1 gap-6">
         {/* Gráfico */}
         <FunnelReportChart
+          ref={chartContainerRef}
           stages={stages}
           isLoading={isLoading}
           viewType={chartType}
