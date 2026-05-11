@@ -1,6 +1,3 @@
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { sanitizarNomeArquivo } from './relatorios';
@@ -9,6 +6,16 @@ import type { FunnelReportStage } from '@/hooks/useFunnelReport';
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/**
+ * Previne Formula Injection (CWE-1236) em células Excel.
+ * Valores string que iniciam com = + - @ | são prefixados com apóstrofo,
+ * o que faz o Excel tratá-los como texto literal.
+ */
+function sanitizarCelulaExcel(val: string | number | null): string | number | null {
+  if (typeof val !== 'string') return val;
+  return /^[=+\-@|]/.test(val) ? `'${val}` : val;
+}
 
 function formatPct(value: number | null, isFirst: boolean): string {
   if (isFirst) return '—';
@@ -35,15 +42,17 @@ function nomeArquivo(boardNome: string, ext: 'xlsx' | 'pdf'): string {
 /**
  * Gera e faz download de um arquivo .xlsx com os dados do relatório de funil.
  */
-export function exportFunnelToXlsx(
+export async function exportFunnelToXlsx(
   stages: FunnelReportStage[],
   boardNome: string
-): void {
+): Promise<void> {
   try {
+    const XLSX = await import('xlsx');
+
     const cabecalho = ['Estágio', 'Contatos', '% vs. Anterior', '% vs. Topo'];
 
     const linhas = stages.map((s, index) => [
-      s.nome,
+      sanitizarCelulaExcel(s.nome),
       s.count,
       formatPct(s.pctVsAnterior, index === 0),
       formatPctTopo(s.pctVsTopo, index === 0),
@@ -135,6 +144,11 @@ export async function exportFunnelToPdf(
   chartContainerRef?: HTMLElement | null
 ): Promise<void> {
   try {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
+
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const dataHoje = format(new Date(), 'dd/MM/yyyy');
     const pageWidth = doc.internal.pageSize.getWidth();

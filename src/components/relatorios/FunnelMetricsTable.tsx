@@ -18,6 +18,8 @@ import type { FunnelReportStage } from '@/hooks/useFunnelReport';
 interface FunnelMetricsTableProps {
   stages: FunnelReportStage[];
   isLoading: boolean;
+  /** true quando pelo menos um estágio está selecionado no multi-select */
+  hasSelection: boolean;
 }
 
 function formatPct(value: number | null, isFirst: boolean): string {
@@ -31,7 +33,7 @@ function formatPctTopo(value: number | null): string {
   return `${Math.round(value)}%`;
 }
 
-export function FunnelMetricsTable({ stages, isLoading }: FunnelMetricsTableProps) {
+export function FunnelMetricsTable({ stages, isLoading, hasSelection }: FunnelMetricsTableProps) {
   if (isLoading) {
     return (
       <div className="border rounded-lg overflow-hidden">
@@ -55,6 +57,16 @@ export function FunnelMetricsTable({ stages, isLoading }: FunnelMetricsTableProp
             ))}
           </TableBody>
         </Table>
+      </div>
+    );
+  }
+
+  if (!hasSelection) {
+    return (
+      <div className="border rounded-lg p-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          Selecione pelo menos um estágio para visualizar o relatório
+        </p>
       </div>
     );
   }

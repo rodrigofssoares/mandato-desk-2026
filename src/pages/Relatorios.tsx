@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { BarChart2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, BarChart2, RefreshCw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default function Relatorios() {
   // Ref para o container do gráfico — usado na captura SVG do PDF
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: stages = [], isLoading } = useFunnelReport(selectedBoardId, selectedStageIds);
+  const { data: stages = [], isLoading, truncado } = useFunnelReport(selectedBoardId, selectedStageIds);
 
   const handleBoardChange = useCallback(
     (boardId: string | null, boardNome?: string) => {
@@ -96,6 +96,17 @@ export default function Relatorios() {
         </div>
       </PageHeader>
 
+      {/* Banner de truncamento — exibido quando board tem > 10k contatos */}
+      {truncado && (
+        <div className="flex items-start gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-700 dark:bg-yellow-950 dark:text-yellow-200">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <span>
+            Atenção: este funil tem mais de 10.000 contatos. O relatório exibe apenas os 10.000
+            primeiros — valores podem estar incompletos.
+          </span>
+        </div>
+      )}
+
       {/* Conteúdo principal */}
       <div className="grid grid-cols-1 gap-6">
         {/* Gráfico */}
@@ -109,7 +120,11 @@ export default function Relatorios() {
         />
 
         {/* Tabela de métricas */}
-        <FunnelMetricsTable stages={stages} isLoading={isLoading} />
+        <FunnelMetricsTable
+          stages={stages}
+          isLoading={isLoading}
+          hasSelection={selectedStageIds.length > 0}
+        />
       </div>
     </div>
   );

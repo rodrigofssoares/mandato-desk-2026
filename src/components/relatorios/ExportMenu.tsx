@@ -26,8 +26,8 @@ export function ExportMenu({
 }: ExportMenuProps) {
   const disabled = isLoading || stages.length === 0;
 
-  function handleExcelClick() {
-    exportFunnelToXlsx(stages, boardNome);
+  async function handleExcelClick() {
+    await exportFunnelToXlsx(stages, boardNome);
   }
 
   async function handlePdfClick() {
