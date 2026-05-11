@@ -101,6 +101,14 @@ export interface ContactFilters {
   estado?: string;
   /** Filtro de origem (ILIKE + IS NOT NULL) */
   origem?: string;
+  /** Filtro de bairro (ILIKE case-insensitive) */
+  bairro?: string;
+  /** Filtro de logradouro (ILIKE case-insensitive) */
+  logradouro?: string;
+  /** Filtro de complemento (ILIKE case-insensitive — NULLs nunca batem com ILIKE) */
+  complemento?: string;
+  /** Filtro de CEP (ILIKE case-insensitive — permite busca parcial) */
+  cep?: string;
   /** Filtro de telefone: 'com' = IS NOT NULL, 'sem' = IS NULL */
   has_phone?: 'com' | 'sem';
   /** Filtro de e-mail: 'com' = IS NOT NULL, 'sem' = IS NULL */
@@ -204,6 +212,10 @@ export function useContacts(filters: ContactFilters = {}) {
     cidade,
     estado,
     origem,
+    bairro,
+    logradouro,
+    complemento,
+    cep,
     has_phone,
     has_email,
     has_demand,
@@ -469,6 +481,26 @@ export function useContacts(filters: ContactFilters = {}) {
         query = query
           .not('origem', 'is', null)
           .ilike('origem', `%${escapeLike(origem.trim())}%`);
+      }
+
+      // Bairro (ILIKE case-insensitive)
+      if (bairro && bairro.trim()) {
+        query = query.ilike('bairro', `%${escapeLike(bairro.trim())}%`);
+      }
+
+      // Logradouro (ILIKE case-insensitive)
+      if (logradouro && logradouro.trim()) {
+        query = query.ilike('logradouro', `%${escapeLike(logradouro.trim())}%`);
+      }
+
+      // Complemento (ILIKE — NULLs não batem com ILIKE no Postgres, cobrindo o critério de NULL)
+      if (complemento && complemento.trim()) {
+        query = query.ilike('complemento', `%${escapeLike(complemento.trim())}%`);
+      }
+
+      // CEP (ILIKE case-insensitive — permite busca parcial por prefixo ou trecho)
+      if (cep && cep.trim()) {
+        query = query.ilike('cep', `%${escapeLike(cep.trim())}%`);
       }
 
       // Telefone (IS NOT NULL / IS NULL)
