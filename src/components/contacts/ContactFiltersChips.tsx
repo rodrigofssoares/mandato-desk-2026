@@ -264,6 +264,42 @@ export function ContactFiltersChips({
     });
   }
 
+  // Bairro
+  if (filters.bairro) {
+    chips.push({
+      key: 'bairro',
+      label: `Bairro: ${filters.bairro}`,
+      onRemove: () => onChange({ ...filters, bairro: undefined }),
+    });
+  }
+
+  // Logradouro
+  if (filters.logradouro) {
+    chips.push({
+      key: 'logradouro',
+      label: `Logradouro: ${filters.logradouro}`,
+      onRemove: () => onChange({ ...filters, logradouro: undefined }),
+    });
+  }
+
+  // CEP
+  if (filters.cep) {
+    chips.push({
+      key: 'cep',
+      label: `CEP: ${filters.cep}`,
+      onRemove: () => onChange({ ...filters, cep: undefined }),
+    });
+  }
+
+  // Complemento
+  if (filters.complemento) {
+    chips.push({
+      key: 'complemento',
+      label: `Complemento: ${filters.complemento}`,
+      onRemove: () => onChange({ ...filters, complemento: undefined }),
+    });
+  }
+
   // Origem
   if (filters.origem) {
     chips.push({

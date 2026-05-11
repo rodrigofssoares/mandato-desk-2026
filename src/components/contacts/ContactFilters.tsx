@@ -95,7 +95,7 @@ function countPessoais(f: Filters): number {
 }
 
 function countLocalizacao(f: Filters): number {
-  return [f.cidade, f.estado, f.origem].filter(Boolean).length;
+  return [f.cidade, f.estado, f.origem, f.bairro, f.logradouro, f.complemento, f.cep].filter(Boolean).length;
 }
 
 function countEngajamento(f: Filters): number {
@@ -255,19 +255,35 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   // Inputs de texto com debounce
   const cidadeDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const origemDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bairroDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logradouroDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const complementoDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cepDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cidadeLocal, setCidadeLocal] = useState(filters.cidade ?? '');
   const [origemLocal, setOrigemLocal] = useState(filters.origem ?? '');
+  const [bairroLocal, setBairroLocal] = useState(filters.bairro ?? '');
+  const [logradouroLocal, setLogradouroLocal] = useState(filters.logradouro ?? '');
+  const [complementoLocal, setComplementoLocal] = useState(filters.complemento ?? '');
+  const [cepLocal, setCepLocal] = useState(filters.cep ?? '');
 
   // Busca local de etiquetas dentro do drawer (não persiste — só filtra a lista visual)
   const [tagSearch, setTagSearch] = useState('');
 
   useEffect(() => { setCidadeLocal(filters.cidade ?? ''); }, [filters.cidade]);
   useEffect(() => { setOrigemLocal(filters.origem ?? ''); }, [filters.origem]);
+  useEffect(() => { setBairroLocal(filters.bairro ?? ''); }, [filters.bairro]);
+  useEffect(() => { setLogradouroLocal(filters.logradouro ?? ''); }, [filters.logradouro]);
+  useEffect(() => { setComplementoLocal(filters.complemento ?? ''); }, [filters.complemento]);
+  useEffect(() => { setCepLocal(filters.cep ?? ''); }, [filters.cep]);
 
   useEffect(() => {
     return () => {
       if (cidadeDebounce.current) clearTimeout(cidadeDebounce.current);
       if (origemDebounce.current) clearTimeout(origemDebounce.current);
+      if (bairroDebounce.current) clearTimeout(bairroDebounce.current);
+      if (logradouroDebounce.current) clearTimeout(logradouroDebounce.current);
+      if (complementoDebounce.current) clearTimeout(complementoDebounce.current);
+      if (cepDebounce.current) clearTimeout(cepDebounce.current);
     };
   }, []);
 
@@ -280,6 +296,10 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
   const clearAll = () => {
     setCidadeLocal('');
     setOrigemLocal('');
+    setBairroLocal('');
+    setLogradouroLocal('');
+    setComplementoLocal('');
+    setCepLocal('');
     onChange({
       search: filters.search,
       sort_by: filters.sort_by,
@@ -301,6 +321,38 @@ export function ContactFilters({ filters, onChange }: ContactFiltersProps) {
     if (origemDebounce.current) clearTimeout(origemDebounce.current);
     origemDebounce.current = setTimeout(() => {
       update({ origem: value.trim() || undefined });
+    }, 300);
+  };
+
+  const handleBairroChange = (value: string) => {
+    setBairroLocal(value);
+    if (bairroDebounce.current) clearTimeout(bairroDebounce.current);
+    bairroDebounce.current = setTimeout(() => {
+      update({ bairro: value.trim() || undefined });
+    }, 300);
+  };
+
+  const handleLogradouroChange = (value: string) => {
+    setLogradouroLocal(value);
+    if (logradouroDebounce.current) clearTimeout(logradouroDebounce.current);
+    logradouroDebounce.current = setTimeout(() => {
+      update({ logradouro: value.trim() || undefined });
+    }, 300);
+  };
+
+  const handleComplementoChange = (value: string) => {
+    setComplementoLocal(value);
+    if (complementoDebounce.current) clearTimeout(complementoDebounce.current);
+    complementoDebounce.current = setTimeout(() => {
+      update({ complemento: value.trim() || undefined });
+    }, 300);
+  };
+
+  const handleCepChange = (value: string) => {
+    setCepLocal(value);
+    if (cepDebounce.current) clearTimeout(cepDebounce.current);
+    cepDebounce.current = setTimeout(() => {
+      update({ cep: value.trim() || undefined });
     }, 300);
   };
 
@@ -1052,7 +1104,7 @@ localizacao: () => (
 <SegmentCard
               icon={<MapPin className="h-4 w-4" />}
               title="Localização"
-              subtitle="Cidade, estado, origem"
+              subtitle="Cidade, estado, bairro e mais"
               count={cLocalizacao}
               defaultOpen={cLocalizacao > 0}
             >
@@ -1070,39 +1122,93 @@ localizacao: () => (
                   />
                 </div>
 
+                <div>
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    Estado
+                  </Label>
+                  <Select
+                    value={filters.estado ?? 'todos'}
+                    onValueChange={(v) => update({ estado: v === 'todos' ? undefined : v })}
+                  >
+                    <SelectTrigger className="mt-1 h-[34px] text-sm">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {ESTADOS_BR.map((uf) => (
+                        <SelectItem key={uf.value} value={uf.value}>{uf.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                      Estado
+                      Bairro
                     </Label>
-                    <Select
-                      value={filters.estado ?? 'todos'}
-                      onValueChange={(v) => update({ estado: v === 'todos' ? undefined : v })}
-                    >
-                      <SelectTrigger className="mt-1 h-[34px] text-sm">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos</SelectItem>
-                        {ESTADOS_BR.map((uf) => (
-                          <SelectItem key={uf.value} value={uf.value}>{uf.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      className="mt-1 h-[34px]"
+                      placeholder="Ex: Centro"
+                      maxLength={100}
+                      value={bairroLocal}
+                      onChange={(e) => handleBairroChange(e.target.value)}
+                    />
                   </div>
 
                   <div>
                     <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
-                      Origem
+                      Logradouro
                     </Label>
                     <Input
                       className="mt-1 h-[34px]"
-                      placeholder="Ex: evento"
+                      placeholder="Ex: Rua das Flores"
                       maxLength={100}
-                      value={origemLocal}
-                      onChange={(e) => handleOrigemChange(e.target.value)}
+                      value={logradouroLocal}
+                      onChange={(e) => handleLogradouroChange(e.target.value)}
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                      CEP
+                    </Label>
+                    <Input
+                      className="mt-1 h-[34px]"
+                      placeholder="Ex: 30140-071"
+                      maxLength={10}
+                      value={cepLocal}
+                      onChange={(e) => handleCepChange(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                      Complemento
+                    </Label>
+                    <Input
+                      className="mt-1 h-[34px]"
+                      placeholder="Ex: Apto 302"
+                      maxLength={100}
+                      value={complementoLocal}
+                      onChange={(e) => handleComplementoChange(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-muted-foreground">
+                    Origem
+                  </Label>
+                  <Input
+                    className="mt-1 h-[34px]"
+                    placeholder="Ex: evento"
+                    maxLength={100}
+                    value={origemLocal}
+                    onChange={(e) => handleOrigemChange(e.target.value)}
+                  />
                 </div>
               </div>
             </SegmentCard>
