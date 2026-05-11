@@ -12,7 +12,13 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { downloadFile, rowsToCSV, downloadXLSX, dateForFilename } from '@/lib/exportUtils';
-import type { ContactFilters } from '@/hooks/useContacts';
+import type { Contact, ContactFilters } from '@/hooks/useContacts';
+import {
+  applyContactsClientFilters,
+  applyContactsServerFilters,
+  buildContactsSelectClause,
+  hydrateContactTags,
+} from '@/lib/contactsFilters';
 
 interface ExportMenuProps {
   filters: ContactFilters;
@@ -54,40 +60,66 @@ const COL_WIDTHS = [
   { wch: 14 }, // Atualizado em
 ];
 
-async function fetchAllContactsPaginated(filters: ContactFilters, ignoreFilters = false) {
-  let allData: any[] = [];
-  let offset = 0;
+/**
+ * Baixa todos os contatos respeitando os filtros ativos.
+ *
+ * Usa os MESMOS helpers de `useContacts` para garantir paridade exata entre
+ * o que aparece na listagem filtrada e o que vai pro arquivo exportado.
+ *
+ * Quando `ignoreFilters=true`, ignora paginação/ordenação/sort do usuário e
+ * baixa o universo inteiro de contatos (modo "Completo"). Em ambos os casos
+ * pagina por batches de 1000 (limite máximo do PostgREST sem RPC) e remove
+ * as opções de paginação/sort de UI (page/per_page/sort_by) — exportação
+ * deve trazer TODOS os matches, não só a página atual.
+ */
+async function fetchAllContactsPaginated(
+  rawFilters: ContactFilters,
+  ignoreFilters = false
+): Promise<Contact[]> {
+  // Para "Completo": ignora todos os filtros. Para "Filtrado": usa todos
+  // EXCETO paginação/sort/per_page (que são da UI, não do escopo do dado).
+  const filters: ContactFilters = ignoreFilters
+    ? {}
+    : { ...rawFilters, page: undefined, per_page: undefined, sort_by: undefined };
+
+  const { selectClause, usingTagFilter, usingBoardFilter } = buildContactsSelectClause(filters);
+
   const batchSize = 1000;
+  let offset = 0;
+  let allData: Contact[] = [];
 
+  // Loop de paginação. Cada iteração reconstrói a query base e re-aplica os
+  // filtros (algumas sub-queries pequenas se repetem, mas o custo é baixo
+  // perto da query principal).
   while (true) {
-    let query = supabase
-      .from('contacts')
-      .select('*, contact_tags(tag_id, tags(nome))');
+    let query = supabase.from('contacts').select(selectClause);
 
-    if (!ignoreFilters) {
-      if (filters.search && filters.search.trim()) {
-        const term = `%${filters.search.trim()}%`;
-        query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
-      }
-      if (filters.is_favorite) query = query.eq('is_favorite', true);
-      if (filters.declarou_voto === true) query = query.eq('declarou_voto', true);
-      if (filters.declarou_voto === false) query = query.eq('declarou_voto', false);
-      if (filters.leader_id) query = query.eq('leader_id', filters.leader_id);
-      if (filters.date_from) query = query.gte('created_at', filters.date_from);
-      if (filters.date_to) query = query.lte('created_at', `${filters.date_to}T23:59:59`);
+    const applied = await applyContactsServerFilters(supabase, query, filters);
+    if (applied.empty) {
+      return [];
     }
+    query = applied.query;
 
     query = query.order('nome', { ascending: true }).range(offset, offset + batchSize - 1);
 
     const { data, error } = await query;
     if (error) throw error;
     if (!data || data.length === 0) break;
-    allData = allData.concat(data);
+
+    // Cast unknown — mesma justificativa de useContacts
+    let batch = (data as unknown) as Contact[];
+
+    if (usingTagFilter || usingBoardFilter) {
+      batch = await hydrateContactTags(supabase, batch);
+    }
+
+    allData = allData.concat(batch);
     if (data.length < batchSize) break;
     offset += batchSize;
   }
 
-  return allData;
+  // Filtros que precisam de cálculo client-side (birthday range, etc.)
+  return applyContactsClientFilters(allData, filters);
 }
 
 function contactsToRows(contacts: any[]) {
