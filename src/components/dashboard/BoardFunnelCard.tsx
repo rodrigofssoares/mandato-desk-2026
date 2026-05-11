@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Filter } from 'lucide-react';
+import { BarChart2, ExternalLink, Filter } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { FunilStage } from '@/hooks/useDashboardMetrics';
 import type { Board } from '@/hooks/useBoards';
 import { ChartViewToggle } from './ChartViewToggle';
@@ -55,6 +56,8 @@ export function BoardFunnelCard({
   viewType = 'bar-horizontal',
   onChangeViewType,
 }: BoardFunnelCardProps) {
+  const { can } = usePermissions();
+  const canViewReports = can.exportData();
   const hasBoards = boards.length > 0;
   const hasData = stages.some((s) => s.count > 0);
 
@@ -90,7 +93,21 @@ export function BoardFunnelCard({
             {onChangeViewType && (
               <ChartViewToggle value={viewType} onChange={onChangeViewType} />
             )}
-            <Button variant="ghost" size="sm" asChild className="h-8 px-2">
+            {canViewReports && (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-8 px-2.5 gap-1.5"
+                title="Abrir relatório analítico do funil"
+              >
+                <Link to={activeBoardId ? `/relatorios?board=${activeBoardId}` : '/relatorios'}>
+                  <BarChart2 className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline text-xs">Relatórios</span>
+                </Link>
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" asChild className="h-8 px-2" title="Abrir funil no Board">
               <Link to={activeBoardId ? `/board?board=${activeBoardId}` : '/board'}>
                 <ExternalLink className="h-3.5 w-3.5" />
               </Link>

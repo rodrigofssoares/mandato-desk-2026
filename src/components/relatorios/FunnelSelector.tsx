@@ -31,9 +31,23 @@ export function FunnelSelector({
   const { data: boards = [], isLoading: boardsLoading } = useBoards('contact');
   const { data: stages = [], isLoading: stagesLoading } = useBoardStages(selectedBoardId);
 
-  // Seleciona o primeiro funil por padrão quando a lista carrega
+  // Seleciona o primeiro funil por padrão quando a lista carrega; e, quando o
+  // ID veio preenchido externamente (deep-link via ?board=), resolve o nome do
+  // funil para que componentes irmãos (ex: ExportMenu) o usem.
   useEffect(() => {
-    if (!selectedBoardId && boards.length > 0) {
+    if (boards.length === 0) return;
+    if (!selectedBoardId) {
+      const primeiro = boards[0];
+      onBoardChange(primeiro.id, primeiro.nome);
+      return;
+    }
+    const match = boards.find((b) => b.id === selectedBoardId);
+    if (match) {
+      // Re-emite para garantir que o nome chegue ao container quando o ID
+      // foi inicializado por deep-link.
+      onBoardChange(match.id, match.nome);
+    } else {
+      // ID inválido (funil deletado ou ID forjado): faz fallback para o primeiro.
       const primeiro = boards[0];
       onBoardChange(primeiro.id, primeiro.nome);
     }

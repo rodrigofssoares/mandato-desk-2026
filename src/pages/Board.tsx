@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Plus, Search, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Search, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight, Trash2, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -55,6 +55,7 @@ export default function Board() {
   const canViewPage = can.viewBoard();
   const canCreate = can.createBoardItem();
   const canDelete = can.deleteBoardItem();
+  const canViewReports = can.exportData();
 
   const { data: boards = [], isLoading: boardsLoading } = useBoards('contact');
 
@@ -268,20 +269,30 @@ export default function Board() {
         icon={KanbanSquare}
         iconVariant="primary"
         actions={
-          canCreate ? (
-            <>
+          <>
+            {canViewReports && (
               <Button asChild variant="outline" size="sm">
-                <Link to="/settings?tab=funis">
-                  <SettingsIcon className="h-4 w-4 mr-2" />
-                  Gerenciar funis
+                <Link to={activeBoardId ? `/relatorios?board=${activeBoardId}` : '/relatorios'}>
+                  <BarChart2 className="h-4 w-4 mr-2" />
+                  Relatórios
                 </Link>
               </Button>
-              <Button onClick={() => setCreateBoardOpen(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo funil
-              </Button>
-            </>
-          ) : undefined
+            )}
+            {canCreate && (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/settings?tab=funis">
+                    <SettingsIcon className="h-4 w-4 mr-2" />
+                    Gerenciar funis
+                  </Link>
+                </Button>
+                <Button onClick={() => setCreateBoardOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo funil
+                </Button>
+              </>
+            )}
+          </>
         }
       />
 

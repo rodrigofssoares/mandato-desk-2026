@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, BarChart2, RefreshCw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -15,11 +16,28 @@ import type { ReportChartViewType } from '@/lib/relatorios';
 export default function Relatorios() {
   const { can } = usePermissions();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlBoardId = searchParams.get('board');
 
-  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(urlBoardId);
   const [selectedBoardNome, setSelectedBoardNome] = useState<string>('');
   const [selectedStageIds, setSelectedStageIds] = useState<string[]>([]);
   const [chartType, setChartType] = useState<ReportChartViewType>('bar-horizontal');
+
+  // Sincroniza seleção atual de funil com a URL para que o link "voltar" e o
+  // compartilhamento de URL preservem o contexto.
+  useEffect(() => {
+    const current = searchParams.get('board');
+    if (selectedBoardId && selectedBoardId !== current) {
+      const next = new URLSearchParams(searchParams);
+      next.set('board', selectedBoardId);
+      setSearchParams(next, { replace: true });
+    } else if (!selectedBoardId && current) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('board');
+      setSearchParams(next, { replace: true });
+    }
+  }, [selectedBoardId, searchParams, setSearchParams]);
 
   // Ref para o container do gráfico — usado na captura SVG do PDF
   const chartContainerRef = useRef<HTMLDivElement>(null);
