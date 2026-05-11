@@ -430,3 +430,28 @@
   width: 3px;
   height: 24px;
 }
+
+/* ─── Impressão ───────────────────────────────────────────────────────────── */
+@media print {
+  /* Esconde sidebar, SidebarTrigger e qualquer elemento marcado como print:hidden */
+  [data-sidebar],
+  aside,
+  nav,
+  header,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Conteúdo principal ocupa a página inteira */
+  main,
+  [data-main-content] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Remove sombras e bordas que não ficam bem em papel */
+  * {
+    box-shadow: none !important;
+  }
+}

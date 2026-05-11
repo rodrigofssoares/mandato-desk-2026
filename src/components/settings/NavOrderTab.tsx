@@ -42,6 +42,7 @@ const SECAO_PERMISSION_CHECK: Record<
   contatos: (can) => can.viewContacts(),
   liderancas: (can) => can.viewLeaders(),
   board: (can) => can.viewBoard(),
+  relatorios: (can) => can.exportData(),
   tarefas: (can) => can.viewTarefas(),
   demandas: (can) => can.viewDemands(),
   etiquetas: (can) => can.viewTags(),

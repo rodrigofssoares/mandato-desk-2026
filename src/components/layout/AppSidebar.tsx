@@ -15,6 +15,7 @@ import {
   LogOut,
   User,
   MessageCircle,
+  BarChart2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -56,6 +57,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Contatos', icon: Users, href: '/contacts', secao: 'contatos' },
   { label: 'Articuladores', icon: Crown, href: '/leaders', secao: 'liderancas' },
   { label: 'Funil', icon: KanbanSquare, href: '/board', secao: 'board' },
+  { label: 'Relatórios', icon: BarChart2, href: '/relatorios', secao: 'relatorios' },
   { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', secao: 'tarefas' },
   { label: 'Demandas', icon: ClipboardList, href: '/demands', secao: 'demandas' },
   { label: 'Etiquetas', icon: Tags, href: '/tags', secao: 'etiquetas' },
