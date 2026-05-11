@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useDismissedAlerts } from '@/hooks/useDismissedAlerts';
 import { formatAlertKey } from '@/lib/alertUtils';
+import { usePermissions } from '@/hooks/usePermissions';
 
 // ─── Mapeamento de alert_type → ícone ────────────────────────────────────────
 
@@ -79,6 +80,9 @@ function ExpirationBadge({ expiresAt }: { expiresAt: string }) {
 export function AlertasTab() {
   const { dismissedList, deleteOne, deleteAll, deleteExpired, isLoading } =
     useDismissedAlerts();
+  const { can } = usePermissions();
+  const canDeleteAlerta = can.canDeleteAlerta();
+  const canBulkDeleteAlertas = can.canBulkDeleteAlertas();
 
   const [confirmDeleteAllOpen, setConfirmDeleteAllOpen] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -131,7 +135,7 @@ export function AlertasTab() {
             </div>
           </div>
 
-          {totalCount > 0 && (
+          {totalCount > 0 && canBulkDeleteAlertas && (
             <div className="flex flex-wrap gap-2">
               {expiredCount > 0 && (
                 <Button
@@ -206,16 +210,18 @@ export function AlertasTab() {
                   </div>
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteOne(item.alert_key)}
-                  aria-label={`Apagar alerta: ${item.alert_title ?? item.alert_key}`}
-                  className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  Apagar
-                </Button>
+                {canDeleteAlerta && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteOne(item.alert_key)}
+                    aria-label={`Apagar alerta: ${item.alert_title ?? item.alert_key}`}
+                    className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Apagar
+                  </Button>
+                )}
               </div>
             ))}
 

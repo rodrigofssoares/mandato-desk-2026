@@ -83,7 +83,7 @@ export function useUpdatePermissao() {
   });
 }
 
-// Seed padrão com 5 roles × 18 seções = 90 linhas (inclui board/tarefas/configuracoes)
+// Seed padrão com 5 roles × 22 seções = 110 linhas (inclui ordem_abas e alertas — migration 050)
 function generateDefaultPermissions() {
   const defaults: Array<{
     role: string;
@@ -188,6 +188,47 @@ function generateDefaultPermissions() {
           so_proprio: false,
         });
       }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Opção B: tratamento explícito pós-loop para seções com defaults que NÃO
+  // cabem nos buckets genéricos (ordem_abas e alertas — migration 050).
+  //
+  // O loop acima já inseriu linhas para essas seções via fallback (todos FALSE),
+  // mas os defaults corretos diferem do fallback (ex: estagiário tem pode_ver=true
+  // em alertas). Sobrescrevemos as linhas geradas pelo fallback com os valores corretos.
+  // -----------------------------------------------------------------------
+  const secoesEspeciais = ['ordem_abas', 'alertas'] as const;
+
+  const defaultsEspeciais: Record<typeof secoesEspeciais[number], Record<Role, {
+    pode_ver: boolean; pode_criar: boolean; pode_editar: boolean;
+    pode_deletar: boolean; pode_deletar_em_massa: boolean; so_proprio: boolean;
+  }>> = {
+    ordem_abas: {
+      admin:        { pode_ver: true,  pode_criar: false, pode_editar: true,  pode_deletar: false, pode_deletar_em_massa: false, so_proprio: false },
+      proprietario: { pode_ver: true,  pode_criar: false, pode_editar: true,  pode_deletar: false, pode_deletar_em_massa: false, so_proprio: false },
+      assessor:     { pode_ver: true,  pode_criar: false, pode_editar: true,  pode_deletar: false, pode_deletar_em_massa: false, so_proprio: false },
+      assistente:   { pode_ver: true,  pode_criar: false, pode_editar: false, pode_deletar: false, pode_deletar_em_massa: false, so_proprio: false },
+      estagiario:   { pode_ver: false, pode_criar: false, pode_editar: false, pode_deletar: false, pode_deletar_em_massa: false, so_proprio: false },
+    },
+    alertas: {
+      admin:        { pode_ver: true, pode_criar: false, pode_editar: false, pode_deletar: true,  pode_deletar_em_massa: true,  so_proprio: false },
+      proprietario: { pode_ver: true, pode_criar: false, pode_editar: false, pode_deletar: true,  pode_deletar_em_massa: true,  so_proprio: false },
+      assessor:     { pode_ver: true, pode_criar: false, pode_editar: false, pode_deletar: true,  pode_deletar_em_massa: false, so_proprio: false },
+      assistente:   { pode_ver: true, pode_criar: false, pode_editar: false, pode_deletar: true,  pode_deletar_em_massa: false, so_proprio: false },
+      estagiario:   { pode_ver: true, pode_criar: false, pode_editar: false, pode_deletar: false, pode_deletar_em_massa: false, so_proprio: false },
+    },
+  };
+
+  for (const secao of secoesEspeciais) {
+    for (const role of ROLES) {
+      // Remove a linha do fallback inserida pelo loop principal
+      const idx = defaults.findIndex((d) => d.role === role && d.secao === secao);
+      if (idx !== -1) defaults.splice(idx, 1);
+
+      // Insere com os valores corretos conforme migration 050
+      defaults.push({ role, secao, ...defaultsEspeciais[secao][role] });
     }
   }
 

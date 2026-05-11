@@ -90,6 +90,9 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   ordenacao_filtros: () => false,
   // whatsapp — gate-keepado por can.accessWhatsapp() (migration 049: somente admin por padrão).
   whatsapp: (can) => can.accessWhatsapp(),
+  // ordem_abas e alertas não têm itens próprios na sidebar — controle via tabs em Configurações.
+  ordem_abas: () => false,
+  alertas: () => false,
 };
 
 export function AppSidebar() {

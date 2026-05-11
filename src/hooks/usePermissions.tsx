@@ -78,6 +78,15 @@ export function usePermissions() {
     // WhatsApp — restrito por padrão a admin (migration 049)
     accessWhatsapp: () => canView('whatsapp'),
     editWhatsapp: () => canEdit('whatsapp'),
+
+    // Ordem das Abas — migration 050 (admin/proprietario/assessor editam; assistente só vê; estagiario sem acesso)
+    canViewOrdemAbas: () => canView('ordem_abas'),
+    canEditOrdemAbas: () => canEdit('ordem_abas'),
+
+    // Alertas — migration 050 (todos veem; admin/proprietario apagam em massa; assessor/assistente apagam individual; estagiario só vê)
+    canViewAlertas: () => canView('alertas'),
+    canDeleteAlerta: () => canDelete('alertas'),
+    canBulkDeleteAlertas: () => canBulkDelete('alertas'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };

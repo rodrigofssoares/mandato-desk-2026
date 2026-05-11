@@ -67,9 +67,13 @@ function getVisibleNavKeys(
 interface SortableRowProps {
   navKey: NavItemKey;
   index: number;
+  /** Quando true, a alça de drag fica desabilitada (modo somente-leitura). */
+  disabled?: boolean;
 }
 
-function SortableRow({ navKey, index }: SortableRowProps) {
+function SortableRow({ navKey, index, disabled = false }: SortableRowProps) {
+  // useSortable é sempre chamado para respeitar a ordem de hooks — listeners
+  // só são aplicados ao botão quando disabled=false.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: navKey,
   });
@@ -91,15 +95,26 @@ function SortableRow({ navKey, index }: SortableRowProps) {
           : 'shadow-sm border-border',
       ].join(' ')}
     >
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        aria-label={`Reordenar ${NAV_ITEM_LABELS[navKey]}`}
-        className="p-1 rounded text-muted-foreground transition-colors hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
+      {disabled ? (
+        <button
+          type="button"
+          aria-disabled="true"
+          aria-label={`Reordenar ${NAV_ITEM_LABELS[navKey]}`}
+          className="p-1 rounded text-muted-foreground cursor-not-allowed opacity-40"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label={`Reordenar ${NAV_ITEM_LABELS[navKey]}`}
+          className="p-1 rounded text-muted-foreground transition-colors hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
 
       <Badge variant="secondary" className="font-mono text-[10px] min-w-[28px] justify-center">
         {index + 1}
@@ -139,6 +154,7 @@ function ConfiguracoesFixedRow() {
 export function NavOrderTab() {
   const { order, setOrder, resetOrder } = useNavOrder();
   const { can } = usePermissions();
+  const canEdit = can.canEditOrdemAbas();
 
   // `can` em usePermissions recria-se a cada render (funções inline em usePermissoes).
   // Estabilizamos via signature serializada em vez de dep direta no objeto — evita loop
@@ -166,6 +182,8 @@ export function NavOrderTab() {
   );
 
   function handleDragEnd(event: DragEndEvent) {
+    // Guard defensivo: se o usuário não tem permissão de edição, ignora o evento.
+    if (!canEdit) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -204,10 +222,12 @@ export function NavOrderTab() {
             </div>
           </div>
 
-          <Button variant="outline" size="sm" onClick={handleReset}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Restaurar padrão
-          </Button>
+          {canEdit && (
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Restaurar padrão
+            </Button>
+          )}
         </div>
       </CardHeader>
 
@@ -216,7 +236,7 @@ export function NavOrderTab() {
           <SortableContext items={localOrder} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-2 max-w-xl">
               {localOrder.map((key, idx) => (
-                <SortableRow key={key} navKey={key} index={idx} />
+                <SortableRow key={key} navKey={key} index={idx} disabled={!canEdit} />
               ))}
             </div>
           </SortableContext>

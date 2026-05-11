@@ -38,11 +38,23 @@ function isValidTab(value: string | null): value is SettingsTab {
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const activeTab: SettingsTab = isValidTab(rawTab) ? rawTab : DEFAULT_TAB;
+  const requestedTab: SettingsTab = isValidTab(rawTab) ? rawTab : DEFAULT_TAB;
 
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessSettings();
   const canAccessFiltros = can.accessOrdenacaoFiltros();
+  const canViewOrdemAbas = can.canViewOrdemAbas();
+  const canViewAlertas = can.canViewAlertas();
+
+  // Fallback quando a aba pedida pela URL está gateada para o role atual.
+  // Sem isso, o <Tabs value="..."> fica ativo mas o <TabsContent> não renderiza,
+  // resultando em conteúdo em branco. Cai no DEFAULT_TAB que é sempre visível.
+  const activeTab: SettingsTab =
+    (requestedTab === 'nav-ordem' && !canViewOrdemAbas) ||
+    (requestedTab === 'filtros' && !canAccessFiltros) ||
+    (requestedTab === 'alertas' && !canViewAlertas)
+      ? DEFAULT_TAB
+      : requestedTab;
 
   if (isPermLoading) {
     return (
@@ -97,8 +109,12 @@ export default function Settings() {
           {canAccessFiltros && (
             <TabsTrigger value="filtros">Ordenação de Filtros</TabsTrigger>
           )}
-          <TabsTrigger value="nav-ordem">Ordem das Abas</TabsTrigger>
-          <TabsTrigger value="alertas">Alertas</TabsTrigger>
+          {canViewOrdemAbas && (
+            <TabsTrigger value="nav-ordem">Ordem das Abas</TabsTrigger>
+          )}
+          {canViewAlertas && (
+            <TabsTrigger value="alertas">Alertas</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="geral" className="mt-4">
@@ -127,12 +143,16 @@ export default function Settings() {
             <FilterOrderTab />
           </TabsContent>
         )}
-        <TabsContent value="nav-ordem" className="mt-4">
-          <NavOrderTab />
-        </TabsContent>
-        <TabsContent value="alertas" className="mt-4">
-          <AlertasTab />
-        </TabsContent>
+        {canViewOrdemAbas && (
+          <TabsContent value="nav-ordem" className="mt-4">
+            <NavOrderTab />
+          </TabsContent>
+        )}
+        {canViewAlertas && (
+          <TabsContent value="alertas" className="mt-4">
+            <AlertasTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
