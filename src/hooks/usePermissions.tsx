@@ -78,6 +78,15 @@ export function usePermissions() {
     // WhatsApp — restrito por padrão a admin (migration 049)
     accessWhatsapp: () => canView('whatsapp'),
     editWhatsapp: () => canEdit('whatsapp'),
+
+    // Sub-abas granulares de Configurações + Design System (migration 050)
+    accessSettingsGeral: () => canView('configuracoes_geral'),
+    editSettingsGeral: () => canEdit('configuracoes_geral'),
+    accessSettingsFunis: () => canView('configuracoes_funis'),
+    editSettingsFunis: () => canEdit('configuracoes_funis'),
+    accessSettingsIA: () => canView('configuracoes_ia'),
+    editSettingsIA: () => canEdit('configuracoes_ia'),
+    accessDesignSystem: () => canView('design_system'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };

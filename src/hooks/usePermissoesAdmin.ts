@@ -83,7 +83,9 @@ export function useUpdatePermissao() {
   });
 }
 
-// Seed padrão com 5 roles × 18 seções = 90 linhas (inclui board/tarefas/configuracoes)
+// Seed padrão com 5 roles × N seções (N = SECOES.length, atualmente 24).
+// Inclui board/tarefas/configuracoes + granulares (configuracoes_geral/funis/ia,
+// design_system — migration 050) + ordenacao_filtros/whatsapp (migration 049).
 function generateDefaultPermissions() {
   const defaults: Array<{
     role: string;
@@ -113,9 +115,11 @@ function generateDefaultPermissions() {
         'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
         'mapa', 'importacao', 'relatorios', 'board', 'tarefas',
       ],
+      // configuracoes_ia ficou DE FORA de propósito — chaves de API são sensíveis
+      // (migration 050). configuracoes_geral/funis e design_system seguem view-only.
       viewOnly: [
         'usuarios', 'google', 'api', 'webhooks', 'personalizacao', 'permissoes',
-        'configuracoes',
+        'configuracoes', 'configuracoes_geral', 'configuracoes_funis', 'design_system',
       ],
       viewCreate: [],
       viewCreateEdit: [],

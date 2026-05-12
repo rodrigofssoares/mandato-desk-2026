@@ -13,6 +13,7 @@ import {
   Users,
   XCircle,
 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,14 +29,39 @@ import {
   type IconBubbleVariant,
   type StatusChipVariant,
 } from '@/components/ui-system';
+import { usePermissions } from '@/hooks/usePermissions';
 
 /**
  * /design-system — catálogo visual dos primitivos do app.
  * Auto-documentação: rode `npm run dev` e acesse /design-system pra ver
  * todos os primitives disponíveis com exemplo de uso.
+ *
+ * Gateado por `can.accessDesignSystem()` (secao `design_system`, migration 050)
+ * — por padrão só admin e proprietário enxergam o catálogo.
  */
 export default function DesignSystem() {
   const [demoColor, setDemoColor] = useState('#7B1E2E');
+  const { can, isLoading: isPermLoading } = usePermissions();
+
+  if (isPermLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!can.accessDesignSystem()) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Você não tem permissão para acessar o Design System.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-10 max-w-6xl">

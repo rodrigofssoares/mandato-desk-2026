@@ -43,6 +43,9 @@ export default function Settings() {
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessSettings();
   const canAccessFiltros = can.accessOrdenacaoFiltros();
+  const canAccessGeral = can.accessSettingsGeral();
+  const canAccessFunis = can.accessSettingsFunis();
+  const canAccessIA = can.accessSettingsIA();
 
   if (isPermLoading) {
     return (
@@ -87,12 +90,12 @@ export default function Settings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="h-auto flex-wrap justify-start">
-          <TabsTrigger value="geral">Geral</TabsTrigger>
-          <TabsTrigger value="funis">Funis</TabsTrigger>
+          {canAccessGeral && <TabsTrigger value="geral">Geral</TabsTrigger>}
+          {canAccessFunis && <TabsTrigger value="funis">Funis</TabsTrigger>}
           <TabsTrigger value="equipe">Equipe</TabsTrigger>
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
-          <TabsTrigger value="ia">IA</TabsTrigger>
+          {canAccessIA && <TabsTrigger value="ia">IA</TabsTrigger>}
           <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
           {canAccessFiltros && (
             <TabsTrigger value="filtros">Ordenação de Filtros</TabsTrigger>
@@ -101,12 +104,16 @@ export default function Settings() {
           <TabsTrigger value="alertas">Alertas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="geral" className="mt-4">
-          <GeneralTab />
-        </TabsContent>
-        <TabsContent value="funis" className="mt-4">
-          <FunisTab />
-        </TabsContent>
+        {canAccessGeral && (
+          <TabsContent value="geral" className="mt-4">
+            <GeneralTab />
+          </TabsContent>
+        )}
+        {canAccessFunis && (
+          <TabsContent value="funis" className="mt-4">
+            <FunisTab />
+          </TabsContent>
+        )}
         <TabsContent value="equipe" className="mt-4">
           <TeamTab />
         </TabsContent>
@@ -116,9 +123,11 @@ export default function Settings() {
         <TabsContent value="integracoes" className="mt-4">
           <IntegrationsTab />
         </TabsContent>
-        <TabsContent value="ia" className="mt-4">
-          <AISettingsTab />
-        </TabsContent>
+        {canAccessIA && (
+          <TabsContent value="ia" className="mt-4">
+            <AISettingsTab />
+          </TabsContent>
+        )}
         <TabsContent value="personalizacao" className="mt-4">
           <BrandingTab />
         </TabsContent>

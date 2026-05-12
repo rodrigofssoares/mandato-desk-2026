@@ -90,6 +90,13 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   ordenacao_filtros: () => false,
   // whatsapp — gate-keepado por can.accessWhatsapp() (migration 049: somente admin por padrão).
   whatsapp: (can) => can.accessWhatsapp(),
+  // Seções granulares de Configurações (migration 050) — não têm item próprio na sidebar.
+  // Controle de visibilidade é feito nas tabs de Settings.tsx.
+  configuracoes_geral: () => false,
+  configuracoes_funis: () => false,
+  configuracoes_ia: () => false,
+  // design_system tem rota standalone /design-system, mas nenhum item de menu hoje.
+  design_system: () => false,
 };
 
 export function AppSidebar() {
