@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import {
   Loader2,
   User,
@@ -283,7 +284,14 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
           </div>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          // Sem este handler, falhas de validacao de campos sem <FormMessage>
+          // visivel (whatsapp, telefone, cep, ranking, leader_id, tag_ids etc.)
+          // bloqueiam o submit em silencio. Loga + toasta pra dar feedback.
+          console.error('[ContactDialog] form invalid:', errors);
+          const fields = Object.keys(errors).join(', ');
+          toast.error(`Campos invalidos: ${fields}. Veja o console pra detalhes.`);
+        })} className="flex flex-col flex-1 overflow-hidden">
           <Tabs defaultValue="pessoais" orientation="vertical" className="flex flex-col sm:flex-row flex-1 overflow-hidden">
 
             {/* Sidebar vertical (≥sm) ou linha horizontal com scroll (mobile) */}
