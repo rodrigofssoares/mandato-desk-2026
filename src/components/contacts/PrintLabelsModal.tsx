@@ -27,7 +27,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { generateAddressLabels, validateAddress, type LabelContact } from '@/lib/addressLabels';
 import { getContactDisplayName } from '@/lib/contactDisplay';
-import type { ContactFilters } from '@/hooks/useContacts';
+import type { Contact, ContactFilters } from '@/hooks/useContacts';
+import {
+  applyContactsClientFilters,
+  applyContactsServerFilters,
+  buildContactsSelectClause,
+  hydrateContactTags,
+} from '@/lib/contactsFilters';
 
 interface PrintLabelsModalProps {
   open: boolean;
@@ -56,43 +62,64 @@ export function PrintLabelsModal({ open, onOpenChange, filters }: PrintLabelsMod
   const loadContacts = async () => {
     setIsLoading(true);
     try {
-      let allData: any[] = [];
-      let offset = 0;
+      // Usa os MESMOS helpers de useContacts/ExportMenu pra garantir paridade
+      // exata entre o que aparece na listagem filtrada e o que vai pras etiquetas.
+      // Antes esse modal aplicava só 4 filtros manualmente (search, is_favorite,
+      // declarou_voto, leader_id) e ignorava tags, board, cidade, estado, bairro,
+      // CEP, has_phone/email/demand, custom_fields, ranking, birthday, etc. —
+      // imprimindo mais contatos do que a listagem mostrava (RAQ-MAND-EM070).
+      const queryFilters: ContactFilters = {
+        ...filters,
+        page: undefined,
+        per_page: undefined,
+        sort_by: undefined,
+      };
+
+      const { selectClause, usingTagFilter, usingBoardFilter } =
+        buildContactsSelectClause(queryFilters);
+
       const batchSize = 1000;
+      let offset = 0;
+      let allData: Contact[] = [];
 
       while (true) {
-        let query = supabase
-          .from('contacts')
-          .select('nome, instagram, logradouro, numero, complemento, bairro, cidade, estado, cep, origem');
+        let query = supabase.from('contacts').select(selectClause);
 
-        if (filters.search?.trim()) {
-          const term = `%${filters.search.trim()}%`;
-          query = query.or(`nome.ilike.${term},email.ilike.${term},whatsapp.ilike.${term}`);
+        const applied = await applyContactsServerFilters(supabase, query, queryFilters);
+        if (applied.empty) {
+          allData = [];
+          break;
         }
-        if (filters.is_favorite) query = query.eq('is_favorite', true);
-        if (filters.declarou_voto === true) query = query.eq('declarou_voto', true);
-        if (filters.declarou_voto === false) query = query.eq('declarou_voto', false);
-        if (filters.leader_id) query = query.eq('leader_id', filters.leader_id);
+        query = applied.query;
 
         query = query.order('nome', { ascending: true }).range(offset, offset + batchSize - 1);
 
         const { data, error } = await query;
         if (error) throw error;
         if (!data || data.length === 0) break;
-        allData = allData.concat(data);
+
+        let batch = (data as unknown) as Contact[];
+        if (usingTagFilter || usingBoardFilter) {
+          batch = await hydrateContactTags(supabase, batch);
+        }
+
+        allData = allData.concat(batch);
         if (data.length < batchSize) break;
         offset += batchSize;
       }
 
+      // Filtros que precisam de cálculo client-side (birthday range etc.)
+      const filtered = applyContactsClientFilters(allData, queryFilters);
+
       const valid: LabelContact[] = [];
       const invalid: InvalidContact[] = [];
 
-      for (const c of allData) {
+      for (const c of filtered) {
         const err = validateAddress(c);
         if (err) {
           invalid.push({ nome: getContactDisplayName(c) || '(sem nome)', motivo: err });
         } else {
-          valid.push(c as LabelContact);
+          valid.push(c as unknown as LabelContact);
         }
       }
 
