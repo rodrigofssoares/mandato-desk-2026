@@ -8,4 +8,4 @@
  * Atualizado automaticamente pela skill /git-finish-task a cada release.
  */
 export const APP_VERSION = '2.8.3';
-export const LAST_UPDATE = '13/05/2026 17:00';
+export const LAST_UPDATE = '13/05/2026 17:30';
