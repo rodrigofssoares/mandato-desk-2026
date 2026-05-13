@@ -19,7 +19,7 @@ A migration `050_prevent_duplicate_skip_unchanged.sql` corrige isso, mas
 CREATE OR REPLACE FUNCTION public.prevent_duplicate_contacts()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $func$
 BEGIN
   IF NEW.merged_into IS NOT NULL THEN
     RETURN NEW;
@@ -29,23 +29,20 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  IF NEW.whatsapp IS NOT NULL AND NEW.whatsapp <> '' THEN
+  IF NEW.whatsapp IS NOT NULL AND NEW.whatsapp != '' THEN
     IF EXISTS (
       SELECT 1 FROM public.contacts
       WHERE whatsapp = NEW.whatsapp
-        AND id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+        AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
         AND merged_into IS NULL
     ) THEN
-      RAISE EXCEPTION 'Contato com este WhatsApp já existe';
+      RAISE EXCEPTION 'Contato com este WhatsApp ja existe';
     END IF;
   END IF;
 
   RETURN NEW;
 END;
-$$;
-
-COMMENT ON FUNCTION public.prevent_duplicate_contacts() IS
-  'Bloqueia inserts/updates que CRIARIAM novas duplicatas de whatsapp. Pula quando whatsapp não muda no UPDATE (duplicata legacy não é problema deste update) ou quando NEW está sendo soft-deletado (merged_into NOT NULL).';
+$func$;
 ```
 
 ## Verificação rápida — confirmar que Érika está entre os afetados
