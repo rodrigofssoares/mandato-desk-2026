@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import {
   Loader2,
   User,
@@ -99,6 +100,19 @@ const EMPTY_CONTACT_FORM: ContactFormData = {
   tag_ids: [],
 };
 
+// Valores aceitos pelo schema Zod do genero. Valor legacy fora desse conjunto
+// (ex: 'M', 'F', 'Masculino' capitalizado) quebra o submit em silencio porque
+// o react-hook-form bloqueia o handleSubmit sem feedback visual (Select nao
+// renderiza <FormMessage>). Normalizamos no load: invalido vira null.
+const VALID_GENEROS = ['masculino', 'feminino', 'outro', 'prefiro_nao_informar'] as const;
+
+function normalizeGenero(value: unknown): ContactFormData['genero'] {
+  if (typeof value === 'string' && (VALID_GENEROS as readonly string[]).includes(value)) {
+    return value as ContactFormData['genero'];
+  }
+  return null;
+}
+
 // Iniciais p/ o avatar do header (até 2 letras).
 function getInitials(name: string | null | undefined): string {
   if (!name) return '??';
@@ -154,7 +168,7 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
         e_multiplicador: contact.e_multiplicador ?? false,
         email: contact.email ?? '',
         telefone: contact.telefone ?? '',
-        genero: (contact.genero as ContactFormData['genero']) ?? null,
+        genero: normalizeGenero(contact.genero),
         data_nascimento: contact.data_nascimento ?? '',
         ultimo_contato: contact.ultimo_contato
           ? format(new Date(contact.ultimo_contato), "yyyy-MM-dd'T'HH:mm")
@@ -283,7 +297,14 @@ export function ContactDialog({ open, onOpenChange, contact }: ContactDialogProp
           </div>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          // Sem este handler, falhas de validacao de campos sem <FormMessage>
+          // visivel (whatsapp, telefone, cep, ranking, leader_id, tag_ids etc.)
+          // bloqueiam o submit em silencio. Loga + toasta pra dar feedback.
+          console.error('[ContactDialog] form invalid:', errors);
+          const fields = Object.keys(errors).join(', ');
+          toast.error(`Campos invalidos: ${fields}. Veja o console pra detalhes.`);
+        })} className="flex flex-col flex-1 overflow-hidden">
           <Tabs defaultValue="pessoais" orientation="vertical" className="flex flex-col sm:flex-row flex-1 overflow-hidden">
 
             {/* Sidebar vertical (≥sm) ou linha horizontal com scroll (mobile) */}
