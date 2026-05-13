@@ -335,6 +335,7 @@ export function useCreateContact() {
       }
     },
     onError: (error: Error) => {
+      console.error('[useContacts] mutation error:', error);
       toast.error(`Erro ao criar contato: ${error.message}`);
     },
   });
@@ -350,19 +351,37 @@ export function useUpdateContact() {
     mutationFn: async ({ id, data: formData }: { id: string; data: ContactFormData }) => {
       const { tag_ids, ...contactData } = formData;
 
-      // Bloqueia se outro contato já usa esse telefone em qualquer formato.
-      const dup = await findDuplicatePhoneContact(
-        {
-          telefone: contactData.telefone as string | undefined,
-          whatsapp: contactData.whatsapp as string | undefined,
-        },
-        id
-      );
-      if (dup) {
-        const numero = dup.matchedField === 'telefone' ? dup.telefone : dup.whatsapp;
-        throw new Error(
-          `Outro contato já usa esse telefone: "${dup.nome}" (${numero ?? '-'}).`
+      // Só verifica duplicata de telefone quando o valor realmente mudou.
+      // Evita bloquear updates de etiquetas em contatos com duplicata legacy.
+      const { data: current, error: currentErr } = await supabase
+        .from('contacts')
+        .select('telefone, whatsapp')
+        .eq('id', id)
+        .single();
+      if (currentErr) throw currentErr;
+
+      const telKeyAtual = phoneComparisonKey(current?.telefone);
+      const telKeyNovo  = phoneComparisonKey(contactData.telefone as string | undefined);
+      const waKeyAtual  = phoneComparisonKey(current?.whatsapp);
+      const waKeyNovo   = phoneComparisonKey(contactData.whatsapp as string | undefined);
+
+      const telefoneMudou = telKeyAtual !== telKeyNovo;
+      const whatsappMudou = waKeyAtual !== waKeyNovo;
+
+      if (telefoneMudou || whatsappMudou) {
+        const dup = await findDuplicatePhoneContact(
+          {
+            telefone: contactData.telefone as string | undefined,
+            whatsapp: contactData.whatsapp as string | undefined,
+          },
+          id
         );
+        if (dup) {
+          const numero = dup.matchedField === 'telefone' ? dup.telefone : dup.whatsapp;
+          throw new Error(
+            `Outro contato já usa esse telefone: "${dup.nome}" (${numero ?? '-'}).`
+          );
+        }
       }
 
       const cleaned = Object.fromEntries(
@@ -378,16 +397,32 @@ export function useUpdateContact() {
 
       if (error) throw error;
 
-      // Sync tags: remove all then re-insert
-      await supabase.from('contact_tags').delete().eq('contact_id', id);
+      // Sync tags em delta: só remove o que saiu e só adiciona o que entrou.
+      // Evita erros silenciosos do delete sem retorno e reduz writes desnecessários.
+      const { data: currentTagRows, error: currentTagsErr } = await supabase
+        .from('contact_tags')
+        .select('tag_id')
+        .eq('contact_id', id);
+      if (currentTagsErr) throw currentTagsErr;
 
-      if (tag_ids && tag_ids.length > 0) {
-        const tagRows = tag_ids.map((tag_id) => ({
-          contact_id: id,
-          tag_id,
-        }));
-        const { error: tagError } = await supabase.from('contact_tags').insert(tagRows);
-        if (tagError) throw tagError;
+      const currentIds = new Set((currentTagRows ?? []).map((r) => r.tag_id));
+      const nextIds = new Set(tag_ids ?? []);
+      const toRemove = [...currentIds].filter((t) => !nextIds.has(t));
+      const toAdd = [...nextIds].filter((t) => !currentIds.has(t));
+
+      if (toRemove.length > 0) {
+        const { error: delErr } = await supabase
+          .from('contact_tags')
+          .delete()
+          .eq('contact_id', id)
+          .in('tag_id', toRemove);
+        if (delErr) throw delErr;
+      }
+
+      if (toAdd.length > 0) {
+        const rows = toAdd.map((tag_id) => ({ contact_id: id, tag_id }));
+        const { error: insErr } = await supabase.from('contact_tags').insert(rows);
+        if (insErr) throw insErr;
       }
 
       return data;
@@ -407,6 +442,7 @@ export function useUpdateContact() {
       }
     },
     onError: (error: Error) => {
+      console.error('[useContacts] mutation error:', error);
       toast.error(`Erro ao atualizar contato: ${error.message}`);
     },
   });
