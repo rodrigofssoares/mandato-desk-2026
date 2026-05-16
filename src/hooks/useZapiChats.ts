@@ -36,7 +36,7 @@ export function useZapiChats(accountId: string | null | undefined) {
     queryFn: async (): Promise<ZapiChat[]> => {
       const { data, error } = await supabase
         .from('zapi_chats')
-        .select('*, contacts:contact_id (name)')
+        .select('*, contacts:contact_id (nome)')
         .eq('account_id', accountId!)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false });
@@ -45,11 +45,11 @@ export function useZapiChats(accountId: string | null | undefined) {
 
       return (data ?? []).map((row) => {
         const { contacts, ...rest } = row as typeof row & {
-          contacts: { name: string } | null;
+          contacts: { nome: string } | null;
         };
         return {
           ...rest,
-          contact_name: contacts?.name ?? null,
+          contact_name: contacts?.nome ?? null,
         } as ZapiChat;
       });
     },
