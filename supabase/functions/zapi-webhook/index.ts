@@ -99,6 +99,7 @@ interface ZapiPayload {
   phone?: string;
   messageId?: string;
   fromMe?: boolean;
+  senderName?: string;
   text?: { message?: string };
   image?: { imageUrl?: string; caption?: string; mimeType?: string };
   audio?: { audioUrl?: string; mimeType?: string; seconds?: number; ptt?: boolean };
@@ -108,6 +109,26 @@ interface ZapiPayload {
   location?: { latitude?: number; longitude?: number; name?: string; address?: string };
   contact?: { displayName?: string; vCard?: string };
   poll?: { name?: string; options?: Array<string | { name?: string }> };
+  // Reação do WhatsApp — payload confirmado na documentação Z-API:
+  // https://developer.z-api.io/webhooks/on-message-received-examples (seção "Reação")
+  // Formato real do evento ReceivedCallback com reação:
+  // { type: "ReceivedCallback", messageId: "...", phone: "...", fromMe: false,
+  //   senderName: "...",
+  //   reaction: { value: "❤️", time: 1651878681150, reactionBy: "554499999999",
+  //     referencedMessage: { messageId: "3EB0796DC6B777C0C7CD", fromMe: true,
+  //                          phone: "...", participant: null } } }
+  // Reação removida: reaction.value === "" (string vazia)
+  reaction?: {
+    value?: string;
+    time?: number;
+    reactionBy?: string;
+    referencedMessage?: {
+      messageId?: string;
+      fromMe?: boolean;
+      phone?: string;
+      participant?: string | null;
+    };
+  };
   [key: string]: unknown;
 }
 
@@ -121,6 +142,7 @@ type MediaKind =
   | 'poll'
   | 'location'
   | 'contact'
+  | 'reaction'
   | 'unknown';
 
 interface MediaExtract {
@@ -282,6 +304,44 @@ function extractMedia(payload: ZapiPayload): MediaExtract {
       caption: null,
       metadata: { question, options },
       preview: `📊 ${question.slice(0, 180)}`,
+    };
+  }
+
+  // Reação do WhatsApp — branch ANTES do fallback 'unknown'
+  // Payload confirmado na doc Z-API (seção on-message-received-examples, tipo "Reação").
+  // `reaction.value` vazio ("") indica remoção da reação — gravado como emoji: ''.
+  if (payload.reaction !== undefined) {
+    // Fix CWE-770: coerção + truncamento alinhados ao padrão dos outros branches
+    const emoji = String(payload.reaction.value ?? '').slice(0, 64);
+    const reactionMessageId = payload.reaction.referencedMessage?.messageId !== undefined
+      ? String(payload.reaction.referencedMessage.messageId).slice(0, 255)
+      : null;
+    const reactionBy = payload.reaction.reactionBy !== undefined
+      ? String(payload.reaction.reactionBy).slice(0, 64)
+      : null;
+    const reactionTime = typeof payload.reaction.time === 'number' ? payload.reaction.time : null;
+    const preview = emoji ? `${emoji} Reação` : 'Reação removida';
+    return {
+      kind: 'reaction',
+      body: null,  // reações não têm corpo de texto — não exibir "[mensagem vazia]"
+      url: null,
+      mime: null,
+      filename: null,
+      caption: null,
+      metadata: {
+        emoji,
+        reaction_message_id: reactionMessageId,
+        reaction_by: reactionBy,
+        reaction_time: reactionTime,
+        // Whitelist explícita dos campos conhecidos — evita gravar campos inesperados do payload
+        _raw_reaction: {
+          value: payload.reaction.value,
+          time: payload.reaction.time,
+          reactionBy: payload.reaction.reactionBy,
+          referencedMessage: payload.reaction.referencedMessage,
+        },
+      },
+      preview,
     };
   }
 
@@ -493,8 +553,9 @@ async function handleReceivedMessage(
     throw new Error(`insert message falhou: ${msgErr.message}`);
   }
 
-  // Atualiza last_message_at + preview e incrementa unread_count se for inbound
-  const newUnread = direction === 'inbound'
+  // Atualiza last_message_at + preview e incrementa unread_count se for inbound.
+  // Reações NÃO incrementam: são confirmações sobre mensagem existente, não nova mensagem a ler.
+  const newUnread = direction === 'inbound' && media.kind !== 'reaction'
     ? (((chat as { unread_count: number }).unread_count ?? 0) + 1)
     : ((chat as { unread_count: number }).unread_count ?? 0);
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
   Send,
@@ -12,9 +12,12 @@ import {
   Mic,
   FileText,
   BarChart3,
+  Search,
+  UserPlus,
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui-system';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +35,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { useZapiChats } from '@/hooks/useZapiChats';
@@ -42,6 +55,9 @@ import {
   type ZapiMediaType,
 } from '@/hooks/useZapiMedia';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useCreateContact } from '@/hooks/useContacts';
+import { supabase } from '@/integrations/supabase/client';
+import { phoneComparisonKey } from '@/lib/normalization';
 import { ChatListItem } from './ChatListItem';
 import { formatPhone } from '@/lib/zapi-format';
 import { MessageBubble } from './MessageBubble';
@@ -53,6 +69,7 @@ export function ConversasTabContent() {
   const { data: accounts = [], isLoading: accountsLoading } = useZapiAccounts();
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Pré-seleciona primeira conta sendable
   useEffect(() => {
@@ -61,13 +78,30 @@ export function ConversasTabContent() {
     if (first) setSelectedAccountId(first.id);
   }, [accounts, selectedAccountId]);
 
-  // Reset chat selecionado ao trocar de conta
+  // Reset chat selecionado E busca ao trocar de conta
   useEffect(() => {
     setSelectedChatId(null);
+    setSearchTerm('');
   }, [selectedAccountId]);
 
   const { data: chats = [], isLoading: chatsLoading, refetch: refetchChats } =
     useZapiChats(selectedAccountId);
+
+  // Filtro client-side por nome ou telefone — useMemo evita recomputação desnecessária.
+  // trim() antes de filtrar para não penalizar espaços acidentais.
+  // Uso de String.includes (nunca RegExp sobre input do usuário) evita crash com
+  // caracteres especiais como (, ), -, +.
+  const filteredChats = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return chats;
+    return chats.filter((c) => {
+      const nameMatch = c.contact_name
+        ? c.contact_name.toLowerCase().includes(term)
+        : false;
+      const phoneMatch = c.phone.toLowerCase().includes(term);
+      return nameMatch || phoneMatch;
+    });
+  }, [chats, searchTerm]);
 
   const selectedChat = useMemo(
     () => chats.find((c) => c.id === selectedChatId) ?? null,
@@ -132,10 +166,22 @@ export function ConversasTabContent() {
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_280px] gap-3 h-[calc(100vh-280px)] min-h-[480px]">
         {/* ── Coluna 1: lista de chats ───────────────────────────────── */}
         <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
-          <div className="px-3 py-2 border-b bg-muted/30">
+          <div className="px-3 py-2 border-b bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               Conversas {chats.length > 0 && `(${chats.length})`}
             </p>
+            {/* Campo de busca — visível quando há conta selecionada */}
+            {selectedAccountId && (
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por nome ou telefone..."
+                  className="pl-7 h-7 text-xs"
+                />
+              </div>
+            )}
           </div>
           <ScrollArea className="flex-1">
             {chatsLoading ? (
@@ -147,8 +193,16 @@ export function ConversasTabContent() {
                   Nenhuma conversa ainda. Envie uma mensagem ou aguarde um eleitor escrever.
                 </p>
               </div>
+            ) : filteredChats.length === 0 ? (
+              // Estado de busca sem resultados — lista original existe mas filtro não bate
+              <div className="p-6 text-center">
+                <Search className="h-6 w-6 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma conversa encontrada para &apos;{searchTerm.trim()}&apos;
+                </p>
+              </div>
             ) : (
-              chats.map((chat) => (
+              filteredChats.map((chat) => (
                 <ChatListItem
                   key={chat.id}
                   chat={chat}
@@ -178,7 +232,7 @@ export function ConversasTabContent() {
         {/* ── Coluna 3: info do contato ──────────────────────────────── */}
         <div className="hidden lg:flex border rounded-lg bg-card overflow-hidden flex-col">
           {selectedChat ? (
-            <ContactPanel chat={selectedChat} />
+            <ContactPanel chat={selectedChat} refetchChats={refetchChats} />
           ) : (
             <div className="flex-1 flex items-center justify-center p-4">
               <p className="text-xs text-muted-foreground text-center">
@@ -454,9 +508,75 @@ function ChatPanel({ chat }: ChatPanelProps) {
 
 interface ContactPanelProps {
   chat: NonNullable<ReturnType<typeof useZapiChats>['data']>[number];
+  refetchChats: () => void;
 }
 
-function ContactPanel({ chat }: ContactPanelProps) {
+/** Busca o contato duplicado por chave normalizada de telefone/whatsapp. */
+async function findDuplicateByPhone(phone: string): Promise<{ id: string; nome: string } | null> {
+  const key = phoneComparisonKey(phone);
+  if (!key) return null;
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('id, nome, telefone, whatsapp')
+    .is('merged_into', null)
+    .or('telefone.not.is.null,whatsapp.not.is.null');
+
+  if (error || !data) return null;
+
+  for (const c of data) {
+    const tk = phoneComparisonKey((c as { telefone?: string | null }).telefone ?? null);
+    const wk = phoneComparisonKey((c as { whatsapp?: string | null }).whatsapp ?? null);
+    if ((tk && tk === key) || (wk && wk === key)) {
+      return { id: c.id, nome: (c as { nome: string }).nome };
+    }
+  }
+  return null;
+}
+
+function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
+  const navigate = useNavigate();
+  const createContact = useCreateContact();
+  // Estado do alerta de duplicata: { id, nome } do contato existente, ou null
+  const [duplicado, setDuplicado] = useState<{ id: string; nome: string } | null>(null);
+  // Cobre a janela entre clique e início da mutation (busca de duplicata pode levar 1-3s)
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  async function handleAdicionarNoCRM() {
+    // Verifica duplicata ANTES de chamar a mutation, para obter o id do existente
+    // e exibir alerta acionável ("Abrir existente").
+    setIsCheckingDuplicate(true);
+    try {
+      const dup = await findDuplicateByPhone(chat.phone);
+      if (dup) {
+        setDuplicado(dup);
+        return;
+      }
+    } catch {
+      // Falha de rede na verificação de duplicata: avisa em vez de falhar em silêncio.
+      toast.error('Não foi possível verificar duplicatas. Tente novamente.');
+      return;
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+
+    createContact.mutate(
+      {
+        nome: chat.contact_name ?? formatPhone(chat.phone),
+        whatsapp: chat.phone,
+        tag_ids: [],
+      },
+      {
+        onSuccess: (data) => {
+          // Refetch de chats para que chat.contact_id seja atualizado na coluna 1
+          refetchChats();
+          // Navega para o ContactDialog do novo contato
+          navigate(`/contacts?contact=${data.id}`);
+        },
+      },
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
@@ -477,20 +597,26 @@ function ContactPanel({ chat }: ContactPanelProps) {
         <Separator />
 
         {chat.contact_id ? (
+          // T02 — link direto ao contato via ?contact=<uuid>
           <Button asChild variant="outline" size="sm" className="w-full">
-            <Link to="/contacts">
+            <Link to={`/contacts?contact=${chat.contact_id}`}>
               <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
               Ver no CRM
             </Link>
           </Button>
         ) : (
-          <div className="text-xs text-muted-foreground space-y-2">
-            <p>Este número ainda não está vinculado a nenhum contato do CRM.</p>
-            <p className="text-[11px]">
-              Para vincular, cadastre o contato em <strong>Contatos → Novo</strong> usando este
-              número no campo WhatsApp.
-            </p>
-          </div>
+          // T03 — botão "Adicionar no CRM" com loading e prevenção de duplo clique.
+          // isCheckingDuplicate cobre a janela do SELECT antes da mutation começar.
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full"
+            onClick={handleAdicionarNoCRM}
+            disabled={isCheckingDuplicate || createContact.isPending}
+          >
+            <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+            {isCheckingDuplicate || createContact.isPending ? 'Adicionando...' : 'Adicionar no CRM'}
+          </Button>
         )}
 
         <Separator />
@@ -515,6 +641,33 @@ function ContactPanel({ chat }: ContactPanelProps) {
           )}
         </div>
       </div>
+
+      {/* Alerta de duplicata — exibido quando o telefone já existe no CRM */}
+      <AlertDialog open={!!duplicado} onOpenChange={(open) => !open && setDuplicado(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Contato já cadastrado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Já existe um contato com este número:{' '}
+              <strong>{duplicado?.nome ?? 'desconhecido'}</strong>. Deseja abrir o contato
+              existente?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDuplicado(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (duplicado) {
+                  navigate(`/contacts?contact=${duplicado.id}`);
+                  setDuplicado(null);
+                }
+              }}
+            >
+              Abrir existente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
