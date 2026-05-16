@@ -31,8 +31,9 @@ verify_jwt = false
 verify_jwt = false
 
 # zapi-webhook: endpoint público chamado pela Z-API a cada evento (mensagem
-# recebida, status, conexão). Sem JWT — autenticação é via X-Webhook-Secret
-# por conta (timing-safe compare). verify_jwt=false é OBRIGATÓRIO.
+# recebida, status, conexão). Sem JWT — autenticação é via webhook_secret por
+# conta, na query string ?secret= (a Z-API não envia headers customizados),
+# com timing-safe compare. verify_jwt=false é OBRIGATÓRIO.
 [functions.zapi-webhook]
 verify_jwt = false
 
