@@ -12,8 +12,15 @@ import { useZapiWebhookConfigs, type ZapiWebhookConfig } from '@/hooks/useZapiAc
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
-function buildWebhookUrl(accountId: string): string {
-  return `${SUPABASE_URL}/functions/v1/zapi-webhook?account=${accountId}`;
+const SECRET_MASK = '••••••••••••••••••••••••••••••••';
+
+/**
+ * Monta a URL do webhook com o segredo embutido na query string.
+ * A Z-API não suporta headers HTTP customizados em webhooks, então o segredo
+ * precisa viajar na própria URL (?secret=...).
+ */
+function buildWebhookUrl(accountId: string, secret: string): string {
+  return `${SUPABASE_URL}/functions/v1/zapi-webhook?account=${encodeURIComponent(accountId)}&secret=${encodeURIComponent(secret)}`;
 }
 
 export function WebhooksTabContent() {
@@ -58,16 +65,15 @@ export function WebhooksTabContent() {
         <Webhook className="h-4 w-4" />
         <AlertDescription className="text-xs space-y-2">
           <p>
-            Configure as URLs abaixo no painel Z-API de cada instância (em <strong>Webhook
-            ao receber</strong>, <strong>Webhook ao enviar</strong>, <strong>Webhook de status
-            de mensagem</strong> e <strong>Webhook de conexão</strong>).
+            Cole a URL abaixo no painel Z-API de cada instância, nos <strong>4 webhooks</strong>:{' '}
+            <strong>Webhook ao receber</strong>, <strong>Webhook ao enviar</strong>,{' '}
+            <strong>Webhook de status de mensagem</strong> e <strong>Webhook de conexão</strong>.
           </p>
           <p>
-            O segredo deve ser configurado como header customizado{' '}
-            <code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">
-              X-Webhook-Secret
-            </code>{' '}
-            no painel Z-API. Sem ele, o webhook é rejeitado.
+            A URL <strong>já inclui o segredo</strong> de autenticação na própria query string
+            (<code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">?secret=…</code>).
+            A Z-API não permite headers HTTP customizados — por isso o segredo viaja na URL.
+            Basta colar a URL completa; não é necessário configurar nenhum header.
           </p>
           <a
             href="https://developer.z-api.io/webhooks/introduction"
@@ -94,9 +100,13 @@ interface WebhookCardProps {
 }
 
 function WebhookCard({ config }: WebhookCardProps) {
-  const url = buildWebhookUrl(config.id);
   const [showSecret, setShowSecret] = useState(false);
   const [copiedField, setCopiedField] = useState<'url' | 'secret' | null>(null);
+
+  // URL real (com segredo) é sempre usada na cópia; a exibição mascara o
+  // segredo enquanto `showSecret` estiver desligado.
+  const url = buildWebhookUrl(config.id, config.webhook_secret);
+  const displayUrl = showSecret ? url : buildWebhookUrl(config.id, SECRET_MASK);
 
   async function handleCopy(value: string, field: 'url' | 'secret') {
     try {
@@ -125,10 +135,10 @@ function WebhookCard({ config }: WebhookCardProps) {
 
       {/* URL */}
       <div className="space-y-1.5">
-        <Label className="text-xs">URL do webhook</Label>
+        <Label className="text-xs">URL do webhook (com segredo embutido)</Label>
         <div className="flex gap-2">
           <Input
-            value={url}
+            value={displayUrl}
             readOnly
             className="font-mono text-xs"
             onFocus={(e) => e.currentTarget.select()}
@@ -137,8 +147,17 @@ function WebhookCard({ config }: WebhookCardProps) {
             type="button"
             size="icon"
             variant="outline"
+            onClick={() => setShowSecret((v) => !v)}
+            title={showSecret ? 'Ocultar segredo' : 'Mostrar segredo'}
+          >
+            {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
             onClick={() => handleCopy(url, 'url')}
-            title="Copiar URL"
+            title="Copiar URL completa"
           >
             {copiedField === 'url' ? (
               <Check className="h-4 w-4 text-emerald-600" />
@@ -148,16 +167,18 @@ function WebhookCard({ config }: WebhookCardProps) {
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Use a mesma URL nos 4 webhooks Z-API (recebida, enviada, status e conexão).
+          Cole esta URL completa (já com <code className="font-mono">?secret=</code>) nos 4
+          webhooks Z-API: recebida, enviada, status e conexão. O botão copiar sempre copia a
+          URL com o segredo real, mesmo oculto.
         </p>
       </div>
 
       {/* Secret */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Segredo (X-Webhook-Secret)</Label>
+        <Label className="text-xs">Segredo de autenticação</Label>
         <div className="flex gap-2">
           <Input
-            value={showSecret ? config.webhook_secret : '••••••••••••••••••••••••••••••••'}
+            value={showSecret ? config.webhook_secret : SECRET_MASK}
             readOnly
             className="font-mono text-xs"
             onFocus={(e) => e.currentTarget.select()}
@@ -186,8 +207,8 @@ function WebhookCard({ config }: WebhookCardProps) {
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Adicione no painel Z-API como header personalizado:{' '}
-          <code className="font-mono">X-Webhook-Secret</code>.
+          Este segredo já está embutido na URL acima — exibido aqui apenas para
+          referência e conferência. Não precisa ser configurado separadamente na Z-API.
         </p>
       </div>
     </div>

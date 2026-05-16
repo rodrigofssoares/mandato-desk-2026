@@ -35,6 +35,7 @@
 // Reference: RAQ-MAND-EM051 — T04 + extensão "envio sem abrir conversa".
 
 import { corsHeaders, jsonResponse, requireAuth } from '../_shared/auth-guard.ts';
+import { isValidPhone, normalizePhoneForZapi } from '../_shared/zapi-helpers.ts';
 
 const ZAPI_BASE = 'https://api.z-api.io/instances';
 
@@ -62,32 +63,8 @@ interface ZapiSendResponse {
   error?: string;
 }
 
-/** Remove tudo que não é dígito. */
-function digitsOnly(input: string): string {
-  return input.replace(/\D+/g, '');
-}
-
-/**
- * Normaliza pro formato Z-API (DDI+DDD+número, somente dígitos).
- * - "(11) 99999-9999"   → "11999999999" (assume BR — mas Z-API exige DDI)
- * - "+55 11 99999-9999" → "5511999999999"
- * - "11999999999"       → "5511999999999" (anexa 55 quando 10/11 dígitos)
- *
- * Regra prática:
- *   - se já começa com 55 e tem 12-13 chars → mantém
- *   - se 10-11 chars (DDD + número) → prefixa 55
- *   - caso contrário → retorna como está e deixa Z-API rejeitar
- */
-function normalizePhoneForZapi(input: string): string {
-  const d = digitsOnly(input);
-  if (d.length === 10 || d.length === 11) return `55${d}`;
-  return d;
-}
-
-function isValidPhone(normalized: string): boolean {
-  // E.164 sem +: 8-15 dígitos. Pra BR esperamos 12-13.
-  return /^\d{10,15}$/.test(normalized);
-}
+// digitsOnly / normalizePhoneForZapi / isValidPhone vivem em _shared/zapi-helpers.ts
+// (fonte única — mesma normalização usada pelo webhook e pelas outras EFs de envio).
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });

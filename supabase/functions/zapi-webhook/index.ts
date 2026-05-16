@@ -2,14 +2,16 @@
 //
 // Receives all callback events from Z-API and persists them in the Mandato Desk
 // database. Public endpoint (no Supabase auth) — authentication is via the
-// account-specific webhook_secret sent in the X-Webhook-Secret header
-// (configured in the Z-API dashboard per instance).
+// account-specific webhook_secret carried in the ?secret= query param.
 //
 // URL pattern (configure in Z-API):
-//   https://<project>.supabase.co/functions/v1/zapi-webhook?account=<account_uuid>
+//   https://<project>.supabase.co/functions/v1/zapi-webhook?account=<account_uuid>&secret=<webhook_secret>
 //
-// Header expected:
-//   X-Webhook-Secret: <webhook_secret of the account>  (timing-safe comparison)
+// Authentication:
+//   O segredo trafega na query string (?secret=...) — a Z-API NÃO suporta
+//   headers HTTP customizados em webhooks. O header X-Webhook-Secret também é
+//   aceito como fallback (mesma comparação timing-safe), para testes manuais
+//   ou outros provedores capazes de enviá-lo.
 //
 // Z-API event types handled:
 //   - ReceivedCallback        → upsert chat + insert inbound message
@@ -33,6 +35,7 @@
 // Reference: RAQ-MAND-EM051 — T02.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { normalizePhoneForZapi } from '../_shared/zapi-helpers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -360,14 +363,23 @@ Deno.serve(async (req) => {
   }
 
   // ── 4. Secret check (timing-safe) ────────────────────────────────────────
-  const providedSecret = req.headers.get('x-webhook-secret') ?? '';
+  // A Z-API NÃO permite configurar headers HTTP customizados em webhooks — a
+  // configuração dela só aceita uma URL. Por isso o segredo trafega na query
+  // string (?secret=...). O header X-Webhook-Secret continua aceito como
+  // fallback para clientes capazes de enviá-lo (testes manuais, outros provedores).
+  // Query string é o mecanismo primário (a Z-API só consegue enviar por aqui);
+  // o header X-Webhook-Secret é o fallback legado para testes manuais.
+  const providedSecret =
+    reqUrl.searchParams.get('secret')?.trim() ??
+    req.headers.get('x-webhook-secret') ??
+    '';
   if (!timingSafeEqual(providedSecret, account.webhook_secret)) {
     await admin.from('zapi_webhook_log').insert({
       account_id: account.id,
       event_type: eventType,
       payload: stripMediaFromPayload(payload),
       processing_status: 'error',
-      error_detail: 'X-Webhook-Secret inválido',
+      error_detail: 'webhook_secret inválido (verifique ?secret= na URL ou o header X-Webhook-Secret)',
     });
     // 200 mesmo em invalid secret pra não dar feedback de "tem account válido aqui"
     return jsonResponse(200, { ok: false, reason: 'invalid_secret' });
@@ -428,8 +440,10 @@ async function handleReceivedMessage(
   accountId: string,
   payload: ZapiPayload,
 ): Promise<void> {
-  const phoneRaw = String(payload.phone ?? '').replace(/\D+/g, '');
-  if (!phoneRaw || phoneRaw.length < 10) {
+  // Normalização canônica (com 9º dígito) — mesma das EFs de envio, pra que
+  // mensagem recebida e enviada caiam no MESMO chat (UNIQUE account_id,phone).
+  const phone = normalizePhoneForZapi(String(payload.phone ?? ''));
+  if (!phone || phone.length < 10) {
     throw new Error('phone ausente ou inválido');
   }
 
@@ -447,7 +461,7 @@ async function handleReceivedMessage(
   const { data: chat, error: chatErr } = await admin
     .from('zapi_chats')
     .upsert(
-      { account_id: accountId, phone: phoneRaw, updated_at: nowIso },
+      { account_id: accountId, phone, updated_at: nowIso },
       { onConflict: 'account_id,phone' },
     )
     .select('id, unread_count')

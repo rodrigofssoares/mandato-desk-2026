@@ -112,24 +112,43 @@ export interface ZapiWebhookConfig {
 
 /**
  * Retorna { id, name, webhook_secret } por conta — usado APENAS na aba
- * Webhooks (admin only). RLS permite SELECT pra qualquer auth user, mas
- * o componente Webhooks gate-keepa por activeRole === 'admin'.
+ * Webhooks (admin only). O componente Webhooks gate-keepa por
+ * activeRole === 'admin'.
  *
- * Por que separamos do useZapiAccounts: o hook principal exclui
- * webhook_secret das colunas selecionadas pra evitar leak em telas que
- * não precisam dele (Conversas, Logs).
+ * IMPORTANTE: a coluna `webhook_secret` teve SELECT revogado de `authenticated`
+ * pela migration 046 (hardening pós-pentest). Ler a coluna direto via PostgREST
+ * falha com "permission denied". O canal oficial é a RPC `zapi_get_webhook_secret`,
+ * SECURITY DEFINER, que valida `has_role(uid,'admin')` server-side.
+ *
+ * Por que não vem do useZapiAccounts: o hook principal já exclui webhook_secret
+ * das colunas pra evitar leak em telas que não precisam dele (Conversas, Logs).
  */
 export function useZapiWebhookConfigs(enabled: boolean) {
   return useQuery({
     queryKey: ['zapi-webhook-configs'],
     enabled,
     queryFn: async (): Promise<ZapiWebhookConfig[]> => {
-      const { data, error } = await supabase
+      const { data: accounts, error } = await supabase
         .from('zapi_accounts')
-        .select('id, name, webhook_secret')
+        .select('id, name')
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data ?? []) as ZapiWebhookConfig[];
+
+      // Busca o secret de cada conta via RPC (canal autorizado, admin-only).
+      // O nº de contas Z-API é pequeno (1-3), então o N+1 aqui é irrelevante.
+      return Promise.all(
+        (accounts ?? []).map(async (acc) => {
+          const { data: secret, error: secretErr } = await supabase.rpc(
+            'zapi_get_webhook_secret',
+            { _account_id: acc.id },
+          );
+          if (secretErr) {
+            console.error('useZapiWebhookConfigs: falha ao obter webhook_secret', acc.id, secretErr.message);
+            throw secretErr;
+          }
+          return { id: acc.id, name: acc.name, webhook_secret: secret ?? '' };
+        }),
+      );
     },
   });
 }
