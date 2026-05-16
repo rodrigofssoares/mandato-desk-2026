@@ -32,14 +32,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { useZapiChats } from '@/hooks/useZapiChats';
 import { useZapiMessagesByChat, useSendZapiMessage } from '@/hooks/useZapiMessages';
-import type { ZapiMediaType } from '@/hooks/useZapiMedia';
+import {
+  useUploadZapiAttachment,
+  useSendZapiMedia,
+  type ZapiMediaType,
+} from '@/hooks/useZapiMedia';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { ChatListItem } from './ChatListItem';
 import { formatPhone } from '@/lib/zapi-format';
 import { MessageBubble } from './MessageBubble';
 import { AttachmentPreviewDialog } from './AttachmentPreviewDialog';
+import { AudioRecorderBar } from './AudioRecorderBar';
 import { PollDialog } from './PollDialog';
 
 export function ConversasTabContent() {
@@ -207,6 +214,40 @@ function ChatPanel({ chat }: ChatPanelProps) {
   >(null);
   const [pollOpen, setPollOpen] = useState(false);
 
+  // Gravação de áudio in-line (microfone)
+  const recorder = useAudioRecorder();
+  const uploadAudio = useUploadZapiAttachment();
+  const sendAudioMedia = useSendZapiMedia();
+  const isSendingAudio = uploadAudio.isPending || sendAudioMedia.isPending;
+
+  // Erros de gravação (permissão negada, sem microfone) viram toast.
+  useEffect(() => {
+    if (recorder.error) toast.error(recorder.error);
+  }, [recorder.error]);
+
+  async function handleSendAudio() {
+    const file = recorder.getFile();
+    if (!file) return;
+    try {
+      const uploaded = await uploadAudio.mutateAsync({
+        account_id: chat.account_id,
+        file,
+        type: 'audio',
+      });
+      await sendAudioMedia.mutateAsync({
+        account_id: chat.account_id,
+        phone: chat.phone,
+        type: 'audio',
+        media_url: uploaded.url,
+        mime_type: uploaded.mime,
+        file_name: file.name,
+      });
+      recorder.reset();
+    } catch {
+      // toasts já disparados pelos hooks; mantém o áudio gravado pra retry
+    }
+  }
+
   // Auto-scroll para o fim quando chega nova mensagem
   useEffect(() => {
     const el = scrollRef.current;
@@ -304,61 +345,92 @@ function ChatPanel({ chat }: ChatPanelProps) {
             onChange={(e) => handleFilePicked('document', e)}
           />
 
-          {/* Paperclip menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {recorder.status === 'idle' ? (
+            <>
+              {/* Paperclip menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    disabled={sendMessage.isPending}
+                    title="Anexos e enquetes"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="top">
+                  <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+                    <ImageIcon className="h-4 w-4 mr-2" /> Imagem
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => videoInputRef.current?.click()}>
+                    <Video className="h-4 w-4 mr-2" /> Vídeo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => audioInputRef.current?.click()}>
+                    <Mic className="h-4 w-4 mr-2" /> Áudio (arquivo)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => documentInputRef.current?.click()}>
+                    <FileText className="h-4 w-4 mr-2" /> Documento
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setPollOpen(true)}>
+                    <BarChart3 className="h-4 w-4 mr-2" /> Enquete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Escreva uma mensagem... (Enter para enviar)"
+                rows={2}
+                className="resize-none"
+                disabled={sendMessage.isPending}
+                maxLength={4096}
+              />
+
+              {/* Botão de microfone — gravação de áudio in-line */}
               <Button
                 type="button"
                 size="icon"
                 variant="outline"
-                disabled={sendMessage.isPending}
-                title="Anexos e enquetes"
+                onClick={() => {
+                  void recorder.start();
+                }}
+                disabled={sendMessage.isPending || !recorder.isSupported}
+                title={
+                  recorder.isSupported
+                    ? 'Gravar áudio'
+                    : 'Gravação de áudio não suportada neste navegador'
+                }
               >
-                <Paperclip className="h-4 w-4" />
+                <Mic className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top">
-              <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
-                <ImageIcon className="h-4 w-4 mr-2" /> Imagem
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => videoInputRef.current?.click()}>
-                <Video className="h-4 w-4 mr-2" /> Vídeo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => audioInputRef.current?.click()}>
-                <Mic className="h-4 w-4 mr-2" /> Áudio
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => documentInputRef.current?.click()}>
-                <FileText className="h-4 w-4 mr-2" /> Documento
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setPollOpen(true)}>
-                <BarChart3 className="h-4 w-4 mr-2" /> Enquete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          <Textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Escreva uma mensagem... (Enter para enviar)"
-            rows={2}
-            className="resize-none"
-            disabled={sendMessage.isPending}
-            maxLength={4096}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={sendMessage.isPending || !draft.trim()}
-            title="Enviar mensagem"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={sendMessage.isPending || !draft.trim()}
+                title="Enviar mensagem"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <AudioRecorderBar
+              recorder={recorder}
+              isSending={isSendingAudio}
+              onSend={handleSendAudio}
+            />
+          )}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1">
-          {draft.length}/4096 — Enter envia, Shift+Enter quebra linha
-        </p>
+        {recorder.status === 'idle' && (
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {draft.length}/4096 — Enter envia, Shift+Enter quebra linha
+          </p>
+        )}
       </form>
 
       {/* Dialogs */}
