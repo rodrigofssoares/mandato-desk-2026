@@ -166,6 +166,7 @@ export interface Contact {
   ranking?: number;
   ranking_manual_override?: boolean;
   leader_id?: string | null;
+  profissao?: string | null;
   origem?: string | null;
   observacoes?: string | null;
   notas_assessor?: string | null;

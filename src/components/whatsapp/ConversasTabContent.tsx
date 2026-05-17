@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
   Send,
-  User,
-  ExternalLink,
   RefreshCw,
   Paperclip,
   Image as ImageIcon,
@@ -13,14 +10,12 @@ import {
   FileText,
   BarChart3,
   Search,
-  UserPlus,
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui-system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -35,16 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { useZapiChats } from '@/hooks/useZapiChats';
@@ -55,15 +40,13 @@ import {
   type ZapiMediaType,
 } from '@/hooks/useZapiMedia';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { useCreateContact } from '@/hooks/useContacts';
-import { supabase } from '@/integrations/supabase/client';
-import { phoneComparisonKey } from '@/lib/normalization';
 import { ChatListItem } from './ChatListItem';
 import { formatPhone, isNonRealPhone } from '@/lib/zapi-format';
 import { MessageBubble } from './MessageBubble';
 import { AttachmentPreviewDialog } from './AttachmentPreviewDialog';
 import { AudioRecorderBar } from './AudioRecorderBar';
 import { PollDialog } from './PollDialog';
+import { ContactPanel } from './ContactPanel';
 
 export function ConversasTabContent() {
   const { data: accounts = [], isLoading: accountsLoading } = useZapiAccounts();
@@ -515,174 +498,3 @@ function ChatPanel({ chat }: ChatPanelProps) {
   );
 }
 
-interface ContactPanelProps {
-  chat: NonNullable<ReturnType<typeof useZapiChats>['data']>[number];
-  refetchChats: () => void;
-}
-
-/** Busca o contato duplicado por chave normalizada de telefone/whatsapp. */
-async function findDuplicateByPhone(phone: string): Promise<{ id: string; nome: string } | null> {
-  const key = phoneComparisonKey(phone);
-  if (!key) return null;
-
-  const { data, error } = await supabase
-    .from('contacts')
-    .select('id, nome, telefone, whatsapp')
-    .is('merged_into', null)
-    .or('telefone.not.is.null,whatsapp.not.is.null');
-
-  if (error || !data) return null;
-
-  for (const c of data) {
-    const tk = phoneComparisonKey((c as { telefone?: string | null }).telefone ?? null);
-    const wk = phoneComparisonKey((c as { whatsapp?: string | null }).whatsapp ?? null);
-    if ((tk && tk === key) || (wk && wk === key)) {
-      return { id: c.id, nome: (c as { nome: string }).nome };
-    }
-  }
-  return null;
-}
-
-function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
-  const navigate = useNavigate();
-  const createContact = useCreateContact();
-  // Estado do alerta de duplicata: { id, nome } do contato existente, ou null
-  const [duplicado, setDuplicado] = useState<{ id: string; nome: string } | null>(null);
-  // Cobre a janela entre clique e início da mutation (busca de duplicata pode levar 1-3s)
-  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
-
-  async function handleAdicionarNoCRM() {
-    // Verifica duplicata ANTES de chamar a mutation, para obter o id do existente
-    // e exibir alerta acionável ("Abrir existente").
-    setIsCheckingDuplicate(true);
-    try {
-      const dup = await findDuplicateByPhone(chat.phone);
-      if (dup) {
-        setDuplicado(dup);
-        return;
-      }
-    } catch {
-      // Falha de rede na verificação de duplicata: avisa em vez de falhar em silêncio.
-      toast.error('Não foi possível verificar duplicatas. Tente novamente.');
-      return;
-    } finally {
-      setIsCheckingDuplicate(false);
-    }
-
-    createContact.mutate(
-      {
-        nome: chat.contact_name ?? chat.whatsapp_name ?? formatPhone(chat.phone),
-        whatsapp: chat.phone,
-        tag_ids: [],
-      },
-      {
-        onSuccess: (data) => {
-          // Refetch de chats para que chat.contact_id seja atualizado na coluna 1
-          refetchChats();
-          // Navega para o ContactDialog do novo contato
-          navigate(`/contacts?contact=${data.id}`);
-        },
-      },
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
-        <p className="text-xs font-medium text-muted-foreground">Detalhes do contato</p>
-      </div>
-
-      <div className="p-4 space-y-4 flex-1 overflow-auto">
-        <div className="flex flex-col items-center text-center">
-          <div className="h-16 w-16 rounded-full bg-primary/15 flex items-center justify-center mb-2">
-            <User className="h-7 w-7 text-primary" />
-          </div>
-          {/* Ordem: contato CRM > nome WhatsApp > indicação de sem cadastro. */}
-          <p className="font-medium">
-            {chat.contact_name
-              ?? chat.whatsapp_name
-              ?? <span className="italic text-muted-foreground">Sem cadastro</span>}
-          </p>
-          {/* Subtítulo: telefone formatado apenas se for phone real (não LID). */}
-          {!isNonRealPhone(chat.phone) && (
-            <p className="text-xs text-muted-foreground mt-0.5">{formatPhone(chat.phone)}</p>
-          )}
-        </div>
-
-        <Separator />
-
-        {chat.contact_id ? (
-          // T02 — link direto ao contato via ?contact=<uuid>
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link to={`/contacts?contact=${chat.contact_id}`}>
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Ver no CRM
-            </Link>
-          </Button>
-        ) : (
-          // T03 — botão "Adicionar no CRM" com loading e prevenção de duplo clique.
-          // isCheckingDuplicate cobre a janela do SELECT antes da mutation começar.
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full"
-            onClick={handleAdicionarNoCRM}
-            disabled={isCheckingDuplicate || createContact.isPending}
-          >
-            <UserPlus className="h-3.5 w-3.5 mr-1.5" />
-            {isCheckingDuplicate || createContact.isPending ? 'Adicionando...' : 'Adicionar no CRM'}
-          </Button>
-        )}
-
-        <Separator />
-
-        <div className="text-xs space-y-1.5">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Não lidas</span>
-            <span className="font-medium">{chat.unread_count}</span>
-          </div>
-          {chat.last_message_at && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Última atividade</span>
-              <span className="font-medium">
-                {new Date(chat.last_message_at).toLocaleString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Alerta de duplicata — exibido quando o telefone já existe no CRM */}
-      <AlertDialog open={!!duplicado} onOpenChange={(open) => !open && setDuplicado(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Contato já cadastrado</AlertDialogTitle>
-            <AlertDialogDescription>
-              Já existe um contato com este número:{' '}
-              <strong>{duplicado?.nome ?? 'desconhecido'}</strong>. Deseja abrir o contato
-              existente?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDuplicado(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (duplicado) {
-                  navigate(`/contacts?contact=${duplicado.id}`);
-                  setDuplicado(null);
-                }
-              }}
-            >
-              Abrir existente
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}

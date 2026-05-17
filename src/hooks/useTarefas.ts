@@ -11,11 +11,14 @@ import { startOfDay, endOfDay, addDays, endOfWeek } from 'date-fns';
 
 export type TarefaTipo = 'LIGACAO' | 'REUNIAO' | 'VISITA' | 'WHATSAPP' | 'EMAIL' | 'TAREFA';
 
+export type TarefaPrioridade = 'baixa' | 'media' | 'alta';
+
 export interface Tarefa {
   id: string;
   titulo: string;
   descricao: string | null;
   tipo: TarefaTipo;
+  prioridade: TarefaPrioridade | null;
   data_agendada: string | null;
   concluida: boolean;
   concluida_em: string | null;
@@ -33,6 +36,7 @@ export interface TarefaInsert {
   titulo: string;
   descricao?: string | null;
   tipo?: TarefaTipo;
+  prioridade?: TarefaPrioridade | null;
   data_agendada?: string | null;
   responsavel_id?: string | null;
   contact_id?: string | null;

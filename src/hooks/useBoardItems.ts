@@ -176,6 +176,7 @@ export function useMoveBoardItem() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['board_items', data.board_id] });
+      queryClient.invalidateQueries({ queryKey: ['contact-board-memberships'] });
       // NÃO dar toast a cada drag — muito barulho
     },
     onError: (error: Error) => {
