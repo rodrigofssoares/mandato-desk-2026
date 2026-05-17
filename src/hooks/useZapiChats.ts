@@ -86,19 +86,26 @@ export function useZapiChats(accountId: string | null | undefined) {
 // ─── useMarkChatAsRead ─────────────────────────────────────────────────────
 
 /**
- * Zera unread_count de um chat. Disparado automaticamente quando o usuário
- * abre o chat na UI. RLS bloqueia escrita direta — vai falhar silenciosamente
- * pra não-service_role. Por enquanto fica no-op até implementarmos via EF
- * (futuro: zapi-mark-as-read). Mantido como mutation pra UI consumir desde já.
+ * Zera unread_count de um chat via Edge Function zapi-mark-as-read.
+ * Disparado automaticamente quando o usuário abre o chat na UI.
+ * RLS bloqueia escrita direta do client — a EF usa service_role.
  */
 export function useMarkChatAsRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_chatId: string) => {
-      // No-op MVP: RLS bloqueia escrita do client. Quando EF for criada,
-      // troca esta linha por supabase.functions.invoke('zapi-mark-as-read', ...).
-      return { ok: true } as const;
+    mutationFn: async (chatId: string) => {
+      const { data, error } = await supabase.functions.invoke('zapi-mark-as-read', {
+        body: { chat_id: chatId },
+      });
+
+      if (error) {
+        // Não lança erro para o usuário — marcar como lida é operação silenciosa
+        console.warn('useMarkChatAsRead: falha ao marcar como lida', error.message);
+        return { ok: false } as const;
+      }
+
+      return (data as { ok: boolean; updated?: boolean }) ?? { ok: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: zapiChatKeys.all });

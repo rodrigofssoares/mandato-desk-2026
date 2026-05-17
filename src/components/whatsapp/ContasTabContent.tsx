@@ -17,6 +17,7 @@ import {
   useResetZapiPanelPassword,
   type ZapiAccount,
 } from '@/hooks/useZapiAccounts';
+import type { RecursosConfig } from '@/lib/featureFlags';
 
 export function ContasTabContent() {
   const { activeRole } = useImpersonation();
@@ -66,9 +67,17 @@ export function ContasTabContent() {
     instance_token?: string;
     client_token?: string;
     panel_password?: string;
+    recursos_config?: RecursosConfig;
   }) {
     if (editingAccount) {
-      const payload: { id: string; name?: string; instance_id?: string; instance_token?: string; client_token?: string } = {
+      const payload: {
+        id: string;
+        name?: string;
+        instance_id?: string;
+        instance_token?: string;
+        client_token?: string;
+        recursos_config?: RecursosConfig;
+      } = {
         id: editingAccount.id,
         name: values.name,
         instance_id: values.instance_id,
@@ -78,6 +87,9 @@ export function ContasTabContent() {
       }
       if (values.client_token && values.client_token.trim()) {
         payload.client_token = values.client_token;
+      }
+      if (values.recursos_config !== undefined) {
+        payload.recursos_config = values.recursos_config;
       }
       updateMutation.mutate(payload, {
         onSuccess: () => setFormOpen(false),

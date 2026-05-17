@@ -1,9 +1,10 @@
-import { MessageCircle, Pencil, Trash2, KeyRound } from 'lucide-react';
+import { MessageCircle, Pencil, Trash2, KeyRound, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusChip } from '@/components/ui-system';
 import type { ZapiAccount } from '@/hooks/useZapiAccounts';
+import { countEnabledFeatures } from '@/lib/featureFlags';
 
 interface AccountCardProps {
   account: ZapiAccount;
@@ -22,6 +23,7 @@ export function AccountCard({ account, onEdit, onDelete, onResetPassword }: Acco
     month: '2-digit',
     year: 'numeric',
   });
+  const activeResourceCount = countEnabledFeatures(account.recursos_config);
 
   return (
     <Card className="group transition-shadow hover:shadow-md">
@@ -33,9 +35,21 @@ export function AccountCard({ account, onEdit, onDelete, onResetPassword }: Acco
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground truncate">{account.name}</h3>
-            <StatusChip variant="info" tone="soft" size="sm" className="mt-1">
-              Configurado
-            </StatusChip>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <StatusChip variant="info" tone="soft" size="sm">
+                Configurado
+              </StatusChip>
+              {activeResourceCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] gap-1 font-medium py-0 px-1.5"
+                  title={`${activeResourceCount} recurso${activeResourceCount !== 1 ? 's' : ''} ativo${activeResourceCount !== 1 ? 's' : ''}`}
+                >
+                  <Sparkles className="h-2.5 w-2.5" />
+                  {activeResourceCount} recurso{activeResourceCount !== 1 ? 's' : ''}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 

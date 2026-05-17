@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, Zap, Heart } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import type { ZapiAccount } from '@/hooks/useZapiAccounts';
+import type { RecursosConfig } from '@/lib/featureFlags';
+import { FEATURES_CATALOG } from '@/lib/featureFlags';
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 
@@ -48,7 +52,31 @@ interface AccountFormDialogProps {
   /** Se definido, estamos editando. Se null, estamos criando. */
   account: ZapiAccount | null;
   isLoading: boolean;
-  onSubmit: (values: FormValues) => void;
+  onSubmit: (values: FormValues & { recursos_config?: RecursosConfig }) => void;
+}
+
+// ─── FeatureSwitch ────────────────────────────────────────────────────────────
+
+interface FeatureSwitchProps {
+  code: string;
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}
+
+function FeatureSwitch({ code, label, checked, onCheckedChange }: FeatureSwitchProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-border/50 last:border-0">
+      <Label htmlFor={`feature-${code}`} className="flex-1 cursor-pointer text-sm font-normal">
+        {label}
+      </Label>
+      <Switch
+        id={`feature-${code}`}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+      />
+    </div>
+  );
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -62,6 +90,9 @@ export function AccountFormDialog({
 }: AccountFormDialogProps) {
   const isEditing = account !== null;
   const schema = isEditing ? schemaEdit : schemaCreate;
+
+  // Estado local dos feature flags (somente em modo edição)
+  const [recursosConfig, setRecursosConfig] = useState<RecursosConfig>({});
 
   const {
     register,
@@ -79,7 +110,7 @@ export function AccountFormDialog({
     },
   });
 
-  // Preenche form ao abrir em modo edição
+  // Preenche form e flags ao abrir em modo edição
   useEffect(() => {
     if (open) {
       if (account) {
@@ -89,6 +120,8 @@ export function AccountFormDialog({
           instance_token: '',
           client_token: '',
         });
+        // Carrega a config atual da conta
+        setRecursosConfig(account.recursos_config ?? {});
       } else {
         reset({
           name: '',
@@ -97,17 +130,194 @@ export function AccountFormDialog({
           client_token: '',
           panel_password: '',
         });
+        setRecursosConfig({});
       }
     }
   }, [open, account, reset]);
 
-  function handleFormSubmit(values: FormValues) {
-    onSubmit(values);
+  function toggleFeature(code: string, enabled: boolean) {
+    setRecursosConfig((prev) => ({ ...prev, [code]: enabled }));
   }
+
+  function handleFormSubmit(values: FormValues) {
+    onSubmit({ ...values, ...(isEditing ? { recursos_config: recursosConfig } : {}) });
+  }
+
+  // Aba de conexão (formulário existente)
+  const connectionTab = (
+    <div className="space-y-4 pt-4">
+      {/* Warning de segurança — tokens em texto puro no MVP */}
+      <Alert className="border-warning/40 bg-warning-soft text-warning-soft-foreground">
+        <AlertTriangle className="h-4 w-4 text-warning" />
+        <AlertDescription className="text-xs">
+          Por enquanto, tokens ficam armazenados em texto puro. A criptografia
+          AES-256-GCM sera aplicada quando a Edge Function{' '}
+          <code className="font-mono">zapi-encrypt</code> estiver implementada.
+          Use apenas instancias de TESTE ate la.
+        </AlertDescription>
+      </Alert>
+
+      {/* Nome */}
+      <div className="space-y-1.5">
+        <Label htmlFor="name">Nome da conta</Label>
+        <Input
+          id="name"
+          placeholder="Ex: Conta Principal, Atendimento..."
+          {...register('name')}
+        />
+        {errors.name && (
+          <p className="text-xs text-destructive">{errors.name.message}</p>
+        )}
+      </div>
+
+      {/* Instance ID */}
+      <div className="space-y-1.5">
+        <Label htmlFor="instance_id">Instance ID</Label>
+        <Input
+          id="instance_id"
+          placeholder="ID da instancia Z-API"
+          className="font-mono text-sm"
+          {...register('instance_id')}
+        />
+        {errors.instance_id && (
+          <p className="text-xs text-destructive">{errors.instance_id.message}</p>
+        )}
+      </div>
+
+      {/* Instance Token */}
+      <div className="space-y-1.5">
+        <Label htmlFor="instance_token">
+          Instance Token
+          {isEditing && (
+            <span className="ml-1.5 text-xs text-muted-foreground">(deixe em branco para manter)</span>
+          )}
+        </Label>
+        <Input
+          id="instance_token"
+          type="password"
+          autoComplete="off"
+          placeholder={isEditing ? '••••••••' : 'Token da instancia Z-API'}
+          className="font-mono text-sm"
+          {...register('instance_token')}
+        />
+        {errors.instance_token && (
+          <p className="text-xs text-destructive">{errors.instance_token.message}</p>
+        )}
+      </div>
+
+      {/* Client Token */}
+      <div className="space-y-1.5">
+        <Label htmlFor="client_token">
+          Client Token
+          {isEditing && (
+            <span className="ml-1.5 text-xs text-muted-foreground">(deixe em branco para manter)</span>
+          )}
+        </Label>
+        <Input
+          id="client_token"
+          type="password"
+          autoComplete="off"
+          placeholder={isEditing ? '••••••••' : 'Client Token Z-API'}
+          className="font-mono text-sm"
+          {...register('client_token')}
+        />
+        {errors.client_token && (
+          <p className="text-xs text-destructive">{errors.client_token.message}</p>
+        )}
+      </div>
+
+      {/* Senha extra do painel — somente na criação */}
+      {!isEditing && (
+        <div className="space-y-1.5">
+          <Label htmlFor="panel_password">
+            Senha do painel{' '}
+            <span className="text-xs text-muted-foreground">(opcional)</span>
+          </Label>
+          <Input
+            id="panel_password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Senha para acessar as conversas (mínimo 8 caracteres)"
+            {...register('panel_password')}
+          />
+          {errors.panel_password && (
+            <p className="text-xs text-destructive">{errors.panel_password.message}</p>
+          )}
+          <p className="text-[11px] text-muted-foreground">
+            Senha armazenada em texto puro temporariamente. Bcrypt hash sera
+            aplicado via Edge Function em sessao futura. Use senha de TESTE.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Aba de recursos (somente em modo edição)
+  const resourcesTab = (
+    <div className="space-y-5 pt-4">
+      {/* Inteligência Artificial */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 mb-3">
+          <BrainCircuit className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-semibold">Inteligência Artificial</h4>
+        </div>
+        <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 mb-3">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+          <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+            Recursos de IA consomem a integração de IA do projeto e podem ter
+            custo por uso. Habilite apenas quando necessário.
+          </AlertDescription>
+        </Alert>
+        {FEATURES_CATALOG.ia.map((f) => (
+          <FeatureSwitch
+            key={f.code}
+            code={f.code}
+            label={f.label}
+            checked={recursosConfig[f.code] === true}
+            onCheckedChange={(checked) => toggleFeature(f.code, checked)}
+          />
+        ))}
+      </div>
+
+      {/* Automação e Alcance */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 mb-3">
+          <Zap className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-semibold">Automação e Alcance</h4>
+        </div>
+        {FEATURES_CATALOG.automacao.map((f) => (
+          <FeatureSwitch
+            key={f.code}
+            code={f.code}
+            label={f.label}
+            checked={recursosConfig[f.code] === true}
+            onCheckedChange={(checked) => toggleFeature(f.code, checked)}
+          />
+        ))}
+      </div>
+
+      {/* Engajamento e Gestão */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 mb-3">
+          <Heart className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-semibold">Engajamento e Gestão</h4>
+        </div>
+        {FEATURES_CATALOG.engajamento.map((f) => (
+          <FeatureSwitch
+            key={f.code}
+            code={f.code}
+            label={f.label}
+            checked={recursosConfig[f.code] === true}
+            onCheckedChange={(checked) => toggleFeature(f.code, checked)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar conta Z-API' : 'Nova conta Z-API'}</DialogTitle>
           <DialogDescription>
@@ -117,112 +327,27 @@ export function AccountFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Warning de segurança — tokens em texto puro no MVP */}
-        <Alert className="border-warning/40 bg-warning-soft text-warning-soft-foreground">
-          <AlertTriangle className="h-4 w-4 text-warning" />
-          <AlertDescription className="text-xs">
-            Por enquanto, tokens ficam armazenados em texto puro. A criptografia
-            AES-256-GCM sera aplicada quando a Edge Function{' '}
-            <code className="font-mono">zapi-encrypt</code> estiver implementada (proxima
-            sessao). Use apenas instancias de TESTE ate la.
-          </AlertDescription>
-        </Alert>
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          {/* Nome */}
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nome da conta</Label>
-            <Input
-              id="name"
-              placeholder="Ex: Conta Principal, Atendimento..."
-              {...register('name')}
-            />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-1">
+            {isEditing ? (
+              <Tabs defaultValue="conexao">
+                <TabsList className="w-full">
+                  <TabsTrigger value="conexao" className="flex-1">Conexão</TabsTrigger>
+                  <TabsTrigger value="recursos" className="flex-1">Recursos</TabsTrigger>
+                </TabsList>
+                <TabsContent value="conexao">
+                  {connectionTab}
+                </TabsContent>
+                <TabsContent value="recursos">
+                  {resourcesTab}
+                </TabsContent>
+              </Tabs>
+            ) : (
+              connectionTab
             )}
           </div>
 
-          {/* Instance ID */}
-          <div className="space-y-1.5">
-            <Label htmlFor="instance_id">Instance ID</Label>
-            <Input
-              id="instance_id"
-              placeholder="ID da instancia Z-API"
-              className="font-mono text-sm"
-              {...register('instance_id')}
-            />
-            {errors.instance_id && (
-              <p className="text-xs text-destructive">{errors.instance_id.message}</p>
-            )}
-          </div>
-
-          {/* Instance Token */}
-          <div className="space-y-1.5">
-            <Label htmlFor="instance_token">
-              Instance Token
-              {isEditing && (
-                <span className="ml-1.5 text-xs text-muted-foreground">(deixe em branco para manter)</span>
-              )}
-            </Label>
-            <Input
-              id="instance_token"
-              type="password"
-              autoComplete="off"
-              placeholder={isEditing ? '••••••••' : 'Token da instancia Z-API'}
-              className="font-mono text-sm"
-              {...register('instance_token')}
-            />
-            {errors.instance_token && (
-              <p className="text-xs text-destructive">{errors.instance_token.message}</p>
-            )}
-          </div>
-
-          {/* Client Token */}
-          <div className="space-y-1.5">
-            <Label htmlFor="client_token">
-              Client Token
-              {isEditing && (
-                <span className="ml-1.5 text-xs text-muted-foreground">(deixe em branco para manter)</span>
-              )}
-            </Label>
-            <Input
-              id="client_token"
-              type="password"
-              autoComplete="off"
-              placeholder={isEditing ? '••••••••' : 'Client Token Z-API'}
-              className="font-mono text-sm"
-              {...register('client_token')}
-            />
-            {errors.client_token && (
-              <p className="text-xs text-destructive">{errors.client_token.message}</p>
-            )}
-          </div>
-
-          {/* Senha extra do painel — somente na criação */}
-          {!isEditing && (
-            <div className="space-y-1.5">
-              <Label htmlFor="panel_password">
-                Senha do painel{' '}
-                <span className="text-xs text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="panel_password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Senha para acessar as conversas (mínimo 8 caracteres)"
-                {...register('panel_password')}
-              />
-              {errors.panel_password && (
-                <p className="text-xs text-destructive">{errors.panel_password.message}</p>
-              )}
-              <p className="text-[11px] text-muted-foreground">
-                Senha armazenada em texto puro temporariamente. Bcrypt hash sera
-                aplicado via Edge Function em sessao futura (T03). Use senha de TESTE.
-              </p>
-            </div>
-          )}
-
-          <DialogFooter className="pt-2">
+          <DialogFooter className="shrink-0 pt-4 border-t border-border/50 mt-2">
             <Button
               type="button"
               variant="outline"
