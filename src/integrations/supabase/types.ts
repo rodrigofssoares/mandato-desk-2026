@@ -1919,6 +1919,8 @@ export type Database = {
           phone: string
           unread_count: number
           updated_at: string
+          /** Nome exibido no WhatsApp para chats LID. Null para telefones normais. Adicionado em 054. */
+          whatsapp_name: string | null
         }
         Insert: {
           account_id: string
@@ -1930,6 +1932,7 @@ export type Database = {
           phone: string
           unread_count?: number
           updated_at?: string
+          whatsapp_name?: string | null
         }
         Update: {
           account_id?: string
@@ -1941,6 +1944,7 @@ export type Database = {
           phone?: string
           unread_count?: number
           updated_at?: string
+          whatsapp_name?: string | null
         }
         Relationships: [
           {

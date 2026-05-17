@@ -11,3 +11,19 @@ export function formatPhone(raw: string): string {
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return raw;
 }
+
+/**
+ * Retorna true se o phone NÃO é um telefone real — isto é, é um LID ou
+ * identificador de grupo/canal com mais de 13 dígitos.
+ *
+ * Critério: phone contém '@lid' OU após remover não-dígitos tem > 13 chars.
+ * Telefones BR reais têm ≤ 13 dígitos (5511999998888 = 13).
+ * LIDs têm 15 dígitos; grupos têm 16-18 dígitos.
+ *
+ * Uso: evitar exibir o identificador numérico cru como subtítulo.
+ */
+export function isNonRealPhone(phone: string): boolean {
+  if (phone.includes('@lid')) return true;
+  const digitsOnly = phone.replace(/\D+/g, '');
+  return digitsOnly.length > 13;
+}

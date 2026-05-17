@@ -52,6 +52,11 @@ interface MediaMetadata {
   vCard?: string;
   seconds?: number;
   ptt?: boolean;
+  // Campos de reação do WhatsApp (media_type='reaction')
+  emoji?: string;
+  reaction_message_id?: string | null;
+  reaction_by?: string | null;
+  reaction_time?: number | null;
 }
 
 function getMetadata(message: ZapiMessage): MediaMetadata | null {
@@ -287,6 +292,23 @@ function renderContent(
       ) : (
         <p className="text-xs italic opacity-70">[Sticker]</p>
       );
+
+    case 'reaction': {
+      const emoji = meta?.emoji ?? '';
+      const reactionBy = meta?.reaction_by ?? null;
+      if (!emoji) {
+        // Reação removida — eleitor retirou o emoji
+        return <p className="italic opacity-70 text-sm">Reação removida</p>;
+      }
+      return (
+        <div className="space-y-0.5">
+          <p className="text-2xl leading-tight">{emoji}</p>
+          {reactionBy && (
+            <p className="text-[11px] opacity-70 leading-snug">{reactionBy} reagiu</p>
+          )}
+        </div>
+      );
+    }
 
     case 'unknown':
       return <p className="italic opacity-70">[Mensagem não suportada]</p>;

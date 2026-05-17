@@ -99,6 +99,14 @@ interface ZapiPayload {
   phone?: string;
   messageId?: string;
   fromMe?: boolean;
+  senderName?: string;
+  // Nome exibido no chat (usado para persistir whatsapp_name em chats LID).
+  // Presente em ReceivedCallback para chats LID e grupos.
+  chatName?: string;
+  // Flags de descarte — presença/verdade indica payload que NÃO deve gerar chat.
+  isGroup?: boolean;
+  isNewsletter?: boolean;
+  broadcast?: boolean;
   text?: { message?: string };
   image?: { imageUrl?: string; caption?: string; mimeType?: string };
   audio?: { audioUrl?: string; mimeType?: string; seconds?: number; ptt?: boolean };
@@ -108,7 +116,41 @@ interface ZapiPayload {
   location?: { latitude?: number; longitude?: number; name?: string; address?: string };
   contact?: { displayName?: string; vCard?: string };
   poll?: { name?: string; options?: Array<string | { name?: string }> };
+  // Reação do WhatsApp — payload confirmado na documentação Z-API:
+  // https://developer.z-api.io/webhooks/on-message-received-examples (seção "Reação")
+  // Formato real do evento ReceivedCallback com reação:
+  // { type: "ReceivedCallback", messageId: "...", phone: "...", fromMe: false,
+  //   senderName: "...",
+  //   reaction: { value: "❤️", time: 1651878681150, reactionBy: "554499999999",
+  //     referencedMessage: { messageId: "3EB0796DC6B777C0C7CD", fromMe: true,
+  //                          phone: "...", participant: null } } }
+  // Reação removida: reaction.value === "" (string vazia)
+  reaction?: {
+    value?: string;
+    time?: number;
+    reactionBy?: string;
+    referencedMessage?: {
+      messageId?: string;
+      fromMe?: boolean;
+      phone?: string;
+      participant?: string | null;
+    };
+  };
   [key: string]: unknown;
+}
+
+/**
+ * Sentinel lançado por handleReceivedMessage quando o payload deve ser
+ * descartado intencionalmente (grupo, newsletter, broadcast).
+ * O dispatcher captura antes do catch genérico e loga 'ignored' no audit log.
+ */
+class IgnoredPayload extends Error {
+  public readonly reason: string;
+  constructor(reason: string) {
+    super(reason);
+    this.name = 'IgnoredPayload';
+    this.reason = reason;
+  }
 }
 
 type MediaKind =
@@ -121,6 +163,7 @@ type MediaKind =
   | 'poll'
   | 'location'
   | 'contact'
+  | 'reaction'
   | 'unknown';
 
 interface MediaExtract {
@@ -285,6 +328,44 @@ function extractMedia(payload: ZapiPayload): MediaExtract {
     };
   }
 
+  // Reação do WhatsApp — branch ANTES do fallback 'unknown'
+  // Payload confirmado na doc Z-API (seção on-message-received-examples, tipo "Reação").
+  // `reaction.value` vazio ("") indica remoção da reação — gravado como emoji: ''.
+  if (payload.reaction !== undefined) {
+    // Fix CWE-770: coerção + truncamento alinhados ao padrão dos outros branches
+    const emoji = String(payload.reaction.value ?? '').slice(0, 64);
+    const reactionMessageId = payload.reaction.referencedMessage?.messageId !== undefined
+      ? String(payload.reaction.referencedMessage.messageId).slice(0, 255)
+      : null;
+    const reactionBy = payload.reaction.reactionBy !== undefined
+      ? String(payload.reaction.reactionBy).slice(0, 64)
+      : null;
+    const reactionTime = typeof payload.reaction.time === 'number' ? payload.reaction.time : null;
+    const preview = emoji ? `${emoji} Reação` : 'Reação removida';
+    return {
+      kind: 'reaction',
+      body: null,  // reações não têm corpo de texto — não exibir "[mensagem vazia]"
+      url: null,
+      mime: null,
+      filename: null,
+      caption: null,
+      metadata: {
+        emoji,
+        reaction_message_id: reactionMessageId,
+        reaction_by: reactionBy,
+        reaction_time: reactionTime,
+        // Whitelist explícita dos campos conhecidos — evita gravar campos inesperados do payload
+        _raw_reaction: {
+          value: payload.reaction.value,
+          time: payload.reaction.time,
+          reactionBy: payload.reaction.reactionBy,
+          referencedMessage: payload.reaction.referencedMessage,
+        },
+      },
+      preview,
+    };
+  }
+
   return {
     kind: 'unknown',
     body: null,
@@ -386,7 +467,7 @@ Deno.serve(async (req) => {
   }
 
   // ── 5. Despacho por tipo de evento ───────────────────────────────────────
-  let processingStatus: 'processed' | 'error' = 'processed';
+  let processingStatus: 'processed' | 'error' | 'ignored' = 'processed';
   let errorDetail: string | null = null;
 
   try {
@@ -416,9 +497,15 @@ Deno.serve(async (req) => {
       }
     }
   } catch (err) {
-    processingStatus = 'error';
-    errorDetail = err instanceof Error ? err.message : String(err);
-    console.error('zapi-webhook: erro ao processar', { type: eventType, detail: errorDetail });
+    if (err instanceof IgnoredPayload) {
+      // Payload descartado intencionalmente (grupo/newsletter/broadcast) — não é erro.
+      processingStatus = 'ignored';
+      errorDetail = null;
+    } else {
+      processingStatus = 'error';
+      errorDetail = err instanceof Error ? err.message : String(err);
+      console.error('zapi-webhook: erro ao processar', { type: eventType, detail: errorDetail });
+    }
   }
 
   // ── 6. Log de auditoria sempre ───────────────────────────────────────────
@@ -430,7 +517,10 @@ Deno.serve(async (req) => {
     error_detail: errorDetail,
   });
 
-  return jsonResponse(200, { ok: processingStatus === 'processed' });
+  return jsonResponse(200, {
+    ok: processingStatus === 'processed',
+    ...(processingStatus === 'ignored' ? { reason: 'ignored_group' } : {}),
+  });
 });
 
 // ─── Helpers de processamento ────────────────────────────────────────────────
@@ -440,6 +530,14 @@ async function handleReceivedMessage(
   accountId: string,
   payload: ZapiPayload,
 ): Promise<void> {
+  // ── Guard de grupo/newsletter/broadcast ───────────────────────────────────
+  // Executado ANTES de qualquer normalização de phone.
+  // Lança IgnoredPayload para que o dispatcher registre 'ignored' no audit log
+  // sem criar registros em zapi_chats ou zapi_messages.
+  if (payload.isGroup === true || payload.isNewsletter === true || payload.broadcast === true) {
+    throw new IgnoredPayload('grupo_newsletter_ou_broadcast');
+  }
+
   // Normalização canônica (com 9º dígito) — mesma das EFs de envio, pra que
   // mensagem recebida e enviada caiam no MESMO chat (UNIQUE account_id,phone).
   const phone = normalizePhoneForZapi(String(payload.phone ?? ''));
@@ -457,13 +555,31 @@ async function handleReceivedMessage(
   const media = extractMedia(payload);
   const nowIso = new Date().toISOString();
 
-  // Upsert chat
+  // Detecta se o phone é um identificador LID (não é telefone real).
+  // LIDs contêm '@lid' e representam contatos cujo nome está em chatName/senderName.
+  const isLidPhone = String(payload.phone ?? '').includes('@lid');
+
+  // whatsapp_name: só populado para chats LID; telefones normais ficam NULL.
+  const whatsappName = isLidPhone
+    ? ((payload.chatName ?? payload.senderName ?? null) as string | null)
+      ?.slice(0, 255) ?? null
+    : null;
+
+  // Upsert chat — whatsapp_name só é incluído para chats LID (onde temos o nome
+  // real do contato). Para telefones normais o campo é omitido do objeto de upsert,
+  // evitando sobrescrever um nome existente com NULL em caso de conflito.
+  const upsertData: Record<string, unknown> = {
+    account_id: accountId,
+    phone,
+    updated_at: nowIso,
+  };
+  if (isLidPhone) {
+    upsertData.whatsapp_name = whatsappName;
+  }
+
   const { data: chat, error: chatErr } = await admin
     .from('zapi_chats')
-    .upsert(
-      { account_id: accountId, phone, updated_at: nowIso },
-      { onConflict: 'account_id,phone' },
-    )
+    .upsert(upsertData, { onConflict: 'account_id,phone' })
     .select('id, unread_count')
     .single();
 
@@ -493,8 +609,9 @@ async function handleReceivedMessage(
     throw new Error(`insert message falhou: ${msgErr.message}`);
   }
 
-  // Atualiza last_message_at + preview e incrementa unread_count se for inbound
-  const newUnread = direction === 'inbound'
+  // Atualiza last_message_at + preview e incrementa unread_count se for inbound.
+  // Reações NÃO incrementam: são confirmações sobre mensagem existente, não nova mensagem a ler.
+  const newUnread = direction === 'inbound' && media.kind !== 'reaction'
     ? (((chat as { unread_count: number }).unread_count ?? 0) + 1)
     : ((chat as { unread_count: number }).unread_count ?? 0);
 
