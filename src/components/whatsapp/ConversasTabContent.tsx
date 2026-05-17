@@ -59,7 +59,7 @@ import { useCreateContact } from '@/hooks/useContacts';
 import { supabase } from '@/integrations/supabase/client';
 import { phoneComparisonKey } from '@/lib/normalization';
 import { ChatListItem } from './ChatListItem';
-import { formatPhone } from '@/lib/zapi-format';
+import { formatPhone, isNonRealPhone } from '@/lib/zapi-format';
 import { MessageBubble } from './MessageBubble';
 import { AttachmentPreviewDialog } from './AttachmentPreviewDialog';
 import { AudioRecorderBar } from './AudioRecorderBar';
@@ -98,8 +98,11 @@ export function ConversasTabContent() {
       const nameMatch = c.contact_name
         ? c.contact_name.toLowerCase().includes(term)
         : false;
+      const waNameMatch = c.whatsapp_name
+        ? c.whatsapp_name.toLowerCase().includes(term)
+        : false;
       const phoneMatch = c.phone.toLowerCase().includes(term);
-      return nameMatch || phoneMatch;
+      return nameMatch || waNameMatch || phoneMatch;
     });
   }, [chats, searchTerm]);
 
@@ -168,7 +171,11 @@ export function ConversasTabContent() {
         <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
-              Conversas {chats.length > 0 && `(${chats.length})`}
+              Conversas{' '}
+              {chats.length > 0 &&
+                (searchTerm.trim() && filteredChats.length !== chats.length
+                  ? `(${filteredChats.length} de ${chats.length})`
+                  : `(${chats.length})`)}
             </p>
             {/* Campo de busca — visível quando há conta selecionada */}
             {selectedAccountId && (
@@ -308,7 +315,8 @@ function ChatPanel({ chat }: ChatPanelProps) {
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages.length]);
 
-  const display = chat.contact_name ?? formatPhone(chat.phone);
+  // Ordem: contato CRM > nome do WhatsApp > fallback fixo.
+  const display = chat.contact_name ?? chat.whatsapp_name ?? 'Contato sem nome';
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -345,7 +353,8 @@ function ChatPanel({ chat }: ChatPanelProps) {
       {/* Header */}
       <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
         <p className="font-medium text-sm">{display}</p>
-        {chat.contact_name && (
+        {/* Subtítulo de telefone: só para contato CRM com phone real (não LID). */}
+        {chat.contact_name && !isNonRealPhone(chat.phone) && (
           <p className="text-xs text-muted-foreground">{formatPhone(chat.phone)}</p>
         )}
       </div>
@@ -562,7 +571,7 @@ function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
 
     createContact.mutate(
       {
-        nome: chat.contact_name ?? formatPhone(chat.phone),
+        nome: chat.contact_name ?? chat.whatsapp_name ?? formatPhone(chat.phone),
         whatsapp: chat.phone,
         tag_ids: [],
       },
@@ -588,10 +597,16 @@ function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
           <div className="h-16 w-16 rounded-full bg-primary/15 flex items-center justify-center mb-2">
             <User className="h-7 w-7 text-primary" />
           </div>
+          {/* Ordem: contato CRM > nome WhatsApp > indicação de sem cadastro. */}
           <p className="font-medium">
-            {chat.contact_name ?? <span className="italic text-muted-foreground">Sem cadastro</span>}
+            {chat.contact_name
+              ?? chat.whatsapp_name
+              ?? <span className="italic text-muted-foreground">Sem cadastro</span>}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{formatPhone(chat.phone)}</p>
+          {/* Subtítulo: telefone formatado apenas se for phone real (não LID). */}
+          {!isNonRealPhone(chat.phone) && (
+            <p className="text-xs text-muted-foreground mt-0.5">{formatPhone(chat.phone)}</p>
+          )}
         </div>
 
         <Separator />

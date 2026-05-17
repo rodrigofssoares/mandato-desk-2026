@@ -1,6 +1,6 @@
 import { User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatPhone } from '@/lib/zapi-format';
+import { formatPhone, isNonRealPhone } from '@/lib/zapi-format';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { ZapiChat } from '@/hooks/useZapiChats';
@@ -34,8 +34,16 @@ function initials(text: string): string {
 }
 
 export function ChatListItem({ chat, selected, onSelect }: ChatListItemProps) {
-  const display = chat.contact_name ?? formatPhone(chat.phone);
-  const showSubtitle = !!chat.contact_name;
+  // Ordem de prioridade: contato CRM > nome do WhatsApp > fallback fixo.
+  const display = chat.contact_name ?? chat.whatsapp_name ?? 'Contato sem nome';
+
+  // Nome para gerar iniciais: usa contact_name se disponível, senão whatsapp_name.
+  const initialsSource = chat.contact_name ?? chat.whatsapp_name;
+
+  // Subtítulo de telefone: só exibir quando há contact_name E o phone é
+  // telefone real (não LID nem grupo). Evita exibir sequência numérica de LID.
+  const showPhoneSubtitle = !!chat.contact_name && !isNonRealPhone(chat.phone);
+
   const hasUnread = (chat.unread_count ?? 0) > 0;
 
   return (
@@ -49,7 +57,7 @@ export function ChatListItem({ chat, selected, onSelect }: ChatListItemProps) {
     >
       <Avatar className="h-10 w-10 shrink-0">
         <AvatarFallback className="bg-primary/15 text-primary text-sm font-medium">
-          {chat.contact_name ? initials(chat.contact_name) : <User className="h-4 w-4" />}
+          {initialsSource ? initials(initialsSource) : <User className="h-4 w-4" />}
         </AvatarFallback>
       </Avatar>
 
@@ -62,7 +70,7 @@ export function ChatListItem({ chat, selected, onSelect }: ChatListItemProps) {
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <p className="text-xs text-muted-foreground truncate">
-            {showSubtitle && (
+            {showPhoneSubtitle && (
               <span className="text-[11px] mr-1.5">{formatPhone(chat.phone)} ·</span>
             )}
             {chat.last_message_preview ?? <span className="italic">Sem mensagens</span>}

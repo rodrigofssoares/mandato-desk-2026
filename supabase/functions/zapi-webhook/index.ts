@@ -100,6 +100,13 @@ interface ZapiPayload {
   messageId?: string;
   fromMe?: boolean;
   senderName?: string;
+  // Nome exibido no chat (usado para persistir whatsapp_name em chats LID).
+  // Presente em ReceivedCallback para chats LID e grupos.
+  chatName?: string;
+  // Flags de descarte — presença/verdade indica payload que NÃO deve gerar chat.
+  isGroup?: boolean;
+  isNewsletter?: boolean;
+  broadcast?: boolean;
   text?: { message?: string };
   image?: { imageUrl?: string; caption?: string; mimeType?: string };
   audio?: { audioUrl?: string; mimeType?: string; seconds?: number; ptt?: boolean };
@@ -130,6 +137,20 @@ interface ZapiPayload {
     };
   };
   [key: string]: unknown;
+}
+
+/**
+ * Sentinel lançado por handleReceivedMessage quando o payload deve ser
+ * descartado intencionalmente (grupo, newsletter, broadcast).
+ * O dispatcher captura antes do catch genérico e loga 'ignored' no audit log.
+ */
+class IgnoredPayload extends Error {
+  public readonly reason: string;
+  constructor(reason: string) {
+    super(reason);
+    this.name = 'IgnoredPayload';
+    this.reason = reason;
+  }
 }
 
 type MediaKind =
@@ -446,7 +467,7 @@ Deno.serve(async (req) => {
   }
 
   // ── 5. Despacho por tipo de evento ───────────────────────────────────────
-  let processingStatus: 'processed' | 'error' = 'processed';
+  let processingStatus: 'processed' | 'error' | 'ignored' = 'processed';
   let errorDetail: string | null = null;
 
   try {
@@ -476,9 +497,15 @@ Deno.serve(async (req) => {
       }
     }
   } catch (err) {
-    processingStatus = 'error';
-    errorDetail = err instanceof Error ? err.message : String(err);
-    console.error('zapi-webhook: erro ao processar', { type: eventType, detail: errorDetail });
+    if (err instanceof IgnoredPayload) {
+      // Payload descartado intencionalmente (grupo/newsletter/broadcast) — não é erro.
+      processingStatus = 'ignored';
+      errorDetail = null;
+    } else {
+      processingStatus = 'error';
+      errorDetail = err instanceof Error ? err.message : String(err);
+      console.error('zapi-webhook: erro ao processar', { type: eventType, detail: errorDetail });
+    }
   }
 
   // ── 6. Log de auditoria sempre ───────────────────────────────────────────
@@ -490,7 +517,10 @@ Deno.serve(async (req) => {
     error_detail: errorDetail,
   });
 
-  return jsonResponse(200, { ok: processingStatus === 'processed' });
+  return jsonResponse(200, {
+    ok: processingStatus === 'processed',
+    ...(processingStatus === 'ignored' ? { reason: 'ignored_group' } : {}),
+  });
 });
 
 // ─── Helpers de processamento ────────────────────────────────────────────────
@@ -500,6 +530,14 @@ async function handleReceivedMessage(
   accountId: string,
   payload: ZapiPayload,
 ): Promise<void> {
+  // ── Guard de grupo/newsletter/broadcast ───────────────────────────────────
+  // Executado ANTES de qualquer normalização de phone.
+  // Lança IgnoredPayload para que o dispatcher registre 'ignored' no audit log
+  // sem criar registros em zapi_chats ou zapi_messages.
+  if (payload.isGroup === true || payload.isNewsletter === true || payload.broadcast === true) {
+    throw new IgnoredPayload('grupo_newsletter_ou_broadcast');
+  }
+
   // Normalização canônica (com 9º dígito) — mesma das EFs de envio, pra que
   // mensagem recebida e enviada caiam no MESMO chat (UNIQUE account_id,phone).
   const phone = normalizePhoneForZapi(String(payload.phone ?? ''));
@@ -517,13 +555,31 @@ async function handleReceivedMessage(
   const media = extractMedia(payload);
   const nowIso = new Date().toISOString();
 
-  // Upsert chat
+  // Detecta se o phone é um identificador LID (não é telefone real).
+  // LIDs contêm '@lid' e representam contatos cujo nome está em chatName/senderName.
+  const isLidPhone = String(payload.phone ?? '').includes('@lid');
+
+  // whatsapp_name: só populado para chats LID; telefones normais ficam NULL.
+  const whatsappName = isLidPhone
+    ? ((payload.chatName ?? payload.senderName ?? null) as string | null)
+      ?.slice(0, 255) ?? null
+    : null;
+
+  // Upsert chat — whatsapp_name só é incluído para chats LID (onde temos o nome
+  // real do contato). Para telefones normais o campo é omitido do objeto de upsert,
+  // evitando sobrescrever um nome existente com NULL em caso de conflito.
+  const upsertData: Record<string, unknown> = {
+    account_id: accountId,
+    phone,
+    updated_at: nowIso,
+  };
+  if (isLidPhone) {
+    upsertData.whatsapp_name = whatsappName;
+  }
+
   const { data: chat, error: chatErr } = await admin
     .from('zapi_chats')
-    .upsert(
-      { account_id: accountId, phone, updated_at: nowIso },
-      { onConflict: 'account_id,phone' },
-    )
+    .upsert(upsertData, { onConflict: 'account_id,phone' })
     .select('id, unread_count')
     .single();
 
