@@ -24,6 +24,11 @@ interface ConversaPaletteDialogProps {
   selectedAccountId: string | null;
   /** Callback quando o chat já existe — seleciona diretamente na lista */
   onSelectChat: (chatId: string) => void;
+  /**
+   * Callback quando o contato NÃO tem chat existente — abre conversa pendente.
+   * Recebe (phone, contactId, contactName).
+   */
+  onOpenPending?: (phone: string, contactId: string | null, contactName: string | null) => void;
 }
 
 export function ConversaPaletteDialog({
@@ -32,6 +37,7 @@ export function ConversaPaletteDialog({
   chats,
   selectedAccountId,
   onSelectChat,
+  onOpenPending,
 }: ConversaPaletteDialogProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,14 +81,22 @@ export function ConversaPaletteDialog({
     [chats],
   );
 
-  function handleSelect(contactPhone: string) {
+  function handleSelect(
+    contactPhone: string,
+    contactId?: string | null,
+    contactName?: string | null,
+  ) {
     const existingChat = chatByPhone(contactPhone);
     if (existingChat) {
       // Chat já existe — seleciona diretamente na lista
       onSelectChat(existingChat.id);
       onOpenChange(false);
+    } else if (onOpenPending) {
+      // Chat não existe e temos callback direto — abre conversa pendente
+      onOpenPending(contactPhone, contactId ?? null, contactName ?? null);
+      onOpenChange(false);
     } else {
-      // Chat não existe — navega com deep-link, T15 cria a seleção
+      // Fallback: navega com deep-link (sem callback — caso do uso externo)
       const normalized = contactPhone.replace(/\D/g, '');
       onOpenChange(false);
       navigate(
@@ -144,7 +158,7 @@ export function ConversaPaletteDialog({
                 <CommandItem
                   key={contact.id}
                   value={`${displayName} ${phone}`}
-                  onSelect={() => handleSelect(phone)}
+                  onSelect={() => handleSelect(phone, contact.id, contact.nome)}
                   className="flex items-center gap-3 py-2"
                 >
                   <Avatar className="h-8 w-8 shrink-0">

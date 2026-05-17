@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
-import { useZapiChats } from '@/hooks/useZapiChats';
+import { useZapiChats, type ZapiChat } from '@/hooks/useZapiChats';
 import { useZapiMessagesByChat, useSendZapiMessage } from '@/hooks/useZapiMessages';
 import {
   useUploadZapiAttachment,
@@ -56,6 +56,23 @@ import { ContactPanel } from './ContactPanel';
 import { ConversaPaletteDialog } from './ConversaPaletteDialog';
 import { phoneComparisonKey } from '@/lib/normalization';
 
+// ─── Conversa pendente ───────────────────────────────────────────────────────
+// Representa um contato que ainda não tem chat em zapi_chats.
+// Quando o usuário envia a primeira mensagem, a EF zapi-send-text cria o chat
+// via UPSERT e retorna o chat_id real — então transitamos para o chat real.
+
+const PENDING_CHAT_ID = '__pending__';
+
+interface PendingChat {
+  /** Marcador fixo que distingue do ZapiChat real */
+  id: typeof PENDING_CHAT_ID;
+  phone: string;
+  account_id: string;
+  contact_id: string | null;
+  contact_name: string | null;
+  whatsapp_name: string | null;
+}
+
 interface ConversasTabContentProps {
   /** T15: telefone puro (dígitos) para selecionar o chat automaticamente via deep-link */
   initialChatPhone?: string;
@@ -71,6 +88,7 @@ export function ConversasTabContent({
   const { data: accounts = [], isLoading: accountsLoading } = useZapiAccounts();
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [pendingChat, setPendingChat] = useState<PendingChat | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -91,19 +109,44 @@ export function ConversasTabContent({
     if (first) setSelectedAccountId(first.id);
   }, [accounts, selectedAccountId]);
 
-  // Reset chat selecionado E busca ao trocar de conta
+  // Reset chat selecionado, pendente E busca ao trocar de conta
   useEffect(() => {
     setSelectedChatId(null);
+    setPendingChat(null);
     setSearchTerm('');
     deepLinkAppliedRef.current = false;
   }, [selectedAccountId]);
 
+  // Abre conversa pendente para um telefone/contato sem chat existente.
+  // Chamado pelo deep-link e pelo ConversaPaletteDialog.
+  function openPendingChat(
+    phone: string,
+    contactId: string | null,
+    contactName: string | null,
+  ) {
+    if (!selectedAccountId) return;
+    setSelectedChatId(null);
+    setPendingChat({
+      id: PENDING_CHAT_ID,
+      phone,
+      account_id: selectedAccountId,
+      contact_id: contactId ?? null,
+      contact_name: contactName ?? null,
+      whatsapp_name: null,
+    });
+  }
+
   const { data: chats = [], isLoading: chatsLoading, refetch: refetchChats } =
     useZapiChats(selectedAccountId);
 
-  // T15: seleção automática via deep-link após chats carregarem
+  // T15: seleção automática via deep-link após chats carregarem.
+  // Correção de timing: só aplica depois que os chats da conta selecionada
+  // realmente carregaram (chatsLoading=false E selectedAccountId definido).
+  // Se não encontrar chat existente, abre conversa pendente em vez de silenciar.
   useEffect(() => {
     if (deepLinkAppliedRef.current) return;
+    // Aguarda conta selecionada e chats carregados para aquela conta
+    if (!selectedAccountId) return;
     if (chatsLoading) return;
 
     // Aguarda resolução do contato quando há ?contact= (evita tratar "sem telefone" como
@@ -131,9 +174,15 @@ export function ConversasTabContent({
 
     const match = chats.find((c) => phoneComparisonKey(c.phone) === targetKey);
     if (match) {
+      // Chat existente → seleciona normalmente
       setSelectedChatId(match.id);
+      setPendingChat(null);
+    } else {
+      // Chat não existe → abre conversa pendente
+      const contactId = deepLinkContact?.id ?? null;
+      const contactName = deepLinkContact?.nome ?? null;
+      openPendingChat(resolvedDeepLinkPhone, contactId, contactName);
     }
-    // Silencioso quando não encontra — sem erro, sem toast
 
     deepLinkAppliedRef.current = true;
 
@@ -146,7 +195,8 @@ export function ConversasTabContent({
       },
       { replace: true },
     );
-  }, [chats, chatsLoading, initialContactId, deepLinkContactLoading, resolvedDeepLinkPhone, setSearchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chats, chatsLoading, selectedAccountId, initialContactId, deepLinkContactLoading, resolvedDeepLinkPhone, deepLinkContact, setSearchParams]);
 
   // Filtro client-side por nome, telefone, empresa e tag — T16
   // trim() antes de filtrar para não penalizar espaços acidentais.
@@ -181,6 +231,9 @@ export function ConversasTabContent({
     () => chats.find((c) => c.id === selectedChatId) ?? null,
     [chats, selectedChatId],
   );
+
+  // Chat ativo: pode ser um chat real ou um chat pendente
+  const activeChat: ZapiChat | PendingChat | null = pendingChat ?? selectedChat;
 
   if (accountsLoading) {
     return (
@@ -299,7 +352,10 @@ export function ConversasTabContent({
                   key={chat.id}
                   chat={chat}
                   selected={chat.id === selectedChatId}
-                  onSelect={setSelectedChatId}
+                  onSelect={(chatId) => {
+                    setPendingChat(null);
+                    setSelectedChatId(chatId);
+                  }}
                 />
               ))
             )}
@@ -308,8 +364,14 @@ export function ConversasTabContent({
 
         {/* ── Coluna 2: conversa ─────────────────────────────────────── */}
         <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
-          {selectedChat ? (
-            <ChatPanel chat={selectedChat} />
+          {activeChat ? (
+            <ChatPanel
+              chat={activeChat}
+              onChatCreated={(realChatId) => {
+                setPendingChat(null);
+                setSelectedChatId(realChatId);
+              }}
+            />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <EmptyState
@@ -325,6 +387,13 @@ export function ConversasTabContent({
         <div className="hidden lg:flex border rounded-lg bg-card overflow-hidden flex-col">
           {selectedChat ? (
             <ContactPanel chat={selectedChat} refetchChats={refetchChats} />
+          ) : activeChat ? (
+            // Chat pendente: painel mínimo com o nome
+            <div className="flex-1 flex items-center justify-center p-4">
+              <p className="text-xs text-muted-foreground text-center">
+                Envie a primeira mensagem para criar a conversa.
+              </p>
+            </div>
           ) : (
             <div className="flex-1 flex items-center justify-center p-4">
               <p className="text-xs text-muted-foreground text-center">
@@ -340,7 +409,13 @@ export function ConversasTabContent({
         onOpenChange={setPaletteOpen}
         chats={chats}
         selectedAccountId={selectedAccountId}
-        onSelectChat={setSelectedChatId}
+        onSelectChat={(chatId) => {
+          setPendingChat(null);
+          setSelectedChatId(chatId);
+        }}
+        onOpenPending={(phone, contactId, contactName) => {
+          openPendingChat(phone, contactId, contactName);
+        }}
       />
     </div>
   );
@@ -349,7 +424,9 @@ export function ConversasTabContent({
 // ─── Subcomponentes ─────────────────────────────────────────────────────────
 
 interface ChatPanelProps {
-  chat: NonNullable<ReturnType<typeof useZapiChats>['data']>[number];
+  chat: ZapiChat | PendingChat;
+  /** Chamado após o primeiro envio num chat pendente — passa o chat_id real criado. */
+  onChatCreated?: (realChatId: string) => void;
 }
 
 // ─── Helper: destaca ocorrências de um termo no texto (sem dangerouslySetInnerHTML) ──
@@ -378,11 +455,24 @@ function highlightText(text: string, term: string): ReactNode {
   return <>{parts}</>;
 }
 
-function ChatPanel({ chat }: ChatPanelProps) {
-  const { data: messages = [], isLoading } = useZapiMessagesByChat(chat.id);
+function ChatPanel({ chat, onChatCreated }: ChatPanelProps) {
+  const isPending = chat.id === PENDING_CHAT_ID;
+  // Para chat pendente, não busca mensagens (chat não existe no banco ainda)
+  const { data: messages = [], isLoading } = useZapiMessagesByChat(
+    isPending ? null : chat.id,
+  );
   const sendMessage = useSendZapiMessage();
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-foca o composer quando é uma conversa pendente (novo contato)
+  useEffect(() => {
+    if (isPending) {
+      const id = setTimeout(() => composerRef.current?.focus(), 80);
+      return () => clearTimeout(id);
+    }
+  }, [isPending, chat.id]);
 
   // Estado do anexo/poll
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -470,7 +560,7 @@ function ChatPanel({ chat }: ChatPanelProps) {
         file,
         type: 'audio',
       });
-      await sendAudioMedia.mutateAsync({
+      const result = await sendAudioMedia.mutateAsync({
         account_id: chat.account_id,
         phone: chat.phone,
         type: 'audio',
@@ -479,6 +569,10 @@ function ChatPanel({ chat }: ChatPanelProps) {
         file_name: file.name,
       });
       recorder.reset();
+      // Se era chat pendente, transita para o chat real recém-criado
+      if (isPending && onChatCreated && result.chat_id) {
+        onChatCreated(result.chat_id);
+      }
     } catch {
       // toasts já disparados pelos hooks; mantém o áudio gravado pra retry
     }
@@ -505,7 +599,13 @@ function ChatPanel({ chat }: ChatPanelProps) {
         message: trimmed,
       },
       {
-        onSuccess: () => setDraft(''),
+        onSuccess: (result) => {
+          setDraft('');
+          // Se era chat pendente, transita para o chat real recém-criado
+          if (isPending && onChatCreated && result.chat_id) {
+            onChatCreated(result.chat_id);
+          }
+        },
       },
     );
   }
@@ -608,33 +708,45 @@ function ChatPanel({ chat }: ChatPanelProps) {
           /* Header normal */
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{display}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm truncate">{display}</p>
+                {isPending && (
+                  <span className="text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded px-1 py-0.5 shrink-0">
+                    Nova conversa
+                  </span>
+                )}
+              </div>
               {/* Subtítulo de telefone: só para contato CRM com phone real (não LID). */}
-              {chat.contact_name && !isNonRealPhone(chat.phone) && (
+              {(chat.contact_name || isPending) && !isNonRealPhone(chat.phone) && (
                 <p className="text-xs text-muted-foreground">{formatPhone(chat.phone)}</p>
               )}
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0"
-              title="Buscar na conversa"
-              onClick={() => setChatSearchOpen(true)}
-            >
-              <Search className="h-3.5 w-3.5" />
-            </Button>
+            {/* Busca só disponível em conversas reais (com histórico) */}
+            {!isPending && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                title="Buscar na conversa"
+                onClick={() => setChatSearchOpen(true)}
+              >
+                <Search className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         )}
       </div>
 
       {/* Mensagens */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
-        {isLoading ? (
+        {isLoading && !isPending ? (
           <p className="text-xs text-muted-foreground text-center py-8">Carregando mensagens...</p>
         ) : messages.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-8">
-            Sem mensagens. Comece a conversa abaixo.
+            {isPending
+              ? 'Nenhuma conversa ainda. Envie a primeira mensagem abaixo.'
+              : 'Sem mensagens. Comece a conversa abaixo.'}
           </p>
         ) : (
           <div className="space-y-2">
@@ -736,6 +848,7 @@ function ChatPanel({ chat }: ChatPanelProps) {
               </DropdownMenu>
 
               <Textarea
+                ref={composerRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -796,12 +909,20 @@ function ChatPanel({ chat }: ChatPanelProps) {
         type={pendingAttachment?.type ?? 'image'}
         accountId={chat.account_id}
         phone={chat.phone}
+        onSent={(chatId) => {
+          setPendingAttachment(null);
+          if (isPending && onChatCreated && chatId) onChatCreated(chatId);
+        }}
       />
       <PollDialog
         open={pollOpen}
         onOpenChange={setPollOpen}
         accountId={chat.account_id}
         phone={chat.phone}
+        onSent={(chatId) => {
+          setPollOpen(false);
+          if (isPending && onChatCreated && chatId) onChatCreated(chatId);
+        }}
       />
     </>
   );
