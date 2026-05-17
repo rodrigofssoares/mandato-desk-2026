@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MessageSquare,
+  MessageSquarePlus,
   Send,
   RefreshCw,
   Paperclip,
@@ -10,7 +11,11 @@ import {
   FileText,
   BarChart3,
   Search,
+  ChevronUp,
+  ChevronDown,
+  X,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { EmptyState } from '@/components/ui-system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +45,7 @@ import {
   type ZapiMediaType,
 } from '@/hooks/useZapiMedia';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useContact } from '@/hooks/useContacts';
 import { ChatListItem } from './ChatListItem';
 import { formatPhone, isNonRealPhone } from '@/lib/zapi-format';
 import { MessageBubble } from './MessageBubble';
@@ -47,12 +53,36 @@ import { AttachmentPreviewDialog } from './AttachmentPreviewDialog';
 import { AudioRecorderBar } from './AudioRecorderBar';
 import { PollDialog } from './PollDialog';
 import { ContactPanel } from './ContactPanel';
+import { ConversaPaletteDialog } from './ConversaPaletteDialog';
+import { phoneComparisonKey } from '@/lib/normalization';
 
-export function ConversasTabContent() {
+interface ConversasTabContentProps {
+  /** T15: telefone puro (dígitos) para selecionar o chat automaticamente via deep-link */
+  initialChatPhone?: string;
+  /** T15: UUID de contato — resolve whatsapp/telefone e usa como initialChatPhone */
+  initialContactId?: string;
+}
+
+export function ConversasTabContent({
+  initialChatPhone,
+  initialContactId,
+}: ConversasTabContentProps) {
+  const [, setSearchParams] = useSearchParams();
   const { data: accounts = [], isLoading: accountsLoading } = useZapiAccounts();
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // T15: resolve ?contact= → número para usar como deep-link
+  const { data: deepLinkContact, isLoading: deepLinkContactLoading } = useContact(initialContactId);
+  const resolvedDeepLinkPhone = initialChatPhone
+    ?? (deepLinkContact
+      ? (deepLinkContact.whatsapp ?? deepLinkContact.telefone ?? undefined)
+      : undefined);
+
+  // Flag para garantir que a seleção automática acontece apenas uma vez por navegação
+  const deepLinkAppliedRef = useRef(false);
 
   // Pré-seleciona primeira conta sendable
   useEffect(() => {
@@ -65,12 +95,60 @@ export function ConversasTabContent() {
   useEffect(() => {
     setSelectedChatId(null);
     setSearchTerm('');
+    deepLinkAppliedRef.current = false;
   }, [selectedAccountId]);
 
   const { data: chats = [], isLoading: chatsLoading, refetch: refetchChats } =
     useZapiChats(selectedAccountId);
 
-  // Filtro client-side por nome ou telefone — useMemo evita recomputação desnecessária.
+  // T15: seleção automática via deep-link após chats carregarem
+  useEffect(() => {
+    if (deepLinkAppliedRef.current) return;
+    if (chatsLoading) return;
+
+    // Aguarda resolução do contato quando há ?contact= (evita tratar "sem telefone" como
+    // dado definitivo enquanto a query ainda está em voo).
+    if (initialContactId && deepLinkContactLoading) return;
+
+    // Contato resolveu mas não tem telefone nem whatsapp → limpa a URL e para.
+    if (initialContactId && !deepLinkContactLoading && !resolvedDeepLinkPhone) {
+      deepLinkAppliedRef.current = true;
+      setSearchParams(
+        (prev) => {
+          prev.delete('chat');
+          prev.delete('contact');
+          return prev;
+        },
+        { replace: true },
+      );
+      return;
+    }
+
+    if (!resolvedDeepLinkPhone) return;
+
+    const targetKey = phoneComparisonKey(resolvedDeepLinkPhone);
+    if (!targetKey) return;
+
+    const match = chats.find((c) => phoneComparisonKey(c.phone) === targetKey);
+    if (match) {
+      setSelectedChatId(match.id);
+    }
+    // Silencioso quando não encontra — sem erro, sem toast
+
+    deepLinkAppliedRef.current = true;
+
+    // Remove ?chat= e ?contact= da URL após processar (replace:true para não criar histórico)
+    setSearchParams(
+      (prev) => {
+        prev.delete('chat');
+        prev.delete('contact');
+        return prev;
+      },
+      { replace: true },
+    );
+  }, [chats, chatsLoading, initialContactId, deepLinkContactLoading, resolvedDeepLinkPhone, setSearchParams]);
+
+  // Filtro client-side por nome, telefone, empresa e tag — T16
   // trim() antes de filtrar para não penalizar espaços acidentais.
   // Uso de String.includes (nunca RegExp sobre input do usuário) evita crash com
   // caracteres especiais como (, ), -, +.
@@ -85,7 +163,17 @@ export function ConversasTabContent() {
         ? c.whatsapp_name.toLowerCase().includes(term)
         : false;
       const phoneMatch = c.phone.toLowerCase().includes(term);
-      return nameMatch || waNameMatch || phoneMatch;
+      // T16: busca por empresa (profissao)
+      const empresaMatch = c.contact_profissao
+        ? c.contact_profissao.toLowerCase().includes(term)
+        : false;
+      // T16: busca por tags
+      const tagMatch = c.contact_tags
+        ? c.contact_tags.some(
+            (ct) => ct.tags && ct.tags.nome.toLowerCase().includes(term),
+          )
+        : false;
+      return nameMatch || waNameMatch || phoneMatch || empresaMatch || tagMatch;
     });
   }, [chats, searchTerm]);
 
@@ -153,13 +241,27 @@ export function ConversasTabContent() {
         {/* ── Coluna 1: lista de chats ───────────────────────────────── */}
         <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Conversas{' '}
-              {chats.length > 0 &&
-                (searchTerm.trim() && filteredChats.length !== chats.length
-                  ? `(${filteredChats.length} de ${chats.length})`
-                  : `(${chats.length})`)}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Conversas{' '}
+                {chats.length > 0 &&
+                  (searchTerm.trim() && filteredChats.length !== chats.length
+                    ? `(${filteredChats.length} de ${chats.length})`
+                    : `(${chats.length})`)}
+              </p>
+              {/* T13: botão para abrir o command palette de nova conversa */}
+              {selectedAccountId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  title="Nova conversa"
+                  onClick={() => setPaletteOpen(true)}
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
             {/* Campo de busca — visível quando há conta selecionada */}
             {selectedAccountId && (
               <div className="relative">
@@ -167,7 +269,7 @@ export function ConversasTabContent() {
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar por nome ou telefone..."
+                  placeholder="Buscar por nome, telefone, empresa ou tag..."
                   className="pl-7 h-7 text-xs"
                 />
               </div>
@@ -232,6 +334,14 @@ export function ConversasTabContent() {
           )}
         </div>
       </div>
+      {/* T13: command palette para buscar e selecionar contatos */}
+      <ConversaPaletteDialog
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        chats={chats}
+        selectedAccountId={selectedAccountId}
+        onSelectChat={setSelectedChatId}
+      />
     </div>
   );
 }
@@ -240,6 +350,32 @@ export function ConversasTabContent() {
 
 interface ChatPanelProps {
   chat: NonNullable<ReturnType<typeof useZapiChats>['data']>[number];
+}
+
+// ─── Helper: destaca ocorrências de um termo no texto (sem dangerouslySetInnerHTML) ──
+
+function highlightText(text: string, term: string): ReactNode {
+  if (!term || term.length < 2) return text;
+  const lower = text.toLowerCase();
+  const termLower = term.toLowerCase();
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  let idx = lower.indexOf(termLower, cursor);
+  while (idx !== -1) {
+    if (idx > cursor) parts.push(text.slice(cursor, idx));
+    parts.push(
+      <mark
+        key={idx}
+        className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5"
+      >
+        {text.slice(idx, idx + term.length)}
+      </mark>,
+    );
+    cursor = idx + term.length;
+    idx = lower.indexOf(termLower, cursor);
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
 }
 
 function ChatPanel({ chat }: ChatPanelProps) {
@@ -263,6 +399,62 @@ function ChatPanel({ chat }: ChatPanelProps) {
   const uploadAudio = useUploadZapiAttachment();
   const sendAudioMedia = useSendZapiMedia();
   const isSendingAudio = uploadAudio.isPending || sendAudioMedia.isPending;
+
+  // T17: estado de busca dentro da conversa
+  const [chatSearchOpen, setChatSearchOpen] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const chatSearchInputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // T17: reset busca ao trocar de chat
+  useEffect(() => {
+    setChatSearchOpen(false);
+    setChatSearchQuery('');
+    setCurrentMatchIndex(0);
+  }, [chat.id]);
+
+  // T17: foca o input quando a barra abre
+  useEffect(() => {
+    if (chatSearchOpen) {
+      setTimeout(() => chatSearchInputRef.current?.focus(), 50);
+    }
+  }, [chatSearchOpen]);
+
+  // T17: índices das mensagens que batem com o termo de busca
+  const matchingIndices = useMemo(() => {
+    if (!chatSearchQuery || chatSearchQuery.length < 2) return [];
+    const term = chatSearchQuery.toLowerCase();
+    return messages.reduce<number[]>((acc, msg, i) => {
+      const body = msg.body ?? '';
+      if (typeof body === 'string' && body.toLowerCase().includes(term)) {
+        acc.push(i);
+      }
+      return acc;
+    }, []);
+  }, [messages, chatSearchQuery]);
+
+  // T17: Set para lookup O(1) no render — evita O(n²) de matchingIndices.includes(i)
+  // dentro do .map(). O array matchingIndices é mantido para navegação anterior/próximo.
+  const matchingSet = useMemo(() => new Set(matchingIndices), [matchingIndices]);
+
+  // T17: scroll até o resultado atual quando muda o índice ou os matches
+  useEffect(() => {
+    if (matchingIndices.length === 0) return;
+    const targetMsgIdx = matchingIndices[currentMatchIndex];
+    if (targetMsgIdx === undefined) return;
+    const el = messageRefs.current[targetMsgIdx];
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [matchingIndices, currentMatchIndex]);
+
+  // T17: garante que currentMatchIndex está dentro do range quando matches muda.
+  // Forma funcional do setter evita depender de currentMatchIndex nas deps,
+  // impedindo double-fire quando ambos mudam no mesmo ciclo.
+  useEffect(() => {
+    setCurrentMatchIndex((prev) =>
+      matchingIndices.length === 0 ? 0 : Math.min(prev, matchingIndices.length - 1)
+    );
+  }, [matchingIndices]);
 
   // Erros de gravação (permissão negada, sem microfone) viram toast.
   useEffect(() => {
@@ -292,11 +484,12 @@ function ChatPanel({ chat }: ChatPanelProps) {
     }
   }
 
-  // Auto-scroll para o fim quando chega nova mensagem
+  // Auto-scroll para o fim quando chega nova mensagem (só quando busca não está ativa)
   useEffect(() => {
+    if (chatSearchOpen) return;
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages.length, chatSearchOpen]);
 
   // Ordem: contato CRM > nome do WhatsApp > fallback fixo.
   const display = chat.contact_name ?? chat.whatsapp_name ?? 'Contato sem nome';
@@ -331,14 +524,107 @@ function ChatPanel({ chat }: ChatPanelProps) {
     e.target.value = '';
   }
 
+  const isSearchActive = chatSearchOpen && chatSearchQuery.length >= 2;
+  const totalMatches = matchingIndices.length;
+
   return (
     <>
       {/* Header */}
       <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
-        <p className="font-medium text-sm">{display}</p>
-        {/* Subtítulo de telefone: só para contato CRM com phone real (não LID). */}
-        {chat.contact_name && !isNonRealPhone(chat.phone) && (
-          <p className="text-xs text-muted-foreground">{formatPhone(chat.phone)}</p>
+        {chatSearchOpen ? (
+          /* T17: barra de busca inline */
+          <div className="flex items-center gap-2">
+            <input
+              ref={chatSearchInputRef}
+              type="text"
+              value={chatSearchQuery}
+              onChange={(e) => {
+                setChatSearchQuery(e.target.value);
+                setCurrentMatchIndex(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setChatSearchOpen(false);
+                  setChatSearchQuery('');
+                }
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (totalMatches === 0) return;
+                  setCurrentMatchIndex((i) => (i + 1) % totalMatches);
+                }
+              }}
+              placeholder="Buscar na conversa..."
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+              aria-label="Buscar mensagem"
+            />
+            {isSearchActive && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                {totalMatches === 0
+                  ? '0 de 0'
+                  : `${currentMatchIndex + 1} de ${totalMatches}`}
+              </span>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              title="Resultado anterior"
+              disabled={totalMatches === 0}
+              onClick={() =>
+                setCurrentMatchIndex((i) => (i - 1 + totalMatches) % totalMatches)
+              }
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              title="Próximo resultado"
+              disabled={totalMatches === 0}
+              onClick={() =>
+                setCurrentMatchIndex((i) => (i + 1) % totalMatches)
+              }
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              title="Fechar busca"
+              onClick={() => {
+                setChatSearchOpen(false);
+                setChatSearchQuery('');
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          /* Header normal */
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{display}</p>
+              {/* Subtítulo de telefone: só para contato CRM com phone real (não LID). */}
+              {chat.contact_name && !isNonRealPhone(chat.phone) && (
+                <p className="text-xs text-muted-foreground">{formatPhone(chat.phone)}</p>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              title="Buscar na conversa"
+              onClick={() => setChatSearchOpen(true)}
+            >
+              <Search className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -352,9 +638,32 @@ function ChatPanel({ chat }: ChatPanelProps) {
           </p>
         ) : (
           <div className="space-y-2">
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
-            ))}
+            {messages.map((msg, i) => {
+              const isMatch = isSearchActive && matchingSet.has(i);
+              const isCurrentMatch =
+                isSearchActive && matchingIndices[currentMatchIndex] === i;
+              return (
+                <div
+                  key={msg.id}
+                  ref={(el) => { messageRefs.current[i] = el; }}
+                  className={
+                    isSearchActive && !isMatch ? 'opacity-30 transition-opacity' : 'transition-opacity'
+                  }
+                  style={isCurrentMatch ? { outline: '2px solid var(--primary)', borderRadius: '8px' } : undefined}
+                >
+                  {/* T17: passa body com highlight quando há busca ativa */}
+                  {isSearchActive && isMatch && msg.body ? (
+                    <MessageBubble
+                      message={msg}
+                      highlightTerm={chatSearchQuery}
+                      highlightText={highlightText}
+                    />
+                  ) : (
+                    <MessageBubble message={msg} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

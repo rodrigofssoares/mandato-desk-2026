@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   Check,
   CheckCheck,
@@ -14,6 +15,10 @@ import type { ZapiMessage } from '@/hooks/useZapiMessages';
 
 interface MessageBubbleProps {
   message: ZapiMessage;
+  /** T17: termo de busca para highlight no corpo da mensagem */
+  highlightTerm?: string;
+  /** T17: função que converte texto + termo em ReactNode com <mark> */
+  highlightText?: (text: string, term: string) => ReactNode;
 }
 
 function formatTime(iso: string): string {
@@ -65,7 +70,7 @@ function getMetadata(message: ZapiMessage): MediaMetadata | null {
   return m as MediaMetadata;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, highlightTerm, highlightText }: MessageBubbleProps) {
   const isOutbound = message.direction === 'outbound';
   const mediaType = (message as { media_type?: string }).media_type ?? 'text';
 
@@ -80,7 +85,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         )}
       >
         <div className="px-3 pt-2 pb-1">
-          {renderContent(message, mediaType, isOutbound)}
+          {renderContent(message, mediaType, isOutbound, highlightTerm, highlightText)}
         </div>
         <div
           className={cn(
@@ -100,6 +105,8 @@ function renderContent(
   message: ZapiMessage,
   mediaType: string,
   isOutbound: boolean,
+  highlightTerm?: string,
+  highlightText?: (text: string, term: string) => ReactNode,
 ): JSX.Element {
   const url = (message as { media_url?: string | null }).media_url ?? null;
   const caption = (message as { media_caption?: string | null }).media_caption ?? message.body ?? null;
@@ -316,7 +323,11 @@ function renderContent(
     case 'text':
     default:
       return message.body ? (
-        <p className="whitespace-pre-wrap break-words">{message.body}</p>
+        <p className="whitespace-pre-wrap break-words">
+          {highlightTerm && highlightText
+            ? highlightText(message.body, highlightTerm)
+            : message.body}
+        </p>
       ) : (
         <p className="italic opacity-70">[mensagem vazia]</p>
       );

@@ -1,6 +1,7 @@
-import { Star, Pencil, Trash2, Check, Phone, Mail, Calendar, Clock } from 'lucide-react';
+import { Star, Pencil, Trash2, Check, Phone, Mail, Calendar, Clock, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,18 @@ export function ContactCard({
 }: ContactCardProps) {
   const { can } = usePermissions();
   const toggleFav = useToggleFavorite();
+  const navigate = useNavigate();
+
+  // T14: telefone para o deep-link WhatsApp (whatsapp tem prioridade sobre telefone)
+  const waPhone = contact.whatsapp ?? contact.telefone ?? null;
+  const hasPhone = !!waPhone;
+
+  function handleConversar(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!waPhone) return;
+    const normalized = waPhone.replace(/\D/g, '');
+    navigate(`/integracoes/whatsapp?tab=conversas&chat=${normalized}`);
+  }
 
   const displayName = getContactDisplayName(contact);
   const initials = displayName
@@ -164,6 +177,23 @@ export function ContactCard({
             </Button>
 
             <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* T14: botão Conversar — só quando há telefone/whatsapp */}
+              {hasPhone && can.accessWhatsapp() && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-success hover:text-success"
+                      title="Conversar no WhatsApp"
+                      onClick={handleConversar}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Conversar no WhatsApp</TooltipContent>
+                </Tooltip>
+              )}
               {can.editContact() && (
                 <Button
                   variant="ghost"

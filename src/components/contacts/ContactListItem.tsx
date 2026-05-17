@@ -1,4 +1,5 @@
-import { Star, Pencil, Trash2, Check } from 'lucide-react';
+import { Star, Pencil, Trash2, Check, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -30,9 +31,21 @@ export function ContactListItem({
 }: ContactListItemProps) {
   const { can } = usePermissions();
   const toggleFav = useToggleFavorite();
+  const navigate = useNavigate();
 
   const tags = contact.contact_tags?.map((ct) => ct.tags).filter(Boolean) ?? [];
   const displayName = getContactDisplayName(contact);
+
+  // T14: telefone para o deep-link WhatsApp
+  const waPhone = contact.whatsapp ?? contact.telefone ?? null;
+  const hasPhone = !!waPhone;
+
+  function handleConversar(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!waPhone) return;
+    const normalized = waPhone.replace(/\D/g, '');
+    navigate(`/integracoes/whatsapp?tab=conversas&chat=${normalized}`);
+  }
 
   return (
     <div
@@ -148,6 +161,23 @@ export function ContactListItem({
 
       {/* Actions */}
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        {/* T14: botão Conversar — só quando há telefone/whatsapp */}
+        {hasPhone && can.accessWhatsapp() && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-success hover:text-success"
+                title="Conversar no WhatsApp"
+                onClick={handleConversar}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Conversar no WhatsApp</TooltipContent>
+          </Tooltip>
+        )}
         {can.editContact() && (
           <Button
             variant="ghost"

@@ -7,6 +7,10 @@ import type { Tables } from '@/integrations/supabase/types';
 
 export type ZapiChat = Tables<'zapi_chats'> & {
   contact_name?: string | null;
+  /** T16: profissão/empresa do contato vinculado */
+  contact_profissao?: string | null;
+  /** T16: tags do contato vinculado */
+  contact_tags?: { tags: { nome: string } }[] | null;
 };
 
 // ─── Key Factory ────────────────────────────────────────────────────────────
@@ -36,7 +40,7 @@ export function useZapiChats(accountId: string | null | undefined) {
     queryFn: async (): Promise<ZapiChat[]> => {
       const { data, error } = await supabase
         .from('zapi_chats')
-        .select('*, contacts:contact_id (nome)')
+        .select('*, contacts:contact_id (nome, profissao, contact_tags(tags(nome)))')
         .eq('account_id', accountId!)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false });
@@ -45,11 +49,17 @@ export function useZapiChats(accountId: string | null | undefined) {
 
       return (data ?? []).map((row) => {
         const { contacts, ...rest } = row as typeof row & {
-          contacts: { nome: string } | null;
+          contacts: {
+            nome: string;
+            profissao?: string | null;
+            contact_tags?: { tags: { nome: string } }[] | null;
+          } | null;
         };
         return {
           ...rest,
           contact_name: contacts?.nome ?? null,
+          contact_profissao: contacts?.profissao ?? null,
+          contact_tags: contacts?.contact_tags ?? null,
         } as ZapiChat;
       });
     },

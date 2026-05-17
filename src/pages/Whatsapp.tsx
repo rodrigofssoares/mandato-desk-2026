@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Loader2, Lock, MessageCircle, Send } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui-system';
@@ -22,7 +22,15 @@ function isValidTab(value: string | null): value is Tab {
 export default function Whatsapp() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const activeTab: Tab = isValidTab(rawTab) ? rawTab : 'contas';
+  // T15: se ?chat= ou ?contact= presente e tab inválida/ausente, força aba conversas
+  const chatParam = searchParams.get('chat');
+  const contactParam = searchParams.get('contact');
+  const hasDeepLink = !!(chatParam || contactParam);
+  const activeTab: Tab = isValidTab(rawTab)
+    ? rawTab
+    : hasDeepLink
+      ? 'conversas'
+      : 'contas';
 
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessWhatsapp();
@@ -30,6 +38,28 @@ export default function Whatsapp() {
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const { data: accounts = [] } = useZapiAccounts();
   const hasSendableAccount = accounts.some((a) => a.status !== 'disconnected');
+
+  // T15: quando há deep-link e aba é diferente de conversas, corrige a tab na URL
+  useEffect(() => {
+    if (hasDeepLink && rawTab !== 'conversas') {
+      setSearchParams(
+        (prev) => {
+          prev.set('tab', 'conversas');
+          return prev;
+        },
+        { replace: true },
+      );
+    }
+  }, [hasDeepLink, rawTab, setSearchParams]);
+
+  // T13: ouve evento do ConversaPaletteDialog para abrir o NewMessageDialog (número avulso)
+  useEffect(() => {
+    function handleOpenNewMessage() {
+      setNewMessageOpen(true);
+    }
+    window.addEventListener('open-new-message-dialog', handleOpenNewMessage);
+    return () => window.removeEventListener('open-new-message-dialog', handleOpenNewMessage);
+  }, []);
 
   function handleTabChange(value: string) {
     setSearchParams({ tab: value }, { replace: true });
@@ -92,7 +122,11 @@ export default function Whatsapp() {
         </TabsContent>
 
         <TabsContent value="conversas">
-          <ConversasTabContent />
+          {/* T15: passa deep-link params para que ConversasTabContent selecione o chat */}
+          <ConversasTabContent
+            initialChatPhone={chatParam ?? undefined}
+            initialContactId={contactParam ?? undefined}
+          />
         </TabsContent>
 
         <TabsContent value="webhooks">
