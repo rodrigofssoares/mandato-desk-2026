@@ -1,4 +1,4 @@
-import { MessageCircle, Pencil, Trash2, KeyRound, Sparkles } from 'lucide-react';
+import { MessageCircle, Pencil, Trash2, KeyRound, Sparkles, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +14,12 @@ interface AccountCardProps {
   onDelete?: (account: ZapiAccount) => void;
   /** Quando ausente, oculta o botão. */
   onResetPassword?: (account: ZapiAccount) => void;
+  /** T46: gerenciador de respostas rápidas. */
+  onQuickReplies?: (account: ZapiAccount) => void;
 }
 
-export function AccountCard({ account, onEdit, onDelete, onResetPassword }: AccountCardProps) {
-  const hasAnyAction = onEdit || onDelete || onResetPassword;
+export function AccountCard({ account, onEdit, onDelete, onResetPassword, onQuickReplies }: AccountCardProps) {
+  const hasAnyAction = onEdit || onDelete || onResetPassword || onQuickReplies;
   const createdAt = new Date(account.created_at).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -90,15 +92,27 @@ export function AccountCard({ account, onEdit, onDelete, onResetPassword }: Acco
                 Editar
               </Button>
             )}
-            {onResetPassword && (
+            {onQuickReplies && (
               <Button
                 size="sm"
                 variant="outline"
                 className="flex-1 gap-1.5"
+                onClick={() => onQuickReplies(account)}
+                title="Gerenciar respostas rápidas"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Respostas
+              </Button>
+            )}
+            {onResetPassword && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="px-2"
                 onClick={() => onResetPassword(account)}
+                title="Redefinir senha do painel"
               >
                 <KeyRound className="h-3.5 w-3.5" />
-                Senha
               </Button>
             )}
             {onDelete && (

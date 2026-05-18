@@ -9,6 +9,7 @@ import { AccountCard } from './AccountCard';
 import { AccountFormDialog } from './AccountFormDialog';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { ResetPanelPasswordDialog } from './ResetPanelPasswordDialog';
+import { QuickRepliesManager } from './QuickRepliesManager';
 import {
   useZapiAccounts,
   useCreateZapiAccount,
@@ -18,6 +19,8 @@ import {
   type ZapiAccount,
 } from '@/hooks/useZapiAccounts';
 import type { RecursosConfig } from '@/lib/featureFlags';
+import type { BusinessHoursConfig } from '@/hooks/useBusinessHours';
+import { toast } from 'sonner';
 
 export function ContasTabContent() {
   const { activeRole } = useImpersonation();
@@ -38,6 +41,9 @@ export function ContasTabContent() {
 
   const [resetPassOpen, setResetPassOpen] = useState(false);
   const [resetPassAccount, setResetPassAccount] = useState<ZapiAccount | null>(null);
+
+  // T46: respostas rápidas
+  const [quickRepliesAccountId, setQuickRepliesAccountId] = useState<string | null>(null);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -121,6 +127,21 @@ export function ContasTabContent() {
     );
   }
 
+  // T51: salvar horário de atendimento
+  function handleSaveBusinessHours(config: BusinessHoursConfig | null) {
+    if (!editingAccount) return;
+    updateMutation.mutate(
+      { id: editingAccount.id, horario_atendimento: (config as unknown as Record<string, unknown>) ?? null },
+      {
+        onSuccess: () => {
+          toast.success(
+            config ? 'Horário de atendimento atualizado' : 'Horário de atendimento desabilitado',
+          );
+        },
+      },
+    );
+  }
+
   // ─── Render ──────────────────────────────────────────────────────────────
 
   if (isLoading) {
@@ -190,6 +211,7 @@ export function ContasTabContent() {
               onEdit={isAdmin ? handleEdit : undefined}
               onDelete={isAdmin ? handleDelete : undefined}
               onResetPassword={isAdmin ? handleResetPassword : undefined}
+              onQuickReplies={(acc) => setQuickRepliesAccountId(acc.id)}
             />
           ))}
         </div>
@@ -202,6 +224,7 @@ export function ContasTabContent() {
         account={editingAccount}
         isLoading={createMutation.isPending || updateMutation.isPending}
         onSubmit={handleFormSubmit}
+        onSaveBusinessHours={editingAccount ? handleSaveBusinessHours : undefined}
       />
 
       <DeleteAccountDialog
@@ -219,6 +242,15 @@ export function ContasTabContent() {
         isLoading={resetPasswordMutation.isPending}
         onSubmit={handleResetPasswordSubmit}
       />
+
+      {/* T46: Gerenciador de respostas rápidas */}
+      {quickRepliesAccountId && (
+        <QuickRepliesManager
+          open={!!quickRepliesAccountId}
+          onOpenChange={(v) => { if (!v) setQuickRepliesAccountId(null); }}
+          accountId={quickRepliesAccountId}
+        />
+      )}
     </>
   );
 }

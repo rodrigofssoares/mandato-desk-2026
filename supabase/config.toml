@@ -45,3 +45,46 @@ verify_jwt = false
 # zapi-send-poll: envia enquete WhatsApp.
 [functions.zapi-send-poll]
 verify_jwt = false
+
+# zapi-mark-as-read: marca mensagem como lida. Auth manual via requireAuth.
+[functions.zapi-mark-as-read]
+verify_jwt = false
+
+# zapi-instance-status: consulta status da instância. Auth manual via requireAuth.
+[functions.zapi-instance-status]
+verify_jwt = false
+
+# zapi-send-reaction: envia reação emoji. Auth manual via requireAuth.
+[functions.zapi-send-reaction]
+verify_jwt = false
+
+# zapi-forward-message: encaminha mensagem. Auth manual via requireAuth.
+[functions.zapi-forward-message]
+verify_jwt = false
+
+# zapi-send-location: envia localização. Auth manual via requireAuth.
+[functions.zapi-send-location]
+verify_jwt = false
+
+# zapi-chat-update: atualiza status/atribuição de um chat. Auth manual via requireAuth.
+[functions.zapi-chat-update]
+verify_jwt = false
+
+# zapi-chat-tag-update: adiciona ou remove etiqueta de chat. Auth manual via requireAuth.
+[functions.zapi-chat-tag-update]
+verify_jwt = false
+
+# zapi-bulk-chat-update: atualização em lote de chats. Auth manual via requireAuth.
+[functions.zapi-bulk-chat-update]
+verify_jwt = false
+
+# zapi-schedule-message: cria agendamento de mensagem com validações de segurança.
+# Auth manual via requireAuth. O INSERT direto na tabela está bloqueado via RLS (mig 066).
+[functions.zapi-schedule-message]
+verify_jwt = false
+
+# zapi-send-scheduled: processador da fila de agendamentos (cron job via pg_net).
+# NÃO usa JWT de usuário — autenticação EXCLUSIVA via CRON_SECRET (env var).
+# verify_jwt=false é obrigatório: o gateway não pode validar o CRON_SECRET como JWT.
+[functions.zapi-send-scheduled]
+verify_jwt = false

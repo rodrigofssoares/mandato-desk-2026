@@ -28,7 +28,15 @@ import {
   Reply,
   Bookmark,
   MapPin,
+  CalendarClock,
+  CheckSquare,
+  AlarmClock,
+  Zap,
+  Clock,
+  Keyboard,
+  Pencil,
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/ui-system';
@@ -99,12 +107,24 @@ import type { UserProfile } from '@/hooks/useUsers';
 import { useChatNotes } from '@/hooks/useChatNotes';
 import { useZapiInstanceStatus } from '@/hooks/useZapiInstanceStatus';
 import { isFeatureEnabled } from '@/lib/featureFlags';
+import { exportChatToPdf } from '@/lib/exportChatPdf';
 import { useImpersonation } from '@/context/ImpersonationContext';
+import { useBusinessHours } from '@/hooks/useBusinessHours';
+import { FiltrosFavoritosConversasBar } from './FiltrosFavoritosConversasBar';
+import { useFiltrosFavoritosConversas } from '@/hooks/useFiltrosFavoritosConversas';
+import type { ConversaFilters } from '@/hooks/useFiltrosFavoritosConversas';
+import { useMessageQueue } from '@/hooks/useMessageQueue';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useBulkChatUpdate } from '@/hooks/useBulkChatUpdate';
+import { useScheduledMessages } from '@/hooks/useScheduledMessages';
+import { useQuickReplies, type QuickReply } from '@/hooks/useQuickReplies';
+import { useDraftPersistence, getDraftChatIds } from '@/hooks/useDraftPersistence';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMessageFlags } from '@/hooks/useMessageFlags';
 import { useReactToMessage } from '@/hooks/useZapiReaction';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { QuotedMessageBlock } from './MessageBubble';
+import { ExtractToContactDialog } from './ExtractToContactDialog';
 
 // ─── Conversa pendente ───────────────────────────────────────────────────────
 
@@ -162,6 +182,19 @@ export function ConversasTabContent({
   // T25: visão de arquivadas
   const [showArchived, setShowArchived] = useState(false);
 
+  // T44: modo de seleção múltipla
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedChatIds, setSelectedChatIds] = useState<Set<string>>(new Set());
+
+  // T57: visão de snoozadas
+  const [showSnoozed, setShowSnoozed] = useState(false);
+
+  // T52: filtros favoritos
+  const { favoritos: filtrosFavoritos, salvarFavorito, removerFavorito } = useFiltrosFavoritosConversas();
+
+  // T49: set de chatIds com rascunho
+  const [draftChatIds, setDraftChatIds] = useState<Set<string>>(() => getDraftChatIds());
+
   // T29: tick para forçar re-render do SLA a cada 60s
   const [slaTick, setSlaTick] = useState(0);
 
@@ -196,6 +229,7 @@ export function ConversasTabContent({
     setStatusFilter(null);
     setOnlyMine(false);
     setShowArchived(false);
+    setShowSnoozed(false);
     setFilterByAssignee(null);
     deepLinkAppliedRef.current = false;
   }, [selectedAccountId]);
@@ -222,6 +256,8 @@ export function ConversasTabContent({
 
   // T18: hook de atualização de chat
   const chatUpdate = useChatUpdate(selectedAccountId);
+  // T44: hook de atualização em lote
+  const bulkChatUpdate = useBulkChatUpdate(selectedAccountId);
 
   // T27/T28: status de conexão da instância Z-API (polling 60s)
   const instanceStatus = useZapiInstanceStatus(selectedAccountId);
@@ -298,10 +334,24 @@ export function ConversasTabContent({
 
     let result = chats;
 
-    // T25: separar arquivadas da lista ativa
-    result = showArchived
-      ? result.filter((c) => c.archived)
-      : result.filter((c) => !c.archived);
+    // T57: visão de snoozadas
+    if (showSnoozed) {
+      result = result.filter(
+        (c) => !c.archived && c.snoozed_until && new Date(c.snoozed_until) > new Date(),
+      );
+    } else {
+      // T25: separar arquivadas da lista ativa
+      result = showArchived
+        ? result.filter((c) => c.archived)
+        : result.filter((c) => !c.archived);
+
+      // T48: ocultar conversas com snooze ativo (snoozed_until > now)
+      if (!showArchived) {
+        result = result.filter(
+          (c) => !c.snoozed_until || new Date(c.snoozed_until) <= new Date(),
+        );
+      }
+    }
 
     // Filtro de busca por texto
     if (term) {
@@ -342,7 +392,10 @@ export function ConversasTabContent({
     });
 
     return result;
-  }, [chats, searchTerm, statusFilter, onlyMine, showArchived, user?.id, filterByAssignee]);
+  // slaTick não é lido dentro do callback mas é dep intencional: força reavaliação periódica
+  // do filtro de snooze (que usa `new Date()`) sem aguardar refetch do servidor.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chats, searchTerm, statusFilter, onlyMine, showArchived, showSnoozed, user?.id, filterByAssignee, slaTick]);
 
   const selectedChat = useMemo(
     () => chats.find((c) => c.id === selectedChatId) ?? null,
@@ -384,6 +437,93 @@ export function ConversasTabContent({
     });
   }
 
+  // T48: snooze
+  function handleSnooze(chatId: string, until: string | null) {
+    chatUpdate.mutate({ chat_id: chatId, patch: { snoozed_until: until } }, {
+      onSuccess: () => {
+        if (until) {
+          const dt = new Date(until);
+          const formatted = format(dt, "dd/MM 'às' HH:mm");
+          toast(`Conversa adiada até ${formatted}`, {
+            action: {
+              label: 'Desfazer',
+              onClick: () => chatUpdate.mutate({ chat_id: chatId, patch: { snoozed_until: null } }),
+            },
+          });
+          // Se a conversa adiada estava selecionada, deselecionar
+          if (selectedChatId === chatId) setSelectedChatId(null);
+        } else {
+          toast.success('Adiamento removido');
+        }
+      },
+    });
+  }
+
+  // T44: toggle de seleção de chat no modo bulk
+  function handleToggleBulkSelect(chatId: string) {
+    setSelectedChatIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(chatId)) next.delete(chatId);
+      else next.add(chatId);
+      return next;
+    });
+  }
+
+  // T44: ações em massa
+  function handleBulkArchive() {
+    const ids = [...selectedChatIds];
+    if (ids.length === 0) return;
+    bulkChatUpdate.mutate({ chat_ids: ids, patch: { archived: true } }, {
+      onSuccess: (data) => {
+        toast.success(`${data.updated} conversa${data.updated !== 1 ? 's' : ''} arquivada${data.updated !== 1 ? 's' : ''}`);
+        setSelectedChatIds(new Set());
+        setSelectionMode(false);
+        if (selectedChatId && ids.includes(selectedChatId)) setSelectedChatId(null);
+      },
+    });
+  }
+
+  function handleBulkStatusChange(status: 'aberta' | 'em_atendimento' | 'aguardando' | 'finalizada') {
+    const ids = [...selectedChatIds];
+    if (ids.length === 0) return;
+    bulkChatUpdate.mutate({ chat_ids: ids, patch: { status } }, {
+      onSuccess: (data) => {
+        toast.success(`${data.updated} conversa${data.updated !== 1 ? 's' : ''} atualizada${data.updated !== 1 ? 's' : ''}`);
+        setSelectedChatIds(new Set());
+        setSelectionMode(false);
+      },
+    });
+  }
+
+  // T56: atalhos de teclado na aba de conversas
+  useKeyboardShortcuts([
+    {
+      key: 'k',
+      ctrlKey: true,
+      disableInInputs: true,
+      handler: (e) => { e.preventDefault(); setPaletteOpen(true); },
+    },
+    {
+      key: 'Escape',
+      disableInInputs: false,
+      handler: () => {
+        if (selectionMode) { setSelectionMode(false); setSelectedChatIds(new Set()); }
+      },
+    },
+  ], !!selectedAccountId);
+
+  // T57: badge de snoozadas — calculado com slaTick para invalidar a cada 60s.
+  // Deve ficar antes dos early returns para não violar Rules of Hooks.
+  // slaTick não é lido diretamente no callback mas é dep intencional para reavaliação de new Date().
+  const snoozedCount = useMemo(
+    () =>
+      chats.filter(
+        (c) => !c.archived && c.snoozed_until && new Date(c.snoozed_until) > new Date(),
+      ).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- slaTick força reavaliação temporal
+    [chats, slaTick],
+  );
+
   if (accountsLoading) {
     return (
       <div className="min-h-[320px] flex items-center justify-center">
@@ -408,6 +548,7 @@ export function ConversasTabContent({
 
   // T20: texto do empty state dependente do filtro ativo
   function emptyStateText() {
+    if (showSnoozed) return 'Nenhuma conversa adiada.';
     if (showArchived) return 'Nenhuma conversa arquivada.';
     if (statusFilter) return `Nenhuma conversa com status "${STATUS_LABELS[statusFilter] ?? statusFilter}".`;
     if (onlyMine) return 'Nenhuma conversa atribuída a você.';
@@ -483,18 +624,97 @@ export function ConversasTabContent({
                     ? `(${totalBase})`
                     : ''}
               </p>
-              {selectedAccountId && (
+              <div className="flex items-center gap-1">
+                {/* T57: badge de snoozadas — clicável para ver visão Adiadas */}
+                {snoozedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSnoozed(true);
+                      setShowArchived(false);
+                      setStatusFilter(null);
+                      setOnlyMine(false);
+                    }}
+                    className="text-[10px] text-amber-600 border border-amber-300 rounded-full px-1.5 py-0.5 flex items-center gap-0.5 hover:bg-amber-50 transition-colors"
+                    title={`${snoozedCount} conversa${snoozedCount !== 1 ? 's' : ''} adiada${snoozedCount !== 1 ? 's' : ''} — clique para ver`}
+                  >
+                    <AlarmClock className="h-2.5 w-2.5" />
+                    {snoozedCount}
+                  </button>
+                )}
+                {/* T44: botão Selecionar — apenas para quem pode editar */}
+                {selectedAccountId && canEdit && !selectionMode && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    title="Selecionar conversas"
+                    onClick={() => { setSelectionMode(true); setSelectedChatIds(new Set()); }}
+                  >
+                    <CheckSquare className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {selectedAccountId && !selectionMode && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    title="Nova conversa"
+                    onClick={() => setPaletteOpen(true)}
+                  >
+                    <MessageSquarePlus className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {/* T56: atalhos de teclado */}
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 shrink-0"
-                  title="Nova conversa"
-                  onClick={() => setPaletteOpen(true)}
+                  title="Atalhos: Ctrl+K (nova conversa) · Ctrl+F (buscar na conversa) · Ctrl+Enter (enviar) · Ctrl+/ (respostas rápidas) · Ctrl+Shift+S (snooze 1h)"
                 >
-                  <MessageSquarePlus className="h-3.5 w-3.5" />
+                  <Keyboard className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
-              )}
+              </div>
             </div>
+
+            {/* T44: barra de ações em massa */}
+            {selectionMode && (
+              <div className="flex items-center gap-1.5 py-1 px-1 bg-primary/5 rounded border border-primary/20">
+                <span className="text-[11px] text-muted-foreground flex-1">
+                  {selectedChatIds.size} selecionada{selectedChatIds.size !== 1 ? 's' : ''}
+                </span>
+                {selectedChatIds.size > 0 && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 text-[10px] px-2"
+                      onClick={handleBulkArchive}
+                      disabled={bulkChatUpdate.isPending}
+                    >
+                      Arquivar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => handleBulkStatusChange('finalizada')}
+                      disabled={bulkChatUpdate.isPending}
+                    >
+                      Finalizar
+                    </Button>
+                  </>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => { setSelectionMode(false); setSelectedChatIds(new Set()); }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
 
             {/* Campo de busca */}
             {selectedAccountId && (
@@ -517,11 +737,12 @@ export function ConversasTabContent({
                   type="button"
                   onClick={() => {
                     setShowArchived(false);
+                    setShowSnoozed(false);
                     setStatusFilter(null);
                   }}
                   className={cn(
                     'px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors',
-                    !showArchived
+                    !showArchived && !showSnoozed
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-transparent text-muted-foreground border-border hover:bg-accent',
                   )}
@@ -551,6 +772,7 @@ export function ConversasTabContent({
                   type="button"
                   onClick={() => {
                     setShowArchived(true);
+                    setShowSnoozed(false);
                     setStatusFilter(null);
                     setOnlyMine(false);
                   }}
@@ -563,6 +785,25 @@ export function ConversasTabContent({
                 >
                   <Archive className="h-2.5 w-2.5" />
                   Arquivadas
+                </button>
+                {/* T57: chip Adiadas */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSnoozed(true);
+                    setShowArchived(false);
+                    setStatusFilter(null);
+                    setOnlyMine(false);
+                  }}
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors flex items-center gap-1',
+                    showSnoozed
+                      ? 'bg-amber-500 text-white border-amber-500'
+                      : 'bg-transparent text-muted-foreground border-border hover:bg-accent',
+                  )}
+                >
+                  <Clock className="h-2.5 w-2.5" />
+                  Adiadas
                 </button>
               </div>
             )}
@@ -582,6 +823,34 @@ export function ConversasTabContent({
               </div>
             )}
           </div>
+
+          {/* T52: barra de filtros favoritos */}
+          {!showArchived && !showSnoozed && selectedAccountId && (
+            <div className="px-3 py-1.5 border-b flex items-center gap-1.5 flex-wrap">
+              <FiltrosFavoritosConversasBar
+                favoritos={filtrosFavoritos}
+                filtrosAtuais={{
+                  status: statusFilter ?? undefined,
+                  onlyMine,
+                  showArchived,
+                  showSnoozed,
+                }}
+                filtrosAtivosCount={
+                  (statusFilter ? 1 : 0) + (onlyMine ? 1 : 0)
+                }
+                onSalvar={(nome, filtros) => {
+                  salvarFavorito(nome, filtros as ConversaFilters);
+                }}
+                onAplicar={(filtros) => {
+                  setStatusFilter(filtros.status ?? null);
+                  setOnlyMine(filtros.onlyMine ?? false);
+                  if (filtros.showArchived) setShowArchived(true);
+                  if (filtros.showSnoozed) setShowSnoozed(true);
+                }}
+                onRemover={removerFavorito}
+              />
+            </div>
+          )}
 
           {/* T30: painel supervisor — visível apenas para admin + c30 */}
           {supervisorEnabled && selectedAccountId && (
@@ -625,8 +894,14 @@ export function ConversasTabContent({
                         onPin={canEdit ? handlePin : undefined}
                         onArchive={canEdit ? handleArchive : undefined}
                         onToggleUnread={canEdit ? handleToggleUnread : undefined}
+                        onSnooze={canEdit ? handleSnooze : undefined}
                         slaTick={slaTick}
                         slaEnabled={slaEnabled}
+                        selectionMode={selectionMode}
+                        bulkSelected={selectedChatIds.has(chat.id)}
+                        onToggleBulkSelect={handleToggleBulkSelect}
+                        hasDraft={draftChatIds.has(chat.id)}
+                        showSnoozedTimeRemaining={showSnoozed}
                       />
                     ))}
                     {unpinnedChats.length > 0 && (
@@ -649,8 +924,14 @@ export function ConversasTabContent({
                     onPin={canEdit ? handlePin : undefined}
                     onArchive={canEdit ? handleArchive : undefined}
                     onToggleUnread={canEdit ? handleToggleUnread : undefined}
+                    onSnooze={canEdit ? handleSnooze : undefined}
                     slaTick={slaTick}
                     slaEnabled={slaEnabled}
+                    selectionMode={selectionMode}
+                    bulkSelected={selectedChatIds.has(chat.id)}
+                    onToggleBulkSelect={handleToggleBulkSelect}
+                    hasDraft={draftChatIds.has(chat.id)}
+                    showSnoozedTimeRemaining={showSnoozed}
                   />
                 ))}
               </>
@@ -664,11 +945,20 @@ export function ConversasTabContent({
             <ChatPanel
               chat={activeChat}
               selectedAccountId={selectedAccountId}
+              selectedAccount={selectedAccount}
               instanceStatus={instanceStatus}
               chats={chats}
               onChatCreated={(realChatId) => {
                 setPendingChat(null);
                 setSelectedChatId(realChatId);
+              }}
+              onDraftChange={(chatId, hasDraft) => {
+                setDraftChatIds((prev) => {
+                  const next = new Set(prev);
+                  if (hasDraft) next.add(chatId);
+                  else next.delete(chatId);
+                  return next;
+                });
               }}
             />
           ) : (
@@ -718,16 +1008,6 @@ export function ConversasTabContent({
 }
 
 // ─── Subcomponentes ─────────────────────────────────────────────────────────
-
-interface ChatPanelProps {
-  chat: ZapiChat | PendingChat;
-  selectedAccountId: string | null;
-  /** T28: status de conexão da instância Z-API para exibir banner de alerta. */
-  instanceStatus?: { connected: boolean; state: string; needsQR: boolean; isLoading: boolean };
-  onChatCreated?: (realChatId: string) => void;
-  /** T37: lista de chats da conta para seleção de destino no encaminhar */
-  chats?: ZapiChat[];
-}
 
 // ─── Helper: destaca ocorrências de um termo no texto ──────────────────────
 
@@ -946,15 +1226,46 @@ function AssignmentSelector({ chat, accountId, disabled, onHandoffNeeded }: Assi
 
 // ─── ChatPanel ────────────────────────────────────────────────────────────────
 
-function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, chats = [] }: ChatPanelProps) {
+interface ChatPanelProps {
+  chat: ZapiChat | PendingChat;
+  selectedAccountId: string | null;
+  instanceStatus?: { connected: boolean; state: string; needsQR: boolean; isLoading: boolean };
+  onChatCreated?: (realChatId: string) => void;
+  chats?: ZapiChat[];
+  /** T49: callback para atualizar o Set de drafts no pai */
+  onDraftChange?: (chatId: string, hasDraft: boolean) => void;
+  /** T51: conta selecionada para calcular horário de atendimento */
+  selectedAccount?: import('@/hooks/useZapiAccounts').ZapiAccount | null;
+}
+
+function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, chats = [], onDraftChange, selectedAccount }: ChatPanelProps) {
   const isPending = chat.id === PENDING_CHAT_ID;
   const chatAsZapi = isPending ? null : (chat as ZapiChat);
+
+  // T51: horário de atendimento (C27)
+  const businessHours = useBusinessHours(selectedAccount ?? null);
+  const showBusinessHoursBanner =
+    !isPending &&
+    isFeatureEnabled((selectedAccount?.recursos_config) ?? null, "c27") &&
+    !businessHours.isOpen &&
+    businessHours.config !== null;
 
   const { data: messages = [], isLoading } = useZapiMessagesByChat(
     isPending ? null : chat.id,
   );
   const sendMessage = useSendZapiMessage();
-  const [draft, setDraft] = useState('');
+
+  // T49: rascunho persistente por conversa
+  const { draft, setDraft, clearDraft } = useDraftPersistence(isPending ? null : chat.id);
+
+  // T49: notifica o pai quando o draft muda (para atualizar draftChatIds no ChatListItem)
+  useEffect(() => {
+    if (!isPending && onDraftChange) {
+      onDraftChange(chat.id, draft.trim().length > 0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, chat.id, isPending]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
@@ -981,6 +1292,24 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
 
   // ── T40: digitando... ─────────────────────────────────────────────────────
   const { isTyping, typingState } = useTypingIndicator(isPending ? null : chat.id);
+
+  // ── T47: atalho "/" — respostas rápidas ───────────────────────────────────
+  const { listQuery: quickRepliesQuery } = useQuickReplies(selectedAccountId);
+  const quickReplies = quickRepliesQuery.data ?? [];
+  const [slashQuery, setSlashQuery] = useState('');
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [varDialog, setVarDialog] = useState<{
+    reply: QuickReply;
+    variables: string[];
+  } | null>(null);
+
+  // ── T43: agendamento de mensagem ─────────────────────────────────────────
+  const chatIdForSchedule = isPending ? null : chat.id;
+  const { listQuery: scheduledQuery, createMutation: scheduleMutation, cancelMutation: cancelScheduleMutation } =
+    useScheduledMessages(chatIdForSchedule);
+  const scheduledPending = scheduledQuery.data ?? [];
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState('');
 
   // Reset estado ao trocar de chat
   useEffect(() => {
@@ -1029,6 +1358,99 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
   const [pollOpen, setPollOpen] = useState(false);
 
   const recorder = useAudioRecorder();
+
+  // T53/C31: exportar PDF
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  async function handleExportPdf() {
+    if (!chatAsZapi || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          exportChatToPdf(chatAsZapi, messages, selectedAccount?.name);
+          resolve();
+        }, 0);
+      });
+    } catch {
+      toast.error('Erro ao gerar o PDF. Tente novamente.');
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
+  // T54/C32: fila de reenvio offline
+  const { queue: messageQueue, enqueue: enqueueMessage, failedCount, clearFailed } = useMessageQueue(chat.account_id);
+
+  // T56: atalhos de teclado no ChatPanel
+  useKeyboardShortcuts([
+    {
+      key: 'f',
+      ctrlKey: true,
+      disableInInputs: true,
+      handler: (e) => {
+        if (isPending) return;
+        e.preventDefault();
+        setChatSearchOpen(true);
+      },
+    },
+    {
+      key: 'Enter',
+      ctrlKey: true,
+      disableInInputs: false,
+      handler: (e) => {
+        if (draft.trim()) {
+          handleSend(e as unknown as React.FormEvent);
+        }
+      },
+    },
+    {
+      key: 'Escape',
+      disableInInputs: false,
+      handler: () => {
+        if (chatSearchOpen) { setChatSearchOpen(false); setChatSearchQuery(''); }
+        else if (slashOpen) { setSlashOpen(false); }
+      },
+    },
+    // T56: Ctrl+/ — abre popover de respostas rápidas no composer
+    {
+      key: '/',
+      ctrlKey: true,
+      disableInInputs: false,
+      handler: (e) => {
+        if (isPending) return;
+        e.preventDefault();
+        setSlashOpen(true);
+        setSlashQuery('/');
+      },
+    },
+    // T56: Ctrl+Shift+S — snooze rápido de 1 hora na conversa selecionada
+    {
+      key: 'S',
+      ctrlKey: true,
+      shiftKey: true,
+      disableInInputs: true,
+      handler: (e) => {
+        if (isPending) return;
+        e.preventDefault();
+        const until = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        chatUpdate.mutate({ chat_id: chat.id, patch: { snoozed_until: until } }, {
+          onSuccess: () => {
+            const dt = new Date(until);
+            const formatted = format(dt, "dd/MM 'às' HH:mm");
+            toast(`Conversa adiada até ${formatted}`, {
+              action: {
+                label: 'Desfazer',
+                onClick: () => chatUpdate.mutate({ chat_id: chat.id, patch: { snoozed_until: null } }),
+              },
+            });
+          },
+        });
+      },
+    },
+  ], !isPending);
+
+  // T56: atalhos de teclado globais
   const uploadAudio = useUploadZapiAttachment();
   const sendAudioMedia = useSendZapiMedia();
   const isSendingAudio = uploadAudio.isPending || sendAudioMedia.isPending;
@@ -1039,10 +1461,57 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
   const chatSearchInputRef = useRef<HTMLInputElement>(null);
   const messageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // T55: extração de texto para campo de contato
+  const [extractDialog, setExtractDialog] = useState<{
+    selectedText: string;
+    contactId: string;
+  } | null>(null);
+  const [extractMiniMenu, setExtractMiniMenu] = useState<{
+    text: string;
+    x: number;
+    y: number;
+    contactId: string;
+  } | null>(null);
+
+  function handleMessagesMouseUp(e: React.MouseEvent<HTMLDivElement>) {
+    // Só processa se há contactId na conversa (contato vinculado)
+    const contactId = chatAsZapi?.contact_id;
+    if (!contactId || isPending) return;
+
+    const sel = window.getSelection();
+    const selectedText = sel?.toString().trim() ?? '';
+    if (!selectedText) {
+      setExtractMiniMenu(null);
+      return;
+    }
+
+    // Garante que a seleção está dentro da área de mensagens
+    const anchor = sel?.anchorNode;
+    if (!anchor) return;
+    const container = e.currentTarget;
+    if (!container.contains(anchor as Node)) return;
+
+    // T55: só exibe mini-menu para mensagens RECEBIDAS (inbound)
+    const anchorEl = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : (anchor as Element);
+    const msgWrapper = anchorEl?.closest('[data-direction]') as HTMLElement | null;
+    if (!msgWrapper || msgWrapper.dataset.direction !== 'inbound') {
+      setExtractMiniMenu(null);
+      return;
+    }
+
+    setExtractMiniMenu({
+      text: selectedText,
+      x: e.clientX,
+      y: e.clientY,
+      contactId,
+    });
+  }
+
   useEffect(() => {
     setChatSearchOpen(false);
     setChatSearchQuery('');
     setCurrentMatchIndex(0);
+    setExtractMiniMenu(null);
   }, [chat.id]);
 
   useEffect(() => {
@@ -1126,17 +1595,34 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
       message: trimmed,
       ...(replyTo ? { quoted_message_id: replyTo.message_id } : {}),
     };
+
+    // T54/C32: enfileirar quando offline
+    if (!navigator.onLine) {
+      enqueueMessage({ chatId: chat.id, message: payload });
+      clearDraft();
+      setReplyTo(null);
+      return;
+    }
+
     sendMessage.mutate(
       payload,
       {
         onSuccess: (result) => {
-          setDraft('');
+          clearDraft(); // T49: limpa rascunho persistente após envio
           setReplyTo(null); // T34: limpa reply após envio bem-sucedido
           if (isPending && onChatCreated && result.chat_id) {
             onChatCreated(result.chat_id);
           }
         },
-        onError: () => {
+        onError: (err) => {
+          // T54: se erro de rede, enfileirar
+          const msg = (err as Error)?.message ?? '';
+          if (msg.toLowerCase().includes('failed to fetch') || !navigator.onLine) {
+            enqueueMessage({ chatId: chat.id, message: payload });
+            clearDraft();
+            setReplyTo(null);
+            toast.warning('Sem conexão — mensagem em fila para reenvio');
+          }
           // T34: mantém replyTo em caso de erro para o usuário reenviar com contexto
         },
       },
@@ -1266,8 +1752,26 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
                   </Button>
                 )}
                 {!isPending && (
-                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Buscar na conversa" onClick={() => setChatSearchOpen(true)}>
+                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Buscar na conversa (Ctrl+F)" onClick={() => setChatSearchOpen(true)}>
                     <Search className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {/* T53/C31: exportar conversa em PDF */}
+                {!isPending && chatAsZapi && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    title="Exportar conversa em PDF"
+                    disabled={exportingPdf}
+                    onClick={handleExportPdf}
+                  >
+                    {exportingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5" />
+                    )}
                   </Button>
                 )}
               </div>
@@ -1319,8 +1823,46 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
         </Alert>
       )}
 
+      {/* T51/C27: banner de fora do expediente */}
+      {showBusinessHoursBanner && businessHours.nextOpenTime && (
+        <Alert className="mx-3 mt-2 mb-0 py-1.5 shrink-0 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <Clock className="h-3.5 w-3.5 text-amber-600" />
+          <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+            Fora do horário de atendimento.{' '}
+            Próximo atendimento:{' '}
+            <strong>
+              {businessHours.nextOpenTime.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+              {' às '}
+              {businessHours.nextOpenTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </strong>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* T55: mini-menu flutuante de extração de texto */}
+      {extractMiniMenu && (
+        <div
+          className="fixed z-50 bg-popover border rounded-md shadow-md p-1 flex gap-1"
+          style={{ left: extractMiniMenu.x + 4, top: extractMiniMenu.y - 36 }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button
+            type="button"
+            className="flex items-center gap-1.5 text-xs px-2 py-1 rounded hover:bg-accent transition-colors"
+            onClick={() => {
+              setExtractDialog({ selectedText: extractMiniMenu.text, contactId: extractMiniMenu.contactId });
+              setExtractMiniMenu(null);
+              window.getSelection()?.removeAllRanges();
+            }}
+          >
+            <Pencil className="h-3 w-3 text-primary" />
+            Salvar em contato
+          </button>
+        </div>
+      )}
+
       {/* T35: visão de favoritas / histórico normal */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3" onMouseUp={handleMessagesMouseUp}>
         {showFavorites ? (
           // ── Visão de favoritas ────────────────────────────────────────────
           <div>
@@ -1369,6 +1911,7 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
                   ref={(el) => { messageRefs.current[i] = el; }}
                   className={isSearchActive && !isMatch ? 'opacity-30 transition-opacity' : 'transition-opacity'}
                   style={isCurrentMatch ? { outline: '2px solid var(--primary)', borderRadius: '8px' } : undefined}
+                  data-direction={msg.direction}
                 >
                   <MessageBubble
                     message={msg}
@@ -1404,6 +1947,63 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
           </div>
         )}
       </div>
+
+      {/* T54/C32: indicador de fila de mensagens pendentes */}
+      {messageQueue.filter((q) => q.chatId === (isPending ? null : chat.id) && (q.status === 'pendente' || q.status === 'tentando')).length > 0 && (
+        <div className="px-3 py-1 border-t bg-amber-50/50 dark:bg-amber-950/20 shrink-0 flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-400">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          {messageQueue.filter((q) => q.chatId === (isPending ? null : chat.id) && (q.status === 'pendente' || q.status === 'tentando')).length} mensagem(ns) aguardando reenvio
+        </div>
+      )}
+      {failedCount > 0 && messageQueue.some((q) => q.chatId === (isPending ? null : chat.id) && q.status === 'falha_permanente') && (
+        <div className="px-3 py-1 border-t bg-destructive/5 shrink-0 flex items-center gap-2 text-[11px] text-destructive">
+          <AlertTriangle className="h-3 w-3" />
+          {messageQueue.filter((q) => q.chatId === (isPending ? null : chat.id) && q.status === 'falha_permanente').length} mensagem(ns) não puderam ser enviadas
+          <button type="button" className="ml-auto underline" onClick={clearFailed}>Limpar</button>
+        </div>
+      )}
+
+      {/* T43: indicador de mensagens agendadas */}
+      {!isPending && scheduledPending.length > 0 && (
+        <div className="px-3 py-1.5 border-t bg-amber-50/50 dark:bg-amber-950/20 shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 hover:underline"
+              >
+                <CalendarClock className="h-3.5 w-3.5" />
+                {scheduledPending.length} mensagem{scheduledPending.length !== 1 ? 'ns' : ''} agendada{scheduledPending.length !== 1 ? 's' : ''}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align="start" side="top">
+              <p className="text-xs font-medium mb-2">Mensagens agendadas</p>
+              <div className="space-y-2">
+                {scheduledPending.map((sm) => (
+                  <div key={sm.id} className="flex items-start justify-between gap-2 text-xs">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-muted-foreground text-[10px]">
+                        {format(new Date(sm.scheduled_at), "dd/MM/yyyy 'às' HH:mm")}
+                      </p>
+                      <p className="truncate">{sm.body}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+                      onClick={() => cancelScheduleMutation.mutate(sm.id)}
+                      disabled={cancelScheduleMutation.isPending}
+                      title="Cancelar agendamento"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
 
       {/* Composer */}
       <form onSubmit={handleSend} className="border-t p-3 bg-muted/10 shrink-0">
@@ -1458,21 +2058,168 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Textarea
-                ref={composerRef}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Escreva uma mensagem... (Enter para enviar)"
-                rows={2}
-                className="resize-none"
-                disabled={sendMessage.isPending}
-                maxLength={4096}
-              />
+              {/* T47: popover de respostas rápidas */}
+              <div className="relative flex-1">
+                {slashOpen && (
+                  <div className="absolute bottom-full mb-1 left-0 right-0 z-50 rounded-md border bg-popover shadow-md">
+                    <Command>
+                      <CommandInput
+                        value={slashQuery}
+                        onValueChange={setSlashQuery}
+                        placeholder="Buscar resposta rápida..."
+                        className="h-8 text-xs"
+                      />
+                      <CommandList className="max-h-48">
+                        <CommandEmpty>Nenhuma resposta rápida encontrada.</CommandEmpty>
+                        {quickReplies.length > 0 && (() => {
+                          const term = slashQuery.replace(/^\//, '').toLowerCase();
+                          const filtered = quickReplies.filter(
+                            (r) =>
+                              !term ||
+                              r.titulo.toLowerCase().includes(term) ||
+                              (r.categoria ?? '').toLowerCase().includes(term),
+                          );
+                          // Agrupa por categoria
+                          const bycat = new Map<string, QuickReply[]>();
+                          for (const r of filtered) {
+                            const k = r.categoria ?? 'Geral';
+                            if (!bycat.has(k)) bycat.set(k, []);
+                            bycat.get(k)!.push(r);
+                          }
+                          return [...bycat.entries()].map(([cat, items]) => (
+                            <CommandGroup key={cat} heading={cat}>
+                              {items.map((r) => (
+                                <CommandItem
+                                  key={r.id}
+                                  value={r.titulo}
+                                  onSelect={() => {
+                                    setSlashOpen(false);
+                                    setSlashQuery('');
+                                    if (r.variaveis && r.variaveis.length > 0) {
+                                      setVarDialog({ reply: r, variables: r.variaveis });
+                                    } else {
+                                      setDraft(r.corpo);
+                                      composerRef.current?.focus();
+                                    }
+                                  }}
+                                  className="text-xs cursor-pointer"
+                                >
+                                  <Zap className="h-3 w-3 mr-2 shrink-0 text-primary/60" />
+                                  <span className="flex-1 truncate">{r.titulo}</span>
+                                  {r.variaveis && r.variaveis.length > 0 && (
+                                    <span className="text-[10px] text-muted-foreground shrink-0">
+                                      {r.variaveis.length} var.
+                                    </span>
+                                  )}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          ));
+                        })()}
+                      </CommandList>
+                    </Command>
+                  </div>
+                )}
+
+                <Textarea
+                  ref={composerRef}
+                  value={draft}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDraft(val);
+                    // T47: detecta atalho "/" no início ou após espaço
+                    const lastSpaceIdx = val.lastIndexOf(' ');
+                    const lastPart = lastSpaceIdx === -1 ? val : val.slice(lastSpaceIdx + 1);
+                    if (lastPart.startsWith('/')) {
+                      setSlashQuery(lastPart);
+                      setSlashOpen(true);
+                    } else {
+                      setSlashOpen(false);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (slashOpen && (e.key === 'Escape')) {
+                      e.preventDefault();
+                      setSlashOpen(false);
+                      return;
+                    }
+                    handleKeyDown(e);
+                  }}
+                  placeholder="Escreva uma mensagem... (/ para respostas rápidas, Enter envia)"
+                  rows={2}
+                  className="resize-none"
+                  disabled={sendMessage.isPending}
+                  maxLength={4096}
+                />
+              </div>
 
               <Button type="button" size="icon" variant="outline" onClick={() => { void recorder.start(); }} disabled={sendMessage.isPending || !recorder.isSupported} title={recorder.isSupported ? 'Gravar áudio' : 'Gravação de áudio não suportada neste navegador'}>
                 <Mic className="h-4 w-4" />
               </Button>
+
+              {/* T43: botão Agendar — só para quem pode editar e quando não é chat pendente */}
+              {canEdit && !isPending && (
+                <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      disabled={sendMessage.isPending || !draft.trim()}
+                      title="Agendar envio"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72" align="end" side="top">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium">Agendar envio</p>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Data e hora</label>
+                        <input
+                          type="datetime-local"
+                          value={scheduledAt}
+                          onChange={(e) => setScheduledAt(e.target.value)}
+                          min={new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16)}
+                          max={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+                          className="w-full text-sm border rounded px-2 py-1.5 bg-background"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          Mínimo: 5 minutos à frente. Máximo: 30 dias.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full"
+                        disabled={!scheduledAt || scheduleMutation.isPending}
+                        onClick={async () => {
+                          if (!scheduledAt || !draft.trim()) return;
+                          const chosenDate = new Date(scheduledAt);
+                          if (chosenDate.getTime() < Date.now() + 4 * 60 * 1000) {
+                            toast.error('Escolha um horário ao menos 5 minutos à frente');
+                            return;
+                          }
+                          await scheduleMutation.mutateAsync({
+                            account_id: chat.account_id,
+                            chat_id: isPending ? null : chat.id,
+                            phone: chat.phone,
+                            body: draft.trim(),
+                            quoted_message_id: replyTo?.message_id ?? null,
+                            scheduled_at: chosenDate.toISOString(),
+                          });
+                          clearDraft();
+                          setReplyTo(null);
+                          setScheduleOpen(false);
+                          setScheduledAt('');
+                        }}
+                      >
+                        {scheduleMutation.isPending ? 'Agendando...' : 'Confirmar agendamento'}
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
 
               <Button type="submit" size="icon" disabled={sendMessage.isPending || !draft.trim()} title="Enviar mensagem">
                 <Send className="h-4 w-4" />
@@ -1546,6 +2293,36 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
         }}
       />
 
+      {/* T47: VariablesFillDialog — preencher variáveis antes de inserir resposta no draft */}
+      {varDialog && (
+        <VariablesFillDialog
+          open={!!varDialog}
+          onClose={() => setVarDialog(null)}
+          reply={varDialog.reply}
+          variables={varDialog.variables}
+          contactName={
+            isPending
+              ? (chat as PendingChat).contact_name ?? undefined
+              : (chat as ZapiChat).contact_name ?? (chat as ZapiChat).whatsapp_name ?? undefined
+          }
+          onConfirm={(filledBody) => {
+            setDraft(filledBody);
+            setVarDialog(null);
+            composerRef.current?.focus();
+          }}
+        />
+      )}
+
+      {/* T55: ExtractToContactDialog */}
+      {extractDialog && (
+        <ExtractToContactDialog
+          open={!!extractDialog}
+          onOpenChange={(o) => !o && setExtractDialog(null)}
+          contactId={extractDialog.contactId}
+          selectedText={extractDialog.selectedText}
+        />
+      )}
+
       {/* Loading overlay para chatUpdate */}
       {chatUpdate.isPending && (
         <div className="absolute inset-0 pointer-events-none flex items-start justify-end p-4">
@@ -1553,5 +2330,80 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
         </div>
       )}
     </>
+  );
+}
+
+// ─── VariablesFillDialog (T47) ─────────────────────────────────────────────────
+
+interface VariablesFillDialogProps {
+  open: boolean;
+  onClose: () => void;
+  reply: QuickReply;
+  variables: string[];
+  /** Nome do contato para pré-preencher {{nome}} */
+  contactName?: string;
+  onConfirm: (filledBody: string) => void;
+}
+
+function VariablesFillDialog({ open, onClose, reply, variables, contactName, onConfirm }: VariablesFillDialogProps) {
+  // Pré-preenche as variáveis conhecidas
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const v of variables) {
+      if (v === 'nome' && contactName) init[v] = contactName;
+      else init[v] = '';
+    }
+    return init;
+  });
+
+  function handleConfirm() {
+    const filled = reply.corpo.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key] ?? `{{${key}}}`);
+    // Avisa se há variáveis não preenchidas
+    const unfilled = variables.filter((v) => !values[v]);
+    if (unfilled.length > 0) {
+      toast.warning(`Variável${unfilled.length !== 1 ? 's' : ''} não preenchida${unfilled.length !== 1 ? 's' : ''}: ${unfilled.map((v) => `{{${v}}}`).join(', ')}`);
+    }
+    onConfirm(filled);
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className={open ? 'fixed inset-0 z-50 flex items-center justify-center' : 'hidden'}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="fixed inset-0 bg-black/50" />
+      <div className="relative bg-background rounded-lg border shadow-lg w-full max-w-sm p-5 space-y-4 z-10">
+        <div>
+          <h2 className="text-sm font-semibold">Preencher variáveis</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{reply.titulo}</p>
+        </div>
+        <div className="space-y-3">
+          {variables.map((v) => (
+            <div key={v} className="space-y-1">
+              <label className="text-xs font-medium">
+                {`{{${v}}}`}
+              </label>
+              <Input
+                value={values[v] ?? ''}
+                onChange={(e) => setValues((prev) => ({ ...prev, [v]: e.target.value }))}
+                placeholder={`Valor para {{${v}}}`}
+                className="h-8 text-xs"
+                autoFocus={variables[0] === v}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 justify-end">
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="button" size="sm" onClick={handleConfirm}>
+            Confirmar
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

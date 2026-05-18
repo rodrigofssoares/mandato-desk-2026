@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle, BrainCircuit, Zap, Heart } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, Zap, Heart, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,8 @@ import { Switch } from '@/components/ui/switch';
 import type { ZapiAccount } from '@/hooks/useZapiAccounts';
 import type { RecursosConfig } from '@/lib/featureFlags';
 import { FEATURES_CATALOG } from '@/lib/featureFlags';
+import { BusinessHoursTab } from './BusinessHoursTab';
+import type { BusinessHoursConfig } from '@/hooks/useBusinessHours';
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 
@@ -83,6 +85,8 @@ interface AccountFormDialogProps {
   account: ZapiAccount | null;
   isLoading: boolean;
   onSubmit: (values: FormValues & { recursos_config?: RecursosConfig }) => void;
+  /** T51: callback para salvar o horário de atendimento. */
+  onSaveBusinessHours?: (config: BusinessHoursConfig | null) => void;
 }
 
 // ─── FeatureSwitch ────────────────────────────────────────────────────────────
@@ -117,6 +121,7 @@ export function AccountFormDialog({
   account,
   isLoading,
   onSubmit,
+  onSaveBusinessHours,
 }: AccountFormDialogProps) {
   const isEditing = account !== null;
   const schema = isEditing ? schemaEdit : schemaCreate;
@@ -364,12 +369,29 @@ export function AccountFormDialog({
                 <TabsList className="w-full">
                   <TabsTrigger value="conexao" className="flex-1">Conexão</TabsTrigger>
                   <TabsTrigger value="recursos" className="flex-1">Recursos</TabsTrigger>
+                  <TabsTrigger value="horario" className="flex-1 gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    Horário
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="conexao">
                   {connectionTab}
                 </TabsContent>
                 <TabsContent value="recursos">
                   {resourcesTab}
+                </TabsContent>
+                <TabsContent value="horario">
+                  {account && onSaveBusinessHours ? (
+                    <BusinessHoursTab
+                      account={account}
+                      isSaving={isLoading}
+                      onSave={onSaveBusinessHours}
+                    />
+                  ) : (
+                    <p className="text-xs text-muted-foreground pt-4 text-center">
+                      Configuração de horário disponível somente ao editar uma conta.
+                    </p>
+                  )}
                 </TabsContent>
               </Tabs>
             ) : (

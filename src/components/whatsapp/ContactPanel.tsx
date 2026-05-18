@@ -34,7 +34,9 @@ import { ContactEditModal } from './ContactEditModal';
 import { ContactFunnelSection } from './ContactFunnelSection';
 import { ContactTasksSection } from './ContactTasksSection';
 import { ChatNotesSection } from './ChatNotesSection';
+import { ChatTagsSection } from './ChatTagsSection';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
@@ -225,6 +227,8 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
   const updateContact = useUpdateContact();
   const createContact = useCreateContact();
   const { user } = useAuth();
+  const { can } = usePermissions();
+  const canEditWpp = can.editWhatsapp();
 
   // Quando chat.contact_id existe, buscamos o contato para ter dados atualizados
   const { data: contactData, isLoading: isContactLoading } = useContact(chat.contact_id ?? undefined);
@@ -484,6 +488,10 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
             <ContactTasksSection contactId={chat.contact_id} />
           </>
         )}
+
+        {/* T45 — Etiquetas da conversa */}
+        <Separator />
+        <ChatTagsSection chatId={chat.id} canEdit={canEditWpp} />
 
         {/* T23 — Notas internas */}
         <Separator />

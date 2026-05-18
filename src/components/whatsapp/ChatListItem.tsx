@@ -1,13 +1,18 @@
-import { Pin, Archive, ArchiveRestore, BellOff, Bell, Clock, User } from 'lucide-react';
+import { Pin, Archive, ArchiveRestore, BellOff, Bell, Clock, User, AlarmClock, Pencil } from 'lucide-react';
+import { addHours, nextMonday, setHours, setMinutes, startOfDay, addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatPhone, isNonRealPhone } from '@/lib/zapi-format';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ZapiChat } from '@/hooks/useZapiChats';
@@ -95,6 +100,18 @@ interface ChatListItemProps {
   slaTick?: number;
   /** T29: true quando a feature flag c28 está habilitada para a conta ativa. */
   slaEnabled?: boolean;
+  /** T48: callback para snooze da conversa */
+  onSnooze?: (chatId: string, until: string | null) => void;
+  /** T44: modo de seleção múltipla */
+  selectionMode?: boolean;
+  /** T44: true quando este chat está selecionado no modo bulk */
+  bulkSelected?: boolean;
+  /** T44: callback ao clicar no checkbox */
+  onToggleBulkSelect?: (chatId: string) => void;
+  /** T49: indica que há rascunho não enviado neste chat */
+  hasDraft?: boolean;
+  /** T57: quando true, exibe "Volta em X" no lugar do tempo da última mensagem */
+  showSnoozedTimeRemaining?: boolean;
 }
 
 // ─── ChatListItem ─────────────────────────────────────────────────────────────
@@ -108,6 +125,12 @@ export function ChatListItem({
   onToggleUnread,
   slaTick: _slaTick,
   slaEnabled = false,
+  onSnooze,
+  selectionMode = false,
+  bulkSelected = false,
+  onToggleBulkSelect,
+  hasDraft = false,
+  showSnoozedTimeRemaining = false,
 }: ChatListItemProps) {
   const display = chat.contact_name ?? chat.whatsapp_name ?? 'Contato sem nome';
   const initialsSource = chat.contact_name ?? chat.whatsapp_name;
@@ -123,6 +146,22 @@ export function ChatListItem({
     slaMinutes >= SLA_THRESHOLD_MINUTES &&
     SLA_ACTIVE_STATUSES.has(chat.status ?? '');
 
+  // T48: cálculo de datas para snooze
+  function snoozeUntil(option: 'h1' | 'h2' | 'tonight' | 'tomorrow' | 'nextweek'): string {
+    const now = new Date();
+    let target: Date;
+    switch (option) {
+      case 'h1':   target = addHours(now, 1); break;
+      case 'h2':   target = addHours(now, 2); break;
+      case 'tonight': target = setMinutes(setHours(startOfDay(now), 20), 0); break;
+      case 'tomorrow': target = setMinutes(setHours(addDays(startOfDay(now), 1), 8), 0); break;
+      case 'nextweek': target = setMinutes(setHours(nextMonday(now), 8), 0); break;
+    }
+    return target.toISOString();
+  }
+
+  const isSnoozed = !!chat.snoozed_until && new Date(chat.snoozed_until) > new Date();
+
   return (
     <div
       className={cn(
@@ -130,12 +169,25 @@ export function ChatListItem({
         selected ? 'bg-accent' : 'hover:bg-accent/50',
         // T29: borda âmbar à esquerda quando SLA estourado
         slaBreached && 'border-l-2 border-l-amber-500',
+        // T44: destaque quando selecionado no modo bulk
+        bulkSelected && 'bg-primary/10',
       )}
     >
+      {/* T44: checkbox no modo de seleção múltipla */}
+      {selectionMode && (
+        <Checkbox
+          checked={bulkSelected}
+          onCheckedChange={() => onToggleBulkSelect?.(chat.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0"
+          aria-label={`Selecionar conversa com ${chat.contact_name ?? chat.phone}`}
+        />
+      )}
+
       {/* Área clicável principal */}
       <button
         type="button"
-        onClick={() => onSelect(chat.id)}
+        onClick={() => selectionMode ? onToggleBulkSelect?.(chat.id) : onSelect(chat.id)}
         className="flex items-center gap-3 flex-1 min-w-0 text-left"
       >
         {/* Avatar com dot de status */}
@@ -175,9 +227,16 @@ export function ChatListItem({
                   <Clock className="h-3.5 w-3.5 text-amber-500" />
                 </span>
               )}
-              <span className="text-[11px] text-muted-foreground">
-                {formatLastTime(chat.last_message_at)}
-              </span>
+              {/* T57: tempo restante de snooze */}
+              {showSnoozedTimeRemaining && chat.snoozed_until ? (
+                <span className="text-[11px] text-amber-600 font-medium">
+                  Volta em {formatSlaDuration(Math.max(0, Math.floor((new Date(chat.snoozed_until).getTime() - Date.now()) / 60_000)))}
+                </span>
+              ) : (
+                <span className="text-[11px] text-muted-foreground">
+                  {formatLastTime(chat.last_message_at)}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -185,13 +244,28 @@ export function ChatListItem({
               {showPhoneSubtitle && (
                 <span className="text-[11px] mr-1.5">{formatPhone(chat.phone)} ·</span>
               )}
-              {chat.last_message_preview ?? <span className="italic">Sem mensagens</span>}
+              {/* T49: se há rascunho, mostra indicador sutil */}
+              {hasDraft ? (
+                <span className="italic text-primary/70 inline-flex items-center gap-0.5">
+                  <Pencil className="h-2.5 w-2.5" /> Rascunho
+                </span>
+              ) : (
+                chat.last_message_preview ?? <span className="italic">Sem mensagens</span>
+              )}
             </p>
-            {hasUnread && (
-              <Badge className="h-5 min-w-5 px-1.5 text-[10px] shrink-0">
-                {chat.unread_count}
-              </Badge>
-            )}
+            <div className="flex items-center gap-1 shrink-0">
+              {/* T48: ícone de snooze ativo */}
+              {isSnoozed && (
+                <span title={`Adiada até ${format(new Date(chat.snoozed_until!), "dd/MM HH:mm")}`}>
+                  <AlarmClock className="h-3.5 w-3.5 text-muted-foreground/70" />
+                </span>
+              )}
+              {hasUnread && (
+                <Badge className="h-5 min-w-5 px-1.5 text-[10px]">
+                  {chat.unread_count}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </button>
@@ -234,7 +308,7 @@ export function ChatListItem({
             </DropdownMenuItem>
           )}
 
-          {(onPin || onToggleUnread) && onArchive && <DropdownMenuSeparator />}
+          {(onPin || onToggleUnread) && (onArchive || onSnooze) && <DropdownMenuSeparator />}
 
           {/* T25: Arquivar/Desarquivar */}
           {onArchive && (
@@ -247,6 +321,45 @@ export function ChatListItem({
                 <><Archive className="h-4 w-4 mr-2" /> Arquivar conversa</>
               )}
             </DropdownMenuItem>
+          )}
+
+          {/* T48: Snooze (Adiar conversa) */}
+          {onSnooze && (
+            <>
+              {onArchive && <DropdownMenuSeparator />}
+              {isSnoozed ? (
+                <DropdownMenuItem
+                  onClick={(e) => { e.stopPropagation(); onSnooze(chat.id, null); }}
+                >
+                  <AlarmClock className="h-4 w-4 mr-2 text-amber-500" />
+                  Remover adiamento
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
+                    <AlarmClock className="h-4 w-4 mr-2" />
+                    Adiar conversa
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-52">
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSnooze(chat.id, snoozeUntil('h1')); }}>
+                      Por 1 hora
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSnooze(chat.id, snoozeUntil('h2')); }}>
+                      Por 2 horas
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSnooze(chat.id, snoozeUntil('tonight')); }}>
+                      Hoje à noite (20h)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSnooze(chat.id, snoozeUntil('tomorrow')); }}>
+                      Amanhã de manhã (8h)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSnooze(chat.id, snoozeUntil('nextweek')); }}>
+                      Próxima semana (segunda 8h)
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

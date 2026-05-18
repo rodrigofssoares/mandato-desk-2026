@@ -1877,6 +1877,7 @@ export type Database = {
           client_token: string
           created_at: string
           created_by: string | null
+          horario_atendimento: Json | null
           id: string
           instance_id: string
           instance_token: string
@@ -1890,6 +1891,7 @@ export type Database = {
           client_token: string
           created_at?: string
           created_by?: string | null
+          horario_atendimento?: Json | null
           id?: string
           instance_id: string
           instance_token: string
@@ -1903,6 +1905,7 @@ export type Database = {
           client_token?: string
           created_at?: string
           created_by?: string | null
+          horario_atendimento?: Json | null
           id?: string
           instance_id?: string
           instance_token?: string
@@ -2251,6 +2254,69 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_scheduled_messages: {
+        Row: {
+          account_id: string
+          body: string
+          chat_id: string | null
+          created_at: string
+          created_by: string | null
+          error_msg: string | null
+          id: string
+          phone: string
+          processing_started_at: string | null
+          quoted_message_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          account_id: string
+          body: string
+          chat_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_msg?: string | null
+          id?: string
+          phone: string
+          processing_started_at?: string | null
+          quoted_message_id?: string | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          account_id?: string
+          body?: string
+          chat_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_msg?: string | null
+          id?: string
+          phone?: string
+          processing_started_at?: string | null
+          quoted_message_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_scheduled_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_scheduled_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_chats"
             referencedColumns: ["id"]
           },
         ]
