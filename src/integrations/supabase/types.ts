@@ -1619,7 +1619,6 @@ export type Database = {
           descricao: string | null
           id: string
           leader_id: string | null
-          /** Prioridade da tarefa: baixa, media ou alta. Nullable. Adicionado em 056. */
           prioridade: string | null
           responsavel_id: string | null
           tipo: Database["public"]["Enums"]["tarefa_tipo"]
@@ -1873,13 +1872,54 @@ export type Database = {
         }
         Relationships: []
       }
+      zapi_accounts: {
+        Row: {
+          client_token: string
+          created_at: string
+          created_by: string | null
+          id: string
+          instance_id: string
+          instance_token: string
+          name: string
+          recursos_config: Json
+          status: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          client_token: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_id: string
+          instance_token: string
+          name: string
+          recursos_config?: Json
+          status?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          client_token?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instance_id?: string
+          instance_token?: string
+          name?: string
+          recursos_config?: Json
+          status?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
       zapi_chat_message_flags: {
         Row: {
           chat_id: string
           created_at: string
           flagged_by: string
           id: string
-          /** ID Z-API da mensagem (mesmo valor de zapi_messages.message_id). */
           message_id: string
         }
         Insert: {
@@ -1904,13 +1944,6 @@ export type Database = {
             referencedRelation: "zapi_chats"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "zapi_chat_message_flags_flagged_by_fkey"
-            columns: ["flagged_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
         ]
       }
       zapi_chat_notes: {
@@ -1920,7 +1953,6 @@ export type Database = {
           corpo: string
           created_at: string
           id: string
-          /** Array JSON de UUIDs dos usuários mencionados. Null quando não há menções. */
           mencoes: Json | null
           updated_at: string
         }
@@ -1943,13 +1975,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "zapi_chat_notes_autor_id_fkey"
-            columns: ["autor_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "zapi_chat_notes_chat_id_fkey"
             columns: ["chat_id"]
@@ -1996,116 +2021,12 @@ export type Database = {
             referencedRelation: "tags"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "zapi_chat_tags_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      zapi_quick_replies: {
-        Row: {
-          account_id: string
-          categoria: string | null
-          corpo: string
-          created_at: string
-          created_by: string | null
-          id: string
-          titulo: string
-          updated_at: string
-          /** Array JSON com nomes das variáveis do corpo. Ex: ["nome","bairro"]. */
-          variaveis: Json | null
-        }
-        Insert: {
-          account_id: string
-          categoria?: string | null
-          corpo: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          titulo: string
-          updated_at?: string
-          variaveis?: Json | null
-        }
-        Update: {
-          account_id?: string
-          categoria?: string | null
-          corpo?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          titulo?: string
-          updated_at?: string
-          variaveis?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "zapi_quick_replies_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "zapi_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "zapi_quick_replies_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      zapi_accounts: {
-        Row: {
-          client_token: string
-          created_at: string
-          created_by: string | null
-          id: string
-          instance_id: string
-          instance_token: string
-          name: string
-          /** Feature flags por conta (C40). Objeto JSON: chave = código do recurso, valor = boolean. */
-          recursos_config: Json
-          status: string
-          updated_at: string
-          webhook_secret: string
-        }
-        Insert: {
-          client_token: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          instance_id: string
-          instance_token: string
-          name: string
-          recursos_config?: Json
-          status?: string
-          updated_at?: string
-          webhook_secret?: string
-        }
-        Update: {
-          client_token?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          instance_id?: string
-          instance_token?: string
-          name?: string
-          recursos_config?: Json
-          status?: string
-          updated_at?: string
-          webhook_secret?: string
-        }
-        Relationships: []
       }
       zapi_chats: {
         Row: {
           account_id: string
-          /** Conversa arquivada (oculta da lista padrão). Default false. Adicionado em 056. */
           archived: boolean
-          /** UUID do usuário responsável. NULL = não atribuída. Adicionado em 056. */
           assigned_to: string | null
           contact_id: string | null
           created_at: string
@@ -2113,15 +2034,11 @@ export type Database = {
           last_message_at: string | null
           last_message_preview: string | null
           phone: string
-          /** Conversa fixada no topo da lista. Default false. Adicionado em 056. */
           pinned: boolean
-          /** Timestamp até quando a conversa fica em snooze. NULL = sem snooze. Adicionado em 056. */
           snoozed_until: string | null
-          /** Estado operacional: aberta, em_atendimento, aguardando, finalizada. Adicionado em 056. */
           status: string
           unread_count: number
           updated_at: string
-          /** Nome exibido no WhatsApp para chats LID. Null para telefones normais. Adicionado em 054. */
           whatsapp_name: string | null
         }
         Insert: {
@@ -2181,7 +2098,10 @@ export type Database = {
           body: string | null
           chat_id: string
           created_at: string
+          deleted_at: string | null
           direction: string
+          edited_at: string | null
+          edited_body: string | null
           id: string
           media_caption: string | null
           media_filename: string | null
@@ -2190,6 +2110,9 @@ export type Database = {
           media_type: string
           media_url: string | null
           message_id: string
+          quoted_body: string | null
+          quoted_message_id: string | null
+          quoted_type: string | null
           sent_at: string
           status: string
         }
@@ -2198,7 +2121,10 @@ export type Database = {
           body?: string | null
           chat_id: string
           created_at?: string
+          deleted_at?: string | null
           direction: string
+          edited_at?: string | null
+          edited_body?: string | null
           id?: string
           media_caption?: string | null
           media_filename?: string | null
@@ -2207,6 +2133,9 @@ export type Database = {
           media_type?: string
           media_url?: string | null
           message_id: string
+          quoted_body?: string | null
+          quoted_message_id?: string | null
+          quoted_type?: string | null
           sent_at?: string
           status?: string
         }
@@ -2215,7 +2144,10 @@ export type Database = {
           body?: string | null
           chat_id?: string
           created_at?: string
+          deleted_at?: string | null
           direction?: string
+          edited_at?: string | null
+          edited_body?: string | null
           id?: string
           media_caption?: string | null
           media_filename?: string | null
@@ -2224,6 +2156,9 @@ export type Database = {
           media_type?: string
           media_url?: string | null
           message_id?: string
+          quoted_body?: string | null
+          quoted_message_id?: string | null
+          quoted_type?: string | null
           sent_at?: string
           status?: string
         }
@@ -2271,6 +2206,50 @@ export type Database = {
             foreignKeyName: "zapi_panel_passwords_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: true
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_quick_replies: {
+        Row: {
+          account_id: string
+          categoria: string | null
+          corpo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          titulo: string
+          updated_at: string
+          variaveis: Json | null
+        }
+        Insert: {
+          account_id: string
+          categoria?: string | null
+          corpo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          titulo: string
+          updated_at?: string
+          variaveis?: Json | null
+        }
+        Update: {
+          account_id?: string
+          categoria?: string | null
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          titulo?: string
+          updated_at?: string
+          variaveis?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_quick_replies_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },

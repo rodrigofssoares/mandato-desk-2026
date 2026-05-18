@@ -43,6 +43,8 @@ interface SendBody {
   account_id?: string;
   phone?: string;
   message?: string;
+  /** T33: ID Z-API da mensagem a citar (reply). Opcional. */
+  quoted_message_id?: string;
 }
 
 interface ZapiAccount {
@@ -88,11 +90,17 @@ Deno.serve(async (req) => {
     const rawPhone = body.phone?.trim() ?? '';
     const rawMessage = body.message ?? '';
     const message = rawMessage.trim();
+    // T33: campo opcional de reply — se presente, não pode ser vazio
+    const quotedId = body.quoted_message_id?.trim() ?? null;
 
     if (!accountId) return jsonResponse(400, { error: 'account_id é obrigatório' });
     if (!message) return jsonResponse(400, { error: 'Mensagem não pode ser vazia' });
     if (message.length > 4096) {
       return jsonResponse(400, { error: 'Mensagem excede 4096 caracteres' });
+    }
+    // T33: quoted_message_id presente mas vazio → erro semântico
+    if (body.quoted_message_id !== undefined && body.quoted_message_id !== null && !quotedId) {
+      return jsonResponse(400, { error: 'quoted_message_id inválido — forneça um ID não-vazio ou omita o campo' });
     }
 
     const phone = normalizePhoneForZapi(rawPhone);
@@ -138,6 +146,13 @@ Deno.serve(async (req) => {
 
     // ── 5. Chamada Z-API ────────────────────────────────────────────────────
     const url = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-text`;
+
+    // T33: body condicional — inclui quoted apenas quando quoted_message_id presente
+    const zapiBodyObj: Record<string, unknown> = { phone, message };
+    if (quotedId) {
+      zapiBodyObj.quoted = { messageId: quotedId };
+    }
+
     let zapiResp: Response;
     try {
       zapiResp = await fetch(url, {
@@ -146,7 +161,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Client-Token': account.client_token,
         },
-        body: JSON.stringify({ phone, message }),
+        body: JSON.stringify(zapiBodyObj),
       });
     } catch (err) {
       console.error('zapi-send-text: fetch falhou', err instanceof Error ? err.message : '');
@@ -189,6 +204,8 @@ Deno.serve(async (req) => {
         body: message.slice(0, 4096),
         status: 'sent',
         sent_at: nowIso,
+        // T33: persiste quoted_message_id quando reply
+        quoted_message_id: quotedId ?? null,
       });
 
     if (msgErr) {

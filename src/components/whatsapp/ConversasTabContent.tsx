@@ -25,6 +25,9 @@ import {
   AlertTriangle,
   Wifi,
   WifiOff,
+  Reply,
+  Bookmark,
+  MapPin,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -66,7 +69,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { useZapiChats, type ZapiChat } from '@/hooks/useZapiChats';
-import { useZapiMessagesByChat, useSendZapiMessage } from '@/hooks/useZapiMessages';
+import { useZapiMessagesByChat, useSendZapiMessage, type ZapiMessage } from '@/hooks/useZapiMessages';
 import {
   useUploadZapiAttachment,
   useSendZapiMedia,
@@ -88,6 +91,9 @@ import { PollDialog } from './PollDialog';
 import { ContactPanel } from './ContactPanel';
 import { ConversaPaletteDialog } from './ConversaPaletteDialog';
 import { HandoffNoteDialog } from './HandoffNoteDialog';
+import { ForwardMessageDialog } from './ForwardMessageDialog';
+import { SendLocationDialog } from './SendLocationDialog';
+import { TypingDots } from './TypingDots';
 import { phoneComparisonKey } from '@/lib/normalization';
 import type { UserProfile } from '@/hooks/useUsers';
 import { useChatNotes } from '@/hooks/useChatNotes';
@@ -95,6 +101,10 @@ import { useZapiInstanceStatus } from '@/hooks/useZapiInstanceStatus';
 import { isFeatureEnabled } from '@/lib/featureFlags';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useMessageFlags } from '@/hooks/useMessageFlags';
+import { useReactToMessage } from '@/hooks/useZapiReaction';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { QuotedMessageBlock } from './MessageBubble';
 
 // ─── Conversa pendente ───────────────────────────────────────────────────────
 
@@ -655,6 +665,7 @@ export function ConversasTabContent({
               chat={activeChat}
               selectedAccountId={selectedAccountId}
               instanceStatus={instanceStatus}
+              chats={chats}
               onChatCreated={(realChatId) => {
                 setPendingChat(null);
                 setSelectedChatId(realChatId);
@@ -714,6 +725,8 @@ interface ChatPanelProps {
   /** T28: status de conexão da instância Z-API para exibir banner de alerta. */
   instanceStatus?: { connected: boolean; state: string; needsQR: boolean; isLoading: boolean };
   onChatCreated?: (realChatId: string) => void;
+  /** T37: lista de chats da conta para seleção de destino no encaminhar */
+  chats?: ZapiChat[];
 }
 
 // ─── Helper: destaca ocorrências de um termo no texto ──────────────────────
@@ -933,7 +946,7 @@ function AssignmentSelector({ chat, accountId, disabled, onHandoffNeeded }: Assi
 
 // ─── ChatPanel ────────────────────────────────────────────────────────────────
 
-function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: ChatPanelProps) {
+function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, chats = [] }: ChatPanelProps) {
   const isPending = chat.id === PENDING_CHAT_ID;
   const chatAsZapi = isPending ? null : (chat as ZapiChat);
 
@@ -948,6 +961,34 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
   const { can } = usePermissions();
   const canEdit = can.editWhatsapp();
   const chatUpdate = useChatUpdate(selectedAccountId);
+
+  // ── T34: reply/citação ────────────────────────────────────────────────────
+  const [replyTo, setReplyTo] = useState<ZapiMessage | null>(null);
+
+  // ── T35: favoritos ────────────────────────────────────────────────────────
+  const chatIdForFlags = isPending ? null : chat.id;
+  const { isFlagged, toggleFlag, flaggedCount, flagsQuery } = useMessageFlags(chatIdForFlags);
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  // ── T36: reações ──────────────────────────────────────────────────────────
+  const reactToMessage = useReactToMessage(isPending ? null : chat.id);
+
+  // ── T37: encaminhar ───────────────────────────────────────────────────────
+  const [forwardMessage, setForwardMessage] = useState<ZapiMessage | null>(null);
+
+  // ── T38: localização ──────────────────────────────────────────────────────
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
+  // ── T40: digitando... ─────────────────────────────────────────────────────
+  const { isTyping, typingState } = useTypingIndicator(isPending ? null : chat.id);
+
+  // Reset estado ao trocar de chat
+  useEffect(() => {
+    setReplyTo(null);
+    setShowFavorites(false);
+    setForwardMessage(null);
+    setLocationDialogOpen(false);
+  }, [chat.id]);
 
   // T22: handoff modal state
   const [handoffOpen, setHandoffOpen] = useState(false);
@@ -1070,7 +1111,7 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
     if (chatSearchOpen) return;
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [messages.length, chatSearchOpen]);
+  }, [messages.length, chatSearchOpen, isTyping]);
 
   const display = chat.contact_name ?? chat.whatsapp_name ?? 'Contato sem nome';
 
@@ -1078,14 +1119,25 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
     e.preventDefault();
     const trimmed = draft.trim();
     if (!trimmed) return;
+    // T34: inclui quoted_message_id quando reply ativo
+    const payload = {
+      account_id: chat.account_id,
+      phone: chat.phone,
+      message: trimmed,
+      ...(replyTo ? { quoted_message_id: replyTo.message_id } : {}),
+    };
     sendMessage.mutate(
-      { account_id: chat.account_id, phone: chat.phone, message: trimmed },
+      payload,
       {
         onSuccess: (result) => {
           setDraft('');
+          setReplyTo(null); // T34: limpa reply após envio bem-sucedido
           if (isPending && onChatCreated && result.chat_id) {
             onChatCreated(result.chat_id);
           }
+        },
+        onError: () => {
+          // T34: mantém replyTo em caso de erro para o usuário reenviar com contexto
         },
       },
     );
@@ -1158,7 +1210,7 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
                   <p className="text-xs text-muted-foreground">{formatPhone(chat.phone)}</p>
                 )}
               </div>
-              {/* Ações do header: pin, archive, busca */}
+              {/* Ações do header: pin, archive, favoritas, busca */}
               <div className="flex items-center gap-1">
                 {!isPending && chatAsZapi && canEdit && (
                   <>
@@ -1194,6 +1246,24 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
                       }
                     </Button>
                   </>
+                )}
+                {/* T35: botão de favoritas */}
+                {!isPending && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 relative"
+                    title={showFavorites ? 'Voltar ao histórico' : 'Ver favoritas'}
+                    onClick={() => setShowFavorites((v) => !v)}
+                  >
+                    <Bookmark className={cn('h-3.5 w-3.5', showFavorites ? 'fill-amber-400 text-amber-400' : '')} />
+                    {flaggedCount > 0 && !showFavorites && (
+                      <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-amber-400 text-[9px] text-white font-bold flex items-center justify-center leading-none">
+                        {flaggedCount > 9 ? '9+' : flaggedCount}
+                      </span>
+                    )}
+                  </Button>
                 )}
                 {!isPending && (
                   <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Buscar na conversa" onClick={() => setChatSearchOpen(true)}>
@@ -1249,15 +1319,46 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
         </Alert>
       )}
 
-      {/* Mensagens */}
+      {/* T35: visão de favoritas / histórico normal */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
-        {isLoading && !isPending ? (
+        {showFavorites ? (
+          // ── Visão de favoritas ────────────────────────────────────────────
+          <div>
+            <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+              <Bookmark className="h-3 w-3" />
+              Mensagens favoritadas
+            </p>
+            {flagsQuery.isLoading ? (
+              <p className="text-xs text-muted-foreground text-center py-8">Carregando...</p>
+            ) : flaggedCount === 0 ? (
+              <div className="text-center py-8">
+                <Bookmark className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+                <p className="text-xs text-muted-foreground">Nenhuma mensagem favoritada ainda.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {messages
+                  .filter((m) => isFlagged(m.message_id))
+                  .map((msg) => (
+                    <MessageBubble
+                      key={msg.id}
+                      message={msg}
+                      onFlag={() => toggleFlag(msg.message_id)}
+                      isFlagged
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
+        ) : isLoading && !isPending ? (
+          // ── Carregando ────────────────────────────────────────────────────
           <p className="text-xs text-muted-foreground text-center py-8">Carregando mensagens...</p>
         ) : messages.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-8">
             {isPending ? 'Nenhuma conversa ainda. Envie a primeira mensagem abaixo.' : 'Sem mensagens. Comece a conversa abaixo.'}
           </p>
         ) : (
+          // ── Histórico normal ──────────────────────────────────────────────
           <div className="space-y-2">
             {messages.map((msg, i) => {
               const isMatch = isSearchActive && matchingSet.has(i);
@@ -1269,20 +1370,68 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
                   className={isSearchActive && !isMatch ? 'opacity-30 transition-opacity' : 'transition-opacity'}
                   style={isCurrentMatch ? { outline: '2px solid var(--primary)', borderRadius: '8px' } : undefined}
                 >
-                  {isSearchActive && isMatch && msg.body ? (
-                    <MessageBubble message={msg} highlightTerm={chatSearchQuery} highlightText={highlightText} />
-                  ) : (
-                    <MessageBubble message={msg} />
-                  )}
+                  <MessageBubble
+                    message={msg}
+                    highlightTerm={isSearchActive && isMatch && msg.body ? chatSearchQuery : undefined}
+                    highlightText={isSearchActive && isMatch && msg.body ? highlightText : undefined}
+                    onReply={canEdit ? setReplyTo : undefined}
+                    onFlag={canEdit ? () => toggleFlag(msg.message_id) : undefined}
+                    isFlagged={isFlagged(msg.message_id)}
+                    onReact={canEdit ? (messageId, emoji) => {
+                      reactToMessage.mutate({
+                        account_id: chat.account_id,
+                        phone: chat.phone,
+                        message_id: messageId,
+                        reaction: emoji,
+                      });
+                    } : undefined}
+                    onForward={canEdit ? setForwardMessage : undefined}
+                  />
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* T40: indicador "digitando..." */}
+        {isTyping && !isPending && (
+          <div className="flex items-center gap-2 px-1 pt-2 text-xs text-muted-foreground">
+            <TypingDots />
+            <span>
+              {(chat as ZapiChat).contact_name ?? (chat as ZapiChat).whatsapp_name ?? 'Contato'}{' '}
+              {typingState === 'recording' ? 'está gravando um áudio...' : 'está digitando...'}
+            </span>
           </div>
         )}
       </div>
 
       {/* Composer */}
       <form onSubmit={handleSend} className="border-t p-3 bg-muted/10 shrink-0">
+        {/* T34: banner de reply ativo */}
+        {replyTo && (
+          <div className="flex items-start gap-2 mb-2 px-2 py-1.5 bg-muted/50 rounded border-l-2 border-primary/60">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <Reply className="h-3 w-3" />
+                Respondendo a:
+              </p>
+              <QuotedMessageBlock
+                body={replyTo.quoted_body ?? replyTo.body}
+                type={replyTo.media_type ?? 'text'}
+                isOutbound={false}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyTo(null)}
+              className="p-0.5 rounded hover:bg-accent transition-colors mt-0.5 shrink-0"
+              aria-label="Cancelar reply"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-end gap-2">
           <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => handleFilePicked('image', e)} />
           <input ref={videoInputRef} type="file" accept="video/mp4,video/3gpp,video/quicktime" className="hidden" onChange={(e) => handleFilePicked('video', e)} />
@@ -1304,6 +1453,8 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
                   <DropdownMenuItem onClick={() => documentInputRef.current?.click()}><FileText className="h-4 w-4 mr-2" /> Documento</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setPollOpen(true)}><BarChart3 className="h-4 w-4 mr-2" /> Enquete</DropdownMenuItem>
+                  {/* T38: item de localização */}
+                  <DropdownMenuItem onClick={() => setLocationDialogOpen(true)}><MapPin className="h-4 w-4 mr-2" /> Localização</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -1371,6 +1522,27 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated }: C
           setHandoffOpen(false);
           setHandoffTarget(null);
           handoffConfirmFnRef.current = null;
+        }}
+      />
+
+      {/* T37: ForwardMessageDialog */}
+      <ForwardMessageDialog
+        open={!!forwardMessage}
+        onOpenChange={(o) => !o && setForwardMessage(null)}
+        message={forwardMessage}
+        accountId={chat.account_id}
+        chats={chats}
+      />
+
+      {/* T38: SendLocationDialog */}
+      <SendLocationDialog
+        open={locationDialogOpen}
+        onOpenChange={setLocationDialogOpen}
+        accountId={chat.account_id}
+        phone={chat.phone}
+        onSent={(chatId) => {
+          setLocationDialogOpen(false);
+          if (isPending && onChatCreated && chatId) onChatCreated(chatId);
         }}
       />
 
