@@ -11,13 +11,18 @@ import { LogsTabContent } from '@/components/whatsapp/LogsTabContent';
 import { NewMessageDialog } from '@/components/whatsapp/NewMessageDialog';
 import { BroadcastsTabContent } from '@/components/whatsapp/BroadcastsTabContent';
 import { EventosTabContent } from '@/components/whatsapp/EventosTabContent';
+import { DashboardAtendimentoTab } from '@/components/whatsapp/DashboardAtendimentoTab';
+import { AuditLogTab } from '@/components/whatsapp/AuditLogTab';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useImpersonation } from '@/context/ImpersonationContext';
 import { isFeatureEnabled } from '@/lib/featureFlags';
 
 // T65 (Fase 6 Onda A): aba de campanhas visível se ao menos 1 conta tem c17 ativo
 // T70 (Fase 6 Onda B): aba de eventos visível se ao menos 1 conta tem c20 ativo
-const TABS = ['contas', 'conversas', 'campanhas', 'eventos', 'webhooks', 'logs'] as const;
+// T90 (Fase 7 Onda B): aba de dashboard de atendimento — visível para admins com contas
+// T91 (Fase 7 Onda B): aba de auditoria — visível somente para admins
+const TABS = ['contas', 'conversas', 'campanhas', 'eventos', 'dashboard', 'auditoria', 'webhooks', 'logs'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(value: string | null): value is Tab {
@@ -39,6 +44,8 @@ export default function Whatsapp() {
 
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessWhatsapp();
+  const { activeRole } = useImpersonation();
+  const isAdmin = activeRole === 'admin';
 
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const { data: accounts = [] } = useZapiAccounts();
@@ -144,6 +151,14 @@ export default function Whatsapp() {
           {hasEventosEnabled && (
             <TabsTrigger value="eventos">Eventos</TabsTrigger>
           )}
+          {/* T90 (Fase 7 Onda B): dashboard de atendimento — visível para admins */}
+          {isAdmin && accounts.length > 0 && (
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          )}
+          {/* T91 (Fase 7 Onda B): auditoria de atendimentos — somente admins */}
+          {isAdmin && (
+            <TabsTrigger value="auditoria">Auditoria</TabsTrigger>
+          )}
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
         </TabsList>
@@ -171,6 +186,20 @@ export default function Whatsapp() {
         {hasEventosEnabled && (
           <TabsContent value="eventos" className="space-y-4">
             <EventosTabContent accountId={eventosAccountId} />
+          </TabsContent>
+        )}
+
+        {/* T90 (Fase 7 Onda B): dashboard de atendimento */}
+        {isAdmin && (
+          <TabsContent value="dashboard" className="space-y-4">
+            <DashboardAtendimentoTab />
+          </TabsContent>
+        )}
+
+        {/* T91 (Fase 7 Onda B): auditoria de atendimentos */}
+        {isAdmin && (
+          <TabsContent value="auditoria" className="space-y-4">
+            <AuditLogTab />
           </TabsContent>
         )}
 

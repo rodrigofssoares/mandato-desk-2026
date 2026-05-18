@@ -35,6 +35,7 @@ import {
   Clock,
   Keyboard,
   Pencil,
+  Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
@@ -86,7 +87,7 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
-import { useZapiChats, type ZapiChat } from '@/hooks/useZapiChats';
+import { useZapiChats, useAllZapiChats, type ZapiChat, type ZapiChatWithAccount } from '@/hooks/useZapiChats';
 import { useZapiMessagesByChat, useSendZapiMessage, type ZapiMessage } from '@/hooks/useZapiMessages';
 import {
   useUploadZapiAttachment,
@@ -137,6 +138,8 @@ import { useReactToMessage } from '@/hooks/useZapiReaction';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { QuotedMessageBlock } from './MessageBubble';
 import { ExtractToContactDialog } from './ExtractToContactDialog';
+import { useAISuggestReply } from '@/hooks/useAISuggestReply';
+import { useTranscribeAudio } from '@/hooks/useTranscribeAudio';
 
 // ─── Conversa pendente ───────────────────────────────────────────────────────
 
@@ -263,16 +266,27 @@ export function ConversasTabContent({
     });
   }
 
+  // T87 (Fase 7 Onda A): C26 — visão consolidada multi-instância
+  const ALL_ACCOUNTS_VALUE = '__all__';
+  const isAllAccounts = selectedAccountId === ALL_ACCOUNTS_VALUE;
+
+  const singleAccountQuery = useZapiChats(isAllAccounts ? null : selectedAccountId);
+  const allAccountsQuery   = useAllZapiChats();
+
   const { data: chats = [], isLoading: chatsLoading, refetch: refetchChats } =
-    useZapiChats(selectedAccountId);
+    isAllAccounts
+      ? (allAccountsQuery as { data: ZapiChatWithAccount[]; isLoading: boolean; refetch: () => void })
+      : singleAccountQuery;
 
   // T18: hook de atualização de chat
-  const chatUpdate = useChatUpdate(selectedAccountId);
+  // Em modo __all__, useChatUpdate/bulk não dependem de accountId (passado no patch)
+  const chatUpdate = useChatUpdate(isAllAccounts ? null : selectedAccountId);
   // T44: hook de atualização em lote
-  const bulkChatUpdate = useBulkChatUpdate(selectedAccountId);
+  const bulkChatUpdate = useBulkChatUpdate(isAllAccounts ? null : selectedAccountId);
 
   // T27/T28: status de conexão da instância Z-API (polling 60s)
-  const instanceStatus = useZapiInstanceStatus(selectedAccountId);
+  // Em modo __all__ não poleia nenhuma instância específica
+  const instanceStatus = useZapiInstanceStatus(isAllAccounts ? null : selectedAccountId);
 
   // T29: incrementa slaTick a cada 60s para forçar re-render do SLA nos itens
   useEffect(() => {
@@ -590,6 +604,15 @@ export function ConversasTabContent({
               <SelectValue placeholder="Selecione uma conta" />
             </SelectTrigger>
             <SelectContent>
+              {/* T87 (Fase 7): C26 — visão consolidada multi-instância */}
+              {accounts.length >= 1 && (
+                <SelectItem value={ALL_ACCOUNTS_VALUE}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full shrink-0 bg-primary/60" aria-hidden="true" />
+                    Todos os números
+                  </span>
+                </SelectItem>
+              )}
               {accounts.map((acc) => {
                 // T28: dot de status de conexão (só para a conta selecionada, pois só poleia ela)
                 const isSelected = acc.id === selectedAccountId;
@@ -914,6 +937,8 @@ export function ConversasTabContent({
                         onToggleBulkSelect={handleToggleBulkSelect}
                         hasDraft={draftChatIds.has(chat.id)}
                         showSnoozedTimeRemaining={showSnoozed}
+                        accountName={isAllAccounts ? (chat as ZapiChatWithAccount).account_name : undefined}
+                        isUrgent={(chat as ZapiChat & { ai_sentiment?: string | null }).ai_sentiment === 'urgente'}
                       />
                     ))}
                     {unpinnedChats.length > 0 && (
@@ -944,6 +969,8 @@ export function ConversasTabContent({
                     onToggleBulkSelect={handleToggleBulkSelect}
                     hasDraft={draftChatIds.has(chat.id)}
                     showSnoozedTimeRemaining={showSnoozed}
+                    accountName={isAllAccounts ? (chat as ZapiChatWithAccount).account_name : undefined}
+                    isUrgent={(chat as ZapiChat & { ai_sentiment?: string | null }).ai_sentiment === 'urgente'}
                   />
                 ))}
               </>
@@ -956,8 +983,17 @@ export function ConversasTabContent({
           {activeChat ? (
             <ChatPanel
               chat={activeChat}
-              selectedAccountId={selectedAccountId}
-              selectedAccount={selectedAccount}
+              selectedAccountId={
+                // T87: em modo consolidado, usa account_id do chat selecionado
+                isAllAccounts && activeChat.account_id
+                  ? activeChat.account_id
+                  : selectedAccountId
+              }
+              selectedAccount={
+                isAllAccounts && activeChat.account_id
+                  ? (accounts.find((a) => a.id === activeChat.account_id) ?? selectedAccount)
+                  : selectedAccount
+              }
               instanceStatus={instanceStatus}
               chats={chats}
               onChatCreated={(realChatId) => {
@@ -1413,12 +1449,67 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
 
+  // ── T82 (Fase 7): sugestão de resposta IA (C34) ───────────────────────────
+  const [aiSuggestionActive, setAiSuggestionActive] = useState(false);
+  const suggestReply = useAISuggestReply(isPending ? null : chat.id, chat.account_id ?? null);
+
+  function handleAISuggest() {
+    suggestReply.mutate(undefined, {
+      onSuccess: (res) => {
+        if (res.skipped || res.error || !res.suggestion) {
+          toast.warning('IA não disponível neste momento');
+          return;
+        }
+        setDraft(res.suggestion);
+        setAiSuggestionActive(true);
+        setTimeout(() => composerRef.current?.focus(), 50);
+      },
+      onError: () => {
+        toast.error('Não foi possível gerar a sugestão');
+      },
+    });
+  }
+
+  function handleClearAISuggestion() {
+    setDraft('');
+    setAiSuggestionActive(false);
+  }
+
+  // ── T84 (Fase 7): transcrição de áudio (C38) ─────────────────────────────
+  const transcribeAudio = useTranscribeAudio(isPending ? null : chat.id);
+  const [transcribingMessageId, setTranscribingMessageId] = useState<string | null>(null);
+
+  function handleTranscribeMessage(messageId: string) {
+    if (!chat.account_id) return;
+    setTranscribingMessageId(messageId);
+    transcribeAudio.mutate(
+      { messageId, accountId: chat.account_id },
+      {
+        onSuccess: (res) => {
+          if (res.skipped && res.reason === 'provider_unsupported') {
+            toast.warning(res.message ?? 'Transcrição de áudio não disponível para o provider configurado. Use OpenAI ou Google.');
+          } else if (res.error) {
+            toast.error('Não foi possível transcrever o áudio');
+          }
+        },
+        onError: () => {
+          toast.error('Erro ao transcrever o áudio');
+        },
+        onSettled: () => {
+          setTranscribingMessageId(null);
+        },
+      },
+    );
+  }
+
   // Reset estado ao trocar de chat
   useEffect(() => {
     setReplyTo(null);
     setShowFavorites(false);
     setForwardMessage(null);
     setLocationDialogOpen(false);
+    setAiSuggestionActive(false);
+    setTranscribingMessageId(null);
   }, [chat.id]);
 
   // T22: handoff modal state
@@ -2031,6 +2122,9 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
                       });
                     } : undefined}
                     onForward={canEdit ? setForwardMessage : undefined}
+                    transcriptionEnabled={isFeatureEnabled(selectedAccount?.recursos_config ?? null, 'c38')}
+                    onTranscribe={handleTranscribeMessage}
+                    isTranscribing={transcribingMessageId === msg.id}
                   />
                 </div>
               );
@@ -2160,8 +2254,41 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* T82 (Fase 7): Botão Sugestão IA (C34) — visível somente quando c34 ativo */}
+              {!isPending && isFeatureEnabled(selectedAccount?.recursos_config ?? null, 'c34') && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={aiSuggestionActive ? 'default' : 'outline'}
+                  onClick={handleAISuggest}
+                  disabled={suggestReply.isPending || sendMessage.isPending}
+                  title="Sugestão de resposta com IA"
+                >
+                  {suggestReply.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+
               {/* T47: popover de respostas rápidas */}
               <div className="relative flex-1">
+                {/* T82 (Fase 7): badge de sugestão ativa */}
+                {aiSuggestionActive && (
+                  <div className="absolute top-0 right-0 z-10 flex items-center gap-1 bg-primary/10 border border-primary/30 rounded-md px-1.5 py-0.5">
+                    <Sparkles className="h-3 w-3 text-primary shrink-0" />
+                    <span className="text-[10px] text-primary font-medium">Sugestão IA</span>
+                    <button
+                      type="button"
+                      onClick={handleClearAISuggestion}
+                      className="ml-0.5 text-primary/70 hover:text-primary"
+                      aria-label="Descartar sugestão"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
                 {slashOpen && (
                   <div className="absolute bottom-full mb-1 left-0 right-0 z-50 rounded-md border bg-popover shadow-md">
                     <Command>

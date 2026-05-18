@@ -16,6 +16,7 @@ import {
   Trash2,
   Image as ImageIcon,
   Video,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ZapiMessage } from '@/hooks/useZapiMessages';
@@ -62,6 +63,12 @@ interface MessageBubbleProps {
   onReact?: (messageId: string, emoji: string) => void;
   /** T37: callback disparado ao clicar em "Encaminhar" */
   onForward?: (message: ZapiMessage) => void;
+  /** T84 (Fase 7): se feature c38 está ativa para a conta */
+  transcriptionEnabled?: boolean;
+  /** T84 (Fase 7): callback para transcrever o áudio desta mensagem */
+  onTranscribe?: (messageId: string) => void;
+  /** T84 (Fase 7): indica se a transcrição desta mensagem está sendo gerada */
+  isTranscribing?: boolean;
 }
 
 function formatTime(iso: string): string {
@@ -207,6 +214,9 @@ export function MessageBubble({
   isFlagged,
   onReact,
   onForward,
+  transcriptionEnabled = false,
+  onTranscribe,
+  isTranscribing = false,
 }: MessageBubbleProps) {
   const isOutbound = message.direction === 'outbound';
   const mediaType = (message as { media_type?: string }).media_type ?? 'text';
@@ -354,7 +364,7 @@ export function MessageBubble({
                 isOutbound={isOutbound}
               />
             )}
-            {renderContent(message, mediaType, isOutbound, highlightTerm, highlightText, editedBody)}
+            {renderContent(message, mediaType, isOutbound, highlightTerm, highlightText, editedBody, transcriptionEnabled, onTranscribe, isTranscribing)}
           </div>
           <div
             className={cn(
@@ -379,6 +389,9 @@ function renderContent(
   highlightTerm?: string,
   highlightText?: (text: string, term: string) => ReactNode,
   editedBody?: string | null,
+  transcriptionEnabled?: boolean,
+  onTranscribe?: (messageId: string) => void,
+  isTranscribing?: boolean,
 ): JSX.Element {
   const url = (message as { media_url?: string | null }).media_url ?? null;
   const caption = (message as { media_caption?: string | null }).media_caption ?? message.body ?? null;
@@ -427,20 +440,44 @@ function renderContent(
     case 'audio': {
       const sec = meta?.seconds;
       const ptt = meta?.ptt;
+      const transcription = (message as ZapiMessage & { transcription?: string | null }).transcription;
       return (
-        <div className="flex items-center gap-2 min-w-[200px]">
-          <Music className="h-4 w-4 shrink-0 opacity-70" />
-          {url ? (
-            <audio controls className="flex-1 h-8">
-              <source src={url} />
-            </audio>
-          ) : (
-            <p className="text-xs italic opacity-70">[Áudio indisponível]</p>
-          )}
-          {sec ? (
-            <span className="text-[10px] opacity-70 shrink-0">
-              {ptt ? 'Voz · ' : ''}{Math.round(sec)}s
-            </span>
+        <div className="space-y-1.5 min-w-[200px]">
+          <div className="flex items-center gap-2">
+            <Music className="h-4 w-4 shrink-0 opacity-70" />
+            {url ? (
+              <audio controls className="flex-1 h-8">
+                <source src={url} />
+              </audio>
+            ) : (
+              <p className="text-xs italic opacity-70">[Áudio indisponível]</p>
+            )}
+            {sec ? (
+              <span className="text-[10px] opacity-70 shrink-0">
+                {ptt ? 'Voz · ' : ''}{Math.round(sec)}s
+              </span>
+            ) : null}
+          </div>
+          {/* T84 (Fase 7): transcrição de áudio (C38) */}
+          {transcription ? (
+            <div className="flex items-start gap-1.5 text-xs text-muted-foreground bg-muted/30 rounded px-2 py-1.5">
+              <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5 opacity-70" />
+              <span className="leading-relaxed">{transcription}</span>
+            </div>
+          ) : transcriptionEnabled && url ? (
+            <button
+              type="button"
+              onClick={() => onTranscribe?.(message.id)}
+              disabled={isTranscribing}
+              className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary transition-colors disabled:opacity-50"
+            >
+              {isTranscribing ? (
+                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+              ) : (
+                <FileText className="h-3 w-3 shrink-0" />
+              )}
+              {isTranscribing ? 'Transcrevendo...' : 'Transcrever'}
+            </button>
           ) : null}
         </div>
       );

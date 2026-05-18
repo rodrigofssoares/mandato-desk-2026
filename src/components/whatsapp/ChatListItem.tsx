@@ -112,6 +112,10 @@ interface ChatListItemProps {
   hasDraft?: boolean;
   /** T57: quando true, exibe "Volta em X" no lugar do tempo da última mensagem */
   showSnoozedTimeRemaining?: boolean;
+  /** T87 (Fase 7): nome da conta para badge em visão consolidada multi-instância (C26) */
+  accountName?: string | null;
+  /** T80 (Fase 7): sentimento urgente indica prioridade (c36) */
+  isUrgent?: boolean;
 }
 
 // ─── ChatListItem ─────────────────────────────────────────────────────────────
@@ -131,6 +135,8 @@ export function ChatListItem({
   onToggleBulkSelect,
   hasDraft = false,
   showSnoozedTimeRemaining = false,
+  accountName,
+  isUrgent = false,
 }: ChatListItemProps) {
   const display = chat.contact_name ?? chat.whatsapp_name ?? 'Contato sem nome';
   const initialsSource = chat.contact_name ?? chat.whatsapp_name;
@@ -237,6 +243,24 @@ export function ChatListItem({
                 >
                   <Cake className="h-2.5 w-2.5" />
                   Aniv.
+                </span>
+              )}
+              {/* T80 (Fase 7 Onda A): badge sentimento urgente (c36) */}
+              {isUrgent && (
+                <span
+                  className="inline-flex items-center px-1 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold shrink-0"
+                  title="Sentimento urgente detectado pela IA"
+                >
+                  ⚠
+                </span>
+              )}
+              {/* T87 (Fase 7 Onda A): badge de conta em visão consolidada (C26) */}
+              {accountName && (
+                <span
+                  className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[9px] font-medium shrink-0 truncate max-w-[60px]"
+                  title={accountName}
+                >
+                  {accountName}
                 </span>
               )}
             </div>

@@ -714,6 +714,8 @@ export type Database = {
       contacts: {
         Row: {
           aceita_whatsapp: boolean | null
+          ai_next_action: string | null
+          ai_next_action_at: string | null
           atualizado_por: string | null
           bairro: string | null
           cep: string | null
@@ -772,6 +774,8 @@ export type Database = {
         }
         Insert: {
           aceita_whatsapp?: boolean | null
+          ai_next_action?: string | null
+          ai_next_action_at?: string | null
           atualizado_por?: string | null
           bairro?: string | null
           cep?: string | null
@@ -830,6 +834,8 @@ export type Database = {
         }
         Update: {
           aceita_whatsapp?: boolean | null
+          ai_next_action?: string | null
+          ai_next_action_at?: string | null
           atualizado_por?: string | null
           bairro?: string | null
           cep?: string | null
@@ -1334,6 +1340,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "mandato_events_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
           {
             foreignKeyName: "mandato_events_account_id_fkey"
             columns: ["account_id"]
@@ -2015,6 +2028,71 @@ export type Database = {
         }
         Relationships: []
       }
+      zapi_audit_log: {
+        Row: {
+          account_id: string | null
+          actor_id: string | null
+          chat_id: string | null
+          contact_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+        }
+        Insert: {
+          account_id?: string | null
+          actor_id?: string | null
+          chat_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Update: {
+          account_id?: string | null
+          actor_id?: string | null
+          chat_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_audit_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_audit_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_audit_log_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_audit_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zapi_broadcast_poll_votes: {
         Row: {
           broadcast_id: string
@@ -2174,6 +2252,13 @@ export type Database = {
             foreignKeyName: "zapi_broadcasts_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_broadcasts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },
@@ -2291,6 +2376,10 @@ export type Database = {
       zapi_chats: {
         Row: {
           account_id: string
+          ai_analyzed_at: string | null
+          ai_intent: string | null
+          ai_sentiment: string | null
+          ai_summary: string | null
           archived: boolean
           assigned_to: string | null
           contact_id: string | null
@@ -2309,6 +2398,10 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          ai_analyzed_at?: string | null
+          ai_intent?: string | null
+          ai_sentiment?: string | null
+          ai_summary?: string | null
           archived?: boolean
           assigned_to?: string | null
           contact_id?: string | null
@@ -2327,6 +2420,10 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          ai_analyzed_at?: string | null
+          ai_intent?: string | null
+          ai_sentiment?: string | null
+          ai_summary?: string | null
           archived?: boolean
           assigned_to?: string | null
           contact_id?: string | null
@@ -2344,6 +2441,13 @@ export type Database = {
           whatsapp_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "zapi_chats_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
           {
             foreignKeyName: "zapi_chats_account_id_fkey"
             columns: ["account_id"]
@@ -2390,6 +2494,8 @@ export type Database = {
           quoted_type: string | null
           sent_at: string
           status: string
+          transcribed_at: string | null
+          transcription: string | null
         }
         Insert: {
           account_id: string
@@ -2413,6 +2519,8 @@ export type Database = {
           quoted_type?: string | null
           sent_at?: string
           status?: string
+          transcribed_at?: string | null
+          transcription?: string | null
         }
         Update: {
           account_id?: string
@@ -2436,8 +2544,17 @@ export type Database = {
           quoted_type?: string | null
           sent_at?: string
           status?: string
+          transcribed_at?: string | null
+          transcription?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "zapi_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
           {
             foreignKeyName: "zapi_messages_account_id_fkey"
             columns: ["account_id"]
@@ -2477,6 +2594,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "zapi_panel_passwords_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
           {
             foreignKeyName: "zapi_panel_passwords_account_id_fkey"
             columns: ["account_id"]
@@ -2525,6 +2649,13 @@ export type Database = {
             foreignKeyName: "zapi_quick_replies_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_quick_replies_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },
@@ -2565,6 +2696,13 @@ export type Database = {
           nome?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "zapi_relationship_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
           {
             foreignKeyName: "zapi_relationship_rules_account_id_fkey"
             columns: ["account_id"]
@@ -2632,6 +2770,13 @@ export type Database = {
             foreignKeyName: "zapi_scheduled_messages_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_scheduled_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },
@@ -2677,6 +2822,13 @@ export type Database = {
             foreignKeyName: "zapi_webhook_log_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_webhook_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
             referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },
@@ -2711,6 +2863,16 @@ export type Database = {
           is_active?: boolean | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      v_dashboard_atendimento: {
+        Row: {
+          account_id: string | null
+          conversas_abertas: number | null
+          conversas_finalizadas_hoje: number | null
+          conversas_por_atendente: Json | null
+          tempo_medio_resposta_min: number | null
         }
         Relationships: []
       }
@@ -2802,6 +2964,10 @@ export type Database = {
       }
       is_user_active: { Args: { user_id: string }; Returns: boolean }
       normalize_phone: { Args: { phone_number: string }; Returns: string }
+      registrar_optin_whatsapp: {
+        Args: { p_contact_id: string; p_origem: string; p_valor: boolean }
+        Returns: undefined
+      }
       slugify_campo: { Args: { label: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
       validate_api_token: {

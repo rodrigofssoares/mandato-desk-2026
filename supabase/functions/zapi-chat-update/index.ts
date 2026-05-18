@@ -181,10 +181,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── 4. Confirma que o chat existe ────────────────────────────────────────
+    // ── 4. Confirma que o chat existe e captura estado anterior (para audit old_value) ───
     const { data: chat, error: chatErr } = await admin
       .from('zapi_chats')
-      .select('id, account_id')
+      .select('id, account_id, status, assigned_to, archived')
       .eq('id', chatId)
       .maybeSingle();
 
@@ -233,6 +233,58 @@ Deno.serve(async (req) => {
       account_id: chat.account_id,
       fields: Object.keys(patch),
     });
+
+    // ── T88 (Fase 7 Onda B): registrar eventos de auditoria ─────────────────
+    // Registra em zapi_audit_log para cada campo relevante alterado.
+    // Feito de forma best-effort (falha não bloqueia resposta).
+    try {
+      const auditEvents: Array<{
+        account_id: string | null;
+        chat_id: string;
+        event_type: string;
+        actor_id: string | null;
+        old_value: Record<string, unknown>;
+        new_value: Record<string, unknown>;
+      }> = [];
+
+      if ('status' in patch && patch.status !== undefined) {
+        auditEvents.push({
+          account_id: chat.account_id,
+          chat_id: chatId,
+          event_type: patch.status === 'finalizada' ? 'finalization' : 'status_change',
+          actor_id: callerId ?? null,
+          old_value: { status: chat.status ?? null },
+          new_value: { status: patch.status },
+        });
+      }
+      if ('assigned_to' in patch) {
+        auditEvents.push({
+          account_id: chat.account_id,
+          chat_id: chatId,
+          event_type: 'assignment',
+          actor_id: callerId ?? null,
+          old_value: { assigned_to: chat.assigned_to ?? null },
+          new_value: { assigned_to: patch.assigned_to ?? null },
+        });
+      }
+      if ('archived' in patch && patch.archived !== undefined) {
+        auditEvents.push({
+          account_id: chat.account_id,
+          chat_id: chatId,
+          event_type: 'archive',
+          actor_id: callerId ?? null,
+          old_value: { archived: chat.archived ?? null },
+          new_value: { archived: patch.archived },
+        });
+      }
+
+      if (auditEvents.length > 0) {
+        await admin.from('zapi_audit_log').insert(auditEvents);
+      }
+    } catch (auditErr) {
+      // Auditoria é best-effort — não falha a operação principal
+      console.warn('zapi-chat-update: falha ao registrar auditoria', auditErr);
+    }
 
     return jsonResponse(200, { ok: true, chat: updated });
   } catch (err) {

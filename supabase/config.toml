@@ -109,3 +109,24 @@ verify_jwt = false
 # Chamada pelo cron job (CRON_SECRET). verify_jwt=false: auth via CRON_SECRET.
 [functions.zapi-relationship-followup]
 verify_jwt = false
+
+# zapi-ai-analyze-chat: analisa conversa com IA (C33 + C35 + C36 — resumo, classificação,
+# sentimento). Triple Gate: ai_enabled + c33/c35/c36 por conta. Auth manual via requireAuth.
+# verify_jwt=false: auth manual para retornar erros customizados.
+[functions.zapi-ai-analyze-chat]
+verify_jwt = false
+
+# zapi-ai-suggest-reply: gera sugestão de resposta efêmera com IA (C34).
+# Triple Gate: ai_enabled + c34 por conta. Sem persistência. Auth manual.
+[functions.zapi-ai-suggest-reply]
+verify_jwt = false
+
+# zapi-transcribe-audio: transcreve áudios do WhatsApp com IA (C38).
+# Triple Gate: ai_enabled + c38 por conta. Persiste em zapi_messages.transcription.
+[functions.zapi-transcribe-audio]
+verify_jwt = false
+
+# zapi-ai-next-action: sugere próxima ação para contato com base no histórico (C37).
+# Triple Gate: ai_enabled + c37 por conta. Persiste em contacts.ai_next_action.
+[functions.zapi-ai-next-action]
+verify_jwt = false

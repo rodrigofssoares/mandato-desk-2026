@@ -41,6 +41,8 @@ import { ChatTagsSection } from './ChatTagsSection';
 import { ContactOptinSection } from './ContactOptinSection';
 import { DemandLinkSection } from './DemandLinkSection';
 import { EventInviteDialog } from './EventInviteDialog';
+import { AISummarySection } from './AISummarySection';
+import { AIInsightsSection } from './AIInsightsSection';
 import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAccountFeatures } from '@/hooks/useAccountFeatures';
@@ -254,7 +256,7 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
   const { user } = useAuth();
   const { can } = usePermissions();
   const canEditWpp = can.editWhatsapp();
-  const { isEnabled: isFeatureEnabled } = useAccountFeatures(chat.account_id ?? null);
+  const { isEnabled: isFeatureEnabled, config: accountConfig } = useAccountFeatures(chat.account_id ?? null);
 
   // Quando chat.contact_id existe, buscamos o contato para ter dados atualizados
   const { data: contactData, isLoading: isContactLoading } = useContact(chat.contact_id ?? undefined);
@@ -637,6 +639,31 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
               accountId={chat.account_id ?? null}
               contactId={chat.contact_id}
               demandId={chat.demand_id ?? null}
+            />
+          </>
+        )}
+
+        {/* T80 (Fase 7 Onda A) — Análise de IA: resumo + assunto + sentimento (C33/C35/C36) */}
+        {(isFeatureEnabled('c33') || isFeatureEnabled('c35') || isFeatureEnabled('c36')) && (
+          <>
+            <Separator />
+            <AISummarySection
+              chat={chat}
+              config={accountConfig}
+            />
+          </>
+        )}
+
+        {/* T86 (Fase 7 Onda A) — Próxima ação sugerida por IA (C37) */}
+        {chat.contact_id && chat.account_id && isFeatureEnabled('c37') && (
+          <>
+            <Separator />
+            <AIInsightsSection
+              contactId={chat.contact_id}
+              accountId={chat.account_id}
+              config={accountConfig}
+              aiNextAction={(contactData as (typeof contactData & { ai_next_action?: string | null }) | undefined)?.ai_next_action ?? null}
+              aiNextActionAt={(contactData as (typeof contactData & { ai_next_action_at?: string | null }) | undefined)?.ai_next_action_at ?? null}
             />
           </>
         )}

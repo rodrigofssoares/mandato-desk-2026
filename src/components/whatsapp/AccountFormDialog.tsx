@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle, BrainCircuit, Zap, Heart, Clock, Vote } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, Zap, Heart, Clock, Vote, Layers } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -96,14 +96,20 @@ interface FeatureSwitchProps {
   label: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  description?: string;
 }
 
-function FeatureSwitch({ code, label, checked, onCheckedChange }: FeatureSwitchProps) {
+function FeatureSwitch({ code, label, checked, onCheckedChange, description }: FeatureSwitchProps) {
   return (
     <div className="flex items-center justify-between gap-3 py-2.5 border-b border-border/50 last:border-0">
-      <Label htmlFor={`feature-${code}`} className="flex-1 cursor-pointer text-sm font-normal">
-        {label}
-      </Label>
+      <div className="flex-1">
+        <Label htmlFor={`feature-${code}`} className="cursor-pointer text-sm font-normal">
+          {label}
+        </Label>
+        {description && (
+          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+        )}
+      </div>
       <Switch
         id={`feature-${code}`}
         checked={checked}
@@ -437,6 +443,21 @@ export function AccountFormDialog({
             onCheckedChange={(checked) => toggleFeature('c17', checked)}
           />
         </div>
+      </div>
+
+      {/* T95 (Fase 7 Onda B): Multi-instância */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 mb-3">
+          <Layers className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-semibold">Multi-Instância</h4>
+        </div>
+        <FeatureSwitch
+          code="c26"
+          label="Visão consolidada multi-instância"
+          checked={recursosConfig['c26'] === true}
+          onCheckedChange={(checked) => toggleFeature('c26', checked)}
+          description="Permite ver conversas de todos os números em uma lista unificada."
+        />
       </div>
     </div>
   );

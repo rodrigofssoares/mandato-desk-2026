@@ -80,9 +80,14 @@ export const FEATURES_CATALOG = {
     { code: 'c29', label: 'CSAT — pesquisa de satisfação' },
     { code: 'c30', label: 'Modo supervisor' },
   ],
+  // T95 (Fase 7 Onda B): multi-instância — visão consolidada de todos os números
+  multi_instancia: [
+    { code: 'c26', label: 'Visão consolidada multi-instância' },
+  ],
 } as const;
 
 export type FeatureCode =
   | typeof FEATURES_CATALOG.ia[number]['code']
   | typeof FEATURES_CATALOG.automacao[number]['code']
-  | typeof FEATURES_CATALOG.engajamento[number]['code'];
+  | typeof FEATURES_CATALOG.engajamento[number]['code']
+  | typeof FEATURES_CATALOG.multi_instancia[number]['code'];

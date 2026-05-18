@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Lock, MessageCircle, Plus } from 'lucide-react';
+import { Lock, MessageCircle, Plus, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -55,6 +56,11 @@ export function ContasTabContent() {
   const hasC22 = c22Accounts.length > 0;
   // Conta selecionada para réguas — default: primeira com c22
   const [rulesAccountId, setRulesAccountId] = useState<string>('');
+
+  // T95 (Fase 7 Onda B): badge "Multi-número ativo" quando ao menos 1 conta tem c26
+  const hasC26 = accounts.some((a) =>
+    isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c26'),
+  );
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -186,7 +192,16 @@ export function ContasTabContent() {
 
       {/* Botao nova conta — somente admin */}
       {isAdmin && (
-        <div className="flex justify-end mb-4">
+        <div className="flex items-center justify-between mb-4 gap-2">
+          {/* T95 (Fase 7 Onda B): badge multi-número quando c26 ativo */}
+          {hasC26 ? (
+            <Badge variant="outline" className="gap-1.5 text-xs border-blue-300 text-blue-700 bg-blue-50">
+              <Layers className="h-3 w-3" />
+              Multi-número ativo
+            </Badge>
+          ) : (
+            <span />
+          )}
           <Button onClick={handleNovaContaClick} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova conta Z-API
