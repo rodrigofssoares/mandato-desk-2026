@@ -23,11 +23,27 @@ import { FEATURES_CATALOG } from '@/lib/featureFlags';
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 
+// Regex de formato para credenciais Z-API — espelha CHECK constraint do banco (migration 060).
+// Impede que o usuário cadastre valores que poderiam causar SSRF nas Edge Functions.
+const ZAPI_ALPHANUMERIC_REGEX = /^[A-Za-z0-9]+$/;
+
 const schemaCreate = z.object({
   name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres').max(100),
-  instance_id: z.string().min(4, 'Instance ID deve ter ao menos 4 caracteres').max(200),
-  instance_token: z.string().min(8, 'Token deve ter ao menos 8 caracteres').max(500),
-  client_token: z.string().min(8, 'Client Token deve ter ao menos 8 caracteres').max(500),
+  instance_id: z
+    .string()
+    .min(4, 'Instance ID deve ter ao menos 4 caracteres')
+    .max(64, 'Instance ID deve ter no máximo 64 caracteres')
+    .regex(ZAPI_ALPHANUMERIC_REGEX, 'Apenas letras e números'),
+  instance_token: z
+    .string()
+    .min(8, 'Token deve ter ao menos 8 caracteres')
+    .max(128, 'Token deve ter no máximo 128 caracteres')
+    .regex(ZAPI_ALPHANUMERIC_REGEX, 'Apenas letras e números'),
+  client_token: z
+    .string()
+    .min(8, 'Client Token deve ter ao menos 8 caracteres')
+    .max(128, 'Client Token deve ter no máximo 128 caracteres')
+    .regex(ZAPI_ALPHANUMERIC_REGEX, 'Apenas letras e números'),
   panel_password: z
     .string()
     .max(100)
@@ -37,9 +53,23 @@ const schemaCreate = z.object({
 
 const schemaEdit = z.object({
   name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres').max(100),
-  instance_id: z.string().min(4, 'Instance ID deve ter ao menos 4 caracteres').max(200),
-  instance_token: z.string().max(500).optional(),
-  client_token: z.string().max(500).optional(),
+  instance_id: z
+    .string()
+    .min(4, 'Instance ID deve ter ao menos 4 caracteres')
+    .max(64, 'Instance ID deve ter no máximo 64 caracteres')
+    .regex(ZAPI_ALPHANUMERIC_REGEX, 'Apenas letras e números'),
+  instance_token: z
+    .string()
+    .max(128, 'Token deve ter no máximo 128 caracteres')
+    .regex(ZAPI_ALPHANUMERIC_REGEX, 'Apenas letras e números')
+    .optional()
+    .or(z.literal('')),
+  client_token: z
+    .string()
+    .max(128, 'Client Token deve ter no máximo 128 caracteres')
+    .regex(ZAPI_ALPHANUMERIC_REGEX, 'Apenas letras e números')
+    .optional()
+    .or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof schemaCreate>;

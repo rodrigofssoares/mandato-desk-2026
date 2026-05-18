@@ -147,17 +147,17 @@ Deno.serve(async (req) => {
 
     switch (type) {
       case 'image':
-        zapiUrl = `${ZAPI_BASE}/${account.instance_id}/token/${account.instance_token}/send-image`;
+        zapiUrl = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-image`;
         zapiPayload = { phone, image: mediaUrl };
         if (caption) zapiPayload.caption = caption;
         break;
       case 'video':
-        zapiUrl = `${ZAPI_BASE}/${account.instance_id}/token/${account.instance_token}/send-video`;
+        zapiUrl = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-video`;
         zapiPayload = { phone, video: mediaUrl };
         if (caption) zapiPayload.caption = caption;
         break;
       case 'audio':
-        zapiUrl = `${ZAPI_BASE}/${account.instance_id}/token/${account.instance_token}/send-audio`;
+        zapiUrl = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-audio`;
         zapiPayload = { phone, audio: mediaUrl };
         break;
       case 'document': {
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
         const ext = extractExtension(fileName) === 'any'
           ? extensionFromMime(mime)
           : extractExtension(fileName);
-        zapiUrl = `${ZAPI_BASE}/${account.instance_id}/token/${account.instance_token}/send-document/${ext}`;
+        zapiUrl = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-document/${ext}`;
         zapiPayload = { phone, document: mediaUrl, fileName };
         if (caption) zapiPayload.caption = caption;
         break;

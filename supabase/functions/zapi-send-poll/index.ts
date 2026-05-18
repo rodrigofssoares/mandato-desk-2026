@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Z-API call ───────────────────────────────────────────────────────────
-    const zapiUrl = `${ZAPI_BASE}/${account.instance_id}/token/${account.instance_token}/send-text-poll`;
+    const zapiUrl = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-text-poll`;
     const zapiPayload = {
       phone,
       message: question,

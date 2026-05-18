@@ -16,7 +16,7 @@
 // Erros:
 //   - 400 payload inválido (sem chat_id, sem patch, UUID malformado).
 //   - 401 sem JWT / JWT inválido.
-//   - 403 perfil não autorizado.
+//   - 403 perfil não autorizado (status ATIVO ou sem permissão de edição WhatsApp).
 //   - 404 chat não encontrado (ou assigned_to não encontrado nos profiles).
 //   - 422 valor inválido no enum de status.
 //   - 500 erro interno.
@@ -25,6 +25,9 @@
 //   - Somente os campos do patch são aplicados (campo ausente = não alterado).
 //   - assigned_to é validado: o perfil deve existir e ter status_aprovacao ATIVO.
 //   - Nenhum token ou secret é lido/retornado.
+//   - Permissão de edição WhatsApp verificada server-side: admin sempre passa;
+//     demais roles precisam ter pode_editar=true na secao 'whatsapp' em
+//     permissoes_perfil (equivalente ao can.editWhatsapp() do frontend).
 //
 // Referência: RAQ-MAND — FASE 0 T04
 
@@ -41,6 +44,8 @@ interface ChatPatch {
   pinned?: boolean;
   archived?: boolean;
   snoozed_until?: string | null;
+  /** T26: true = seta unread_count=1; false = zera unread_count=0. */
+  unread?: boolean;
 }
 
 interface ChatUpdateBody {
@@ -56,7 +61,30 @@ Deno.serve(async (req) => {
     // ── 1. Autenticação ──────────────────────────────────────────────────────
     const guard = await requireAuth(req);
     if (guard instanceof Response) return guard;
-    const { admin, callerId, callerEmail } = guard;
+    const { admin, callerId, callerEmail, callerRole } = guard;
+
+    // ── 1b. Autorização server-side — permissão de edição WhatsApp ───────────
+    // Admin sempre tem acesso. Para demais roles, verifica permissoes_perfil.
+    // Isso espelha o can.editWhatsapp() do frontend, mas com garantia server-side.
+    const isAdmin = callerRole === 'admin';
+    if (!isAdmin) {
+      const { data: perm, error: permErr } = await admin
+        .from('permissoes_perfil')
+        .select('pode_editar')
+        .eq('role', callerRole)
+        .eq('secao', 'whatsapp')
+        .maybeSingle();
+
+      if (permErr) {
+        console.error('zapi-chat-update: erro ao verificar permissão', { code: permErr.code });
+        return jsonResponse(500, { error: 'Erro ao verificar permissões' });
+      }
+
+      if (!perm || perm.pode_editar !== true) {
+        console.warn('zapi-chat-update: acesso negado', { callerId, callerRole });
+        return jsonResponse(403, { error: 'Sem permissão para editar conversas WhatsApp' });
+      }
+    }
 
     // ── 2. Parse body ────────────────────────────────────────────────────────
     let body: ChatUpdateBody;
@@ -85,7 +113,8 @@ Deno.serve(async (req) => {
       'assigned_to' in patch ||
       'pinned' in patch ||
       'archived' in patch ||
-      'snoozed_until' in patch
+      'snoozed_until' in patch ||
+      'unread' in patch
     );
     if (!hasPatchFields) {
       return jsonResponse(400, { error: 'patch não contém campos reconhecidos' });
@@ -102,12 +131,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Validação de pinned / archived (devem ser boolean)
+    // Validação de pinned / archived / unread (devem ser boolean)
     if ('pinned' in patch && patch.pinned !== undefined && typeof patch.pinned !== 'boolean') {
       return jsonResponse(400, { error: 'pinned deve ser boolean' });
     }
     if ('archived' in patch && patch.archived !== undefined && typeof patch.archived !== 'boolean') {
       return jsonResponse(400, { error: 'archived deve ser boolean' });
+    }
+    if ('unread' in patch && patch.unread !== undefined && typeof patch.unread !== 'boolean') {
+      return jsonResponse(400, { error: 'unread deve ser boolean' });
     }
 
     // Validação de snoozed_until (deve ser ISO date string no futuro ou null)
@@ -162,7 +194,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 5. Monta o update somente com campos presentes ───────────────────────
-    const updatePayload: Record<string, string | boolean | null> = {
+    const updatePayload: Record<string, string | boolean | number | null> = {
       updated_at: new Date().toISOString(),
     };
 
@@ -171,13 +203,17 @@ Deno.serve(async (req) => {
     if ('pinned' in patch)        updatePayload.pinned = patch.pinned;
     if ('archived' in patch)      updatePayload.archived = patch.archived;
     if ('snoozed_until' in patch) updatePayload.snoozed_until = patch.snoozed_until ?? null;
+    // T26: unread=true → unread_count=1; unread=false → unread_count=0
+    if ('unread' in patch && patch.unread !== undefined) {
+      updatePayload.unread_count = patch.unread ? 1 : 0;
+    }
 
     // ── 6. Aplica o update ───────────────────────────────────────────────────
     const { data: updated, error: updateErr } = await admin
       .from('zapi_chats')
       .update(updatePayload)
       .eq('id', chatId)
-      .select('id, status, assigned_to, pinned, archived, snoozed_until, updated_at')
+      .select('id, status, assigned_to, pinned, archived, snoozed_until, unread_count, updated_at')
       .single();
 
     if (updateErr) {

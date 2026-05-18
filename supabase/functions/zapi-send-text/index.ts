@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 5. Chamada Z-API ────────────────────────────────────────────────────
-    const url = `${ZAPI_BASE}/${account.instance_id}/token/${account.instance_token}/send-text`;
+    const url = `${ZAPI_BASE}/${encodeURIComponent(account.instance_id)}/token/${encodeURIComponent(account.instance_token)}/send-text`;
     let zapiResp: Response;
     try {
       zapiResp = await fetch(url, {

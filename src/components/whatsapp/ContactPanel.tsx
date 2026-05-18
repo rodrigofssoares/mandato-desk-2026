@@ -33,6 +33,8 @@ import type { ContactFormData } from '@/lib/contactValidation';
 import { ContactEditModal } from './ContactEditModal';
 import { ContactFunnelSection } from './ContactFunnelSection';
 import { ContactTasksSection } from './ContactTasksSection';
+import { ChatNotesSection } from './ChatNotesSection';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
@@ -222,6 +224,7 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
   const navigate = useNavigate();
   const updateContact = useUpdateContact();
   const createContact = useCreateContact();
+  const { user } = useAuth();
 
   // Quando chat.contact_id existe, buscamos o contato para ter dados atualizados
   const { data: contactData, isLoading: isContactLoading } = useContact(chat.contact_id ?? undefined);
@@ -481,6 +484,10 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
             <ContactTasksSection contactId={chat.contact_id} />
           </>
         )}
+
+        {/* T23 — Notas internas */}
+        <Separator />
+        <ChatNotesSection chatId={chat.id} currentUserId={user?.id ?? null} />
       </div>
 
       {/* Modal de edição completa (T08) */}
