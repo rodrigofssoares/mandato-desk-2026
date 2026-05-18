@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle, BrainCircuit, Zap, Heart, Clock } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, Zap, Heart, Clock, Vote } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -346,6 +346,97 @@ export function AccountFormDialog({
             onCheckedChange={(checked) => toggleFeature(f.code, checked)}
           />
         ))}
+      </div>
+
+      {/* CRM Político (Fase 6) */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 mb-3">
+          <Vote className="h-4 w-4 text-primary" />
+          <h4 className="text-sm font-semibold">CRM Político</h4>
+        </div>
+
+        {/* c24 — Opt-in LGPD (default true — conformidade) */}
+        <div className="mb-2">
+          <Alert className="border-blue-400/40 bg-blue-50 dark:bg-blue-950/20 mb-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-blue-600" />
+            <AlertDescription className="text-xs text-blue-800 dark:text-blue-300">
+              Requerido para broadcast. Ativar registra consentimento dos eleitores (LGPD).
+            </AlertDescription>
+          </Alert>
+          <FeatureSwitch
+            code="c24"
+            label="Consentimento LGPD (opt-in)"
+            checked={recursosConfig['c24'] !== false}
+            onCheckedChange={(checked) => toggleFeature('c24', checked)}
+          />
+        </div>
+
+        {/* c21 — Bairro/zona eleitoral (default true — sem risco) */}
+        <FeatureSwitch
+          code="c21"
+          label="Bairro e zona eleitoral no painel"
+          checked={recursosConfig['c21'] !== false}
+          onCheckedChange={(checked) => toggleFeature('c21', checked)}
+        />
+
+        <FeatureSwitch
+          code="c18"
+          label="Protocolo de demanda com retorno automático"
+          checked={recursosConfig['c18'] === true}
+          onCheckedChange={(checked) => toggleFeature('c18', checked)}
+        />
+
+        <FeatureSwitch
+          code="c19"
+          label="Lembrete de aniversário do eleitor"
+          checked={recursosConfig['c19'] === true}
+          onCheckedChange={(checked) => toggleFeature('c19', checked)}
+        />
+
+        <FeatureSwitch
+          code="c20"
+          label="Convite a eventos e RSVP"
+          checked={recursosConfig['c20'] === true}
+          onCheckedChange={(checked) => toggleFeature('c20', checked)}
+        />
+
+        <FeatureSwitch
+          code="c22"
+          label="Régua de relacionamento automática"
+          checked={recursosConfig['c22'] === true}
+          onCheckedChange={(checked) => toggleFeature('c22', checked)}
+        />
+
+        <FeatureSwitch
+          code="c23"
+          label="Campanhas de pesquisa de opinião"
+          checked={recursosConfig['c23'] === true}
+          onCheckedChange={(checked) => toggleFeature('c23', checked)}
+        />
+
+        <FeatureSwitch
+          code="c29"
+          label="CSAT ao finalizar atendimento"
+          checked={recursosConfig['c29'] === true}
+          onCheckedChange={(checked) => toggleFeature('c29', checked)}
+        />
+
+        {/* c17 — Broadcast (risco de ban) */}
+        <div className="mt-2">
+          <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 mb-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+            <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+              Broadcast usa Z-API não-oficial. Envio em excesso pode causar banimento do número.
+              Use com responsabilidade.
+            </AlertDescription>
+          </Alert>
+          <FeatureSwitch
+            code="c17"
+            label="Broadcast / Comunicados em massa"
+            checked={recursosConfig['c17'] === true}
+            onCheckedChange={(checked) => toggleFeature('c17', checked)}
+          />
+        </div>
       </div>
     </div>
   );

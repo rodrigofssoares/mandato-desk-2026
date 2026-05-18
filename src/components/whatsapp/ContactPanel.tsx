@@ -8,6 +8,9 @@ import {
   Loader2,
   Check,
   X,
+  MapPin,
+  Cake,
+  CalendarPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,8 +38,14 @@ import { ContactFunnelSection } from './ContactFunnelSection';
 import { ContactTasksSection } from './ContactTasksSection';
 import { ChatNotesSection } from './ChatNotesSection';
 import { ChatTagsSection } from './ChatTagsSection';
+import { ContactOptinSection } from './ContactOptinSection';
+import { DemandLinkSection } from './DemandLinkSection';
+import { EventInviteDialog } from './EventInviteDialog';
 import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAccountFeatures } from '@/hooks/useAccountFeatures';
+import { format, getMonth, getDate, differenceInDays, parseISO, addYears, startOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
@@ -222,6 +231,22 @@ function InlineField({
 
 // ─── ContactPanel ─────────────────────────────────────────────────────────────
 
+// ── Helpers de aniversário ───────────────────────────────────────────────────
+
+function isBirthdayToday(dataNascimento: string): boolean {
+  const today = new Date();
+  const bday = parseISO(dataNascimento);
+  return getMonth(bday) === getMonth(today) && getDate(bday) === getDate(today);
+}
+
+function daysUntilBirthday(dataNascimento: string): number {
+  const today = startOfDay(new Date());
+  const bday = parseISO(dataNascimento);
+  let next = new Date(today.getFullYear(), getMonth(bday), getDate(bday));
+  if (next < today) next = addYears(next, 1);
+  return differenceInDays(next, today);
+}
+
 export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
   const navigate = useNavigate();
   const updateContact = useUpdateContact();
@@ -229,6 +254,7 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
   const { user } = useAuth();
   const { can } = usePermissions();
   const canEditWpp = can.editWhatsapp();
+  const { isEnabled: isFeatureEnabled } = useAccountFeatures(chat.account_id ?? null);
 
   // Quando chat.contact_id existe, buscamos o contato para ter dados atualizados
   const { data: contactData, isLoading: isContactLoading } = useContact(chat.contact_id ?? undefined);
@@ -236,6 +262,8 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
   const [duplicado, setDuplicado] = useState<{ id: string; nome: string } | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  // T71 (Fase 6 Onda B): dialog de convite a evento
+  const [eventInviteOpen, setEventInviteOpen] = useState(false);
 
   // ── helper para salvar campo inline ───────────────────────────────────────
   const saveField = useCallback(
@@ -489,6 +517,143 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
           </>
         )}
 
+        {/* T67 (Fase 6) — Bairro e zona eleitoral */}
+        {chat.contact_id && contactData && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <InlineField
+                label="Bairro"
+                value={contactData.bairro ?? null}
+                onSave={(v) => saveField('bairro', v)}
+                placeholder="Ex: Centro"
+                disabled={updateContact.isPending}
+              />
+              <InlineField
+                label="Zona eleitoral"
+                value={contactData.zona_eleitoral ?? null}
+                onSave={async (v) => {
+                  if (!chat.contact_id) return;
+                  const { error } = await supabase
+                    .from('contacts')
+                    .update({ zona_eleitoral: v || null })
+                    .eq('id', chat.contact_id);
+                  if (error) throw error;
+                  toast.success('Salvo');
+                }}
+                placeholder="Ex: Zona 01"
+                disabled={updateContact.isPending}
+              />
+              {contactData.bairro && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/mapa?bairro=${encodeURIComponent(contactData.bairro!)}`)}
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  Ver no mapa
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* T68 (Fase 6) — Aniversário */}
+        {chat.contact_id && contactData?.data_nascimento && (() => {
+          const daysLeft = daysUntilBirthday(contactData.data_nascimento);
+          const isToday = isBirthdayToday(contactData.data_nascimento);
+          const isSoon = daysLeft <= 7;
+          if (!isSoon && !isToday) return null;
+          const bday = parseISO(contactData.data_nascimento);
+
+          return (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Aniversário
+                </p>
+                <div className="rounded-lg border bg-muted/20 px-3 py-2.5 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Cake className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+                    <span className="text-xs">
+                      {format(bday, "dd 'de' MMMM", { locale: ptBR })}
+                      {isToday ? (
+                        <span className="ml-1.5 font-semibold text-pink-600">— Hoje!</span>
+                      ) : (
+                        <span className="ml-1.5 text-muted-foreground">
+                          — em {daysLeft} dia{daysLeft !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full text-xs bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 rounded-md px-2 py-1.5 flex items-center justify-center gap-1.5 transition-colors"
+                    onClick={() => {
+                      const msg = `Parabéns, ${contactData.nome ?? 'eleitor'}! O gabinete deseja um feliz aniversário! 🎂`;
+                      // Dispara evento customizado para pré-preencher o composer
+                      window.dispatchEvent(new CustomEvent('whatsapp:prefill-message', {
+                        detail: { chatId: chat.id, message: msg },
+                      }));
+                    }}
+                  >
+                    <Cake className="h-3.5 w-3.5 shrink-0" />
+                    Enviar parabéns
+                  </button>
+                </div>
+              </div>
+            </>
+          );
+        })()}
+
+        {/* T71 (Fase 6 Onda B) — Convite a evento (C20) */}
+        {chat.contact_id && contactData && isFeatureEnabled('c20') && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                Eventos
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5"
+                onClick={() => setEventInviteOpen(true)}
+              >
+                <CalendarPlus className="h-3.5 w-3.5" />
+                Convidar para evento
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* T62 (Fase 6) — Demanda vinculada */}
+        {chat.contact_id && isFeatureEnabled('c18') && (
+          <>
+            <Separator />
+            <DemandLinkSection
+              chatId={chat.id}
+              accountId={chat.account_id ?? null}
+              contactId={chat.contact_id}
+              demandId={chat.demand_id ?? null}
+            />
+          </>
+        )}
+
+        {/* T59 (Fase 6) — Consentimento LGPD */}
+        {chat.contact_id && contactData && (
+          <>
+            <Separator />
+            <ContactOptinSection
+              contactId={chat.contact_id}
+              optinWhatsapp={contactData.optin_whatsapp ?? false}
+              optinData={contactData.optin_data ?? null}
+              optinOrigem={contactData.optin_origem ?? null}
+            />
+          </>
+        )}
+
         {/* T45 — Etiquetas da conversa */}
         <Separator />
         <ChatTagsSection chatId={chat.id} canEdit={canEditWpp} />
@@ -504,6 +669,18 @@ export function ContactPanel({ chat, refetchChats }: ContactPanelProps) {
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
           contactId={chat.contact_id}
+        />
+      )}
+
+      {/* T71 (Fase 6 Onda B): dialog de convite a evento (C20) */}
+      {chat.contact_id && chat.account_id && (
+        <EventInviteDialog
+          open={eventInviteOpen}
+          onOpenChange={setEventInviteOpen}
+          accountId={chat.account_id}
+          contactId={chat.contact_id}
+          contactName={contactData?.nome ?? chat.contact_name ?? chat.whatsapp_name ?? ''}
+          phone={chat.phone}
         />
       )}
 

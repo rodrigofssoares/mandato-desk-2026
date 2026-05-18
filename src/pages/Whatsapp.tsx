@@ -9,10 +9,15 @@ import { ConversasTabContent } from '@/components/whatsapp/ConversasTabContent';
 import { WebhooksTabContent } from '@/components/whatsapp/WebhooksTabContent';
 import { LogsTabContent } from '@/components/whatsapp/LogsTabContent';
 import { NewMessageDialog } from '@/components/whatsapp/NewMessageDialog';
+import { BroadcastsTabContent } from '@/components/whatsapp/BroadcastsTabContent';
+import { EventosTabContent } from '@/components/whatsapp/EventosTabContent';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { usePermissions } from '@/hooks/usePermissions';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
-const TABS = ['contas', 'conversas', 'webhooks', 'logs'] as const;
+// T65 (Fase 6 Onda A): aba de campanhas visível se ao menos 1 conta tem c17 ativo
+// T70 (Fase 6 Onda B): aba de eventos visível se ao menos 1 conta tem c20 ativo
+const TABS = ['contas', 'conversas', 'campanhas', 'eventos', 'webhooks', 'logs'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(value: string | null): value is Tab {
@@ -38,6 +43,24 @@ export default function Whatsapp() {
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const { data: accounts = [] } = useZapiAccounts();
   const hasSendableAccount = accounts.some((a) => a.status !== 'disconnected');
+  // T65 (Fase 6 Onda A): aba campanhas visível se alguma conta tem c17 ativo
+  const hasBroadcastEnabled = accounts.some((a) =>
+    isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c17'),
+  );
+  // Primeira conta com c17 para usar na aba de campanhas
+  const broadcastAccountId =
+    accounts.find((a) =>
+      isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c17'),
+    )?.id ?? accounts[0]?.id ?? '';
+
+  // T70 (Fase 6 Onda B): aba de eventos visível se alguma conta tem c20 ativo
+  const hasEventosEnabled = accounts.some((a) =>
+    isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c20'),
+  );
+  const eventosAccountId =
+    accounts.find((a) =>
+      isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c20'),
+    )?.id ?? accounts[0]?.id ?? '';
 
   // T15: quando há deep-link e aba é diferente de conversas, corrige a tab na URL
   useEffect(() => {
@@ -113,6 +136,14 @@ export default function Whatsapp() {
         <TabsList>
           <TabsTrigger value="contas">Contas</TabsTrigger>
           <TabsTrigger value="conversas">Conversas</TabsTrigger>
+          {/* T65 (Fase 6 Onda A): aba de campanhas — só visível quando c17 ativo */}
+          {hasBroadcastEnabled && (
+            <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
+          )}
+          {/* T70 (Fase 6 Onda B): aba de eventos — só visível quando c20 ativo */}
+          {hasEventosEnabled && (
+            <TabsTrigger value="eventos">Eventos</TabsTrigger>
+          )}
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
         </TabsList>
@@ -128,6 +159,20 @@ export default function Whatsapp() {
             initialContactId={contactParam ?? undefined}
           />
         </TabsContent>
+
+        {/* T65 (Fase 6 Onda A): gestão de campanhas broadcast */}
+        {hasBroadcastEnabled && (
+          <TabsContent value="campanhas" className="h-[700px]">
+            <BroadcastsTabContent accountId={broadcastAccountId} />
+          </TabsContent>
+        )}
+
+        {/* T70 (Fase 6 Onda B): gestão de eventos com convite e RSVP */}
+        {hasEventosEnabled && (
+          <TabsContent value="eventos" className="space-y-4">
+            <EventosTabContent accountId={eventosAccountId} />
+          </TabsContent>
+        )}
 
         <TabsContent value="webhooks">
           <WebhooksTabContent />

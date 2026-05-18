@@ -1,5 +1,5 @@
-import { Pin, Archive, ArchiveRestore, BellOff, Bell, Clock, User, AlarmClock, Pencil } from 'lucide-react';
-import { addHours, nextMonday, setHours, setMinutes, startOfDay, addDays, format } from 'date-fns';
+import { Pin, Archive, ArchiveRestore, BellOff, Bell, Clock, User, AlarmClock, Pencil, Cake } from 'lucide-react';
+import { addHours, nextMonday, setHours, setMinutes, startOfDay, addDays, format, getMonth, getDate, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatPhone, isNonRealPhone } from '@/lib/zapi-format';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -138,6 +138,20 @@ export function ChatListItem({
   const hasUnread = (chat.unread_count ?? 0) > 0;
   const statusDot = STATUS_DOT_CLASS[chat.status] ?? STATUS_DOT_CLASS['aberta'];
 
+  // T68 (Fase 6 Onda A): badge de aniversariante hoje
+  const isBirthdayToday = (() => {
+    const dn = chat.contact_data_nascimento;
+    if (!dn) return false;
+    try {
+      const bday = parseISO(dn);
+      const today = new Date();
+      return getMonth(bday) === getMonth(today) && getDate(bday) === getDate(today);
+    } catch { return false; }
+  })();
+
+  // T67 (Fase 6 Onda A): bairro como subtítulo
+  const bairroSubtitle = chat.contact_bairro ?? null;
+
   // T29: cálculo de SLA (client-side, recalculado a cada tick do pai)
   const slaMinutes = slaEnabled ? calcSlaMinutes(chat.last_message_at) : null;
   const slaBreached =
@@ -215,6 +229,16 @@ export function ChatListItem({
                 <Pin className="h-3 w-3 text-amber-500 shrink-0" />
               )}
               <p className="font-medium text-sm truncate">{display}</p>
+              {/* T68 (Fase 6 Onda A): badge aniversariante hoje */}
+              {isBirthdayToday && (
+                <span
+                  className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-pink-100 text-pink-600 text-[10px] font-semibold shrink-0"
+                  title="Aniversariante hoje"
+                >
+                  <Cake className="h-2.5 w-2.5" />
+                  Aniv.
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {/* T29: ícone de SLA estourado */}
@@ -243,6 +267,10 @@ export function ChatListItem({
             <p className="text-xs text-muted-foreground truncate">
               {showPhoneSubtitle && (
                 <span className="text-[11px] mr-1.5">{formatPhone(chat.phone)} ·</span>
+              )}
+              {/* T67 (Fase 6 Onda A): bairro como subtítulo */}
+              {bairroSubtitle && !hasDraft && (
+                <span className="text-[11px] mr-1.5 text-muted-foreground/70">{bairroSubtitle} ·</span>
               )}
               {/* T49: se há rascunho, mostra indicador sutil */}
               {hasDraft ? (

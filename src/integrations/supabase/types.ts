@@ -547,6 +547,48 @@ export type Database = {
           },
         ]
       }
+      contact_event_rsvps: {
+        Row: {
+          contact_id: string
+          created_at: string
+          event_id: string
+          id: string
+          respondido_em: string | null
+          status: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          respondido_em?: string | null
+          status?: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          respondido_em?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_event_rsvps_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "mandato_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_merges: {
         Row: {
           deleted_contact_id: string
@@ -708,6 +750,9 @@ export type Database = {
           notas_assessor: string | null
           numero: string | null
           observacoes: string | null
+          optin_data: string | null
+          optin_origem: string | null
+          optin_whatsapp: boolean
           origem: string | null
           pin_color: string | null
           profissao: string | null
@@ -763,6 +808,9 @@ export type Database = {
           notas_assessor?: string | null
           numero?: string | null
           observacoes?: string | null
+          optin_data?: string | null
+          optin_origem?: string | null
+          optin_whatsapp?: boolean
           origem?: string | null
           pin_color?: string | null
           profissao?: string | null
@@ -818,6 +866,9 @@ export type Database = {
           notas_assessor?: string | null
           numero?: string | null
           observacoes?: string | null
+          optin_data?: string | null
+          optin_origem?: string | null
+          optin_whatsapp?: boolean
           origem?: string | null
           pin_color?: string | null
           profissao?: string | null
@@ -931,6 +982,7 @@ export type Database = {
           id: string
           neighborhood: string | null
           priority: Database["public"]["Enums"]["demand_priority"]
+          protocolo: string | null
           responsible_id: string | null
           status: Database["public"]["Enums"]["demand_status"]
           title: string
@@ -944,6 +996,7 @@ export type Database = {
           id?: string
           neighborhood?: string | null
           priority?: Database["public"]["Enums"]["demand_priority"]
+          protocolo?: string | null
           responsible_id?: string | null
           status?: Database["public"]["Enums"]["demand_status"]
           title: string
@@ -957,6 +1010,7 @@ export type Database = {
           id?: string
           neighborhood?: string | null
           priority?: Database["public"]["Enums"]["demand_priority"]
+          protocolo?: string | null
           responsible_id?: string | null
           status?: Database["public"]["Enums"]["demand_status"]
           title?: string
@@ -1241,6 +1295,50 @@ export type Database = {
             columns: ["leader_type_id"]
             isOneToOne: false
             referencedRelation: "leader_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mandato_events: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string
+          data_evento: string
+          descricao: string | null
+          id: string
+          local: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by: string
+          data_evento: string
+          descricao?: string | null
+          id?: string
+          local?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string
+          data_evento?: string
+          descricao?: string | null
+          id?: string
+          local?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mandato_events_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -1917,6 +2015,170 @@ export type Database = {
         }
         Relationships: []
       }
+      zapi_broadcast_poll_votes: {
+        Row: {
+          broadcast_id: string
+          contact_id: string | null
+          id: string
+          option_voted: string
+          phone: string
+          received_at: string
+        }
+        Insert: {
+          broadcast_id: string
+          contact_id?: string | null
+          id?: string
+          option_voted: string
+          phone: string
+          received_at?: string
+        }
+        Update: {
+          broadcast_id?: string
+          contact_id?: string | null
+          id?: string
+          option_voted?: string
+          phone?: string
+          received_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_broadcast_poll_votes_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_broadcast_poll_votes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_broadcast_targets: {
+        Row: {
+          bloqueio_motivo: string | null
+          broadcast_id: string
+          contact_id: string | null
+          created_at: string
+          error_msg: string | null
+          id: string
+          phone: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          bloqueio_motivo?: string | null
+          broadcast_id: string
+          contact_id?: string | null
+          created_at?: string
+          error_msg?: string | null
+          id?: string
+          phone: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          bloqueio_motivo?: string | null
+          broadcast_id?: string
+          contact_id?: string | null
+          created_at?: string
+          error_msg?: string | null
+          id?: string
+          phone?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_broadcast_targets_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_broadcast_targets_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_broadcasts: {
+        Row: {
+          account_id: string
+          body: string
+          created_at: string
+          created_by: string
+          failed_count: number
+          finished_at: string | null
+          id: string
+          poll_options: Json | null
+          poll_question: string | null
+          ritmo_por_minuto: number
+          scheduled_at: string | null
+          segment_filters: Json
+          sent_count: number
+          started_at: string | null
+          status: string
+          tipo: string
+          title: string
+          total_targets: number
+        }
+        Insert: {
+          account_id: string
+          body: string
+          created_at?: string
+          created_by: string
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          poll_options?: Json | null
+          poll_question?: string | null
+          ritmo_por_minuto?: number
+          scheduled_at?: string | null
+          segment_filters?: Json
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          tipo?: string
+          title: string
+          total_targets?: number
+        }
+        Update: {
+          account_id?: string
+          body?: string
+          created_at?: string
+          created_by?: string
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          poll_options?: Json | null
+          poll_question?: string | null
+          ritmo_por_minuto?: number
+          scheduled_at?: string | null
+          segment_filters?: Json
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          tipo?: string
+          title?: string
+          total_targets?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_broadcasts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zapi_chat_message_flags: {
         Row: {
           chat_id: string
@@ -2033,6 +2295,7 @@ export type Database = {
           assigned_to: string | null
           contact_id: string | null
           created_at: string
+          demand_id: string | null
           id: string
           last_message_at: string | null
           last_message_preview: string | null
@@ -2050,6 +2313,7 @@ export type Database = {
           assigned_to?: string | null
           contact_id?: string | null
           created_at?: string
+          demand_id?: string | null
           id?: string
           last_message_at?: string | null
           last_message_preview?: string | null
@@ -2067,6 +2331,7 @@ export type Database = {
           assigned_to?: string | null
           contact_id?: string | null
           created_at?: string
+          demand_id?: string | null
           id?: string
           last_message_at?: string | null
           last_message_preview?: string | null
@@ -2091,6 +2356,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_chats_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
             referencedColumns: ["id"]
           },
         ]
@@ -2254,6 +2526,57 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_relationship_rules: {
+        Row: {
+          account_id: string
+          ativo: boolean
+          board_stage_id: string | null
+          created_at: string
+          created_by: string
+          dias_sem_resposta: number
+          id: string
+          mensagem_template: string
+          nome: string
+        }
+        Insert: {
+          account_id: string
+          ativo?: boolean
+          board_stage_id?: string | null
+          created_at?: string
+          created_by: string
+          dias_sem_resposta: number
+          id?: string
+          mensagem_template: string
+          nome: string
+        }
+        Update: {
+          account_id?: string
+          ativo?: boolean
+          board_stage_id?: string | null
+          created_at?: string
+          created_by?: string
+          dias_sem_resposta?: number
+          id?: string
+          mensagem_template?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_relationship_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_relationship_rules_board_stage_id_fkey"
+            columns: ["board_stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
             referencedColumns: ["id"]
           },
         ]

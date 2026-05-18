@@ -3,6 +3,7 @@ import { Lock, MessageCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui-system';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { AccountCard } from './AccountCard';
@@ -10,6 +11,7 @@ import { AccountFormDialog } from './AccountFormDialog';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { ResetPanelPasswordDialog } from './ResetPanelPasswordDialog';
 import { QuickRepliesManager } from './QuickRepliesManager';
+import { RelationshipRulesSection } from './RelationshipRulesSection';
 import {
   useZapiAccounts,
   useCreateZapiAccount,
@@ -19,6 +21,7 @@ import {
   type ZapiAccount,
 } from '@/hooks/useZapiAccounts';
 import type { RecursosConfig } from '@/lib/featureFlags';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import type { BusinessHoursConfig } from '@/hooks/useBusinessHours';
 import { toast } from 'sonner';
 
@@ -44,6 +47,14 @@ export function ContasTabContent() {
 
   // T46: respostas rápidas
   const [quickRepliesAccountId, setQuickRepliesAccountId] = useState<string | null>(null);
+
+  // T74 (Fase 6 Onda B): contas com c22 (régua de relacionamento) ativo
+  const c22Accounts = accounts.filter((a) =>
+    isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c22'),
+  );
+  const hasC22 = c22Accounts.length > 0;
+  // Conta selecionada para réguas — default: primeira com c22
+  const [rulesAccountId, setRulesAccountId] = useState<string>('');
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -215,6 +226,34 @@ export function ContasTabContent() {
             />
           ))}
         </div>
+      )}
+
+      {/* T74 (Fase 6 Onda B): Réguas de relacionamento — visível quando c22 ativo */}
+      {hasC22 && (
+        <>
+          <Separator className="my-6" />
+          {/* Seletor de conta quando há múltiplas com c22 */}
+          {c22Accounts.length > 1 && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-muted-foreground">Conta:</span>
+              <div className="flex gap-2 flex-wrap">
+                {c22Accounts.map((a) => (
+                  <Button
+                    key={a.id}
+                    size="sm"
+                    variant={(rulesAccountId || c22Accounts[0].id) === a.id ? 'default' : 'outline'}
+                    onClick={() => setRulesAccountId(a.id)}
+                  >
+                    {a.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          <RelationshipRulesSection
+            accountId={rulesAccountId || c22Accounts[0].id}
+          />
+        </>
       )}
 
       {/* Dialogs */}

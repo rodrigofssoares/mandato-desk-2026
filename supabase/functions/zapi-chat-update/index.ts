@@ -46,6 +46,8 @@ interface ChatPatch {
   snoozed_until?: string | null;
   /** T26: true = seta unread_count=1; false = zera unread_count=0. */
   unread?: boolean;
+  /** T62 (Fase 6 Onda A): vincula/desvincula demanda ao chat. */
+  demand_id?: string | null;
 }
 
 interface ChatUpdateBody {
@@ -114,7 +116,8 @@ Deno.serve(async (req) => {
       'pinned' in patch ||
       'archived' in patch ||
       'snoozed_until' in patch ||
-      'unread' in patch
+      'unread' in patch ||
+      'demand_id' in patch
     );
     if (!hasPatchFields) {
       return jsonResponse(400, { error: 'patch não contém campos reconhecidos' });
@@ -207,13 +210,15 @@ Deno.serve(async (req) => {
     if ('unread' in patch && patch.unread !== undefined) {
       updatePayload.unread_count = patch.unread ? 1 : 0;
     }
+    // T62 (Fase 6 Onda A): vincula/desvincula demanda ao chat
+    if ('demand_id' in patch) updatePayload.demand_id = patch.demand_id ?? null;
 
     // ── 6. Aplica o update ───────────────────────────────────────────────────
     const { data: updated, error: updateErr } = await admin
       .from('zapi_chats')
       .update(updatePayload)
       .eq('id', chatId)
-      .select('id, status, assigned_to, pinned, archived, snoozed_until, unread_count, updated_at')
+      .select('id, status, assigned_to, pinned, archived, snoozed_until, unread_count, demand_id, updated_at')
       .single();
 
     if (updateErr) {

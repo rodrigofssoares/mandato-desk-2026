@@ -88,3 +88,24 @@ verify_jwt = false
 # verify_jwt=false é obrigatório: o gateway não pode validar o CRON_SECRET como JWT.
 [functions.zapi-send-scheduled]
 verify_jwt = false
+
+# zapi-demand-notify: envia mensagem automática ao eleitor quando status de
+# demanda muda (C18). Chamada pelo trigger pg_net com CRON_SECRET.
+# verify_jwt=false: usa CRON_SECRET, não JWT de usuário.
+[functions.zapi-demand-notify]
+verify_jwt = false
+
+# zapi-broadcast-create: resolve segmento e cria targets de uma campanha.
+# Chamada pelo usuário autenticado (JWT). verify_jwt=false: auth manual via requireAuth.
+[functions.zapi-broadcast-create]
+verify_jwt = false
+
+# zapi-broadcast-send: processa fila de targets de broadcasts ativos.
+# Chamada pelo cron job (CRON_SECRET). verify_jwt=false: auth via CRON_SECRET.
+[functions.zapi-broadcast-send]
+verify_jwt = false
+
+# zapi-relationship-followup: executa réguas de follow-up automático diariamente.
+# Chamada pelo cron job (CRON_SECRET). verify_jwt=false: auth via CRON_SECRET.
+[functions.zapi-relationship-followup]
+verify_jwt = false

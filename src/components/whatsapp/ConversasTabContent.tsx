@@ -41,6 +41,16 @@ import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/ui-system';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -81,11 +91,13 @@ import { useZapiMessagesByChat, useSendZapiMessage, type ZapiMessage } from '@/h
 import {
   useUploadZapiAttachment,
   useSendZapiMedia,
+  useSendZapiPoll,
   type ZapiMediaType,
 } from '@/hooks/useZapiMedia';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useContact } from '@/hooks/useContacts';
 import { useChatUpdate } from '@/hooks/useChatUpdate';
+import { useAccountFeatures } from '@/hooks/useAccountFeatures';
 import { useUsers } from '@/hooks/useUsers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/AuthContext';
@@ -1040,15 +1052,67 @@ interface StatusSelectorProps {
   disabled?: boolean;
 }
 
+// ─── CSAT constant ────────────────────────────────────────────────────────────
+
+const CSAT_QUESTION = 'Como você avalia o atendimento do gabinete?';
+const CSAT_OPTIONS = [
+  '⭐ Muito ruim',
+  '⭐⭐ Ruim',
+  '⭐⭐⭐ Regular',
+  '⭐⭐⭐⭐ Bom',
+  '⭐⭐⭐⭐⭐ Excelente',
+];
+
 function StatusSelector({ chat, accountId, disabled }: StatusSelectorProps) {
   const chatUpdate = useChatUpdate(accountId);
+  const sendPoll = useSendZapiPoll();
+  const { isEnabled: isFeatureEnabledFn } = useAccountFeatures(accountId);
+  const [csatDialogOpen, setCsatDialogOpen] = useState(false);
+  const [pendingFinalizar, setPendingFinalizar] = useState(false);
+
   const statuses: ChatStatus[] = ['aberta', 'em_atendimento', 'aguardando', 'finalizada'];
 
   function handleSelect(s: ChatStatus) {
     if (s === chat.status) return;
+    // T76: se está finalizando e c29 ativo, exibir AlertDialog com opção CSAT
+    if (s === 'finalizada' && isFeatureEnabledFn('c29')) {
+      setPendingFinalizar(true);
+      setCsatDialogOpen(true);
+      return;
+    }
     chatUpdate.mutate(
       { chat_id: chat.id, patch: { status: s } },
       { onSuccess: () => toast.success(`Status atualizado: ${STATUS_LABELS[s]}`) },
+    );
+  }
+
+  function handleFinalizarOnly() {
+    setCsatDialogOpen(false);
+    setPendingFinalizar(false);
+    chatUpdate.mutate(
+      { chat_id: chat.id, patch: { status: 'finalizada' } },
+      { onSuccess: () => toast.success('Atendimento finalizado') },
+    );
+  }
+
+  function handleFinalizarComCsat() {
+    setCsatDialogOpen(false);
+    setPendingFinalizar(false);
+    // Finaliza a conversa
+    chatUpdate.mutate({ chat_id: chat.id, patch: { status: 'finalizada' } });
+    // Envia a enquete CSAT
+    sendPoll.mutate(
+      {
+        account_id: accountId ?? '',
+        phone: chat.phone,
+        question: CSAT_QUESTION,
+        options: CSAT_OPTIONS,
+        allow_multiple_answers: false,
+      },
+      {
+        onSuccess: () => toast.success('Atendimento finalizado + CSAT enviado'),
+        onError: () => toast.warning('Atendimento finalizado, mas não foi possível enviar o CSAT'),
+      },
     );
   }
 
@@ -1056,6 +1120,29 @@ function StatusSelector({ chat, accountId, disabled }: StatusSelectorProps) {
   const badgeClass = STATUS_BADGE_CLASS[currentStatus] ?? STATUS_BADGE_CLASS['aberta'];
 
   return (
+    <>
+    {/* T76: AlertDialog de CSAT ao finalizar */}
+    {pendingFinalizar && (
+      <AlertDialog open={csatDialogOpen} onOpenChange={(open) => { if (!open) { setCsatDialogOpen(false); setPendingFinalizar(false); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar atendimento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja enviar uma pesquisa de satisfação (CSAT) ao eleitor antes de finalizar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <Button type="button" variant="outline" onClick={handleFinalizarOnly}>
+              Finalizar apenas
+            </Button>
+            <AlertDialogAction onClick={handleFinalizarComCsat}>
+              Finalizar e enviar CSAT
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={disabled}>
         <button
@@ -1085,6 +1172,7 @@ function StatusSelector({ chat, accountId, disabled }: StatusSelectorProps) {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+    </>
   );
 }
 
@@ -1265,6 +1353,20 @@ function ChatPanel({ chat, selectedAccountId, instanceStatus, onChatCreated, cha
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, chat.id, isPending]);
+
+  // T68 (Fase 6 Onda A): pré-preenche o compositor ao clicar em "Enviar parabéns"
+  useEffect(() => {
+    if (isPending) return;
+    function handlePrefill(e: Event) {
+      const { chatId, message } = (e as CustomEvent<{ chatId: string; message: string }>).detail;
+      if (chatId === chat.id) {
+        setDraft(message);
+        setTimeout(() => composerRef.current?.focus(), 50);
+      }
+    }
+    window.addEventListener('whatsapp:prefill-message', handlePrefill);
+    return () => window.removeEventListener('whatsapp:prefill-message', handlePrefill);
+  }, [chat.id, isPending, setDraft]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);

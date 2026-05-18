@@ -21,6 +21,7 @@
 //   - EditedMessageCallback   → update edited_body + edited_at in zapi_messages
 //   - DeletedMessageCallback  → update deleted_at in zapi_messages
 //   - PresenceCallback        → broadcast typing state via Supabase Realtime
+//   - PollUpdateMessage (T75) → registra voto de enquete de broadcast em zapi_broadcast_poll_votes
 //   - other types             → logged but not processed (ignored gracefully)
 //
 // Always responds 200 to avoid Z-API retry storms — failures are logged in
@@ -522,6 +523,12 @@ Deno.serve(async (req) => {
         processingStatus = 'ignored'; // metadado efêmero, não gera dados persistidos
         break;
       }
+      // T75 (Fase 6 Onda B): voto de enquete de broadcast
+      case 'PollUpdateMessage':
+      case 'pollUpdateMessage': {
+        await handlePollVote(admin, account.id, payload);
+        break;
+      }
       default: {
         // Tipo desconhecido — apenas loga, sem erro
         processingStatus = 'ignored';
@@ -791,6 +798,7 @@ async function handlePresenceCallback(
 
   // Broadcast via Supabase Realtime REST API — sem persistir no banco
   // POST {SUPABASE_URL}/realtime/v1/api/broadcast
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !serviceRoleKey) return;
@@ -816,5 +824,110 @@ async function handlePresenceCallback(
   } catch (err) {
     // Falha no broadcast não deve derrubar o webhook
     console.error('zapi-webhook: falha ao fazer broadcast de typing', err instanceof Error ? err.message : '');
+  }
+}
+
+// ─── T75 (Fase 6 Onda B): PollUpdateMessage — voto de enquete de broadcast ────
+// ALTA-6: voto só conta se o phone está em zapi_broadcast_targets com status='enviado'
+// para um broadcast tipo enquete. Upsert com onConflict='broadcast_id,phone'
+// (1 voto por pessoa — último voto vence). index único alterado na migration 078.
+
+async function handlePollVote(
+  admin: ReturnType<typeof createClient>,
+  accountId: string,
+  payload: ZapiPayload,
+): Promise<void> {
+  // Formato Z-API (estrutura defensiva — pode variar por versão):
+  // { type: "PollUpdateMessage", phone: "5511...", poll: { name: "Pergunta", options: [...] },
+  //   selectedOptions?: ["Opção escolhida"], pollUpdate?: { selectedOptions: [...] } }
+  const phone = normalizePhoneForZapi(String(payload.phone ?? ''));
+  if (!phone || phone.length < 10) {
+    console.log('zapi-webhook: PollUpdateMessage com phone inválido — ignorado');
+    return;
+  }
+
+  // Extrai opção votada — diferentes versões da Z-API usam campos diferentes
+  const rawPayload = payload as Record<string, unknown>;
+  let optionVoted: string | null = null;
+
+  // Tenta pollUpdate.selectedOptions (versão nova)
+  const pollUpdate = rawPayload.pollUpdate as Record<string, unknown> | undefined;
+  if (pollUpdate && Array.isArray(pollUpdate.selectedOptions) && pollUpdate.selectedOptions.length > 0) {
+    optionVoted = String(pollUpdate.selectedOptions[0]).slice(0, 255);
+  }
+
+  // Fallback: selectedOptions direto no payload
+  if (!optionVoted && Array.isArray(rawPayload.selectedOptions) && (rawPayload.selectedOptions as unknown[]).length > 0) {
+    optionVoted = String((rawPayload.selectedOptions as unknown[])[0]).slice(0, 255);
+  }
+
+  if (!optionVoted) {
+    console.log('zapi-webhook: PollUpdateMessage sem opção selecionada — ignorado');
+    return;
+  }
+
+  // ── ALTA-6: verifica que o phone está em zapi_broadcast_targets com status='enviado' ──
+  // Associa ao broadcast correto via o target — evita associação ao "mais recente" sem cruzar o phone.
+  // Também evita que votes de enquetes avulsas (PollDialog) sejam confundidos com votos de broadcast.
+
+  // 1. Busca os IDs de enquetes ativas desta conta ANTES de usar em .in()
+  const { data: enquetes, error: enquetesError } = await admin
+    .from('zapi_broadcasts')
+    .select('id')
+    .eq('account_id', accountId)
+    .eq('tipo', 'enquete')
+    .in('status', ['enviando', 'concluido']);
+
+  if (enquetesError) {
+    console.error('zapi-webhook: erro ao buscar enquetes da conta', enquetesError.message);
+    // Propaga erro para que o dispatcher registre processing_status='error'
+    throw new Error(`erro ao buscar enquetes: ${enquetesError.message}`);
+  }
+
+  const enqueteIds = (enquetes ?? []).map((e: { id: string }) => e.id);
+  if (enqueteIds.length === 0) {
+    // Nenhuma enquete ativa para esta conta — voto não pode ser associado
+    console.log('zapi-webhook: PollUpdateMessage — sem enquetes ativas para esta conta', { accountId });
+    return;
+  }
+
+  const { data: target } = await admin
+    .from('zapi_broadcast_targets')
+    .select('broadcast_id, contact_id, phone')
+    .eq('phone', phone)
+    .eq('status', 'enviado')
+    .in('broadcast_id', enqueteIds)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ broadcast_id: string; contact_id: string | null; phone: string }>();
+
+  if (!target) {
+    // Phone não encontrado entre targets enviados de enquetes desta conta — ignorar
+    console.log('zapi-webhook: PollUpdateMessage — phone não está nos targets enviados de enquete desta conta', { phone, accountId });
+    return;
+  }
+
+  // Upsert com onConflict='broadcast_id,phone' — 1 voto por pessoa, último voto vence
+  // (migration 078 criou o índice único correto)
+  const { error: voteError } = await admin
+    .from('zapi_broadcast_poll_votes')
+    .upsert(
+      {
+        broadcast_id: target.broadcast_id,
+        contact_id: target.contact_id ?? null,
+        phone,
+        option_voted: optionVoted,
+        received_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'broadcast_id,phone',
+        ignoreDuplicates: false, // atualiza option_voted (último voto vence)
+      },
+    );
+
+  if (voteError) {
+    console.error('zapi-webhook: erro ao registrar voto de enquete:', voteError.message);
+  } else {
+    console.log(`zapi-webhook: voto registrado — broadcast ${target.broadcast_id}, phone ${phone}, opção "${optionVoted}"`);
   }
 }

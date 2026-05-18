@@ -176,6 +176,12 @@ export interface Contact {
   updated_at?: string;
   atualizado_por?: string | null;
   contact_tags?: { tag_id: string; tags: Tag }[];
+  /** T67 (Fase 6 Onda A): zona eleitoral do contato */
+  zona_eleitoral?: string | null;
+  /** T59 (Fase 6 Onda A): LGPD opt-in para mensagens em massa */
+  optin_whatsapp?: boolean;
+  optin_data?: string | null;
+  optin_origem?: string | null;
 }
 
 export interface Tag {

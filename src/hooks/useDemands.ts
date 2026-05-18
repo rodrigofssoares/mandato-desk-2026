@@ -23,6 +23,8 @@ export interface Demand {
   created_by: string | null;
   responsible_id: string | null;
   neighborhood: string | null;
+  /** T60 (Fase 6 Onda A): protocolo gerado automaticamente (MAND-XXXXXX) */
+  protocolo: string | null;
   created_at: string;
   updated_at: string;
   contact: { nome: string; instagram: string | null } | null;
@@ -34,6 +36,8 @@ export interface DemandFilters {
   status?: string;
   priority?: string;
   search?: string;
+  /** T62 (Fase 6 Onda A): filtro por contato vinculado */
+  contact_id?: string;
 }
 
 export interface DemandInsert {
@@ -73,6 +77,10 @@ export function useDemands(filters?: DemandFilters) {
       }
       if (filters?.search) {
         query = query.ilike('title', `%${filters.search}%`);
+      }
+      // T62 (Fase 6 Onda A): filtro por contato para vinculação conversa↔demanda
+      if (filters?.contact_id) {
+        query = query.eq('contact_id', filters.contact_id);
       }
 
       const { data, error } = await query;

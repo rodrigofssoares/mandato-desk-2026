@@ -11,6 +11,10 @@ export type ZapiChat = Tables<'zapi_chats'> & {
   contact_profissao?: string | null;
   /** T16: tags do contato vinculado */
   contact_tags?: { tags: { nome: string } }[] | null;
+  /** T68 (Fase 6 Onda A): data de nascimento do contato (para badge aniversariante) */
+  contact_data_nascimento?: string | null;
+  /** T67 (Fase 6 Onda A): bairro do contato (para subtítulo no ChatListItem) */
+  contact_bairro?: string | null;
 };
 
 // ─── Key Factory ────────────────────────────────────────────────────────────
@@ -40,7 +44,7 @@ export function useZapiChats(accountId: string | null | undefined) {
     queryFn: async (): Promise<ZapiChat[]> => {
       const { data, error } = await supabase
         .from('zapi_chats')
-        .select('*, contacts:contact_id (nome, profissao, contact_tags(tags(nome)))')
+        .select('*, contacts:contact_id (nome, profissao, data_nascimento, bairro, contact_tags(tags(nome)))')
         .eq('account_id', accountId!)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false });
@@ -52,6 +56,8 @@ export function useZapiChats(accountId: string | null | undefined) {
           contacts: {
             nome: string;
             profissao?: string | null;
+            data_nascimento?: string | null;
+            bairro?: string | null;
             contact_tags?: { tags: { nome: string } }[] | null;
           } | null;
         };
@@ -59,6 +65,8 @@ export function useZapiChats(accountId: string | null | undefined) {
           ...rest,
           contact_name: contacts?.nome ?? null,
           contact_profissao: contacts?.profissao ?? null,
+          contact_data_nascimento: contacts?.data_nascimento ?? null,
+          contact_bairro: contacts?.bairro ?? null,
           contact_tags: contacts?.contact_tags ?? null,
         } as ZapiChat;
       });

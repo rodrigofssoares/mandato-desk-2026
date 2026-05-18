@@ -15,17 +15,29 @@
 export type RecursosConfig = Record<string, boolean>;
 
 /**
+ * Features que são habilitados por default (não precisam de flag explícita).
+ * c24 (opt-in LGPD) e c21 (bairro/zona) têm default=true por razões de conformidade/UX.
+ */
+const DEFAULT_ENABLED: ReadonlySet<string> = new Set(['c24', 'c21']);
+
+/**
  * Retorna se um feature está habilitado na conta.
  * Função pura — sem efeitos colaterais, sem chamadas de rede.
  *
  * @param config  - O objeto `recursos_config` da conta (pode ser null/undefined).
  * @param feature - Código do feature (ex: "c33", "c38").
  * @returns boolean — false quando config for null/undefined ou a chave estiver ausente.
+ *                    Exceto c24/c21 que retornam true quando ausentes (default ativo).
  */
 export function isFeatureEnabled(
   config: RecursosConfig | null | undefined,
   feature: string,
 ): boolean {
+  // Features com default true: retornam true a menos que explicitamente false
+  if (DEFAULT_ENABLED.has(feature)) {
+    if (!config || typeof config !== 'object') return true;
+    return config[feature] !== false;
+  }
   if (!config || typeof config !== 'object') return false;
   return config[feature] === true;
 }
