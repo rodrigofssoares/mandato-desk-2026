@@ -30,6 +30,37 @@ const forgotPasswordSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
+/**
+ * Tempo máximo (ms) que esperamos por uma resposta do Supabase Auth.
+ * Sem isso, se o backend ficar fora do ar a chamada fica pendente pra
+ * sempre e o botão trava em "Entrando..." sem feedback nenhum.
+ */
+const AUTH_TIMEOUT_MS = 15000;
+
+class AuthTimeoutError extends Error {
+  constructor() {
+    super('AUTH_TIMEOUT');
+    this.name = 'AuthTimeoutError';
+  }
+}
+
+/** Resolve com a promise original ou rejeita com AuthTimeoutError após `ms`. */
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new AuthTimeoutError()), ms);
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 export default function Auth() {
   const navigate = useNavigate();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -48,10 +79,13 @@ export default function Auth() {
   const handleLogin = async (data: LoginFormData) => {
     setIsSubmitting(true);
     try {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const { data: authData, error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        }),
+        AUTH_TIMEOUT_MS,
+      );
 
       if (error) {
         // Supabase às vezes retorna "Invalid login credentials" mesmo quando
@@ -69,11 +103,14 @@ export default function Auth() {
 
       // Verifica status de aprovação do perfil
       if (authData.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('status_aprovacao')
-          .eq('id', authData.user.id)
-          .single();
+        const { data: profile, error: profileError } = await withTimeout(
+          supabase
+            .from('profiles')
+            .select('status_aprovacao')
+            .eq('id', authData.user.id)
+            .single(),
+          AUTH_TIMEOUT_MS,
+        );
 
         if (profileError) {
           toast.error('Erro ao verificar perfil. Tente novamente.');
@@ -95,8 +132,14 @@ export default function Auth() {
 
         navigate('/');
       }
-    } catch {
-      toast.error('Erro inesperado. Tente novamente.');
+    } catch (err) {
+      if (err instanceof AuthTimeoutError) {
+        toast.error(
+          'O servidor de autenticação não respondeu. Verifique sua conexão e tente novamente.',
+        );
+      } else {
+        toast.error('Erro inesperado. Tente novamente.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -105,9 +148,12 @@ export default function Auth() {
   const handleForgotPassword = async (data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { error } = await withTimeout(
+        supabase.auth.resetPasswordForEmail(data.email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }),
+        AUTH_TIMEOUT_MS,
+      );
 
       if (error) {
         toast.error('Erro ao enviar e-mail de recuperação. Tente novamente.');
@@ -116,8 +162,14 @@ export default function Auth() {
 
       toast.success('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
       setShowForgotPassword(false);
-    } catch {
-      toast.error('Erro inesperado. Tente novamente.');
+    } catch (err) {
+      if (err instanceof AuthTimeoutError) {
+        toast.error(
+          'O servidor de autenticação não respondeu. Verifique sua conexão e tente novamente.',
+        );
+      } else {
+        toast.error('Erro inesperado. Tente novamente.');
+      }
     } finally {
       setIsSubmitting(false);
     }
