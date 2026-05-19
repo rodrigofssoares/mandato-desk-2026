@@ -14,10 +14,14 @@
 //   ou outros provedores capazes de enviá-lo.
 //
 // Z-API event types handled:
-//   - ReceivedCallback        → upsert chat + insert inbound message
+//   - ReceivedCallback        → upsert chat + insert inbound message (+ quoted fields)
 //   - MessageStatusCallback   → update message status (delivered/read/etc)
 //   - DisconnectedCallback    → set zapi_accounts.status = 'disconnected'
 //   - ConnectedCallback       → set zapi_accounts.status = 'connected'
+//   - EditedMessageCallback   → update edited_body + edited_at in zapi_messages
+//   - DeletedMessageCallback  → update deleted_at in zapi_messages
+//   - PresenceCallback        → broadcast typing state via Supabase Realtime
+//   - PollUpdateMessage (T75) → registra voto de enquete de broadcast em zapi_broadcast_poll_votes
 //   - other types             → logged but not processed (ignored gracefully)
 //
 // Always responds 200 to avoid Z-API retry storms — failures are logged in
@@ -136,6 +140,19 @@ interface ZapiPayload {
       participant?: string | null;
     };
   };
+  // T32: quoted message (reply) — presente em ReceivedCallback quando há citação
+  quoted?: {
+    messageId?: string;
+    body?: string;
+    type?: string;
+  };
+  // T32: EditedMessageCallback — campos de edição
+  // Formato: { type: "EditedMessageCallback", messageId: "<original>", text: { message: "<novo>" } }
+  // (campo 'text' já presente na interface acima)
+  // T32: DeletedMessageCallback — campo alternativo para messageId apagado
+  deletedMessageId?: string;
+  // T40: PresenceCallback — estado de presença/digitando
+  state?: string;
   [key: string]: unknown;
 }
 
@@ -491,8 +508,30 @@ Deno.serve(async (req) => {
         await admin.from('zapi_accounts').update({ status: 'connected' }).eq('id', account.id);
         break;
       }
+      // T32: edição e exclusão de mensagem
+      case 'EditedMessageCallback': {
+        await handleEditedMessage(admin, account.id, payload);
+        break;
+      }
+      case 'DeletedMessageCallback': {
+        await handleDeletedMessage(admin, account.id, payload);
+        break;
+      }
+      // T40: presença/digitando (efêmero — broadcast Realtime, sem persistência)
+      case 'PresenceCallback': {
+        await handlePresenceCallback(admin, account.id, payload);
+        processingStatus = 'ignored'; // metadado efêmero, não gera dados persistidos
+        break;
+      }
+      // T75 (Fase 6 Onda B): voto de enquete de broadcast
+      case 'PollUpdateMessage':
+      case 'pollUpdateMessage': {
+        await handlePollVote(admin, account.id, payload);
+        break;
+      }
       default: {
         // Tipo desconhecido — apenas loga, sem erro
+        processingStatus = 'ignored';
         break;
       }
     }
@@ -587,6 +626,18 @@ async function handleReceivedMessage(
     throw new Error(`upsert chat falhou: ${chatErr?.message ?? 'sem dado'}`);
   }
 
+  // T32: extrair campos de quoted (reply) se presentes
+  // quoted.body truncado a 500 chars conforme backlog (preview seguro)
+  const quotedMessageId = payload.quoted?.messageId
+    ? String(payload.quoted.messageId).slice(0, 255)
+    : null;
+  const quotedBody = payload.quoted?.body !== undefined
+    ? String(payload.quoted.body).slice(0, 500)
+    : null;
+  const quotedType = payload.quoted?.type
+    ? String(payload.quoted.type).slice(0, 64)
+    : null;
+
   // Insert mensagem (idempotente via UNIQUE(message_id, account_id))
   const { error: msgErr } = await admin.from('zapi_messages').insert({
     account_id: accountId,
@@ -602,6 +653,10 @@ async function handleReceivedMessage(
     media_filename: media.filename,
     media_caption: media.caption,
     media_metadata: media.metadata,
+    // T32: campos de quoted message (nullable — presentes apenas em replies)
+    quoted_message_id: quotedMessageId,
+    quoted_body: quotedBody,
+    quoted_type: quotedType,
   });
 
   if (msgErr && msgErr.code !== '23505') {
@@ -652,4 +707,227 @@ async function handleStatusUpdate(
     .update({ status: newStatus })
     .eq('account_id', accountId)
     .eq('message_id', messageId);
+}
+
+// ─── T32: EditedMessageCallback ───────────────────────────────────────────────
+
+async function handleEditedMessage(
+  admin: ReturnType<typeof createClient>,
+  accountId: string,
+  payload: ZapiPayload,
+): Promise<void> {
+  // Formato Z-API: { type: "EditedMessageCallback", messageId: "<original>",
+  //   text: { message: "<novo conteúdo>" } }
+  const messageId = String(payload.messageId ?? '');
+  if (!messageId) return; // sem id → sem-op silencioso
+
+  const newText = payload.text?.message;
+  if (typeof newText !== 'string') return; // sem texto → sem-op
+
+  await admin
+    .from('zapi_messages')
+    .update({
+      edited_body: String(newText).slice(0, 4096),
+      edited_at: new Date().toISOString(),
+    })
+    .eq('account_id', accountId)
+    .eq('message_id', messageId);
+  // Edição é legítima tanto para inbound (eleitor editou) quanto outbound (operador editou).
+  // Proteção contra forja de webhook é responsabilidade do webhook_secret — não filtrar direção.
+  // 0 linhas afetadas = messageId inexistente nesta conta → silencioso (sem-op T32)
+}
+
+// ─── T32: DeletedMessageCallback ─────────────────────────────────────────────
+
+async function handleDeletedMessage(
+  admin: ReturnType<typeof createClient>,
+  accountId: string,
+  payload: ZapiPayload,
+): Promise<void> {
+  // Formato Z-API: { type: "DeletedMessageCallback", messageId: "<apagada>" }
+  // Versões antigas podem usar deletedMessageId — usar defensivamente ambos.
+  const messageId =
+    String(payload.messageId ?? payload.deletedMessageId ?? '');
+  if (!messageId) return;
+
+  await admin
+    .from('zapi_messages')
+    .update({
+      deleted_at: new Date().toISOString(),
+      // edited_body NÃO é alterado — body original preservado para auditoria
+    })
+    .eq('account_id', accountId)
+    .eq('message_id', messageId);
+}
+
+// ─── T40: PresenceCallback ────────────────────────────────────────────────────
+
+async function handlePresenceCallback(
+  admin: ReturnType<typeof createClient>,
+  accountId: string,
+  payload: ZapiPayload,
+): Promise<void> {
+  // Formato Z-API: { type: "PresenceCallback", phone: "...", state: "composing"|"paused"|... }
+  const phone = normalizePhoneForZapi(String(payload.phone ?? ''));
+  if (!phone || phone.length < 10) {
+    console.log('zapi-webhook: PresenceCallback com phone inválido — ignorado');
+    return;
+  }
+
+  // Whitelist de estados permitidos — evita XSS-via-realtime e spoof de valor arbitrário
+  const ALLOWED_STATES = new Set(['composing', 'recording', 'paused', 'available', 'unavailable']);
+  const rawState = String(payload.state ?? '');
+  const safeState = ALLOWED_STATES.has(rawState) ? rawState : 'unavailable';
+
+  // Buscar o chat_id pelo phone + account_id (igual ao handleReceivedMessage)
+  const { data: chat } = await admin
+    .from('zapi_chats')
+    .select('id')
+    .eq('account_id', accountId)
+    .eq('phone', phone)
+    .maybeSingle<{ id: string }>();
+
+  if (!chat) {
+    // Contato sem chat cadastrado → ignorar silenciosamente
+    return;
+  }
+
+  const chatId = chat.id;
+  const isTyping = safeState === 'composing' || safeState === 'recording';
+  const eventName = isTyping ? 'typing' : 'stopped-typing';
+
+  // Broadcast via Supabase Realtime REST API — sem persistir no banco
+  // POST {SUPABASE_URL}/realtime/v1/api/broadcast
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceRoleKey) return;
+
+  try {
+    await fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'apikey': serviceRoleKey,
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            topic: `typing-${chatId}`,
+            event: eventName,
+            payload: { state: safeState, chatId }, // phone omitido: não necessário para exibição e evita vazar telefone de terceiro
+          },
+        ],
+      }),
+    });
+  } catch (err) {
+    // Falha no broadcast não deve derrubar o webhook
+    console.error('zapi-webhook: falha ao fazer broadcast de typing', err instanceof Error ? err.message : '');
+  }
+}
+
+// ─── T75 (Fase 6 Onda B): PollUpdateMessage — voto de enquete de broadcast ────
+// ALTA-6: voto só conta se o phone está em zapi_broadcast_targets com status='enviado'
+// para um broadcast tipo enquete. Upsert com onConflict='broadcast_id,phone'
+// (1 voto por pessoa — último voto vence). index único alterado na migration 078.
+
+async function handlePollVote(
+  admin: ReturnType<typeof createClient>,
+  accountId: string,
+  payload: ZapiPayload,
+): Promise<void> {
+  // Formato Z-API (estrutura defensiva — pode variar por versão):
+  // { type: "PollUpdateMessage", phone: "5511...", poll: { name: "Pergunta", options: [...] },
+  //   selectedOptions?: ["Opção escolhida"], pollUpdate?: { selectedOptions: [...] } }
+  const phone = normalizePhoneForZapi(String(payload.phone ?? ''));
+  if (!phone || phone.length < 10) {
+    console.log('zapi-webhook: PollUpdateMessage com phone inválido — ignorado');
+    return;
+  }
+
+  // Extrai opção votada — diferentes versões da Z-API usam campos diferentes
+  const rawPayload = payload as Record<string, unknown>;
+  let optionVoted: string | null = null;
+
+  // Tenta pollUpdate.selectedOptions (versão nova)
+  const pollUpdate = rawPayload.pollUpdate as Record<string, unknown> | undefined;
+  if (pollUpdate && Array.isArray(pollUpdate.selectedOptions) && pollUpdate.selectedOptions.length > 0) {
+    optionVoted = String(pollUpdate.selectedOptions[0]).slice(0, 255);
+  }
+
+  // Fallback: selectedOptions direto no payload
+  if (!optionVoted && Array.isArray(rawPayload.selectedOptions) && (rawPayload.selectedOptions as unknown[]).length > 0) {
+    optionVoted = String((rawPayload.selectedOptions as unknown[])[0]).slice(0, 255);
+  }
+
+  if (!optionVoted) {
+    console.log('zapi-webhook: PollUpdateMessage sem opção selecionada — ignorado');
+    return;
+  }
+
+  // ── ALTA-6: verifica que o phone está em zapi_broadcast_targets com status='enviado' ──
+  // Associa ao broadcast correto via o target — evita associação ao "mais recente" sem cruzar o phone.
+  // Também evita que votes de enquetes avulsas (PollDialog) sejam confundidos com votos de broadcast.
+
+  // 1. Busca os IDs de enquetes ativas desta conta ANTES de usar em .in()
+  const { data: enquetes, error: enquetesError } = await admin
+    .from('zapi_broadcasts')
+    .select('id')
+    .eq('account_id', accountId)
+    .eq('tipo', 'enquete')
+    .in('status', ['enviando', 'concluido']);
+
+  if (enquetesError) {
+    console.error('zapi-webhook: erro ao buscar enquetes da conta', enquetesError.message);
+    // Propaga erro para que o dispatcher registre processing_status='error'
+    throw new Error(`erro ao buscar enquetes: ${enquetesError.message}`);
+  }
+
+  const enqueteIds = (enquetes ?? []).map((e: { id: string }) => e.id);
+  if (enqueteIds.length === 0) {
+    // Nenhuma enquete ativa para esta conta — voto não pode ser associado
+    console.log('zapi-webhook: PollUpdateMessage — sem enquetes ativas para esta conta', { accountId });
+    return;
+  }
+
+  const { data: target } = await admin
+    .from('zapi_broadcast_targets')
+    .select('broadcast_id, contact_id, phone')
+    .eq('phone', phone)
+    .eq('status', 'enviado')
+    .in('broadcast_id', enqueteIds)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ broadcast_id: string; contact_id: string | null; phone: string }>();
+
+  if (!target) {
+    // Phone não encontrado entre targets enviados de enquetes desta conta — ignorar
+    console.log('zapi-webhook: PollUpdateMessage — phone não está nos targets enviados de enquete desta conta', { phone, accountId });
+    return;
+  }
+
+  // Upsert com onConflict='broadcast_id,phone' — 1 voto por pessoa, último voto vence
+  // (migration 078 criou o índice único correto)
+  const { error: voteError } = await admin
+    .from('zapi_broadcast_poll_votes')
+    .upsert(
+      {
+        broadcast_id: target.broadcast_id,
+        contact_id: target.contact_id ?? null,
+        phone,
+        option_voted: optionVoted,
+        received_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'broadcast_id,phone',
+        ignoreDuplicates: false, // atualiza option_voted (último voto vence)
+      },
+    );
+
+  if (voteError) {
+    console.error('zapi-webhook: erro ao registrar voto de enquete:', voteError.message);
+  } else {
+    console.log(`zapi-webhook: voto registrado — broadcast ${target.broadcast_id}, phone ${phone}, opção "${optionVoted}"`);
+  }
 }

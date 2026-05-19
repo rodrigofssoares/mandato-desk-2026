@@ -21,6 +21,8 @@ export interface SendZapiMessageInput {
   phone: string;
   /** Texto da mensagem (1 a 4096 caracteres após trim). */
   message: string;
+  /** T33: ID Z-API da mensagem a citar (reply). Opcional. */
+  quoted_message_id?: string;
 }
 
 export interface SendZapiMessageResult {

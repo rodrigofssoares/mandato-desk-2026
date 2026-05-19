@@ -39,6 +39,9 @@ export const contactSchema = z.object({
   ranking_manual_override: z.boolean().optional().default(false),
   leader_id: z.string().uuid().optional().nullable().or(z.literal('')),
 
+  // Profissão
+  profissao: z.string().max(200).optional().or(z.literal('')),
+
   // Observações
   origem: z.string().max(200).optional().or(z.literal('')),
   observacoes: z.string().max(5000).optional().or(z.literal('')),

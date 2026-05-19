@@ -37,7 +37,7 @@ const MODELOS: Record<AIProvider, string[]> = {
   google: ['gemini-2.5-pro', 'gemini-2.5-flash'],
 };
 
-const FEATURE_OPTIONS: { key: keyof AIFeatures; label: string; description: string }[] = [
+const DEMANDAS_FEATURE_OPTIONS: { key: keyof AIFeatures; label: string; description: string }[] = [
   {
     key: 'resumo_demandas',
     label: 'Resumo automático de demandas',
@@ -55,10 +55,51 @@ const FEATURE_OPTIONS: { key: keyof AIFeatures; label: string; description: stri
   },
 ];
 
+// T92 (Fase 7 Onda B): features de IA para WhatsApp (C33-C38)
+const WHATSAPP_FEATURE_OPTIONS: { key: keyof AIFeatures; label: string; description: string }[] = [
+  {
+    key: 'resumo_conversa',
+    label: 'Resumo da conversa',
+    description: 'Gera resumo automático ao abrir uma conversa — economiza tempo ao retomar atendimentos.',
+  },
+  {
+    key: 'sugestao_resposta',
+    label: 'Sugestão de resposta',
+    description: 'Sugere uma resposta para o eleitor com base no histórico da conversa.',
+  },
+  {
+    key: 'classificacao_assunto',
+    label: 'Classificação de assunto',
+    description: 'Identifica automaticamente o tema da conversa (ex: asfalto, saúde, educação).',
+  },
+  {
+    key: 'analise_sentimento',
+    label: 'Análise de sentimento',
+    description: 'Classifica o sentimento do eleitor: positivo, neutro, negativo ou urgente.',
+  },
+  {
+    key: 'next_best_action',
+    label: 'Próxima ação sugerida',
+    description: 'Sugere a próxima ação para cada contato com base no funil e histórico de interações.',
+  },
+  {
+    key: 'transcricao_audio',
+    label: 'Transcrição de áudios',
+    description: 'Converte mensagens de voz para texto — útil em ambientes onde ouvir áudio não é viável.',
+  },
+];
+
 const DEFAULT_FEATURES: AIFeatures = {
   resumo_demandas: false,
   sugestao_acoes: false,
   analise_risco: false,
+  // WhatsApp (T92)
+  resumo_conversa: false,
+  sugestao_resposta: false,
+  classificacao_assunto: false,
+  analise_sentimento: false,
+  next_best_action: false,
+  transcricao_audio: false,
 };
 
 export function AISettingsTab() {
@@ -300,15 +341,51 @@ export function AISettingsTab() {
         </CardContent>
       </Card>
 
+      {/* Features de Demandas */}
       <Card>
         <CardHeader>
-          <CardTitle>Features disponíveis</CardTitle>
+          <CardTitle>Recursos de IA — Demandas</CardTitle>
           <CardDescription>
-            Selecione quais features de IA estarão disponíveis na aplicação.
+            Features de IA aplicadas ao módulo de demandas e contatos.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {FEATURE_OPTIONS.map((feature) => (
+          {DEMANDAS_FEATURE_OPTIONS.map((feature) => (
+            <div key={feature.key} className="flex items-start gap-3">
+              <Checkbox
+                id={`ai-feature-${feature.key}`}
+                checked={features[feature.key]}
+                onCheckedChange={(checked) => handleToggleFeature(feature.key, checked === true)}
+                disabled={!aiEnabled}
+              />
+              <div className="space-y-0.5">
+                <Label
+                  htmlFor={`ai-feature-${feature.key}`}
+                  className="text-sm font-medium leading-none"
+                >
+                  {feature.label}
+                </Label>
+                <p className="text-xs text-muted-foreground">{feature.description}</p>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* T92 (Fase 7 Onda B): Features de WhatsApp */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Recursos de IA — WhatsApp
+          </CardTitle>
+          <CardDescription>
+            Features de IA para atendimento via WhatsApp. Habilitá-las aqui é o primeiro
+            passo — cada conta também precisa ter o recurso ligado em Configurações de Conta.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {WHATSAPP_FEATURE_OPTIONS.map((feature) => (
             <div key={feature.key} className="flex items-start gap-3">
               <Checkbox
                 id={`ai-feature-${feature.key}`}
@@ -328,8 +405,8 @@ export function AISettingsTab() {
             </div>
           ))}
           <p className="text-xs text-muted-foreground border-t pt-3">
-            Nenhuma feature está conectada ao motor de IA ainda — esta tela é apenas configuração.
-            A integração real será feita em uma futura iteração via Edge Function.
+            Triple gate obrigatório: IA global habilitada + este recurso ativo + recurso ativo
+            na conta. Todos os três precisam estar ligados para gerar custo com o provider.
           </p>
         </CardContent>
       </Card>

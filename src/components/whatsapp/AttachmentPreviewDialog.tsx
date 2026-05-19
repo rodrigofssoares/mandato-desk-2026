@@ -24,7 +24,8 @@ interface AttachmentPreviewDialogProps {
   type: ZapiMediaType;
   accountId: string;
   phone: string;
-  onSent?: () => void;
+  /** Chamado após envio com sucesso. Recebe o chat_id retornado pela API. */
+  onSent?: (chatId: string) => void;
 }
 
 const TITLES: Record<ZapiMediaType, string> = {
@@ -74,7 +75,7 @@ export function AttachmentPreviewDialog({
     if (!file) return;
     try {
       const uploaded = await upload.mutateAsync({ account_id: accountId, file, type });
-      await sendMedia.mutateAsync({
+      const result = await sendMedia.mutateAsync({
         account_id: accountId,
         phone,
         type,
@@ -83,7 +84,7 @@ export function AttachmentPreviewDialog({
         file_name: file.name,
         mime_type: uploaded.mime,
       });
-      onSent?.();
+      onSent?.(result.chat_id);
       onOpenChange(false);
     } catch {
       // toasts já disparados pelos hooks

@@ -13,9 +13,23 @@ import type { Json } from '@/integrations/supabase/types';
 export type AIProvider = 'anthropic' | 'openai' | 'google';
 
 export interface AIFeatures {
+  // ── Features de demandas (existentes) ─────────────────────────────────────
   resumo_demandas: boolean;
   sugestao_acoes: boolean;
   analise_risco: boolean;
+  // ── Features de WhatsApp (T92 — Fase 7 Onda B) ────────────────────────────
+  /** C33: resumo automático da conversa ao abrir */
+  resumo_conversa: boolean;
+  /** C34: sugestão de resposta no compositor */
+  sugestao_resposta: boolean;
+  /** C35: classificação de assunto da conversa */
+  classificacao_assunto: boolean;
+  /** C36: análise de sentimento do eleitor */
+  analise_sentimento: boolean;
+  /** C37: sugestão de próxima ação para o contato */
+  next_best_action: boolean;
+  /** C38: transcrição automática de áudios */
+  transcricao_audio: boolean;
 }
 
 export interface AISettings {
@@ -56,9 +70,17 @@ export function maskKey(key: string): string {
 }
 
 const DEFAULT_FEATURES: AIFeatures = {
+  // Demandas
   resumo_demandas: false,
   sugestao_acoes: false,
   analise_risco: false,
+  // WhatsApp (T92 — Fase 7 Onda B)
+  resumo_conversa: false,
+  sugestao_resposta: false,
+  classificacao_assunto: false,
+  analise_sentimento: false,
+  next_best_action: false,
+  transcricao_audio: false,
 };
 
 // ============================================================================
@@ -94,9 +116,17 @@ export function useAISettings() {
         api_key_set: !!data.api_key,
         ai_enabled: data.ai_enabled,
         features: {
+          // Demandas (existentes)
           resumo_demandas: !!features.resumo_demandas,
           sugestao_acoes: !!features.sugestao_acoes,
           analise_risco: !!features.analise_risco,
+          // WhatsApp (T92 — Fase 7 Onda B) — default false se ausente
+          resumo_conversa: !!features.resumo_conversa,
+          sugestao_resposta: !!features.sugestao_resposta,
+          classificacao_assunto: !!features.classificacao_assunto,
+          analise_sentimento: !!features.analise_sentimento,
+          next_best_action: !!features.next_best_action,
+          transcricao_audio: !!features.transcricao_audio,
         },
         updated_by: data.updated_by,
         updated_at: data.updated_at,

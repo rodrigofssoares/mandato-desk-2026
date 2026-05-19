@@ -45,3 +45,88 @@ verify_jwt = false
 # zapi-send-poll: envia enquete WhatsApp.
 [functions.zapi-send-poll]
 verify_jwt = false
+
+# zapi-mark-as-read: marca mensagem como lida. Auth manual via requireAuth.
+[functions.zapi-mark-as-read]
+verify_jwt = false
+
+# zapi-instance-status: consulta status da instância. Auth manual via requireAuth.
+[functions.zapi-instance-status]
+verify_jwt = false
+
+# zapi-send-reaction: envia reação emoji. Auth manual via requireAuth.
+[functions.zapi-send-reaction]
+verify_jwt = false
+
+# zapi-forward-message: encaminha mensagem. Auth manual via requireAuth.
+[functions.zapi-forward-message]
+verify_jwt = false
+
+# zapi-send-location: envia localização. Auth manual via requireAuth.
+[functions.zapi-send-location]
+verify_jwt = false
+
+# zapi-chat-update: atualiza status/atribuição de um chat. Auth manual via requireAuth.
+[functions.zapi-chat-update]
+verify_jwt = false
+
+# zapi-chat-tag-update: adiciona ou remove etiqueta de chat. Auth manual via requireAuth.
+[functions.zapi-chat-tag-update]
+verify_jwt = false
+
+# zapi-bulk-chat-update: atualização em lote de chats. Auth manual via requireAuth.
+[functions.zapi-bulk-chat-update]
+verify_jwt = false
+
+# zapi-schedule-message: cria agendamento de mensagem com validações de segurança.
+# Auth manual via requireAuth. O INSERT direto na tabela está bloqueado via RLS (mig 066).
+[functions.zapi-schedule-message]
+verify_jwt = false
+
+# zapi-send-scheduled: processador da fila de agendamentos (cron job via pg_net).
+# NÃO usa JWT de usuário — autenticação EXCLUSIVA via CRON_SECRET (env var).
+# verify_jwt=false é obrigatório: o gateway não pode validar o CRON_SECRET como JWT.
+[functions.zapi-send-scheduled]
+verify_jwt = false
+
+# zapi-demand-notify: envia mensagem automática ao eleitor quando status de
+# demanda muda (C18). Chamada pelo trigger pg_net com CRON_SECRET.
+# verify_jwt=false: usa CRON_SECRET, não JWT de usuário.
+[functions.zapi-demand-notify]
+verify_jwt = false
+
+# zapi-broadcast-create: resolve segmento e cria targets de uma campanha.
+# Chamada pelo usuário autenticado (JWT). verify_jwt=false: auth manual via requireAuth.
+[functions.zapi-broadcast-create]
+verify_jwt = false
+
+# zapi-broadcast-send: processa fila de targets de broadcasts ativos.
+# Chamada pelo cron job (CRON_SECRET). verify_jwt=false: auth via CRON_SECRET.
+[functions.zapi-broadcast-send]
+verify_jwt = false
+
+# zapi-relationship-followup: executa réguas de follow-up automático diariamente.
+# Chamada pelo cron job (CRON_SECRET). verify_jwt=false: auth via CRON_SECRET.
+[functions.zapi-relationship-followup]
+verify_jwt = false
+
+# zapi-ai-analyze-chat: analisa conversa com IA (C33 + C35 + C36 — resumo, classificação,
+# sentimento). Triple Gate: ai_enabled + c33/c35/c36 por conta. Auth manual via requireAuth.
+# verify_jwt=false: auth manual para retornar erros customizados.
+[functions.zapi-ai-analyze-chat]
+verify_jwt = false
+
+# zapi-ai-suggest-reply: gera sugestão de resposta efêmera com IA (C34).
+# Triple Gate: ai_enabled + c34 por conta. Sem persistência. Auth manual.
+[functions.zapi-ai-suggest-reply]
+verify_jwt = false
+
+# zapi-transcribe-audio: transcreve áudios do WhatsApp com IA (C38).
+# Triple Gate: ai_enabled + c38 por conta. Persiste em zapi_messages.transcription.
+[functions.zapi-transcribe-audio]
+verify_jwt = false
+
+# zapi-ai-next-action: sugere próxima ação para contato com base no histórico (C37).
+# Triple Gate: ai_enabled + c37 por conta. Persiste em contacts.ai_next_action.
+[functions.zapi-ai-next-action]
+verify_jwt = false

@@ -19,7 +19,8 @@ interface PollDialogProps {
   onOpenChange: (open: boolean) => void;
   accountId: string;
   phone: string;
-  onSent?: () => void;
+  /** Chamado após envio com sucesso. Recebe o chat_id retornado pela API. */
+  onSent?: (chatId: string) => void;
 }
 
 const MIN_OPTIONS = 2;
@@ -67,14 +68,14 @@ export function PollDialog({ open, onOpenChange, accountId, phone, onSent }: Pol
     e.preventDefault();
     if (!canSubmit) return;
     try {
-      await sendPoll.mutateAsync({
+      const result = await sendPoll.mutateAsync({
         account_id: accountId,
         phone,
         question: question.trim(),
         options: filledOptions,
         allow_multiple_answers: allowMulti,
       });
-      onSent?.();
+      onSent?.(result.chat_id);
       onOpenChange(false);
     } catch {
       // toast pelo hook

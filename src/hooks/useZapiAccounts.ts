@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import type { RecursosConfig } from '@/lib/featureFlags';
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,8 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 export type ZapiAccount = Omit<Tables<'zapi_accounts'>, 'instance_token' | 'client_token' | 'webhook_secret'> & {
   /** Primeiros 8 chars do instance_id para exibição — resto ofuscado. */
   instance_id_partial: string;
+  /** Feature flags por conta (C40). Null/undefined quando a conta não tem a coluna ainda. */
+  recursos_config: RecursosConfig;
 };
 
 export type ZapiAccountRow = Tables<'zapi_accounts'>;
@@ -36,6 +39,10 @@ export interface UpdateZapiAccountInput {
   instance_token?: string;
   /** Opcional — só atualiza se fornecido. Texto puro — TEMPORÁRIO. */
   client_token?: string;
+  /** Feature flags da conta (C40). Substituição completa do objeto JSONB. */
+  recursos_config?: RecursosConfig;
+  /** T51/C27: horário de atendimento por dia da semana. null = desabilitar. */
+  horario_atendimento?: Record<string, unknown> | null;
 }
 
 export interface ResetPanelPasswordInput {
@@ -54,12 +61,21 @@ export const zapiAccountKeys = {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /** Colunas seguras: tokens e webhook_secret excluídos da query. */
-const SAFE_COLUMNS = 'id, name, status, instance_id, created_at, updated_at, created_by' as const;
+const SAFE_COLUMNS = 'id, name, status, instance_id, created_at, updated_at, created_by, recursos_config, horario_atendimento' as const;
 
-function toSafeAccount(row: Pick<ZapiAccountRow, 'id' | 'name' | 'status' | 'instance_id' | 'created_at' | 'updated_at' | 'created_by'>): ZapiAccount {
+function toSafeAccount(
+  row: Pick<ZapiAccountRow, 'id' | 'name' | 'status' | 'instance_id' | 'created_at' | 'updated_at' | 'created_by' | 'recursos_config' | 'horario_atendimento'>,
+): ZapiAccount {
+  const cfg = row.recursos_config;
+  const recursos_config: RecursosConfig =
+    cfg && typeof cfg === 'object' && !Array.isArray(cfg)
+      ? (cfg as RecursosConfig)
+      : {};
+
   return {
     ...row,
     instance_id_partial: row.instance_id.slice(0, 8),
+    recursos_config,
   };
 }
 
@@ -223,6 +239,8 @@ export function useUpdateZapiAccount() {
       if (input.instance_id !== undefined) payload.instance_id = input.instance_id;
       if (input.instance_token !== undefined) payload.instance_token = input.instance_token;
       if (input.client_token !== undefined) payload.client_token = input.client_token;
+      if (input.recursos_config !== undefined) payload.recursos_config = input.recursos_config;
+      if (input.horario_atendimento !== undefined) payload.horario_atendimento = input.horario_atendimento as import('@/integrations/supabase/types').Json;
 
       const { data, error } = await supabase
         .from('zapi_accounts')
