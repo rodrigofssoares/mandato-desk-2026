@@ -15,6 +15,7 @@
  *   visibleCount / totalCount — para exibir o contador (T04)
  */
 
+import { ShieldCheck } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -79,9 +80,10 @@ export function WhatsAppFilterControl({
           {/* Badge de etapas protegidas */}
           {qtdProtegidas > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-300 whitespace-nowrap">
+              <ShieldCheck className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
               {qtdProtegidas === 1
-                ? '🛡 etapa 1 protegida'
-                : `🛡 etapas 1–${qtdProtegidas} protegidas`}
+                ? 'etapa 1 protegida'
+                : `etapas 1–${qtdProtegidas} protegidas`}
             </span>
           )}
         </div>

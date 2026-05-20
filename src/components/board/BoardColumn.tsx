@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { BoardCard } from './BoardCard';
 import { StageChecklistTrigger } from './StageChecklistTrigger';
 import { colorToHex } from '@/components/settings/stageColors';
@@ -59,9 +59,10 @@ export function BoardColumn({
         {isProtected && (
           <Badge
             variant="outline"
-            className="text-[10px] px-1.5 text-amber-700 border-amber-300 bg-amber-50"
+            className="text-[10px] px-1.5 py-0.5 text-amber-700 border-amber-300 bg-amber-50 inline-flex items-center gap-1 whitespace-nowrap"
           >
-            🛡 protegida
+            <ShieldCheck className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
+            protegida
           </Badge>
         )}
         <Badge variant="secondary" className="ml-auto text-xs">

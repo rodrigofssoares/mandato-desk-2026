@@ -331,10 +331,10 @@ export default function Contacts() {
 
       {/* Search + Sort + Filtros + View Toggle */}
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[180px] sm:max-w-[280px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, e-mail ou WhatsApp..."
+            placeholder="Buscar nome, e-mail, WhatsApp..."
             className="pl-9"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
@@ -343,7 +343,7 @@ export default function Contacts() {
 
         {/* Chip de atalho tri-state de aceite WhatsApp — T05 */}
         <WhatsAppSegmentedControl
-          label="Aceite WA:"
+          label="Aceite WhatsApp:"
           value={
             filters.aceita_whatsapp === true
               ? 'yes'
