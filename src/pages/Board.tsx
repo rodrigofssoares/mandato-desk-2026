@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader2, Plus, Search, Settings as SettingsIcon, KanbanSquare, ListOrdered, Users, CheckSquare, X, ChevronRight, Trash2 } from 'lucide-react';
+import { WhatsAppFilterControl } from '@/components/board/WhatsAppFilterControl';
+import { WhatsAppFilterLegend } from '@/components/board/WhatsAppFilterLegend';
+import { useWhatsAppBoardFilter } from '@/hooks/useWhatsAppBoardFilter';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -127,6 +130,14 @@ export default function Board() {
     setDebouncedSearch('');
   }, [debounceRef]);
 
+  // Filtro tri-state de aceite WhatsApp com persistência por funil (T01, T02, T03)
+  const {
+    mode: whatsappFilter,
+    stageFromIndex,
+    setMode: setWhatsappFilter,
+    setStageFromIndex,
+  } = useWhatsAppBoardFilter(activeBoardId, stages);
+
   // Sai do modo selecao e reseta busca quando troca de funil
   useEffect(() => {
     setSelectionMode(false);
@@ -182,6 +193,41 @@ export default function Board() {
       return false;
     });
   }, [items, debouncedSearch]);
+
+  /**
+   * IDs das etapas protegidas pelo filtro: etapas com ordem < stages[stageFromIndex].ordem.
+   * Etapas protegidas mostram TODOS os cards independentemente do filtro tri-state.
+   * Passado como prop ao BoardKanban → BoardColumn (badge amarelo).
+   */
+  const protectedStageIds = useMemo<Set<string>>(() => {
+    if (whatsappFilter === 'all' || stages.length === 0) return new Set();
+    const limiarOrdem = stages[stageFromIndex]?.ordem ?? -Infinity;
+    return new Set(stages.filter((s) => s.ordem < limiarOrdem).map((s) => s.id));
+  }, [whatsappFilter, stages, stageFromIndex]);
+
+  /**
+   * Items filtrados pelo aceite de WhatsApp, compondo sobre filteredItems (busca textual).
+   *
+   * Lógica:
+   * - 'all': retorna filteredItems intacto
+   * - 'yes' / 'no': para cada item, verificar se está em etapa protegida (via protectedStageIds).
+   *   Se protegida → sempre visível. Se não protegida → filtrar por aceita_whatsapp.
+   *   null é tratado como "sem informação" — nunca passa em 'yes' nem 'no'.
+   */
+  const filteredItemsForKanban = useMemo(() => {
+    if (whatsappFilter === 'all') return filteredItems;
+    if (stages.length === 0) return filteredItems;
+
+    return filteredItems.filter((item) => {
+      // Etapa protegida → sempre visível
+      if (protectedStageIds.has(item.stage_id)) return true;
+
+      const aceita = item.contact?.aceita_whatsapp ?? null;
+      if (whatsappFilter === 'yes') return aceita === true;
+      if (whatsappFilter === 'no') return aceita === false;
+      return true;
+    });
+  }, [filteredItems, whatsappFilter, protectedStageIds, stages.length]);
 
   // Toast com contagem de resultados quando a busca muda. Usa ref pra ler a
   // contagem mais recente sem disparar toast a cada mudanca de `items` (drag,
@@ -375,6 +421,22 @@ export default function Board() {
                 )}
               </div>
             )}
+            {/* Filtro de aceite WhatsApp — T01/T02/T03/T04 */}
+            {activeBoardId && stages.length > 0 && (
+              <>
+                {/* Divisor visual */}
+                <div className="w-px h-6 bg-border self-center" aria-hidden="true" />
+                <WhatsAppFilterControl
+                  value={whatsappFilter}
+                  onChange={setWhatsappFilter}
+                  stageFromIndex={stageFromIndex}
+                  onStageFromChange={setStageFromIndex}
+                  stages={stages}
+                  visibleCount={filteredItemsForKanban.length}
+                  totalCount={items.length}
+                />
+              </>
+            )}
             {activeBoardId && canCreate && (
               <Button
                 variant="outline"
@@ -461,25 +523,30 @@ export default function Board() {
               </Button>
             </div>
           ) : (
-            <BoardKanban
-              stages={stages}
-              items={filteredItems}
-              onCardClick={(item) => {
-                if (item.contact?.id) setEditingContactId(item.contact.id);
-              }}
-              onCardRemove={(item) => {
-                if (!canDelete) return;
-                setRemoveTarget(item);
-              }}
-              onAddContact={(stageId) => {
-                if (!canCreate) return;
-                setAddStageId(stageId);
-                setAddOpen(true);
-              }}
-              selectionMode={selectionMode}
-              selectedIds={selectedItemIds}
-              onToggleSelect={handleToggleSelect}
-            />
+            <>
+              <BoardKanban
+                stages={stages}
+                items={filteredItemsForKanban}
+                onCardClick={(item) => {
+                  if (item.contact?.id) setEditingContactId(item.contact.id);
+                }}
+                onCardRemove={(item) => {
+                  if (!canDelete) return;
+                  setRemoveTarget(item);
+                }}
+                onAddContact={(stageId) => {
+                  if (!canCreate) return;
+                  setAddStageId(stageId);
+                  setAddOpen(true);
+                }}
+                selectionMode={selectionMode}
+                selectedIds={selectedItemIds}
+                onToggleSelect={handleToggleSelect}
+                protectedStageIds={protectedStageIds}
+              />
+              {/* Legenda do filtro — T04 */}
+              <WhatsAppFilterLegend mode={whatsappFilter} />
+            </>
           )}
         </>
       )}

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>EM074 · V2 — Sticky Bar Timeline</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --primary: #7B1E2E;
+    --primary-light: rgba(123,30,46,0.08);
+    --primary-border: rgba(123,30,46,0.25);
+    --accent: #D4A446;
+    --success: #1f7a4f;
+    --success-light: #e4f5ec;
+    --danger: #b1424a;
+    --danger-light: #fbeaec;
+    --bg: #f8f7f4;
+  }
+  body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--bg); }
+  .filter-bar { background: linear-gradient(135deg, #fff 0%, #fdfbf7 50%, var(--primary-light) 100%); border-bottom: 2px solid var(--primary-border); }
+  .filter-bar[data-active="true"] { background: linear-gradient(135deg, var(--primary-light) 0%, #fff 50%, var(--success-light) 100%); }
+  .seg-button { transition: all 0.15s; cursor: pointer; }
+  .seg-button[data-active="true"] { background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(123,30,46,0.3); }
+  .seg-button:hover:not([data-active="true"]) { background: var(--primary-light); }
+  .timeline-stage { transition: all 0.2s ease; cursor: pointer; position: relative; }
+  .timeline-stage[data-protected="true"] { opacity: 0.55; }
+  .timeline-stage[data-protected="true"] .stage-dot { background: #fff5d6 !important; border-color: #f1d77a !important; color: #8a6800 !important; }
+  .timeline-stage[data-from="true"] .stage-dot { transform: scale(1.18); box-shadow: 0 0 0 4px var(--success-light); border-color: var(--success); background: var(--success); color: white; }
+  .timeline-stage:hover:not([data-from="true"]) .stage-dot { transform: scale(1.08); }
+  .stage-dot { width: 28px; height: 28px; border-radius: 50%; background: white; border: 2px solid #d1d5db; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #6b7280; transition: all 0.2s ease; }
+  .timeline-line { flex: 1; height: 2px; background: linear-gradient(90deg, #e5e7eb, #d1d5db); position: relative; }
+  .timeline-line[data-active="true"] { background: linear-gradient(90deg, var(--success), var(--success)); }
+  .timeline-line[data-protected="true"] { background: repeating-linear-gradient(90deg, #f1d77a 0, #f1d77a 4px, transparent 4px, transparent 8px); }
+  .card-funnel { transition: all 0.2s ease; }
+  .card-funnel.hidden-by-filter { opacity: 0.2; filter: grayscale(0.7); }
+  .badge-accept-yes { background: #dbf2e3; color: #1f7a4f; }
+  .badge-accept-no { background: #fbeaec; color: #b1424a; }
+  .badge-protected { background: #fff5d6; color: #8a6800; border: 1px solid #f1d77a; }
+  details summary { list-style: none; cursor: pointer; }
+  details summary::-webkit-details-marker { display: none; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; background: #d1d5db; border-radius: 9999px; cursor: pointer; transition: background 0.2s; }
+  .toggle-switch[data-on="true"] { background: var(--primary); }
+  .toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-switch[data-on="true"] .toggle-knob { transform: translateX(20px); }
+</style>
+</head>
+<body class="min-h-screen p-6">
+<div class="max-w-[1400px] mx-auto">
+
+  <!-- ─── Documentação ─────────────────────────────────────────────── -->
+  <div class="mb-6 bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-white font-bold" style="background: var(--primary);">V2</span>
+      <h1 class="text-xl font-bold">Sticky Bar Timeline</h1>
+    </div>
+    <p class="text-sm text-gray-600 leading-relaxed">
+      Barra <strong>dedicada</strong> ao filtro, sempre visível abaixo do header. Toggle principal liga/desliga + tri-state em pílulas grandes. Etapas são apresentadas como uma <strong>timeline visual horizontal</strong> — clica direto no círculo da etapa pra escolher onde o filtro começa. Mais didático e visual. Educa o usuário sobre o que tá acontecendo.
+    </p>
+    <div class="mt-3 grid grid-cols-3 gap-3 text-xs">
+      <div class="p-2.5 rounded bg-green-50 border border-green-200"><strong class="text-green-800">✓ Bom pra:</strong> usuários novos. Timeline torna a regra "a partir de etapa X" óbvia visualmente.</div>
+      <div class="p-2.5 rounded bg-amber-50 border border-amber-200"><strong class="text-amber-800">⚠ Atenção:</strong> ocupa ~88px verticais permanentes. Em telas pequenas pode ser apertado.</div>
+      <div class="p-2.5 rounded bg-gray-50 border border-gray-200"><strong>Espaço:</strong> footprint maior, mas é didático e diminui suporte.</div>
+    </div>
+  </div>
+
+  <!-- Aba Contatos resumo -->
+  <details class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+    <summary class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs uppercase tracking-wider font-bold text-gray-500">Aba Contatos</span>
+        <span class="text-sm text-gray-700">— em Contatos, V2 promove o filtro a chip rápido na toolbar (além do drawer atual)</span>
+      </div>
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </summary>
+    <div class="p-5">
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white">🔍 Filtros</button>
+        <div class="toolbar-divider"></div>
+        <span class="text-xs uppercase tracking-wider font-bold text-gray-500">Quick:</span>
+        <button class="px-3 py-1.5 text-xs font-medium rounded-full border" style="background: var(--success-light); border-color: var(--success); color: var(--success);">✓ Só aceita WhatsApp</button>
+        <button class="px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 bg-white text-gray-600 hover:border-red-400">✗ Só não aceita</button>
+      </div>
+      <p class="text-xs text-gray-500">Os mesmos quick-filters da timeline do funil aparecem também aqui, pra consistência.</p>
+    </div>
+  </details>
+
+  <!-- ─── Aba Funis (foco da V2) ──────────────────────────────────── -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+    <!-- Header -->
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold">Funil de Mobilização — Eleição 2026</h2>
+        <p class="text-xs text-gray-500 mt-0.5">86 contatos · 5 etapas</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Modo seleção</button>
+        <button class="px-3 py-1.5 text-sm text-white rounded-lg" style="background: var(--primary);">+ Adicionar contato</button>
+      </div>
+    </div>
+
+    <!-- ⚡ Sticky filter bar com TIMELINE -->
+    <div id="filter-bar" class="filter-bar px-5 py-3.5" data-active="false">
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+
+        <!-- Esquerda: toggle + segmented -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <div id="toggle" class="toggle-switch" data-on="false" onclick="toggleFilter()">
+              <div class="toggle-knob"></div>
+            </div>
+            <span class="text-sm font-semibold text-gray-700">Filtrar por aceite WhatsApp</span>
+          </div>
+
+          <div id="seg-group" class="inline-flex rounded-lg border border-gray-300 overflow-hidden bg-white opacity-50 pointer-events-none transition-opacity">
+            <button class="seg-button px-3 py-1.5 text-xs font-medium" data-active="true" onclick="setMode('yes')">
+              <span class="inline-block w-2 h-2 rounded-full bg-green-600 mr-1"></span>Apenas Sim
+            </button>
+            <button class="seg-button px-3 py-1.5 text-xs font-medium border-l border-gray-300" data-active="false" onclick="setMode('no')">
+              <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Apenas Não
+            </button>
+          </div>
+        </div>
+
+        <!-- Direita: status -->
+        <div class="text-right">
+          <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Visíveis no funil</div>
+          <div class="text-lg font-bold" id="visible-count" style="color: var(--primary);">86<span class="text-sm text-gray-400 font-normal"> / 86</span></div>
+        </div>
+      </div>
+
+      <!-- TIMELINE de etapas -->
+      <div class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] uppercase tracking-[0.06em] font-bold text-gray-500">Aplicar filtro a partir desta etapa:</span>
+          <span id="from-label" class="text-xs text-gray-500 italic">filtro desligado</span>
+        </div>
+
+        <div class="flex items-center gap-1 px-2">
+          <!-- 5 stages com linhas entre -->
+          <div class="timeline-stage flex flex-col items-center gap-1.5" data-from="false" data-protected="false" data-stage="0" onclick="setStageFrom(0)">
+            <div class="stage-dot">1</div>
+            <span class="text-[10px] font-medium text-gray-600 whitespace-nowrap">Lead novo</span>
+          </div>
+          <div class="timeline-line" data-active="false" data-protected="false"></div>
+
+          <div class="timeline-stage flex flex-col items-center gap-1.5" data-from="false" data-protected="false" data-stage="1" onclick="setStageFrom(1)">
+            <div class="stage-dot">2</div>
+            <span class="text-[10px] font-medium text-gray-600 whitespace-nowrap">Engajado</span>
+          </div>
+          <div class="timeline-line" data-active="false" data-protected="false"></div>
+
+          <div class="timeline-stage flex flex-col items-center gap-1.5" data-from="false" data-protected="false" data-stage="2" onclick="setStageFrom(2)">
+            <div class="stage-dot">3</div>
+            <span class="text-[10px] font-medium text-gray-600 whitespace-nowrap">Qualificado</span>
+          </div>
+          <div class="timeline-line" data-active="false" data-protected="false"></div>
+
+          <div class="timeline-stage flex flex-col items-center gap-1.5" data-from="false" data-protected="false" data-stage="3" onclick="setStageFrom(3)">
+            <div class="stage-dot">4</div>
+            <span class="text-[10px] font-medium text-gray-600 whitespace-nowrap">Compromissado</span>
+          </div>
+          <div class="timeline-line" data-active="false" data-protected="false"></div>
+
+          <div class="timeline-stage flex flex-col items-center gap-1.5" data-from="false" data-protected="false" data-stage="4" onclick="setStageFrom(4)">
+            <div class="stage-dot">5</div>
+            <span class="text-[10px] font-medium text-gray-600 whitespace-nowrap">Convertido</span>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-gray-500 mt-2.5 italic flex items-center gap-1.5">
+          <span class="inline-block w-2 h-2 rounded-full" style="background: #fff5d6; border: 1px solid #f1d77a;"></span>
+          Etapas <strong>antes</strong> do ponto escolhido (riscadas) mostram todos — assim novos leads não somem.
+        </p>
+      </div>
+    </div>
+
+    <!-- Kanban -->
+    <div class="p-5 overflow-x-auto">
+      <div class="flex gap-3 min-w-[1300px]">
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="0">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Lead novo</span>
+              <span class="text-xs text-gray-500 stage-count">22</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="0"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Maria Souza</div><div class="text-xs text-gray-500 mt-0.5">⏰ há 2 dias</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="0"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Pedro Lima</div><div class="text-xs text-gray-500 mt-0.5">⏰ há 4 dias</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="0"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Ana Castro</div><div class="text-xs text-gray-500 mt-0.5">⏰ há 5 dias</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="1">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Engajado</span>
+              <span class="text-xs text-gray-500 stage-count">18</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="1"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Carlos Vieira</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="1"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Luiza Mendes</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="1"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">João Pereira</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="2">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Qualificado</span>
+              <span class="text-xs text-gray-500 stage-count">20</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Rita Oliveira</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Bruno Alves</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Sandra Costa</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Felipe Rios</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="3">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Compromissado</span>
+              <span class="text-xs text-gray-500 stage-count">15</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="3"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Marcelo Tavares</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="3"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Cristina Borges</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="3"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Roberto Pinheiro</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="4">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Convertido</span>
+              <span class="text-xs text-gray-500 stage-count">11</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="4"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Aline Cunha</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="4"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Diego Macedo</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let filterOn = false;
+  let mode = 'yes';     // 'yes' | 'no'
+  let stageFrom = 2;    // default: começa em "Qualificado"
+
+  function toggleFilter() {
+    filterOn = !filterOn;
+    document.getElementById('toggle').setAttribute('data-on', filterOn);
+    document.getElementById('filter-bar').setAttribute('data-active', filterOn);
+    const seg = document.getElementById('seg-group');
+    if (filterOn) {
+      seg.classList.remove('opacity-50', 'pointer-events-none');
+    } else {
+      seg.classList.add('opacity-50', 'pointer-events-none');
+    }
+    apply();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('#seg-group .seg-button').forEach(b => b.setAttribute('data-active', 'false'));
+    document.querySelector(`#seg-group .seg-button[onclick="setMode('${m}')"]`).setAttribute('data-active', 'true');
+    apply();
+  }
+
+  function setStageFrom(idx) {
+    if (!filterOn) {
+      // Liga o filtro automaticamente se o usuário clicou numa etapa
+      toggleFilter();
+    }
+    stageFrom = idx;
+    apply();
+  }
+
+  function apply() {
+    // Atualiza timeline
+    document.querySelectorAll('.timeline-stage').forEach(s => {
+      const i = parseInt(s.dataset.stage, 10);
+      s.setAttribute('data-from', i === stageFrom ? 'true' : 'false');
+      s.setAttribute('data-protected', filterOn && i < stageFrom ? 'true' : 'false');
+    });
+    const lines = document.querySelectorAll('.timeline-line');
+    lines.forEach((l, i) => {
+      l.setAttribute('data-active', filterOn && i >= stageFrom);
+      l.setAttribute('data-protected', filterOn && i < stageFrom);
+    });
+
+    const stagesName = ['Lead novo', 'Engajado', 'Qualificado', 'Compromissado', 'Convertido'];
+    document.getElementById('from-label').textContent = filterOn
+      ? `aplicando a partir de "${stagesName[stageFrom]}"`
+      : 'filtro desligado';
+
+    // Cards
+    let visible = 0;
+    const total = document.querySelectorAll('.card-funnel').length;
+    document.querySelectorAll('.card-funnel').forEach(card => {
+      const idx = parseInt(card.dataset.stageIdx, 10);
+      const accept = card.dataset.accept;
+      let hide = false;
+      if (filterOn && idx >= stageFrom) {
+        if (mode === 'yes' && accept !== 'yes') hide = true;
+        if (mode === 'no' && accept !== 'no') hide = true;
+      }
+      card.classList.toggle('hidden-by-filter', hide);
+      if (!hide) visible++;
+    });
+    document.getElementById('visible-count').innerHTML = `${visible}<span class="text-sm text-gray-400 font-normal"> / ${total}</span>`;
+
+    // Badges nas colunas
+    document.querySelectorAll('.kanban-col').forEach(col => {
+      const i = parseInt(col.dataset.stage, 10);
+      const protectedBadge = col.querySelector('.protected-badge');
+      const isProtected = filterOn && i < stageFrom;
+      protectedBadge.classList.toggle('hidden', !isProtected);
+
+      const stageCards = col.querySelectorAll('.card-funnel');
+      const visibleInStage = [...stageCards].filter(c => !c.classList.contains('hidden-by-filter')).length;
+      col.querySelector('.stage-count').textContent = visibleInStage;
+    });
+  }
+
+  // Init
+  setStageFrom(2);
+  // Deixa começar desligado pra mostrar interação
+  filterOn = false;
+  apply();
+</script>
+</body>
+</html>

@@ -21,6 +21,11 @@ interface BoardKanbanProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (item: BoardItemWithContact) => void;
+  /**
+   * IDs das etapas que estão "protegidas" pelo filtro de aceite WhatsApp
+   * (etapas antes do ponto de início — mostram todos os cards, exibem badge amarelo).
+   */
+  protectedStageIds?: Set<string>;
 }
 
 export function BoardKanban({
@@ -32,6 +37,7 @@ export function BoardKanban({
   selectionMode,
   selectedIds,
   onToggleSelect,
+  protectedStageIds,
 }: BoardKanbanProps) {
   const moveItem = useMoveBoardItem();
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
@@ -168,6 +174,7 @@ export function BoardKanban({
               selectionMode={selectionMode}
               selectedIds={selectedIds}
               onToggleSelect={onToggleSelect}
+              isProtected={protectedStageIds?.has(stage.id) ?? false}
             />
           ))}
         </div>
