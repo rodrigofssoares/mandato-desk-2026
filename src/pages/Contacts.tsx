@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { LayoutGrid, List, Plus, Search, Loader2, Users, Upload, Copy, Printer, KanbanSquare, X } from 'lucide-react';
+import { WhatsAppSegmentedControl } from '@/components/common/WhatsAppSegmentedControl';
+import type { WhatsAppFilterMode } from '@/lib/boardFilterStorage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -117,6 +119,7 @@ export default function Contacts() {
         filters.has_demand,
         filters.board_id,
         filters.no_funnel,
+        filters.aceita_whatsapp !== undefined && filters.aceita_whatsapp !== null,
       ].filter(Boolean).length,
     [filters, debouncedSearch]
   );
@@ -327,16 +330,33 @@ export default function Contacts() {
       />
 
       {/* Search + Sort + Filtros + View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[180px] sm:max-w-[280px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, e-mail ou WhatsApp..."
+            placeholder="Buscar nome, e-mail, WhatsApp..."
             className="pl-9"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
+
+        {/* Chip de atalho tri-state de aceite WhatsApp — T05 */}
+        <WhatsAppSegmentedControl
+          label="Aceite WhatsApp:"
+          value={
+            filters.aceita_whatsapp === true
+              ? 'yes'
+              : filters.aceita_whatsapp === false
+                ? 'no'
+                : 'all'
+          }
+          onChange={(chipValue: WhatsAppFilterMode) => {
+            const aceita_whatsapp =
+              chipValue === 'yes' ? true : chipValue === 'no' ? false : undefined;
+            setFilters((prev) => ({ ...prev, aceita_whatsapp, page: 1 }));
+          }}
+        />
 
         <Select
           value={filters.sort_by ?? 'created_desc'}

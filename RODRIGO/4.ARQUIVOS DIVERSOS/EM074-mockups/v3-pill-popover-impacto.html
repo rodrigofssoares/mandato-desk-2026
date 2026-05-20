@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>EM074 · V3 — Pill + Popover com Preview de Impacto</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --primary: #7B1E2E;
+    --primary-light: rgba(123,30,46,0.08);
+    --primary-border: rgba(123,30,46,0.25);
+    --accent: #D4A446;
+    --success: #1f7a4f;
+    --success-light: #e4f5ec;
+    --danger: #b1424a;
+    --danger-light: #fbeaec;
+    --bg: #f8f7f4;
+  }
+  body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--bg); }
+  .pill-trigger { background: white; border: 1.5px solid #d1d5db; color: #374151; transition: all 0.15s; }
+  .pill-trigger[data-on="true"] { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 6px rgba(123,30,46,0.25); }
+  .pill-trigger:hover:not([data-on="true"]) { border-color: var(--primary); background: var(--primary-light); }
+  .popover { position: absolute; top: calc(100% + 8px); right: 0; width: 440px; background: white; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 12px 32px rgba(15,23,42,0.18); z-index: 50; transition: all 0.2s ease; transform-origin: top right; }
+  .popover[data-open="false"] { opacity: 0; transform: scale(0.95); pointer-events: none; }
+  .popover[data-open="true"] { opacity: 1; transform: scale(1); }
+  .seg-pill { transition: all 0.15s; cursor: pointer; }
+  .seg-pill[data-active="true"] { background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(123,30,46,0.25); }
+  .seg-pill:hover:not([data-active="true"]) { background: var(--primary-light); }
+  .stage-row { transition: all 0.15s; cursor: pointer; }
+  .stage-row[data-from="true"] { background: var(--success-light); border-left: 3px solid var(--success); }
+  .stage-row[data-protected="true"] { background: #fef9e7; border-left: 3px dashed #f1d77a; }
+  .stage-row[data-filtered="true"] { background: var(--primary-light); border-left: 3px solid var(--primary); }
+  .stage-row:hover { transform: translateX(2px); }
+  .card-funnel { transition: all 0.2s ease; }
+  .card-funnel.hidden-by-filter { opacity: 0.18; filter: grayscale(0.7); }
+  .badge-accept-yes { background: #dbf2e3; color: #1f7a4f; }
+  .badge-accept-no { background: #fbeaec; color: #b1424a; }
+  .badge-protected { background: #fff5d6; color: #8a6800; border: 1px solid #f1d77a; }
+  details summary { list-style: none; cursor: pointer; }
+  details summary::-webkit-details-marker { display: none; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; background: #d1d5db; border-radius: 9999px; cursor: pointer; transition: background 0.2s; }
+  .toggle-switch[data-on="true"] { background: var(--primary); }
+  .toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-switch[data-on="true"] .toggle-knob { transform: translateX(20px); }
+  .impact-bar { height: 8px; border-radius: 4px; background: #e5e7eb; overflow: hidden; position: relative; }
+  .impact-fill { height: 100%; transition: width 0.3s ease; background: linear-gradient(90deg, var(--primary), var(--danger)); }
+</style>
+</head>
+<body class="min-h-screen p-6">
+<div class="max-w-[1400px] mx-auto">
+
+  <!-- ─── Documentação ─────────────────────────────────────────────── -->
+  <div class="mb-6 bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-white font-bold" style="background: var(--primary);">V3</span>
+      <h1 class="text-xl font-bold">Pill + Popover com Preview de Impacto</h1>
+    </div>
+    <p class="text-sm text-gray-600 leading-relaxed">
+      Botão pill compacto na toolbar. Clica → abre <strong>popover</strong> com painel completo: switch principal, segmented sim/não, lista vertical das etapas com radio "começar daqui", e <strong>preview de impacto em tempo real</strong> (barra mostrando quantos contatos serão escondidos por etapa). Mais avançado — adequa a usuários que querem entender exatamente o que tá acontecendo antes de aplicar. Footprint zero quando fechado.
+    </p>
+    <div class="mt-3 grid grid-cols-3 gap-3 text-xs">
+      <div class="p-2.5 rounded bg-green-50 border border-green-200"><strong class="text-green-800">✓ Bom pra:</strong> usuários analíticos. "Preview de impacto" reduz medo de aplicar errado.</div>
+      <div class="p-2.5 rounded bg-amber-50 border border-amber-200"><strong class="text-amber-800">⚠ Atenção:</strong> exige 2 cliques (abrir popover + ajustar). Botão fechar/aplicar precisa ser óbvio.</div>
+      <div class="p-2.5 rounded bg-gray-50 border border-gray-200"><strong>Espaço:</strong> footprint zero quando inativo. Estado ativo visível pelo pill colorido.</div>
+    </div>
+  </div>
+
+  <!-- Aba Contatos resumo -->
+  <details class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+    <summary class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs uppercase tracking-wider font-bold text-gray-500">Aba Contatos</span>
+        <span class="text-sm text-gray-700">— em Contatos, V3 expõe o mesmo pill na toolbar (sem etapas/protegidas, só toggle + sim/não)</span>
+      </div>
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </summary>
+    <div class="p-5">
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white">🔍 Filtros</button>
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm rounded-full pill-trigger" data-on="true">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          WhatsApp: ✓ aceita
+        </span>
+      </div>
+      <p class="text-xs text-gray-500">Na aba Contatos, o popover não mostra etapas (não há funil). Só toggle + segmented Sim/Não. Mesma linguagem visual.</p>
+    </div>
+  </details>
+
+  <!-- ─── Aba Funis (foco da V3) ──────────────────────────────────── -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+    <!-- Header -->
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold">Funil de Mobilização — Eleição 2026</h2>
+        <p class="text-xs text-gray-500 mt-0.5">86 contatos · 5 etapas</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Modo seleção</button>
+        <button class="px-3 py-1.5 text-sm text-white rounded-lg" style="background: var(--primary);">+ Adicionar contato</button>
+      </div>
+    </div>
+
+    <!-- Toolbar com pill + popover -->
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-3 flex-wrap relative">
+      <select class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white">
+        <option>Funil: Mobilização 2026</option>
+        <option>Funil: Liderança Comunitária</option>
+      </select>
+
+      <div class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg bg-white">
+        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input class="text-sm w-32 outline-none" placeholder="Buscar lead..." />
+      </div>
+
+      <!-- ⚡ Pill com popover -->
+      <div class="relative" id="filter-anchor">
+        <button id="filter-pill" class="pill-trigger inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm rounded-full font-medium" data-on="false" onclick="togglePopover()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <span id="pill-label">Filtro WhatsApp</span>
+          <span id="pill-badge" class="hidden inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1" style="background: white; color: var(--primary);">0</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <!-- Popover -->
+        <div id="popover" class="popover" data-open="false">
+          <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" style="color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              <span class="font-bold text-sm">Filtro WhatsApp</span>
+            </div>
+            <button onclick="togglePopover()" class="w-7 h-7 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-500">✕</button>
+          </div>
+
+          <div class="p-4 space-y-4 max-h-[600px] overflow-y-auto">
+            <!-- Toggle principal -->
+            <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+              <div>
+                <div class="text-sm font-semibold">Ativar filtro</div>
+                <div class="text-[11px] text-gray-500 mt-0.5">Liga/desliga a aplicação</div>
+              </div>
+              <div id="popover-toggle" class="toggle-switch" data-on="false" onclick="toggleFilter()">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <!-- Segmented -->
+            <div id="seg-block" class="opacity-50 pointer-events-none transition-opacity">
+              <div class="text-[11px] uppercase tracking-wider font-bold text-gray-500 mb-1.5">O que mostrar</div>
+              <div class="inline-flex w-full rounded-lg border border-gray-200 overflow-hidden bg-white">
+                <button class="seg-pill flex-1 px-3 py-2 text-xs font-medium" data-active="true" onclick="setMode('yes')">
+                  <span class="inline-block w-2 h-2 rounded-full bg-green-600 mr-1"></span>Apenas Aceita
+                </button>
+                <button class="seg-pill flex-1 px-3 py-2 text-xs font-medium border-l border-gray-200" data-active="false" onclick="setMode('no')">
+                  <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Apenas Não aceita
+                </button>
+              </div>
+            </div>
+
+            <!-- Stages list com radio + preview -->
+            <div id="stages-block" class="opacity-50 pointer-events-none transition-opacity">
+              <div class="text-[11px] uppercase tracking-wider font-bold text-gray-500 mb-1.5">Aplicar a partir da etapa</div>
+              <div class="space-y-1.5">
+                <div class="stage-row flex items-center gap-3 p-2.5 rounded-lg border border-gray-200" data-from="false" data-protected="false" data-filtered="false" data-stage="0" onclick="setStageFrom(0)">
+                  <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+                    <div class="radio-dot w-2 h-2 rounded-full hidden" style="background: var(--success);"></div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">1. Lead novo</div>
+                    <div class="impact-bar mt-1.5"><div class="impact-fill" style="width: 33%"></div></div>
+                  </div>
+                  <div class="text-right text-[11px]"><span class="font-bold">22</span><span class="text-gray-500">→<span class="visible-after font-bold" style="color: var(--success);">22</span></span></div>
+                </div>
+
+                <div class="stage-row flex items-center gap-3 p-2.5 rounded-lg border border-gray-200" data-from="false" data-protected="false" data-filtered="false" data-stage="1" onclick="setStageFrom(1)">
+                  <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+                    <div class="radio-dot w-2 h-2 rounded-full hidden" style="background: var(--success);"></div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">2. Engajado</div>
+                    <div class="impact-bar mt-1.5"><div class="impact-fill" style="width: 33%"></div></div>
+                  </div>
+                  <div class="text-right text-[11px]"><span class="font-bold">18</span><span class="text-gray-500">→<span class="visible-after font-bold" style="color: var(--success);">18</span></span></div>
+                </div>
+
+                <div class="stage-row flex items-center gap-3 p-2.5 rounded-lg border border-gray-200" data-from="false" data-protected="false" data-filtered="false" data-stage="2" onclick="setStageFrom(2)">
+                  <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+                    <div class="radio-dot w-2 h-2 rounded-full hidden" style="background: var(--success);"></div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">3. Qualificado</div>
+                    <div class="impact-bar mt-1.5"><div class="impact-fill" style="width: 50%"></div></div>
+                  </div>
+                  <div class="text-right text-[11px]"><span class="font-bold">20</span><span class="text-gray-500">→<span class="visible-after font-bold" style="color: var(--primary);">20</span></span></div>
+                </div>
+
+                <div class="stage-row flex items-center gap-3 p-2.5 rounded-lg border border-gray-200" data-from="false" data-protected="false" data-filtered="false" data-stage="3" onclick="setStageFrom(3)">
+                  <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+                    <div class="radio-dot w-2 h-2 rounded-full hidden" style="background: var(--success);"></div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">4. Compromissado</div>
+                    <div class="impact-bar mt-1.5"><div class="impact-fill" style="width: 66%"></div></div>
+                  </div>
+                  <div class="text-right text-[11px]"><span class="font-bold">15</span><span class="text-gray-500">→<span class="visible-after font-bold" style="color: var(--primary);">15</span></span></div>
+                </div>
+
+                <div class="stage-row flex items-center gap-3 p-2.5 rounded-lg border border-gray-200" data-from="false" data-protected="false" data-filtered="false" data-stage="4" onclick="setStageFrom(4)">
+                  <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+                    <div class="radio-dot w-2 h-2 rounded-full hidden" style="background: var(--success);"></div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">5. Convertido</div>
+                    <div class="impact-bar mt-1.5"><div class="impact-fill" style="width: 100%"></div></div>
+                  </div>
+                  <div class="text-right text-[11px]"><span class="font-bold">11</span><span class="text-gray-500">→<span class="visible-after font-bold" style="color: var(--primary);">11</span></span></div>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-gray-500 mt-2 italic flex items-start gap-1.5">
+                <span>💡</span>
+                <span>Etapas <strong>antes</strong> da escolhida (amarelas) ficam <strong>protegidas</strong> — mostram todos os contatos, mesmo os que não aceitam WhatsApp. Assim novos leads/seguidores não somem.</span>
+              </p>
+            </div>
+
+            <!-- Preview consolidado -->
+            <div class="p-3 rounded-lg border border-gray-200" style="background: linear-gradient(135deg, var(--primary-light), white);">
+              <div class="text-[11px] uppercase tracking-wider font-bold text-gray-500">Resumo do impacto</div>
+              <div class="flex items-end gap-2 mt-1.5">
+                <div class="text-2xl font-bold" id="preview-visible" style="color: var(--primary);">86</div>
+                <div class="text-xs text-gray-500 pb-1">contatos visíveis de <span id="preview-total">86</span></div>
+              </div>
+              <div class="text-[11px] text-gray-600 mt-0.5"><span id="preview-hidden" class="font-semibold">0</span> ocultos pelo filtro</div>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 border-t border-gray-100 flex gap-2 bg-gray-50">
+            <button class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-100" onclick="resetFilter()">Limpar</button>
+            <button class="flex-1 px-3 py-2 text-sm text-white rounded-lg" style="background: var(--primary);" onclick="togglePopover()">Aplicar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ml-auto text-xs text-gray-500">
+        Visíveis: <span id="visible-count" class="font-bold text-gray-900">86</span> de 86
+      </div>
+    </div>
+
+    <!-- Kanban -->
+    <div class="p-5 overflow-x-auto">
+      <div class="flex gap-3 min-w-[1300px]">
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="0">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Lead novo</span>
+              <span class="text-xs text-gray-500 stage-count">22</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="0"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Maria Souza</div><div class="text-xs text-gray-500 mt-0.5">⏰ há 2 dias</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="0"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Pedro Lima</div><div class="text-xs text-gray-500 mt-0.5">⏰ há 4 dias</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="0"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Ana Castro</div><div class="text-xs text-gray-500 mt-0.5">⏰ há 5 dias</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="1">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Engajado</span>
+              <span class="text-xs text-gray-500 stage-count">18</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="1"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Carlos Vieira</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="1"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Luiza Mendes</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="1"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">João Pereira</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="2">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Qualificado</span>
+              <span class="text-xs text-gray-500 stage-count">20</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Rita Oliveira</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Bruno Alves</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Sandra Costa</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="2"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Felipe Rios</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="3">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Compromissado</span>
+              <span class="text-xs text-gray-500 stage-count">15</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="3"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Marcelo Tavares</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="3"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Cristina Borges</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="no" data-stage-idx="3"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Roberto Pinheiro</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-no">✗ não aceita</div></div></div>
+          </div>
+        </div>
+
+        <div class="kanban-col flex-1 min-w-[240px]" data-stage="4">
+          <div class="flex items-center justify-between mb-2.5 px-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span class="text-sm font-semibold text-gray-700">Convertido</span>
+              <span class="text-xs text-gray-500 stage-count">11</span>
+            </div>
+            <span class="protected-badge hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold badge-protected">🛡 protegida</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="card-funnel" data-accept="yes" data-stage-idx="4"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Aline Cunha</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+            <div class="card-funnel" data-accept="yes" data-stage-idx="4"><div class="bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:shadow"><div class="font-medium">Diego Macedo</div><div class="mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] badge-accept-yes">✓ aceita</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Demo data — % de "Aceita" por etapa (mock realista)
+  const STAGES_DATA = [
+    { name: 'Lead novo', total: 22, accept_yes_pct: 0.65 },
+    { name: 'Engajado', total: 18, accept_yes_pct: 0.70 },
+    { name: 'Qualificado', total: 20, accept_yes_pct: 0.55 },
+    { name: 'Compromissado', total: 15, accept_yes_pct: 0.78 },
+    { name: 'Convertido', total: 11, accept_yes_pct: 0.92 },
+  ];
+  const TOTAL = STAGES_DATA.reduce((s, x) => s + x.total, 0);
+
+  let popoverOpen = false;
+  let filterOn = false;
+  let mode = 'yes';
+  let stageFrom = 2;
+
+  function togglePopover() {
+    popoverOpen = !popoverOpen;
+    document.getElementById('popover').setAttribute('data-open', popoverOpen);
+  }
+
+  function toggleFilter() {
+    filterOn = !filterOn;
+    document.getElementById('popover-toggle').setAttribute('data-on', filterOn);
+    document.getElementById('filter-pill').setAttribute('data-on', filterOn);
+    document.getElementById('seg-block').classList.toggle('opacity-50', !filterOn);
+    document.getElementById('seg-block').classList.toggle('pointer-events-none', !filterOn);
+    document.getElementById('stages-block').classList.toggle('opacity-50', !filterOn);
+    document.getElementById('stages-block').classList.toggle('pointer-events-none', !filterOn);
+    apply();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('#seg-block .seg-pill').forEach(b => b.setAttribute('data-active', 'false'));
+    document.querySelector(`#seg-block .seg-pill[onclick="setMode('${m}')"]`).setAttribute('data-active', 'true');
+    apply();
+  }
+
+  function setStageFrom(idx) {
+    stageFrom = idx;
+    apply();
+  }
+
+  function resetFilter() {
+    filterOn = false;
+    mode = 'yes';
+    stageFrom = 2;
+    document.getElementById('popover-toggle').setAttribute('data-on', false);
+    document.getElementById('filter-pill').setAttribute('data-on', false);
+    document.getElementById('seg-block').classList.add('opacity-50', 'pointer-events-none');
+    document.getElementById('stages-block').classList.add('opacity-50', 'pointer-events-none');
+    apply();
+  }
+
+  function apply() {
+    // Stages list (popover)
+    document.querySelectorAll('.stage-row').forEach(row => {
+      const i = parseInt(row.dataset.stage, 10);
+      const isFrom = filterOn && i === stageFrom;
+      const isProtected = filterOn && i < stageFrom;
+      const isFiltered = filterOn && i > stageFrom;
+      row.setAttribute('data-from', isFrom);
+      row.setAttribute('data-protected', isProtected);
+      row.setAttribute('data-filtered', isFiltered);
+      const dot = row.querySelector('.radio-dot');
+      dot.classList.toggle('hidden', !isFrom);
+
+      // Visíveis após filtro (preview)
+      const stageData = STAGES_DATA[i];
+      let visibleAfter = stageData.total;
+      if (filterOn && i >= stageFrom) {
+        const ratio = mode === 'yes' ? stageData.accept_yes_pct : (1 - stageData.accept_yes_pct);
+        visibleAfter = Math.round(stageData.total * ratio);
+      }
+      row.querySelector('.visible-after').textContent = visibleAfter;
+    });
+
+    // Cards (mundo real)
+    let visible = 0;
+    document.querySelectorAll('.card-funnel').forEach(card => {
+      const idx = parseInt(card.dataset.stageIdx, 10);
+      const accept = card.dataset.accept;
+      let hide = false;
+      if (filterOn && idx >= stageFrom) {
+        if (mode === 'yes' && accept !== 'yes') hide = true;
+        if (mode === 'no' && accept !== 'no') hide = true;
+      }
+      card.classList.toggle('hidden-by-filter', hide);
+      if (!hide) visible++;
+    });
+    document.getElementById('visible-count').textContent = visible;
+    document.getElementById('preview-visible').textContent = visible;
+    document.getElementById('preview-total').textContent = TOTAL;
+    document.getElementById('preview-hidden').textContent = TOTAL - visible;
+
+    // Badges nas colunas
+    document.querySelectorAll('.kanban-col').forEach(col => {
+      const i = parseInt(col.dataset.stage, 10);
+      const protectedBadge = col.querySelector('.protected-badge');
+      const isProtected = filterOn && i < stageFrom;
+      protectedBadge.classList.toggle('hidden', !isProtected);
+
+      const stageCards = col.querySelectorAll('.card-funnel');
+      const visibleInStage = [...stageCards].filter(c => !c.classList.contains('hidden-by-filter')).length;
+      col.querySelector('.stage-count').textContent = visibleInStage;
+    });
+
+    // Pill label + badge
+    if (filterOn) {
+      const modeLabel = mode === 'yes' ? '✓ aceita' : '✗ não aceita';
+      document.getElementById('pill-label').textContent = `WhatsApp: ${modeLabel}`;
+      document.getElementById('pill-badge').classList.remove('hidden');
+      document.getElementById('pill-badge').textContent = TOTAL - visible;
+    } else {
+      document.getElementById('pill-label').textContent = 'Filtro WhatsApp';
+      document.getElementById('pill-badge').classList.add('hidden');
+    }
+  }
+
+  // Init
+  apply();
+</script>
+</body>
+</html>

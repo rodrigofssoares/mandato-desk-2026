@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { BoardCard } from './BoardCard';
 import { StageChecklistTrigger } from './StageChecklistTrigger';
 import { colorToHex } from '@/components/settings/stageColors';
@@ -18,6 +18,8 @@ interface BoardColumnProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (item: BoardItemWithContact) => void;
+  /** Quando true, a etapa está protegida pelo filtro — exibe badge amarelo no header */
+  isProtected?: boolean;
 }
 
 export function BoardColumn({
@@ -29,6 +31,7 @@ export function BoardColumn({
   selectionMode,
   selectedIds,
   onToggleSelect,
+  isProtected = false,
 }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
@@ -52,6 +55,16 @@ export function BoardColumn({
         <h3 className="font-semibold text-sm uppercase tracking-wide" style={{ color: corHex }}>
           {stage.nome}
         </h3>
+        {/* Badge "protegida" — exibido quando a etapa está antes do ponto de início do filtro */}
+        {isProtected && (
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0.5 text-amber-700 border-amber-300 bg-amber-50 inline-flex items-center gap-1 whitespace-nowrap"
+          >
+            <ShieldCheck className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
+            protegida
+          </Badge>
+        )}
         <Badge variant="secondary" className="ml-auto text-xs">
           {items.length}
         </Badge>

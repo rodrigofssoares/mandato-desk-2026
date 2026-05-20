@@ -31,6 +31,8 @@ export interface BoardItemWithContact extends BoardItem {
     email: string | null;
     is_favorite: boolean | null;
     leader_id: string | null;
+    /** null = sem informação — só aparece em modo "Todos" no filtro de aceite */
+    aceita_whatsapp: boolean | null;
   } | null;
 }
 
@@ -49,7 +51,7 @@ export function useBoardItems(boardId: string | null | undefined) {
         .select(
           `
           id, board_id, stage_id, contact_id, ordem, moved_at, created_at,
-          contact:contacts(id, nome, instagram, twitter, tiktok, youtube, whatsapp, telefone, email, is_favorite, leader_id)
+          contact:contacts(id, nome, instagram, twitter, tiktok, youtube, whatsapp, telefone, email, is_favorite, leader_id, aceita_whatsapp)
         `
         )
         .eq('board_id', boardId)
