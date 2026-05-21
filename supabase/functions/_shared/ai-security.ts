@@ -125,11 +125,13 @@ export async function isRateLimited(
 ): Promise<boolean> {
   const since = new Date(Date.now() - WINDOW_MS).toISOString();
 
-  // Conta chamadas do usuário na última janela
+  // Conta chamadas do usuário na última janela, filtrado por ef_name
+  // MED-02: sem esse filtro a cota seria compartilhada entre todas as EFs do usuario
   const { count, error } = await admin
     .from('ai_rate_limit')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
+    .eq('ef_name', efName)
     .gte('called_at', since);
 
   if (error) {
