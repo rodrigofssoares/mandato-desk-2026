@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-05-09T19:14:24.288Z",
+  "results": [
+    {
+      "ct": "SETUP-alertas-disponiveis",
+      "status": "PASS",
+      "notes": "Badge: \"Alertas50\" — 50 alertas"
+    },
+    {
+      "ct": "CT01-precondition",
+      "status": "PASS",
+      "notes": "50 alertas disponíveis"
+    },
+    {
+      "ct": "CT01-modal-titulo",
+      "status": "PASS",
+      "notes": "Título \"Alertas (N)\" correto"
+    },
+    {
+      "ct": "CT01-botoes-x",
+      "status": "PASS",
+      "notes": "50 botões X encontrados"
+    },
+    {
+      "ct": "CT01-aria-label-x",
+      "status": "PASS",
+      "notes": "aria-label: \"Dispensar alerta\""
+    },
+    {
+      "ct": "CT01-item-sumiu",
+      "status": "PASS",
+      "notes": "50 → 49"
+    },
+    {
+      "ct": "CT01-badge-decrement",
+      "status": "PASS",
+      "notes": "50 → 49"
+    },
+    {
+      "ct": "CT01-titulo-atualizado",
+      "status": "PASS",
+      "notes": "Título indica 49 (esperado 49)"
+    },
+    {
+      "ct": "CT01-link-gerenciar",
+      "status": "PASS",
+      "notes": "Link \"Gerenciar alertas dispensados\" presente"
+    },
+    {
+      "ct": "CT01-dispensar-todos-visivel",
+      "status": "PASS",
+      "notes": "Botão \"Dispensar todos\" presente"
+    },
+    {
+      "ct": "CT01-persistencia-badge",
+      "status": "PASS",
+      "notes": "Badge reload: 49 (esperado ≤ 49)"
+    },
+    {
+      "ct": "CT01-persistencia-item-sumido",
+      "status": "PASS",
+      "notes": "49 items após reload (esperado ≤ 49)"
+    },
+    {
+      "ct": "CT03-precondition",
+      "status": "WARN",
+      "notes": "0 alertas dispensados para restaurar"
+    }
+  ],
+  "consoleErrors": [
+    "[SETUP] Erro ao buscar perfil: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…src/context/AuthContext.tsx?t=1778336021569:37:37, hint: , code: }"
+  ],
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "warned": 1
+  }
+}

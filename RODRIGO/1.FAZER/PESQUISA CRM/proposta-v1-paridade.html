@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Proposta V1 — Paridade WhatsApp · Mandato Desk 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --burgundy:#6E1E3F; --burgundy-dark:#561530; --gold:#C9A24B; --gold-soft:#E7D6A8;
+    --cream:#FBF7F2; --paper:#FFFFFF; --ink:#2A2024; --muted:#7A6F73; --line:#E8DFD8;
+    --must:#6E1E3F; --should:#B8862F; --could:#5B6B7A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  /* header */
+  header{background:linear-gradient(135deg,var(--burgundy),var(--burgundy-dark));color:#fff;padding:46px 0 38px}
+  .tier{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    padding:6px 14px;border-radius:999px;font-family:'Space Grotesk';font-weight:600;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+  header h1{font-family:'Cinzel',serif;font-weight:600;font-size:2.1rem;margin:16px 0 6px;line-height:1.2}
+  header .sub{font-family:'Space Grotesk';font-size:1.05rem;color:var(--gold-soft);font-weight:500}
+  header .meta{margin-top:14px;font-size:.86rem;color:rgba(255,255,255,.7)}
+  /* positioning */
+  .pos{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:12px;padding:20px 24px;margin:26px 0}
+  .pos h2{font-family:'Space Grotesk';font-size:1rem;text-transform:uppercase;letter-spacing:.05em;color:var(--burgundy);margin-bottom:8px}
+  .pos p{font-size:.95rem;color:var(--ink)}
+  .pos p+p{margin-top:8px}
+  /* toolbar */
+  .toolbar{position:sticky;top:0;z-index:20;background:var(--cream);border-bottom:1px solid var(--line);
+    padding:14px 0;margin-bottom:18px}
+  .stats{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:12px}
+  .stat{font-family:'Space Grotesk'}
+  .stat b{font-size:1.5rem;color:var(--burgundy);font-weight:700}
+  .stat span{font-size:.8rem;color:var(--muted);display:block;text-transform:uppercase;letter-spacing:.04em}
+  .bar{flex:1;min-width:160px;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--burgundy));width:100%;transition:width .25s}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  button{font-family:'Space Grotesk';cursor:pointer;border:none;font-weight:600}
+  .btn{padding:8px 16px;border-radius:8px;font-size:.85rem}
+  .btn-primary{background:var(--burgundy);color:#fff}
+  .btn-primary:hover{background:var(--burgundy-dark)}
+  .btn-ghost{background:transparent;color:var(--burgundy);border:1px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--burgundy)}
+  .filters{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .chip{padding:5px 12px;border-radius:99px;font-size:.78rem;font-family:'Space Grotesk';font-weight:500;
+    background:var(--paper);border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--gold)}
+  .chip.on{background:var(--burgundy);color:#fff;border-color:var(--burgundy)}
+  /* cards */
+  .grid{display:grid;gap:12px;padding-bottom:40px}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;transition:.15s}
+  .card.sel{border-color:var(--gold);box-shadow:0 1px 0 var(--gold-soft)}
+  .card.hide{display:none}
+  .chead{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+  .chead input{width:20px;height:20px;margin-top:2px;accent-color:var(--burgundy);cursor:pointer;flex-shrink:0}
+  .code{font-family:'Space Grotesk';font-weight:700;color:var(--gold);font-size:.9rem;flex-shrink:0;margin-top:1px}
+  .name{font-family:'Space Grotesk';font-weight:600;font-size:1.02rem;flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0 32px}
+  .tag{font-size:.72rem;font-family:'Space Grotesk';font-weight:600;padding:3px 9px;border-radius:6px;letter-spacing:.02em}
+  .tag-theme{background:#F1EAE3;color:var(--burgundy)}
+  .tag-must{background:var(--must);color:#fff}
+  .tag-should{background:var(--should);color:#fff}
+  .tag-could{background:var(--could);color:#fff}
+  .tag-eff{background:#EFEAF0;color:#5a4a52;border:1px solid var(--line)}
+  .more{background:none;color:var(--muted);font-size:.8rem;margin:10px 0 0 32px;padding:0;text-decoration:underline}
+  .detail{margin:10px 0 0 32px;padding:12px 14px;background:var(--cream);border-radius:8px;font-size:.88rem;display:none}
+  .detail.open{display:block}
+  .detail p+p{margin-top:6px}
+  .detail strong{color:var(--burgundy);font-family:'Space Grotesk'}
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(42,32,36,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal.open{display:flex}
+  .sheet{background:var(--paper);border-radius:14px;max-width:620px;width:100%;max-height:84vh;display:flex;flex-direction:column;overflow:hidden}
+  .sheet header{background:var(--burgundy);padding:18px 22px}
+  .sheet header h3{font-family:'Cinzel',serif;color:#fff;font-size:1.2rem}
+  .sheet header p{color:var(--gold-soft);font-size:.85rem;font-family:'Space Grotesk';margin-top:2px}
+  .sheet .body{padding:18px 22px;overflow-y:auto}
+  .sumline{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+  .sumline .code{margin-top:0}
+  .sheet .foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+  .empty{color:var(--muted);font-style:italic;padding:14px 0}
+  footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.82rem;border-top:1px solid var(--line)}
+  @media(max-width:560px){header h1{font-size:1.6rem}.chips,.more,.detail{margin-left:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="tier">◆ Versão 1 de 3 — Escopo enxuto</span>
+    <h1>Paridade WhatsApp</h1>
+    <p class="sub">Complementos para o WhatsApp CRM do Mandato Desk 2026</p>
+    <p class="meta">Proposta · 2026-05-17 · baseada na PESQUISA-CRM-WHATSAPP.md — nada será desenvolvido sem sua escolha</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="pos">
+    <h2>Posicionamento desta versão</h2>
+    <p>A <strong>V1</strong> fecha o "óbvio que falta": as interações nativas do WhatsApp que
+    qualquer usuário espera de imediato (responder, reagir, encaminhar, buscar) e os recursos de
+    produtividade e confiabilidade que evitam o gabinete ficar "mudo" sem perceber.</p>
+    <p>É o menor escopo viável de complemento. Tira o produto da percepção de "caixa de entrada
+    incompleta". <strong>Não inclui</strong> os recursos de domínio político nem a camada de IA —
+    esses estão nas versões V2 e V3.</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="stats">
+      <div class="stat"><b id="selCount">0</b><span>Selecionados</span></div>
+      <div class="stat"><b id="effPts">0</b><span>Pontos de esforço</span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="allBtn">Marcar todos</button>
+      <button class="btn btn-ghost" id="noneBtn">Limpar</button>
+      <button class="btn btn-primary" id="sumBtn">Resumo da seleção</button>
+    </div>
+    <div class="filters" id="filters"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <header><h3>Resumo da seleção</h3><p id="sumMeta"></p></header>
+    <div class="body" id="sumBody"></div>
+    <div class="foot">
+      <button class="btn btn-ghost" id="closeBtn">Fechar</button>
+      <button class="btn btn-primary" id="copyBtn">Copiar lista</button>
+    </div>
+  </div>
+</div>
+
+<footer>Mandato Desk 2026 · CRM político — cliente Raquel · Versão 1: Paridade WhatsApp</footer>
+
+<script>
+const VERSION = "V1 — Paridade WhatsApp";
+const CATALOG = [
+ {c:"C1",n:"Responder / citar mensagem específica",t:"Interação WhatsApp",p:"MUST",e:"M",mk:"Padrão universal em todas as plataformas.",no:"Hoje o operador não consegue citar uma mensagem ao responder — confunde em conversa longa."},
+ {c:"C2",n:"Reagir a mensagem com emoji",t:"Interação WhatsApp",p:"SHOULD",e:"P",mk:"Reação nativa do WhatsApp.",no:"O código já exibe reações recebidas; falta o operador poder enviar. Fecha o ciclo barato."},
+ {c:"C3",n:"Encaminhar mensagem entre conversas",t:"Interação WhatsApp",p:"SHOULD",e:"M",mk:"Encaminhamento nativo do WhatsApp.",no:"Repassar áudio/mídia de uma demanda para outra conversa ou atendente."},
+ {c:"C4",n:"Buscar texto dentro da conversa",t:"Interação WhatsApp",p:"MUST",e:"M",mk:"Busca intra-conversa — padrão de qualquer messenger.",no:"A pesquisa tem busca global (#51), mas não busca dentro de uma conversa longa."},
+ {c:"C5",n:"Favoritar / marcar mensagem",t:"Interação WhatsApp",p:"COULD",e:"P",mk:"Mensagens favoritas do WhatsApp.",no:"Marcar mensagens-chave (endereço, compromisso) + aba 'importantes' por conversa."},
+ {c:"C9",n:"Agendar envio de mensagem",t:"Produtividade",p:"SHOULD",e:"M",mk:"Send later — Kommo, respond.io.",no:"Escrever agora e enviar no horário definido (bom dia, parabéns)."},
+ {c:"C10",n:"Snooze de conversa ('lembrar depois')",t:"Produtividade",p:"SHOULD",e:"P",mk:"Snooze — respond.io, Intercom.",no:"A conversa some da lista ativa e volta no horário marcado."},
+ {c:"C11",n:"Variáveis nas respostas rápidas",t:"Produtividade",p:"SHOULD",e:"P",mk:"Merge fields — padrão de templates.",no:"{{nome}}, {{bairro}} preenchidos automaticamente. Complementa o #40 da pesquisa."},
+ {c:"C12",n:"Categorias / pastas de respostas rápidas",t:"Produtividade",p:"COULD",e:"P",mk:"Pastas de macros — Zendesk.",no:"Organiza os snippets por tema quando viram dezenas."},
+ {c:"C13",n:"Ações em massa na lista de conversas",t:"Produtividade",p:"SHOULD",e:"M",mk:"Bulk actions na inbox — HubSpot, respond.io.",no:"Multi-seleção de conversas → atribuir / etiquetar / arquivar em lote."},
+ {c:"C14",n:"Visões salvas de conversas (smart folders)",t:"Produtividade",p:"SHOULD",e:"M",mk:"Smart folders / saved views.",no:"Filtros nomeados. Reaproveita o padrão FiltrosFavoritos já usado em contatos."},
+ {c:"C15",n:"Rascunho persistente por conversa",t:"Produtividade",p:"COULD",e:"P",mk:"Draft por conversa — WhatsApp e todos os inboxes.",no:"Texto não enviado fica salvo ao trocar de conversa."},
+ {c:"C25",n:"Monitor de saúde da conexão Z-API",t:"Confiabilidade",p:"MUST",e:"M",mk:"Connection health — qualquer gateway não-oficial.",no:"Status da instância, alerta quando o QR cai, botão reconectar. Sem isso o gabinete fica 'mudo' sem saber."},
+ {c:"C27",n:"Horário de atendimento configurável",t:"Confiabilidade",p:"SHOULD",e:"P",mk:"Office hours — Zendesk, Intercom.",no:"Define expediente + aviso automático fora do horário. Complementa o #41."}
+];
+const EFF={P:1,M:3,G:6};
+const sel=new Set(CATALOG.map(x=>x.c));
+let fTheme="all",fPrio="all";
+
+const grid=document.getElementById("grid");
+function prioClass(p){return p==="MUST"?"tag-must":p==="SHOULD"?"tag-should":"tag-could"}
+function effLabel(e){return e==="P"?"Pequeno":e==="M"?"Médio":"Grande"}
+
+function render(){
+  grid.innerHTML="";
+  CATALOG.forEach(x=>{
+    const card=document.createElement("article");
+    card.className="card"+(sel.has(x.c)?" sel":"");
+    if((fTheme!=="all"&&x.t!==fTheme)||(fPrio!=="all"&&x.p!==fPrio))card.classList.add("hide");
+    card.innerHTML=`
+      <label class="chead">
+        <input type="checkbox" ${sel.has(x.c)?"checked":""} data-c="${x.c}">
+        <span class="code">${x.c}</span><span class="name">${x.n}</span>
+      </label>
+      <div class="chips">
+        <span class="tag tag-theme">${x.t}</span>
+        <span class="tag ${prioClass(x.p)}">${x.p}</span>
+        <span class="tag tag-eff">Esforço: ${effLabel(x.e)}</span>
+      </div>
+      <button class="more">ver detalhes ▾</button>
+      <div class="detail">
+        <p><strong>Referência de mercado:</strong> ${x.mk}</p>
+        <p><strong>Por que importa:</strong> ${x.no}</p>
+      </div>`;
+    card.querySelector("input").addEventListener("change",e=>{
+      e.target.checked?sel.add(x.c):sel.delete(x.c);
+      card.classList.toggle("sel",e.target.checked);update();
+    });
+    const more=card.querySelector(".more"),det=card.querySelector(".detail");
+    more.addEventListener("click",()=>{det.classList.toggle("open");
+      more.textContent=det.classList.contains("open")?"ocultar detalhes ▴":"ver detalhes ▾";});
+    grid.appendChild(card);
+  });
+}
+function update(){
+  let pts=0;CATALOG.forEach(x=>{if(sel.has(x.c))pts+=EFF[x.e]});
+  document.getElementById("selCount").textContent=sel.size;
+  document.getElementById("effPts").textContent=pts;
+  document.getElementById("barFill").style.width=(sel.size/CATALOG.length*100)+"%";
+}
+function buildFilters(){
+  const box=document.getElementById("filters");
+  const themes=[...new Set(CATALOG.map(x=>x.t))];
+  const mk=(label,val,kind)=>{
+    const c=document.createElement("span");c.className="chip"+((kind==="t"?fTheme:fPrio)===val?" on":"");
+    c.textContent=label;c.onclick=()=>{if(kind==="t")fTheme=val;else fPrio=val;buildFilters();render();};
+    return c;};
+  box.innerHTML="";
+  box.appendChild(mk("Todos os temas","all","t"));
+  themes.forEach(t=>box.appendChild(mk(t,t,"t")));
+  ["MUST","SHOULD","COULD"].forEach(p=>box.appendChild(mk(p,p,"p")));
+  box.appendChild(mk("Todas prioridades","all","p"));
+}
+document.getElementById("allBtn").onclick=()=>{CATALOG.forEach(x=>sel.add(x.c));render();update();};
+document.getElementById("noneBtn").onclick=()=>{sel.clear();render();update();};
+const modal=document.getElementById("modal");
+document.getElementById("sumBtn").onclick=()=>{
+  const chosen=CATALOG.filter(x=>sel.has(x.c));
+  let pts=0;chosen.forEach(x=>pts+=EFF[x.e]);
+  document.getElementById("sumMeta").textContent=
+    `${VERSION} · ${chosen.length} de ${CATALOG.length} recursos · ${pts} pontos de esforço`;
+  const body=document.getElementById("sumBody");
+  if(!chosen.length){body.innerHTML='<p class="empty">Nenhum recurso selecionado.</p>';}
+  else{body.innerHTML=chosen.map(x=>
+    `<div class="sumline"><span class="code">${x.c}</span><span>${x.n}</span>
+     <span class="tag ${prioClass(x.p)}" style="margin-left:auto">${x.p}</span>
+     <span class="tag tag-eff">${x.e}</span></div>`).join("");}
+  modal.classList.add("open");
+};
+document.getElementById("closeBtn").onclick=()=>modal.classList.remove("open");
+modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open");};
+document.getElementById("copyBtn").onclick=()=>{
+  const chosen=CATALOG.filter(x=>sel.has(x.c));
+  let pts=0;chosen.forEach(x=>pts+=EFF[x.e]);
+  const txt=`SELEÇÃO — Proposta ${VERSION}\n`+
+    `${chosen.length} de ${CATALOG.length} recursos · ${pts} pontos de esforço\n\n`+
+    chosen.map(x=>`[${x.p}] ${x.c} — ${x.n} (esforço ${x.e})`).join("\n");
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=document.getElementById("copyBtn");b.textContent="Copiado ✓";
+    setTimeout(()=>b.textContent="Copiar lista",1800);
+  });
+};
+buildFilters();render();update();
+</script>
+</body>
+</html>

@@ -81,7 +81,19 @@ export function useTestProviderKey() {
         body: { provider, api_key },
       });
 
-      if (error) throw error;
+      // supabase-js encapsula non-2xx em FunctionsHttpError mas oculta o body.
+      // Lemos o body manualmente pra mostrar mensagem útil ao usuário.
+      if (error) {
+        let detail = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json().catch(() => null);
+            if (body?.error) detail = body.error;
+          }
+        } catch { /* ignora */ }
+        throw new Error(detail);
+      }
 
       const result = data as { ok: boolean; error?: string };
       if (!result.ok) {

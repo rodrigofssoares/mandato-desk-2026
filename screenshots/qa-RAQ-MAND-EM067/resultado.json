@@ -1,0 +1,117 @@
+{
+  "timestamp": "2026-05-09T19:10:51.001Z",
+  "results": [
+    {
+      "ct": "CT01-badge-presente",
+      "status": "PASS",
+      "notes": "Badge visível: \"Alertas\""
+    },
+    {
+      "ct": "CT01-modal-abre",
+      "status": "PASS",
+      "notes": "Modal abriu corretamente"
+    },
+    {
+      "ct": "CT01-modal-titulo",
+      "status": "PASS",
+      "notes": "Título \"Alertas\" presente"
+    },
+    {
+      "ct": "CT01-alertas-na-lista",
+      "status": "WARN",
+      "notes": "Modal abriu mas lista de alertas vazia"
+    },
+    {
+      "ct": "CT02-botao-dispensar-todos",
+      "status": "PASS",
+      "notes": "Botão \"Dispensar todos\" presente"
+    },
+    {
+      "ct": "CT02-dialog-confirmacao",
+      "status": "PASS",
+      "notes": "AlertDialog de confirmação abriu"
+    },
+    {
+      "ct": "CT02-dialog-menciona-qtd",
+      "status": "PASS",
+      "notes": "Dialog menciona número"
+    },
+    {
+      "ct": "CT02-cancelar-fecha-dialog",
+      "status": "PASS",
+      "notes": "Dialog fechou ao cancelar"
+    },
+    {
+      "ct": "CT02-cancelar-intacto",
+      "status": "PASS",
+      "notes": "50 (esperado 50)"
+    },
+    {
+      "ct": "CT02-modal-vazia-apos-confirm",
+      "status": "PASS",
+      "notes": "Estado vazio exibido"
+    },
+    {
+      "ct": "CT02-badge-zero",
+      "status": "PASS",
+      "notes": "Badge: 0"
+    },
+    {
+      "ct": "CT03-aba-alertas-existe",
+      "status": "PASS",
+      "notes": "Aba renderizada, ativa: \"Alertas\""
+    },
+    {
+      "ct": "CT03-estado-vazio",
+      "status": "WARN",
+      "notes": "Sem itens e sem msg de vazio"
+    },
+    {
+      "ct": "CT03-restaurar-individual",
+      "status": "WARN",
+      "notes": "Sem alertas dispensados para restaurar"
+    },
+    {
+      "ct": "CT04-restaurar-todos",
+      "status": "WARN",
+      "notes": "Nenhum alerta dispensado para restaurar"
+    },
+    {
+      "ct": "CT05-badge-mobile",
+      "status": "PASS",
+      "notes": "Badge visível em mobile"
+    },
+    {
+      "ct": "CT05-touch-target-badge",
+      "status": "PASS",
+      "notes": "42x36px"
+    },
+    {
+      "ct": "CT05-modal-mobile",
+      "status": "PASS",
+      "notes": "Modal abre em mobile"
+    },
+    {
+      "ct": "CT05-touch-target-x",
+      "status": "WARN",
+      "notes": "Sem alertas ativos em mobile para verificar botão X"
+    },
+    {
+      "ct": "CT05-link-gerenciar",
+      "status": "PASS",
+      "notes": "Link Gerenciar presente em mobile"
+    },
+    {
+      "ct": "CT05-settings-mobile",
+      "status": "PASS",
+      "notes": "Settings > Alertas acessível em mobile"
+    }
+  ],
+  "consoleErrors": [],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "warned": 5,
+    "total": 21
+  }
+}

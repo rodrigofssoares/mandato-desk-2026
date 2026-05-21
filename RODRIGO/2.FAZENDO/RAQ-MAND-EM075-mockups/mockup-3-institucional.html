@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente IA — Layout 3: Institucional (foco no conteúdo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    height: 100dvh;
+    overflow: hidden;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Subtle texture */
+    background-image:
+      radial-gradient(at 20% 0%, hsl(var(--accent) / 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--primary) / 0.05) 0px, transparent 50%);
+  }
+
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .font-serif { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ===== Header institucional ===== */
+  .app-header {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 32px;
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid hsl(var(--border) / 0.6);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+  }
+  @media (max-width: 640px) {
+    .app-header { padding: 0 16px; gap: 10px; height: 64px; }
+  }
+
+  .header-brand {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .agent-avatar {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.75) 100%);
+    color: hsl(var(--primary-foreground));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+    position: relative;
+  }
+  .agent-avatar::after {
+    content: ''; position: absolute;
+    bottom: -2px; right: -2px;
+    width: 12px; height: 12px;
+    background: hsl(var(--success));
+    border: 2.5px solid hsl(var(--card));
+    border-radius: 50%;
+  }
+  @media (max-width: 640px) {
+    .agent-avatar { width: 38px; height: 38px; border-radius: 12px; }
+  }
+
+  .header-title { line-height: 1.2; }
+  .header-title .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: hsl(var(--accent-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .header-title .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+  @media (max-width: 640px) {
+    .header-title .name { font-size: 15px; }
+    .header-title .eyebrow { display: none; }
+  }
+
+  .header-spacer { flex: 1; }
+
+  /* Pills no header (model, tokens) */
+  .header-pills { display: flex; gap: 8px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+  }
+  .pill svg { color: hsl(var(--primary)); }
+  .pill.warn {
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-soft-fg));
+    border-color: transparent;
+  }
+  .pill.warn svg { color: hsl(var(--warning-soft-fg)); }
+  @media (max-width: 768px) {
+    .pill.tokens, .pill.model { display: none; }
+  }
+
+  /* Icon buttons no header */
+  .btn-icon {
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    border-radius: 11px;
+    padding: 8px;
+    width: 38px; height: 38px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--foreground));
+    transition: all 0.18s ease;
+  }
+  .btn-icon:hover { background: hsl(var(--muted)); transform: translateY(-1px); }
+  .btn-icon.has-badge { position: relative; }
+  .btn-icon .badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+    border: 2px solid hsl(var(--card));
+  }
+
+  /* ===== Body central ===== */
+  .body-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px 24px 24px;
+    scroll-behavior: smooth;
+  }
+  .body-area::-webkit-scrollbar { width: 8px; }
+  .body-area::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.22); border-radius: 4px; }
+
+  .container {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+
+  /* Hero / welcome */
+  .welcome {
+    text-align: center;
+    margin-bottom: 32px;
+    animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .welcome .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: hsl(var(--accent-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .welcome .eyebrow::before, .welcome .eyebrow::after {
+    content: '';
+    flex: 0 0 32px;
+    height: 1px;
+    background: hsl(var(--accent) / 0.5);
+  }
+  .welcome h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .welcome p {
+    font-size: 14.5px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.5;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Suggested prompts */
+  .suggestions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  @media (max-width: 640px) { .suggestions { grid-template-columns: 1fr; } }
+
+  .suggestion {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border) / 0.7);
+    border-radius: 14px;
+    padding: 14px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    color: hsl(var(--foreground));
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .suggestion:hover {
+    border-color: hsl(var(--primary) / 0.4);
+    background: hsl(var(--card));
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px hsl(var(--primary) / 0.08);
+  }
+  .suggestion-icon {
+    width: 30px; height: 30px;
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--primary));
+    flex-shrink: 0;
+  }
+  .suggestion-body { flex: 1; }
+  .suggestion-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: hsl(var(--foreground));
+  }
+  .suggestion-text {
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.45;
+  }
+
+  /* ===== Messages ===== */
+  .messages { display: flex; flex-direction: column; gap: 18px; }
+
+  .message {
+    animation: fadeIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  /* Mensagem do user — alinhada à direita, bolha */
+  .message.user {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .message.user .bubble {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    padding: 12px 16px;
+    border-radius: 16px 16px 4px 16px;
+    max-width: 80%;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* Mensagem do assistant — sem avatar, ocupa largura toda, identificada por borda esquerda */
+  .message.assistant {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border) / 0.6);
+    border-left: 3px solid hsl(var(--primary));
+    border-radius: 14px;
+    padding: 16px 20px 12px;
+  }
+  .message.assistant.favorited {
+    border-left-color: hsl(var(--accent));
+    background: hsl(var(--accent) / 0.04);
+  }
+
+  .message-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid hsl(var(--border) / 0.4);
+  }
+  .message-meta-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--primary));
+  }
+  .message-meta-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: hsl(var(--accent-foreground));
+    background: hsl(var(--accent) / 0.18);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .message-meta-time {
+    margin-left: auto;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .message-body {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: hsl(var(--foreground));
+  }
+  .message-body p { margin-bottom: 8px; }
+  .message-body p:last-child { margin-bottom: 0; }
+  .message-body strong { font-weight: 600; }
+  .message-body em { font-style: italic; color: hsl(var(--muted-foreground)); }
+  .message-body .quote {
+    background: hsl(var(--accent) / 0.08);
+    padding: 12px 16px;
+    border-left: 3px solid hsl(var(--accent));
+    border-radius: 0 10px 10px 0;
+    font-style: italic;
+    color: hsl(var(--foreground));
+    margin: 10px 0;
+  }
+
+  .message-footer {
+    display: flex; align-items: center; gap: 4px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid hsl(var(--border) / 0.4);
+  }
+  .msg-action {
+    background: transparent; border: none; cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: inherit; font-size: 11.5px;
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: all 0.15s ease;
+  }
+  .msg-action:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .msg-action.favorited {
+    color: hsl(var(--accent-foreground));
+    background: hsl(var(--accent) / 0.15);
+  }
+  .msg-action.favorited svg { fill: hsl(var(--accent)); color: hsl(var(--accent)); }
+
+  /* Typing */
+  .typing-indicator {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .typing-dot {
+    width: 7px; height: 7px;
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+  /* ===== Input flutuante glass ===== */
+  .input-zone {
+    padding: 12px 24px 20px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .input-container {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+  .input-wrap {
+    display: flex; align-items: flex-end; gap: 8px;
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(14px);
+    border: 1px solid hsl(var(--border));
+    border-radius: 18px;
+    padding: 10px 10px 10px 16px;
+    box-shadow: 0 10px 30px -10px hsl(var(--primary) / 0.15);
+    transition: all 0.18s ease;
+  }
+  .input-wrap:focus-within {
+    border-color: hsl(var(--primary) / 0.6);
+    box-shadow: 0 12px 32px -10px hsl(var(--primary) / 0.25);
+  }
+  .input-ta {
+    flex: 1; border: none; outline: none; background: transparent; resize: none;
+    font-family: inherit; font-size: 14.5px;
+    color: hsl(var(--foreground));
+    padding: 6px 0;
+    max-height: 160px; min-height: 24px;
+    line-height: 1.5;
+  }
+  .input-ta::placeholder { color: hsl(var(--muted-foreground)); }
+  .input-actions { display: flex; gap: 4px; padding-bottom: 2px; }
+  .input-btn {
+    background: transparent; border: none; cursor: pointer;
+    padding: 8px; width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--muted-foreground));
+  }
+  .input-btn:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .input-btn.send {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 3px 10px hsl(var(--primary) / 0.25);
+  }
+  .input-btn.send:hover { background: hsl(var(--primary) / 0.9); transform: translateY(-1px); }
+
+  .input-footer-tag {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  kbd {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+
+  /* ===== Drawer (histórico) ===== */
+  .drawer-overlay {
+    position: fixed; inset: 0;
+    background: hsl(353 35% 13% / 0.5);
+    backdrop-filter: blur(6px);
+    z-index: 50;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.28s ease;
+  }
+  .drawer-overlay.open { display: block; opacity: 1; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 100%; max-width: 380px;
+    background: hsl(var(--card));
+    box-shadow: -10px 0 40px rgba(0,0,0,0.2);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer.left {
+    right: auto; left: 0;
+    transform: translateX(-100%);
+  }
+  .drawer.left.open { transform: translateX(0); }
+
+  .drawer-header {
+    padding: 20px 22px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex; align-items: center; gap: 12px;
+  }
+  .drawer-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .drawer-close {
+    background: transparent; border: none; cursor: pointer;
+    padding: 8px; border-radius: 8px;
+    color: hsl(var(--muted-foreground));
+  }
+  .drawer-close:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+
+  .drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+  .drawer-body::-webkit-scrollbar { width: 6px; }
+  .drawer-body::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
+
+  .drawer-section {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+    padding: 16px 8px 8px;
+  }
+
+  .drawer-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin-bottom: 2px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .drawer-item:hover { background: hsl(var(--muted)); }
+  .drawer-item.active { background: hsl(var(--primary) / 0.08); border-left: 3px solid hsl(var(--primary)); padding-left: 11px; }
+  .drawer-item .icon {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--primary));
+    flex-shrink: 0;
+  }
+  .drawer-item .info { flex: 1; min-width: 0; }
+  .drawer-item .info .title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .drawer-item .info .meta { font-size: 11px; color: hsl(var(--muted-foreground)); }
+
+  .drawer-footer {
+    padding: 16px 22px;
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    text-align: center;
+  }
+
+  /* New chat button no drawer */
+  .new-chat-btn {
+    width: 100%;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: none;
+    padding: 10px 14px;
+    border-radius: 11px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .new-chat-btn:hover { background: hsl(var(--primary) / 0.9); }
+
+  /* Favoritos drawer */
+  .fav-card {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .fav-card-text {
+    font-size: 13px;
+    line-height: 1.55;
+    color: hsl(var(--foreground));
+    margin-bottom: 6px;
+  }
+  .fav-card-note {
+    font-size: 11.5px;
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--accent) / 0.08);
+    border-left: 2px solid hsl(var(--accent));
+    padding: 6px 10px;
+    border-radius: 5px;
+    margin: 6px 0;
+  }
+  .fav-card-meta {
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+  }
+  .fav-card-actions {
+    display: flex; gap: 4px;
+    margin-top: 8px;
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 8px;
+  }
+  .fav-card-actions button {
+    background: transparent; border: none; cursor: pointer;
+    padding: 4px 8px;
+    font-size: 11px; font-family: inherit;
+    color: hsl(var(--muted-foreground));
+    border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .fav-card-actions button:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .fav-card-actions button.danger:hover { color: hsl(var(--destructive)); }
+
+  .fav-search {
+    margin-bottom: 12px;
+  }
+  .fav-search input {
+    width: 100%;
+    padding: 9px 14px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--background));
+    font-family: inherit; font-size: 13px;
+  }
+  .fav-search input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px; left: 50%; transform: translateX(-50%) translateY(-80px);
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 11px 18px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <button class="btn-icon" onclick="openDrawer('history')" title="Histórico de conversas" aria-label="Histórico">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+
+    <div class="header-brand">
+      <div class="agent-avatar" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+      </div>
+      <div class="header-title">
+        <span class="eyebrow">Agente do Gabinete</span>
+        <span class="name">Atendente Institucional</span>
+      </div>
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <div class="header-pills">
+      <span class="pill model">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        claude-3.5-sonnet
+      </span>
+      <span class="pill tokens">3.2K tokens · sessão</span>
+      <span class="pill warn" title="Não use dados pessoais (CPF, nome, telefone) — LGPD">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        LGPD
+      </span>
+    </div>
+
+    <button class="btn-icon has-badge" onclick="openDrawer('favorites')" title="Favoritas (14)" aria-label="Favoritas">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: hsl(var(--accent));"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      <span class="badge">14</span>
+    </button>
+  </header>
+
+  <!-- ===== BODY ===== -->
+  <div class="body-area">
+    <div class="container">
+
+      <!-- Welcome / Suggestions (escondido após primeira interação) -->
+      <div class="welcome" id="welcome">
+        <div class="eyebrow">
+          <span>Mandato Desk · 2026</span>
+        </div>
+        <h1>Como posso ajudar hoje?</h1>
+        <p>Pergunte ao agente do gabinete. Respostas baseadas no comportamento configurado por Rodrigo e contexto institucional do mandato.</p>
+
+        <div class="suggestions">
+          <button class="suggestion" onclick="useSuggestion('Como respondo a um eleitor pedindo asfalto?')">
+            <div class="suggestion-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="suggestion-body">
+              <div class="suggestion-title">Atender pedido de obra pública</div>
+              <div class="suggestion-text">Roteiro padrão para eleitor pedindo asfalto, iluminação, calçada...</div>
+            </div>
+          </button>
+
+          <button class="suggestion" onclick="useSuggestion('Qual o modelo de ofício para Secretaria Municipal?')">
+            <div class="suggestion-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+            <div class="suggestion-body">
+              <div class="suggestion-title">Redigir ofício institucional</div>
+              <div class="suggestion-text">Estrutura formal para Secretaria, Câmara, Ministério Público...</div>
+            </div>
+          </button>
+
+          <button class="suggestion" onclick="useSuggestion('Como classificar uma demanda jurídica do eleitor?')">
+            <div class="suggestion-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><rect x="2" y="6" width="20" height="14" rx="2"/></svg></div>
+            <div class="suggestion-body">
+              <div class="suggestion-title">Classificar demanda jurídica</div>
+              <div class="suggestion-text">Categorização, encaminhamento e priorização de casos legais.</div>
+            </div>
+          </button>
+
+          <button class="suggestion" onclick="useSuggestion('Checklist completo para evento no bairro')">
+            <div class="suggestion-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+            <div class="suggestion-body">
+              <div class="suggestion-title">Organizar evento de campo</div>
+              <div class="suggestion-text">Logística, segurança, mobilização e cobertura de imprensa.</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages" id="messages"></div>
+
+    </div>
+  </div>
+
+  <!-- ===== INPUT ZONE ===== -->
+  <div class="input-zone">
+    <div class="input-container">
+      <div class="input-wrap">
+        <textarea
+          id="input"
+          class="input-ta"
+          placeholder="Pergunte ao agente do gabinete..."
+          rows="1"
+          aria-label="Mensagem"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"></textarea>
+        <div class="input-actions">
+          <button class="input-btn" title="Anexar (em breve)" aria-label="Anexar" disabled style="opacity: 0.4;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button class="input-btn send" onclick="sendMessage()" aria-label="Enviar">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="input-footer-tag">
+        <span><kbd>Enter</kbd> envia · <kbd>Shift+Enter</kbd> quebra linha</span>
+        <span style="font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;">Histórico · 30 dias · Favoritas · sem expiração</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== DRAWERS ===== -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- Drawer histórico (esquerda) -->
+<aside class="drawer left" id="drawer-history" role="dialog" aria-labelledby="drawer-hist-title">
+  <div class="drawer-header">
+    <h2 id="drawer-hist-title">Histórico</h2>
+    <button class="drawer-close" onclick="closeDrawer()" aria-label="Fechar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <button class="new-chat-btn" onclick="newSession(); closeDrawer();">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nova conversa
+    </button>
+
+    <div class="drawer-section">Hoje</div>
+    <div class="drawer-item active">
+      <div class="icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="info">
+        <div class="title">Asfalto para rua do eleitor</div>
+        <div class="meta">há 12 min · 4 msgs</div>
+      </div>
+    </div>
+    <div class="drawer-item">
+      <div class="icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="info">
+        <div class="title">Modelo de ofício Secretaria</div>
+        <div class="meta">há 2h · 7 msgs</div>
+      </div>
+    </div>
+
+    <div class="drawer-section">Ontem</div>
+    <div class="drawer-item">
+      <div class="icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="info">
+        <div class="title">Visita de campo no bairro</div>
+        <div class="meta">19/05 · 12 msgs</div>
+      </div>
+    </div>
+    <div class="drawer-item">
+      <div class="icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="info">
+        <div class="title">Classificar demanda jurídica</div>
+        <div class="meta">19/05 · 5 msgs</div>
+      </div>
+    </div>
+
+    <div class="drawer-section">Semana passada</div>
+    <div class="drawer-item">
+      <div class="icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="info">
+        <div class="title">Reclamação de transporte</div>
+        <div class="meta">14/05 · 3 msgs</div>
+      </div>
+    </div>
+    <div class="drawer-item">
+      <div class="icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="info">
+        <div class="title">Checklist evento no bairro</div>
+        <div class="meta">12/05 · 9 msgs</div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    Conversas mais antigas que <strong>30 dias</strong> são apagadas automaticamente.
+  </div>
+</aside>
+
+<!-- Drawer favoritos (direita) -->
+<aside class="drawer" id="drawer-favorites" role="dialog" aria-labelledby="drawer-fav-title">
+  <div class="drawer-header">
+    <h2 id="drawer-fav-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: hsl(var(--accent)); vertical-align: middle; margin-right: 6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      Favoritas
+      <span style="font-weight: 400; color: hsl(var(--muted-foreground)); font-size: 13px; margin-left: 4px;">14 / 500</span>
+    </h2>
+    <button class="drawer-close" onclick="closeDrawer()" aria-label="Fechar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="fav-search">
+      <input type="search" placeholder="Buscar nas favoritas..." aria-label="Buscar">
+    </div>
+
+    <div class="fav-card">
+      <div class="fav-card-text">
+        Fluxo padrão para pedidos de obra pública: confirmar recebimento, registrar demanda com tag "obra-asfalto", responder com protocolo, encaminhar à Secretaria...
+      </div>
+      <div class="fav-card-note">📝 Pedido novo, não escalação.</div>
+      <div class="fav-card-meta">18/05 · Asfalto para rua do eleitor</div>
+      <div class="fav-card-actions">
+        <button onclick="showToast('Copiado!')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+        <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar nota</button>
+        <button class="danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="fav-card">
+      <div class="fav-card-text">
+        Para reclamações de transporte público, identifique linha + horário + descrição. Se for empresa concessionária, abrir denúncia na BHTrans/SP-Trans...
+      </div>
+      <div class="fav-card-meta">14/05 · Reclamação de transporte</div>
+      <div class="fav-card-actions">
+        <button onclick="showToast('Copiado!')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+        <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar nota</button>
+        <button class="danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="fav-card">
+      <div class="fav-card-text">
+        Modelo de ofício para Secretaria Municipal: cabeçalho institucional, protocolo, exposição em até 3 parágrafos, fundamentação legal, prazo 15 dias úteis...
+      </div>
+      <div class="fav-card-note">📝 Salvar como template no Drive.</div>
+      <div class="fav-card-meta">10/05 · Modelo de ofício</div>
+      <div class="fav-card-actions">
+        <button onclick="showToast('Copiado!')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+        <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar nota</button>
+        <button class="danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+    </div>
+
+  </div>
+</aside>
+
+<div class="toast" id="toast">toast</div>
+
+<script>
+  const mockResponses = [
+    {
+      title: "Atendimento padrão",
+      body: "Boa pergunta. O fluxo institucional do gabinete para pedidos de obra pública segue 4 etapas:\n\n**1.** Confirme o recebimento do pedido e registre a demanda no CRM com a tag <em>obra-asfalto</em>.\n\n**2.** Responda ao eleitor com mensagem padrão:\n\n<quote>Olá! Sua solicitação foi registrada com o protocolo XXXX. O próximo passo é encaminhar à Secretaria Municipal de Obras para avaliação técnica. Te aviso assim que tivermos retorno.</quote>\n\n**3.** Crie demanda no funil <strong>Obras Públicas</strong> com prioridade média.\n\n**4.** Aguarde até 15 dias úteis para retorno da Secretaria."
+    },
+    {
+      title: "Acolhimento sem promessas",
+      body: "Esse caso pede acolhimento sem assumir compromissos não confirmados. Sugiro:\n\n<quote>Entendo a frustração. Vou puxar o protocolo anterior agora e checar onde parou na Secretaria. Te retorno ainda hoje com o status atualizado.</quote>\n\nDepois, <strong>busque o protocolo anterior no CRM</strong>, anexe à demanda atual e, se realmente parou, escale para o proprietário do mandato com prioridade alta."
+    },
+    {
+      title: "Roteiro institucional",
+      body: "Para essa situação específica, recomendo o seguinte roteiro:\n\n• Verifique se o eleitor já está cadastrado como contato.\n• Confirme o pedido por escrito (WhatsApp ou e-mail).\n• Registre a demanda no funil correspondente.\n• Defina prazo de retorno realista — <strong>nunca prometa o que não está confirmado</strong>."
+    }
+  ];
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function useSuggestion(text) {
+    document.getElementById('input').value = text;
+    sendMessage();
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    document.getElementById('welcome').style.display = 'none';
+
+    const container = document.getElementById('messages');
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    container.insertAdjacentHTML('beforeend', `
+      <div class="message user">
+        <div class="bubble">${escapeHtml(text)}</div>
+      </div>
+    `);
+
+    input.value = '';
+    autoResize(input);
+
+    const typingId = 'typing-' + Date.now();
+    container.insertAdjacentHTML('beforeend', `
+      <div class="message assistant" id="${typingId}">
+        <div class="message-meta">
+          <span class="message-meta-name">Atendente</span>
+          <span class="message-meta-tag">processando</span>
+          <span class="message-meta-time">agora</span>
+        </div>
+        <div class="message-body">
+          <div class="typing-indicator">
+            <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+          </div>
+        </div>
+      </div>
+    `);
+    scrollToBottom();
+
+    setTimeout(() => {
+      const t = document.getElementById(typingId);
+      const r = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+      t.outerHTML = `
+        <div class="message assistant">
+          <div class="message-meta">
+            <span class="message-meta-name">Atendente</span>
+            <span class="message-meta-tag">${r.title}</span>
+            <span class="message-meta-time">${timeStr}</span>
+          </div>
+          <div class="message-body">${formatBody(r.body)}</div>
+          <div class="message-footer">
+            <button class="msg-action" onclick="toggleFavorite(this)" aria-label="Favoritar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              Favoritar
+            </button>
+            <button class="msg-action" onclick="copyMessage(this)" aria-label="Copiar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar
+            </button>
+            <button class="msg-action" onclick="showToast('Gerando nova resposta...')" aria-label="Regenerar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+              Regenerar
+            </button>
+            <button class="msg-action" onclick="showToast('Compartilhar — em breve')" aria-label="Compartilhar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Compartilhar
+            </button>
+          </div>
+        </div>
+      `;
+      scrollToBottom();
+    }, 1500);
+  }
+
+  function formatBody(text) {
+    return text
+      .replace(/<quote>(.*?)<\/quote>/g, '<div class="quote">$1</div>')
+      .split('\n\n')
+      .map(p => p.match(/^<div class="quote">/) ? p : `<p>${p.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`)
+      .join('');
+  }
+  function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function scrollToBottom() { const a = document.querySelector('.body-area'); a.scrollTop = a.scrollHeight; }
+
+  function toggleFavorite(btn) {
+    btn.classList.toggle('favorited');
+    const msg = btn.closest('.message');
+    msg.classList.toggle('favorited');
+    if (btn.classList.contains('favorited')) {
+      btn.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Favoritado
+      `;
+      showToast('✨ Adicionado às favoritas');
+    } else {
+      btn.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Favoritar
+      `;
+      showToast('Removido das favoritas');
+    }
+  }
+
+  function copyMessage(btn) {
+    const text = btn.closest('.message').querySelector('.message-body').innerText;
+    navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência'));
+  }
+
+  function newSession() {
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('welcome').style.display = 'block';
+    document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
+    showToast('Nova conversa iniciada');
+  }
+
+  function openDrawer(which) {
+    document.getElementById('drawer-overlay').classList.add('open');
+    if (which === 'history') {
+      document.getElementById('drawer-history').classList.add('open');
+    } else if (which === 'favorites') {
+      document.getElementById('drawer-favorites').classList.add('open');
+    }
+  }
+  function closeDrawer() {
+    document.getElementById('drawer-overlay').classList.remove('open');
+    document.getElementById('drawer-history').classList.remove('open');
+    document.getElementById('drawer-favorites').classList.remove('open');
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+
+  let toastTimer;
+  function showToast(m) {
+    const t = document.getElementById('toast');
+    t.textContent = m;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente IA — Layout 1: Clássico (estilo ChatGPT)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== Burgundy Institucional — tokens fiéis ao DS do Mandato Desk ===== */
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 353 35% 13%;
+    --popover: 0 0% 100%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --secondary-foreground: 353 35% 13%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --input: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --success-soft-fg: 142 72% 26%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+    --danger: 0 73% 51%;
+    --danger-soft: 0 86% 97%;
+    --danger-soft-fg: 0 70% 35%;
+
+    --sidebar-bg: 40 47% 98%;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    height: 100dvh;
+    overflow: hidden;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .font-serif { font-family: 'Cinzel', serif; letter-spacing: 0.04em; }
+
+  /* ===== Layout principal: sidebar + main ===== */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: 100dvh;
+  }
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: absolute; left: -100%; top: 0; bottom: 0; width: 80vw; z-index: 20; transition: left 0.22s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+    .sidebar.open { left: 0; }
+  }
+
+  /* ===== Sidebar de histórico (esquerda) ===== */
+  .sidebar {
+    background: hsl(var(--sidebar-bg));
+    border-right: 1px solid hsl(var(--border));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .agent-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: hsl(var(--primary) / 0.06);
+    border: 1px solid hsl(var(--primary) / 0.18);
+    border-radius: 12px;
+  }
+  .agent-tag .dot {
+    width: 8px; height: 8px;
+    background: hsl(var(--success));
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px hsl(var(--success) / 0.18);
+  }
+  .agent-tag-info { display: flex; flex-direction: column; line-height: 1.2; }
+  .agent-tag-info .name { font-size: 13px; font-weight: 600; color: hsl(var(--primary)); }
+  .agent-tag-info .status { font-size: 11px; color: hsl(var(--muted-foreground)); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    border-radius: 12px; cursor: pointer;
+    transition: all 0.18s ease;
+    border: none;
+    padding: 10px 16px;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .btn-primary:hover { background: hsl(var(--primary) / 0.92); transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: hsl(var(--foreground));
+  }
+  .btn-ghost:hover { background: hsl(var(--muted)); }
+  .btn-icon { padding: 8px; width: 36px; height: 36px; }
+
+  .new-chat-btn { width: 100%; }
+
+  .sidebar-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .sidebar-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--card));
+    font-family: inherit; font-size: 13px;
+    color: hsl(var(--foreground));
+    transition: border 0.18s ease;
+  }
+  .sidebar-search input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; border-color: hsl(var(--ring)); }
+
+  .sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .sidebar-list::-webkit-scrollbar { width: 6px; }
+  .sidebar-list::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.25); border-radius: 3px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: hsl(var(--muted-foreground));
+    padding: 12px 12px 6px 12px;
+  }
+
+  .session-item {
+    display: flex; align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    position: relative;
+  }
+  .session-item:hover { background: hsl(var(--muted)); }
+  .session-item.active {
+    background: hsl(var(--primary) / 0.08);
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 9px;
+  }
+  .session-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .session-item-meta {
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 2px;
+  }
+  .session-actions {
+    display: none;
+    gap: 4px;
+  }
+  .session-item:hover .session-actions { display: flex; }
+  .session-actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: hsl(var(--muted-foreground));
+    border-radius: 6px;
+  }
+  .session-actions button:hover { color: hsl(var(--destructive)); background: hsl(var(--card)); }
+
+  .sidebar-footer {
+    border-top: 1px solid hsl(var(--border));
+    padding: 12px 16px;
+  }
+  .favorites-link {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: hsl(var(--accent) / 0.12);
+    border: 1px solid hsl(var(--accent) / 0.4);
+    color: hsl(var(--foreground));
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.18s ease;
+  }
+  .favorites-link:hover { background: hsl(var(--accent) / 0.2); }
+  .favorites-link .count {
+    margin-left: auto;
+    background: hsl(var(--accent) / 0.3);
+    color: hsl(var(--accent-foreground));
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* ===== Main area ===== */
+  .main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .main-header {
+    height: 64px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    background: hsl(var(--card));
+    flex-shrink: 0;
+  }
+  .mobile-toggle {
+    display: none;
+    background: transparent; border: none; padding: 8px; cursor: pointer;
+    color: hsl(var(--foreground));
+  }
+  @media (max-width: 768px) { .mobile-toggle { display: inline-flex; } }
+
+  .agent-title {
+    display: flex; flex-direction: column;
+    line-height: 1.2;
+  }
+  .agent-title .name { font-size: 15px; font-weight: 600; }
+  .agent-title .meta { font-size: 12px; color: hsl(var(--muted-foreground)); }
+
+  .header-spacer { flex: 1; }
+
+  .lgpd-warning {
+    display: inline-flex; align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-soft-fg));
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  @media (max-width: 640px) { .lgpd-warning span:not(.icon) { display: none; } }
+
+  /* ===== Mensagens ===== */
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 0;
+    scroll-behavior: smooth;
+  }
+  .messages-area::-webkit-scrollbar { width: 8px; }
+  .messages-area::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.25); border-radius: 4px; }
+
+  .messages-container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .message {
+    display: flex;
+    gap: 12px;
+    animation: fadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px; font-weight: 600;
+  }
+  .message.user .message-avatar {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  .message.assistant .message-avatar {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .message-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .message-header {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+  }
+  .message-author { font-size: 13px; font-weight: 600; }
+  .message-author.assistant { color: hsl(var(--primary)); font-family: 'Space Grotesk', sans-serif; }
+  .message-time { font-size: 11px; color: hsl(var(--muted-foreground)); }
+
+  .message-body {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: hsl(var(--foreground));
+  }
+  .message-body p { margin-bottom: 8px; }
+  .message-body p:last-child { margin-bottom: 0; }
+  .message-body strong { font-weight: 600; }
+
+  .message-actions {
+    display: flex; gap: 4px;
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+  .message:hover .message-actions { opacity: 1; }
+  .message-actions button {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 8px;
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .message-actions button:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+  .message-actions button.favorited {
+    color: hsl(var(--accent));
+    border-color: hsl(var(--accent) / 0.3);
+  }
+  .message-actions button.favorited svg { fill: hsl(var(--accent)); }
+
+  /* ===== Typing indicator ===== */
+  .typing {
+    display: flex; align-items: center; gap: 4px;
+    padding: 12px 0;
+  }
+  .typing-dot {
+    width: 8px; height: 8px;
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ===== Input bar ===== */
+  .input-area {
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    padding: 16px 24px 20px;
+    flex-shrink: 0;
+  }
+  .input-container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .input-wrap {
+    display: flex; align-items: flex-end;
+    gap: 8px;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 16px;
+    padding: 8px 8px 8px 12px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .input-wrap:focus-within {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
+  }
+  .input-textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: 14.5px;
+    color: hsl(var(--foreground));
+    padding: 8px 0;
+    max-height: 160px;
+    min-height: 24px;
+    line-height: 1.5;
+  }
+  .input-textarea::placeholder { color: hsl(var(--muted-foreground)); }
+
+  .input-actions { display: flex; gap: 4px; align-items: flex-end; padding-bottom: 2px; }
+
+  .attach-btn {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: hsl(var(--muted-foreground));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .attach-btn:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .attach-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .send-btn {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: none;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    transition: all 0.18s ease;
+  }
+  .send-btn:hover:not(:disabled) { background: hsl(var(--primary) / 0.9); transform: translateY(-1px); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; background: hsl(var(--muted-foreground)); }
+
+  .input-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+  .model-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    background: hsl(var(--muted));
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  /* ===== Empty state (favoritos modal) ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: hsl(353 35% 13% / 0.4);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: hsl(var(--card));
+    border-radius: 18px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 80dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  }
+  .modal-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px; font-weight: 700;
+  }
+  .modal-close {
+    background: transparent; border: none; cursor: pointer;
+    padding: 8px; border-radius: 8px;
+    color: hsl(var(--muted-foreground));
+  }
+  .modal-close:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-search { margin-bottom: 16px; }
+  .modal-search input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--background));
+    font-family: inherit; font-size: 14px;
+  }
+  .modal-search input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+
+  .favorite-card {
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: hsl(var(--background));
+  }
+  .favorite-card-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 6px;
+  }
+  .favorite-card-text {
+    font-size: 13.5px; line-height: 1.55;
+    color: hsl(var(--foreground));
+  }
+  .favorite-card-note {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: hsl(var(--accent) / 0.1);
+    border-left: 2px solid hsl(var(--accent));
+    border-radius: 4px;
+    font-size: 12px; font-style: italic;
+    color: hsl(var(--foreground));
+  }
+  .favorite-card-actions {
+    display: flex; gap: 4px;
+    margin-top: 10px;
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 8px;
+  }
+  .favorite-card-actions button {
+    background: transparent; border: none; cursor: pointer;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    border-radius: 6px;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .favorite-card-actions button:hover { color: hsl(var(--primary)); background: hsl(var(--muted)); }
+  .favorite-card-actions button.danger:hover { color: hsl(var(--destructive)); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: hsl(var(--muted-foreground));
+  }
+  .empty-state svg { color: hsl(var(--muted-foreground) / 0.4); margin-bottom: 12px; }
+  .empty-state h3 { font-size: 16px; margin-bottom: 6px; color: hsl(var(--foreground)); }
+  .empty-state p { font-size: 13px; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    z-index: 200;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ===== Backdrop mobile ===== */
+  .backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 15;
+  }
+  @media (max-width: 768px) {
+    .backdrop.show { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="agent-tag" role="status">
+        <div class="dot" aria-hidden="true"></div>
+        <div class="agent-tag-info">
+          <span class="name font-display">Atendente do Gabinete</span>
+          <span class="status">ativo · gpt-4o</span>
+        </div>
+      </div>
+      <button class="btn btn-primary new-chat-btn" onclick="newSession()" aria-label="Nova conversa">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova conversa
+      </button>
+    </div>
+
+    <div class="sidebar-search">
+      <input type="search" placeholder="Buscar nas conversas..." aria-label="Buscar conversas">
+    </div>
+
+    <div class="sidebar-list" role="navigation" aria-label="Histórico de conversas">
+      <div class="section-label">Hoje</div>
+
+      <div class="session-item active" onclick="loadSession(this, 'hoje-1')">
+        <div style="flex:1; min-width:0;">
+          <div class="session-item-title">Como respondo eleitor pedindo asfalto?</div>
+          <div class="session-item-meta">há 12 min · 4 msgs</div>
+        </div>
+        <div class="session-actions">
+          <button title="Renomear" aria-label="Renomear conversa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button title="Excluir" aria-label="Excluir conversa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        </div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this, 'hoje-2')">
+        <div style="flex:1; min-width:0;">
+          <div class="session-item-title">Modelo de ofício para Secretaria</div>
+          <div class="session-item-meta">há 2h · 7 msgs</div>
+        </div>
+      </div>
+
+      <div class="section-label">Ontem</div>
+
+      <div class="session-item" onclick="loadSession(this, 'ontem-1')">
+        <div style="flex:1; min-width:0;">
+          <div class="session-item-title">Roteiro para visita de campo</div>
+          <div class="session-item-meta">19/05 · 12 msgs</div>
+        </div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this, 'ontem-2')">
+        <div style="flex:1; min-width:0;">
+          <div class="session-item-title">Como classificar demanda jurídica?</div>
+          <div class="session-item-meta">19/05 · 5 msgs</div>
+        </div>
+      </div>
+
+      <div class="section-label">Semana passada</div>
+
+      <div class="session-item" onclick="loadSession(this, 'sem-1')">
+        <div style="flex:1; min-width:0;">
+          <div class="session-item-title">Resposta padrão para reclamação de transporte</div>
+          <div class="session-item-meta">14/05 · 3 msgs</div>
+        </div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this, 'sem-2')">
+        <div style="flex:1; min-width:0;">
+          <div class="session-item-title">Checklist para evento no bairro</div>
+          <div class="session-item-meta">12/05 · 9 msgs</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="favorites-link" onclick="openFavorites()" aria-label="Abrir respostas favoritas">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Respostas favoritas
+        <span class="count">14</span>
+      </button>
+      <p style="font-size: 10.5px; color: hsl(var(--muted-foreground)); margin-top: 10px; line-height: 1.4; padding: 0 4px;">
+        Histórico disponível por 30 dias. Favoritos não expiram.
+      </p>
+    </div>
+  </aside>
+
+  <div class="backdrop" id="backdrop" onclick="closeSidebar()"></div>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+    <header class="main-header">
+      <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Abrir menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <div class="message-avatar" style="width: 36px; height: 36px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground));">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+      </div>
+
+      <div class="agent-title">
+        <span class="name font-display">Atendente do Gabinete</span>
+        <span class="meta">Configurado por Rodrigo · OpenAI · gpt-4o</span>
+      </div>
+
+      <div class="header-spacer"></div>
+
+      <div class="lgpd-warning" role="note" title="Não insira CPF, nome ou telefone de eleitores. Use apelidos/IDs internos.">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>LGPD: não use dados pessoais</span>
+      </div>
+    </header>
+
+    <div class="messages-area" id="messages-area">
+      <div class="messages-container" id="messages-container">
+
+        <!-- USER -->
+        <article class="message user">
+          <div class="message-avatar">RS</div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author">Renata (você)</span>
+              <span class="message-time">14:32</span>
+            </div>
+            <div class="message-body">
+              <p>Um eleitor mandou áudio no WhatsApp pedindo asfaltamento da rua dele. Como devo responder?</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- ASSISTANT -->
+        <article class="message assistant">
+          <div class="message-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+          </div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author assistant">Atendente do Gabinete</span>
+              <span class="message-time">14:32</span>
+            </div>
+            <div class="message-body">
+              <p>Boa pergunta. O fluxo padrão do gabinete para pedidos de obra pública é:</p>
+              <p><strong>1.</strong> Confirme o recebimento e registre a demanda no CRM com tag <em>"obra-asfalto"</em>.</p>
+              <p><strong>2.</strong> Responda algo como:</p>
+              <p style="background: hsl(var(--muted)); padding: 10px 14px; border-radius: 10px; border-left: 3px solid hsl(var(--accent));"><em>"Olá! Sua solicitação de asfaltamento foi registrada com o número de protocolo XXXX. O próximo passo é encaminhar para a Secretaria Municipal de Obras com pedido de avaliação técnica. Te aviso assim que tiver retorno."</em></p>
+              <p><strong>3.</strong> Crie demanda no funil "Obras Públicas" com prioridade média.</p>
+              <p><strong>4.</strong> Aguarde até 15 dias úteis para retorno da Secretaria. Se passar disso sem resposta, reabra o protocolo.</p>
+            </div>
+            <div class="message-actions">
+              <button onclick="toggleFavorite(this)" aria-label="Favoritar resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                Favoritar
+              </button>
+              <button onclick="copyMessage(this)" aria-label="Copiar resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copiar
+              </button>
+              <button onclick="regenerateMessage(this)" aria-label="Gerar outra resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+                Regenerar
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- USER 2 -->
+        <article class="message user">
+          <div class="message-avatar">RS</div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author">Renata (você)</span>
+              <span class="message-time">14:34</span>
+            </div>
+            <div class="message-body">
+              <p>E se ele insistir que já mandou há 3 meses e nada foi feito?</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- ASSISTANT 2 (typing - removido após primeira interação) -->
+        <article class="message assistant" id="msg-typing-demo">
+          <div class="message-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+          </div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author assistant">Atendente do Gabinete</span>
+              <span class="message-time">agora</span>
+            </div>
+            <div class="message-body">
+              <p>Nesse caso, demonstre acolhimento sem prometer o que não está confirmado:</p>
+              <p style="background: hsl(var(--muted)); padding: 10px 14px; border-radius: 10px; border-left: 3px solid hsl(var(--accent));"><em>"Entendo a frustração. Vou puxar o protocolo anterior agora e checar onde parou na Secretaria. Te retorno ainda hoje com o status atualizado."</em></p>
+              <p>Em seguida: <strong>busque o protocolo anterior no CRM</strong>, anexe à demanda atual e, se realmente parou, escale para o proprietário do mandato como prioridade alta.</p>
+            </div>
+            <div class="message-actions">
+              <button onclick="toggleFavorite(this)" aria-label="Favoritar resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                Favoritar
+              </button>
+              <button onclick="copyMessage(this)" aria-label="Copiar resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copiar
+              </button>
+              <button onclick="regenerateMessage(this)" aria-label="Gerar outra resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+                Regenerar
+              </button>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-container">
+        <div class="input-wrap">
+          <textarea
+            id="input"
+            class="input-textarea"
+            placeholder="Pergunte algo ao agente..."
+            rows="1"
+            aria-label="Mensagem para o agente"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"></textarea>
+          <div class="input-actions">
+            <button class="attach-btn" title="Anexar arquivo (em breve)" aria-label="Anexar arquivo" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button class="send-btn" onclick="sendMessage()" aria-label="Enviar mensagem">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="input-footer">
+          <span>Pressione <kbd>Enter</kbd> para enviar · <kbd>Shift+Enter</kbd> para quebrar linha</span>
+          <span class="model-tag">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            gpt-4o · 4.2K tokens
+          </span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- ===== MODAL FAVORITOS ===== -->
+<div class="modal-overlay" id="favorites-modal" onclick="if(event.target===this) closeFavorites()">
+  <div class="modal" role="dialog" aria-labelledby="fav-title" aria-modal="true">
+    <div class="modal-header">
+      <h2 id="fav-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: hsl(var(--accent)); vertical-align: middle; margin-right: 6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Respostas favoritas <span style="color: hsl(var(--muted-foreground)); font-weight: 400; font-size: 14px; margin-left: 6px;">14 / 500</span>
+      </h2>
+      <button class="modal-close" onclick="closeFavorites()" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-search">
+        <input type="search" placeholder="Buscar em favoritas (conteúdo + notas)..." aria-label="Buscar favoritas">
+      </div>
+
+      <div class="favorite-card">
+        <div class="favorite-card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Favoritado em 18/05 · da conversa "Como responder eleitor pedindo asfalto"
+        </div>
+        <div class="favorite-card-text">
+          O fluxo padrão do gabinete para pedidos de obra pública é: confirmar o recebimento, registrar a demanda no CRM com tag "obra-asfalto", responder com protocolo e encaminhar para a Secretaria...
+        </div>
+        <div class="favorite-card-note">
+          📝 Usar quando o pedido for novo (não escalação). Adaptar nome da rua.
+        </div>
+        <div class="favorite-card-actions">
+          <button onclick="showToast('Texto copiado!')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar nota</button>
+          <button class="danger" onclick="showToast('Favorito removido')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Remover</button>
+        </div>
+      </div>
+
+      <div class="favorite-card">
+        <div class="favorite-card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Favoritado em 14/05 · da conversa "Resposta padrão transporte"
+        </div>
+        <div class="favorite-card-text">
+          Para reclamações sobre transporte público, primeiro identifique: linha + horário + descrição do problema. Se for relacionado à empresa concessionária, o caminho é abrir denúncia na BHTrans / SP-Trans...
+        </div>
+        <div class="favorite-card-actions">
+          <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar nota</button>
+          <button class="danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Remover</button>
+        </div>
+      </div>
+
+      <div class="favorite-card">
+        <div class="favorite-card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Favoritado em 10/05 · da conversa "Modelo de ofício para Secretaria"
+        </div>
+        <div class="favorite-card-text">
+          Modelo padrão de ofício para Secretaria Municipal: cabeçalho institucional, número de protocolo, exposição clara do pedido em até 3 parágrafos, fundamentação legal (se aplicável) e prazo de retorno de 15 dias úteis...
+        </div>
+        <div class="favorite-card-note">
+          📝 Salvar como template no Drive do gabinete.
+        </div>
+        <div class="favorite-card-actions">
+          <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar nota</button>
+          <button class="danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Remover</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Mensagem do toast</div>
+
+<script>
+  // ===== Mock data =====
+  const mockResponses = [
+    "Boa pergunta. Para essa situação específica, recomendo o seguinte:\n\n**1.** Verifique se o eleitor já é contato cadastrado.\n**2.** Confirme o pedido por escrito (WhatsApp ou e-mail).\n**3.** Registre a demanda no funil correspondente.\n**4.** Defina prazo de retorno realista — nunca prometa o que não está confirmado.",
+    "Entendo. O caminho mais eficiente nesse caso é:\n\nPrimeiro escalonar para a chefia se for demanda urgente. Caso contrário, manter o fluxo padrão: registrar protocolo, encaminhar formalmente e dar previsão de retorno de 5 a 15 dias úteis dependendo da complexidade.",
+    "Cuidado nessa situação — é um caso que pode escalar rápido. Sugiro:\n\n• Acolha o eleitor sem prometer nada.\n• Documente tudo no CRM.\n• Avise o proprietário do mandato antes de responder.\n• Use linguagem formal e empática."
+  ];
+
+  // ===== Interactions =====
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const container = document.getElementById('messages-container');
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    // user msg
+    container.insertAdjacentHTML('beforeend', `
+      <article class="message user">
+        <div class="message-avatar">RS</div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author">Renata (você)</span>
+            <span class="message-time">${timeStr}</span>
+          </div>
+          <div class="message-body"><p>${escapeHtml(text)}</p></div>
+        </div>
+      </article>
+    `);
+
+    input.value = '';
+    autoResize(input);
+
+    // typing
+    const typingId = 'typing-' + Date.now();
+    container.insertAdjacentHTML('beforeend', `
+      <article class="message assistant" id="${typingId}">
+        <div class="message-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        </div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author assistant">Atendente do Gabinete</span>
+            <span class="message-time">digitando...</span>
+          </div>
+          <div class="message-body">
+            <div class="typing"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+          </div>
+        </div>
+      </article>
+    `);
+
+    scrollToBottom();
+
+    // mock response after delay
+    setTimeout(() => {
+      const typing = document.getElementById(typingId);
+      const response = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+      typing.outerHTML = `
+        <article class="message assistant">
+          <div class="message-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+          </div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author assistant">Atendente do Gabinete</span>
+              <span class="message-time">${timeStr}</span>
+            </div>
+            <div class="message-body">${formatResponse(response)}</div>
+            <div class="message-actions">
+              <button onclick="toggleFavorite(this)" aria-label="Favoritar resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                Favoritar
+              </button>
+              <button onclick="copyMessage(this)" aria-label="Copiar resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copiar
+              </button>
+              <button onclick="regenerateMessage(this)" aria-label="Gerar outra resposta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+                Regenerar
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+      scrollToBottom();
+    }, 1400);
+  }
+
+  function formatResponse(text) {
+    return text.split('\n\n').map(p => {
+      if (p.match(/^[•\*\d]/)) return `<p>${p.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
+      return `<p>${p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function scrollToBottom() {
+    const area = document.getElementById('messages-area');
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function toggleFavorite(btn) {
+    btn.classList.toggle('favorited');
+    if (btn.classList.contains('favorited')) {
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Favoritado
+      `;
+      showToast('Resposta favoritada — 15/500');
+    } else {
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Favoritar
+      `;
+      showToast('Removido dos favoritos');
+    }
+  }
+
+  function copyMessage(btn) {
+    const text = btn.closest('.message-content').querySelector('.message-body').innerText;
+    navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência'));
+  }
+
+  function regenerateMessage(btn) { showToast('Gerando nova resposta...'); }
+
+  function newSession() {
+    const container = document.getElementById('messages-container');
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        <h3 class="font-display">Nova conversa</h3>
+        <p>Comece digitando sua pergunta abaixo. O agente lembra do contexto desta conversa.</p>
+      </div>
+    `;
+    document.querySelectorAll('.session-item').forEach(s => s.classList.remove('active'));
+    showToast('Nova conversa iniciada');
+  }
+
+  function loadSession(el, id) {
+    document.querySelectorAll('.session-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    showToast('Conversa carregada');
+  }
+
+  function openFavorites() {
+    document.getElementById('favorites-modal').classList.add('open');
+  }
+  function closeFavorites() {
+    document.getElementById('favorites-modal').classList.remove('open');
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('backdrop').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('backdrop').classList.remove('show');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ESC fecha modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFavorites();
+  });
+
+  // initial scroll
+  scrollToBottom();
+</script>
+
+</body>
+</html>

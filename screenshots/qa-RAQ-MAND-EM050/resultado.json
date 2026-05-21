@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-05-11T13:45:30.838Z",
+  "results": [
+    {
+      "ct": "CT1-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT2-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT3-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT4-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT5-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT6-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT8-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT9-geral",
+      "status": "FAIL",
+      "notes": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "ct": "CT10-funil-sem-estagios",
+      "status": "SKIP",
+      "notes": "Edge case verificado via análise de código: FunnelSelector.tsx linha 151 exibe msg correta para stages.length===0"
+    },
+    {
+      "ct": "CT7-impressao-css-media-print",
+      "status": "PASS",
+      "notes": "CSS @media print em index.css esconde [data-sidebar]/aside/nav/header; controles têm print:hidden; gráfico e tabela permanecem — verificado por análise de código"
+    }
+  ],
+  "consoleErrors": [
+    "[CT1] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT2] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT3] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT4] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT5] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT6] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT8] Failed to load resource: the server responded with a status of 400 ()",
+    "[CT9] Failed to load resource: the server responded with a status of 400 ()"
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 8,
+    "warned": 0,
+    "skipped": 1,
+    "total": 10
+  }
+}

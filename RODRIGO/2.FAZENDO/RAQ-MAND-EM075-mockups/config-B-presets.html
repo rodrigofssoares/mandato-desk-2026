@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações — Agente IA · Layout B (Presets curados)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --secondary-foreground: 353 35% 13%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --success-soft-fg: 142 72% 26%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+    --danger: 0 73% 51%;
+    --danger-soft: 0 86% 97%;
+    --danger-soft-fg: 0 70% 35%;
+    --info: 199 89% 48%;
+    --info-soft: 204 94% 94%;
+    --info-soft-fg: 200 98% 28%;
+
+    --sidebar-bg: 40 47% 98%;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    min-height: 100dvh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-image:
+      radial-gradient(at 20% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .font-serif { font-family: 'Cinzel', serif; letter-spacing: 0.08em; }
+
+  .app { display: grid; grid-template-columns: 60px 1fr; min-height: 100dvh; }
+  @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .mini-sidebar { display: none; } }
+
+  .mini-sidebar {
+    background: hsl(var(--sidebar-bg));
+    border-right: 1px solid hsl(var(--border));
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 6px;
+  }
+  .mini-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .mini-icon:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .mini-icon.active { background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); }
+
+  .main { padding: 32px 32px 48px; max-width: 1280px; }
+  @media (max-width: 640px) { .main { padding: 20px 16px 32px; } }
+
+  .page-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  .page-header-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%);
+    color: hsl(var(--primary-foreground));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+  }
+  .page-header-text { flex: 1; }
+  .page-header-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 10px; font-weight: 600;
+    color: hsl(var(--accent-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 2px;
+  }
+  .page-header-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; }
+  .page-header-desc { font-size: 13px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+
+  /* Tabs principais */
+  .tabs-list {
+    display: flex; gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    background: hsl(var(--muted));
+    padding: 4px;
+    border-radius: 11px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .tab:hover { color: hsl(var(--foreground)); }
+  .tab.active {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .tab .badge {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-size: 9.5px; font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Section header (Cinzel) */
+  .section-header {
+    margin: 28px 0 16px;
+  }
+  .section-header:first-child { margin-top: 0; }
+  .section-header .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 4px;
+  }
+  .section-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+  .section-header p {
+    font-size: 13px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 4px;
+    max-width: 640px;
+  }
+
+  /* ===== Presets grid ===== */
+  .presets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 1100px) { .presets-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .presets-grid { grid-template-columns: 1fr; } }
+
+  .preset-card {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    border-radius: 16px;
+    padding: 18px 18px 16px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .preset-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--preset-color, hsl(var(--primary)));
+    opacity: 0.6;
+  }
+  .preset-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    border-color: var(--preset-color);
+  }
+  .preset-card.selected {
+    border-color: var(--preset-color);
+    box-shadow: 0 0 0 4px hsl(from var(--preset-color) h s l / 0.15), 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .preset-card.selected::before { opacity: 1; height: 4px; }
+
+  .preset-emoji {
+    font-size: 28px;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .preset-card .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .preset-card .desc {
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.45;
+    margin-bottom: 12px;
+    min-height: 50px;
+  }
+
+  .preset-stats {
+    display: flex; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .preset-stat {
+    flex: 1;
+    background: hsl(var(--muted) / 0.5);
+    border-radius: 7px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .preset-stat .v {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 700;
+    color: var(--preset-color);
+    line-height: 1.1;
+  }
+  .preset-stat .l {
+    font-size: 9px;
+    color: hsl(var(--muted-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .preset-models {
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .preset-model {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: hsl(var(--foreground));
+  }
+  .preset-model .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: hsl(var(--success));
+  }
+  .preset-model.blocked .dot { background: hsl(var(--muted-foreground) / 0.4); }
+  .preset-model.blocked {
+    color: hsl(var(--muted-foreground));
+    text-decoration: line-through;
+  }
+
+  .preset-pick-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid var(--preset-color);
+    background: transparent;
+    color: var(--preset-color);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .preset-card.selected .preset-pick-btn {
+    background: var(--preset-color);
+    color: white;
+  }
+  .preset-pick-btn:hover {
+    background: var(--preset-color);
+    color: white;
+  }
+
+  /* Preset color variants */
+  .preset-eco { --preset-color: hsl(var(--success)); }
+  .preset-bal { --preset-color: hsl(var(--info)); }
+  .preset-pre { --preset-color: hsl(var(--primary)); }
+  .preset-cus { --preset-color: hsl(var(--accent)); }
+
+  /* ===== Detalhes do preset selecionado ===== */
+  .detail-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .detail-card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex; align-items: center; gap: 10px;
+  }
+  .detail-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .detail-card-desc { font-size: 12px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+  .detail-card-icon {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .detail-card-body { padding: 14px 18px; }
+
+  /* Switch */
+  .switch {
+    position: relative;
+    display: inline-flex;
+    width: 36px; height: 20px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch.on { background: hsl(var(--primary)); }
+  .switch.on::after { transform: translateX(16px); }
+
+  /* Modelos detalhados */
+  .preset-detail-models {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pmodel-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: hsl(var(--muted) / 0.4);
+    border-radius: 10px;
+    transition: all 0.15s ease;
+  }
+  .pmodel-row:hover { background: hsl(var(--muted) / 0.7); }
+  .pmodel-row.disabled {
+    opacity: 0.5;
+  }
+  .pmodel-row.multimodal {
+    background: hsl(var(--warning-soft) / 0.6);
+  }
+
+  .pmodel-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .pmodel-icon.openai { background: #10A37F; }
+  .pmodel-icon.anthropic { background: #D77655; }
+  .pmodel-icon.meta { background: #1877F2; }
+  .pmodel-icon.google { background: #4285F4; }
+  .pmodel-icon.deepseek { background: #3D5AFE; }
+
+  .pmodel-info { flex: 1; min-width: 0; }
+  .pmodel-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pmodel-id {
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 1px;
+  }
+  .pmodel-tags {
+    display: flex; gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .pmodel-tag {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pmodel-tag.text { background: hsl(var(--success-soft)); color: hsl(var(--success-soft-fg)); }
+  .pmodel-tag.vision { background: hsl(var(--warning-soft)); color: hsl(var(--warning-soft-fg)); }
+  .pmodel-tag.audio { background: hsl(var(--info-soft)); color: hsl(var(--info-soft-fg)); }
+  .pmodel-tag.default { background: hsl(var(--accent) / 0.2); color: hsl(var(--accent-foreground)); border: 1px solid hsl(var(--accent) / 0.4); }
+
+  .pmodel-price {
+    font-size: 11px;
+    color: hsl(var(--foreground));
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .pmodel-price small { color: hsl(var(--muted-foreground)); }
+
+  .pmodel-default-btn {
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .pmodel-default-btn:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .pmodel-default-btn.active {
+    background: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent-foreground));
+    border-color: hsl(var(--accent) / 0.4);
+  }
+
+  @media (max-width: 768px) {
+    .pmodel-row { flex-wrap: wrap; }
+    .pmodel-price, .pmodel-default-btn { font-size: 10.5px; }
+  }
+
+  /* Add suggestion: includes locked card */
+  .pmodel-row.add-suggestion {
+    background: transparent;
+    border: 1px dashed hsl(var(--border));
+    cursor: pointer;
+  }
+  .pmodel-row.add-suggestion:hover {
+    border-color: hsl(var(--primary) / 0.5);
+    background: hsl(var(--primary) / 0.04);
+  }
+  .pmodel-row.add-suggestion .pmodel-name { color: hsl(var(--muted-foreground)); }
+
+  /* Custom modeler */
+  .custom-builder {
+    border: 1px dashed hsl(var(--border));
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+  }
+  .custom-builder input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    background: hsl(var(--background));
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+  }
+  .custom-builder input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+
+  /* Master rule */
+  .master-rule {
+    background: hsl(var(--info-soft));
+    border: 1px solid hsl(var(--info) / 0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .master-rule-icon {
+    width: 36px; height: 36px;
+    background: hsl(var(--info) / 0.18);
+    color: hsl(var(--info));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .master-rule-text { flex: 1; }
+  .master-rule-text .n { font-size: 13.5px; font-weight: 600; color: hsl(var(--foreground)); }
+  .master-rule-text .h { font-size: 11.5px; color: hsl(var(--info-soft-fg)); margin-top: 2px; line-height: 1.4; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 9px;
+    cursor: pointer;
+    border: none;
+    padding: 8px 14px;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 2px 6px hsl(var(--primary) / 0.2);
+  }
+  .btn-primary:hover { background: hsl(var(--primary) / 0.92); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+  }
+  .btn-outline:hover { background: hsl(var(--muted)); }
+  .btn-ghost { background: transparent; color: hsl(var(--muted-foreground)); padding: 6px 10px; }
+  .btn-ghost:hover { color: hsl(var(--foreground)); background: hsl(var(--muted)); }
+
+  /* Identity card */
+  .identity-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 800px) { .identity-grid { grid-template-columns: 1fr; } }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block;
+    font-size: 12px; font-weight: 600;
+    color: hsl(var(--foreground));
+    margin-bottom: 6px;
+  }
+  .field-hint { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-top: 4px; line-height: 1.4; }
+
+  .input, .textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--background));
+    font-family: inherit;
+    font-size: 13.5px;
+    color: hsl(var(--foreground));
+  }
+  .input:focus, .textarea:focus {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 1px;
+    border-color: hsl(var(--ring));
+  }
+  .textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  /* Role chips */
+  .role-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0 4px 4px 0;
+    border: 1px solid hsl(var(--border));
+  }
+  .role-chip:hover { background: hsl(var(--card)); }
+  .role-chip.selected {
+    background: hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+  .role-chip.selected::before { content: '✓'; font-weight: 700; }
+
+  /* Save bar */
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: hsl(var(--card) / 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 20px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+  }
+  .save-bar-info {
+    flex: 1;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+  .save-bar-info strong { color: hsl(var(--foreground)); font-weight: 600; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px; right: 24px;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 11px 18px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(-80px);
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: hsl(var(--success)); color: white; }
+
+  /* Cost gauge */
+  .cost-gauge {
+    background: linear-gradient(135deg, hsl(var(--success-soft)) 0%, hsl(var(--info-soft)) 100%);
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .cost-gauge-icon {
+    width: 48px; height: 48px;
+    background: white;
+    color: hsl(var(--success-soft-fg));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .cost-gauge-text { flex: 1; }
+  .cost-gauge-text .val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: hsl(var(--success-soft-fg));
+    line-height: 1.1;
+  }
+  .cost-gauge-text .l {
+    font-size: 12px;
+    color: hsl(var(--info-soft-fg));
+    margin-top: 4px;
+  }
+  .cost-gauge-text .l strong { font-weight: 600; }
+
+  kbd {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="mini-sidebar">
+    <div class="mini-icon" title="Dashboard">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    </div>
+    <div class="mini-icon" title="Contatos">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <div class="mini-icon" title="Agente">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+    </div>
+    <div style="flex:1"></div>
+    <div class="mini-icon active" title="Configurações">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6"/><path d="m4.22 4.22 4.24 4.24m7.08 7.08 4.24 4.24"/><path d="M1 12h6m10 0h6"/><path d="m4.22 19.78 4.24-4.24m7.08-7.08 4.24-4.24"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="page-header">
+      <div class="page-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <div class="page-header-text">
+        <div class="page-header-eyebrow">Sistema</div>
+        <div class="page-header-title">Configurações</div>
+        <div class="page-header-desc">Personalize seu mandato, equipe, integrações e permissões.</div>
+      </div>
+    </header>
+
+    <div class="tabs-list">
+      <button class="tab">Geral</button>
+      <button class="tab">Funis</button>
+      <button class="tab">Equipe</button>
+      <button class="tab">Permissões</button>
+      <button class="tab">Integrações</button>
+      <button class="tab">IA</button>
+      <button class="tab active">Agente <span class="badge">novo</span></button>
+      <button class="tab">Personalização</button>
+      <button class="tab">Alertas</button>
+    </div>
+
+    <!-- ===== Seção 1: Identidade ===== -->
+    <div class="section-header">
+      <div class="eyebrow">Passo 1</div>
+      <h2>Identidade do agente</h2>
+      <p>Quem é o agente e como ele se comporta. Esta é a configuração que define o tom e o conhecimento que ele aplica.</p>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-body">
+        <div class="identity-grid">
+          <div>
+            <div class="field">
+              <label class="field-label" for="agent-name">Nome do agente</label>
+              <input id="agent-name" class="input" type="text" value="Atendente Institucional">
+            </div>
+            <div class="field">
+              <label class="field-label" for="agent-prompt">Prompt do sistema</label>
+              <textarea id="agent-prompt" class="textarea" rows="5">Você é o Atendente Institucional do gabinete da Vereadora Raquel.
+
+Tom: formal, empático, claro. Sempre responda em português do Brasil.
+
+Regras:
+1. Nunca prometa o que não foi confirmado.
+2. Sempre sugira registrar a demanda no CRM com tag apropriada.
+3. Não invente nomes de leis ou números de protocolo.</textarea>
+              <div class="field-hint"><strong>1.180/32.000</strong> caracteres</div>
+            </div>
+          </div>
+          <div>
+            <div class="field">
+              <label class="field-label">Status</label>
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: hsl(var(--success-soft)); border-radius: 10px;">
+                <div class="switch on" onclick="this.classList.toggle('on')"></div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 600; color: hsl(var(--success-soft-fg));">Ativo</div>
+                  <div style="font-size: 11px; color: hsl(var(--success-soft-fg));">Visível para usuários</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Quem pode usar</label>
+              <div>
+                <span class="role-chip selected" onclick="toggleRole(this)">Admin</span>
+                <span class="role-chip selected" onclick="toggleRole(this)">Proprietário</span>
+                <span class="role-chip selected" onclick="toggleRole(this)">Assessor</span>
+                <span class="role-chip" onclick="toggleRole(this)">Assistente</span>
+                <span class="role-chip" onclick="toggleRole(this)">Estagiário</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Seção 2: Presets de modelos ===== -->
+    <div class="section-header">
+      <div class="eyebrow">Passo 2 · Modelos permitidos</div>
+      <h2>Escolha uma curadoria de modelos</h2>
+      <p>Cada preset é um conjunto pré-aprovado de modelos com perfil de custo e qualidade. Comece por um e refine se precisar.</p>
+    </div>
+
+    <!-- Master rule -->
+    <div class="master-rule">
+      <div class="master-rule-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+      </div>
+      <div class="master-rule-text">
+        <div class="n">Regra base: apenas modelos de texto</div>
+        <div class="h">Todos os presets bloqueiam modelos multimodais (visão/áudio) por padrão. Vision custa 5-15× mais por tarefa e não é necessária para o atendimento do gabinete.</div>
+      </div>
+      <div class="switch on" onclick="showToast('Regra ainda em vigor', 'success')"></div>
+    </div>
+
+    <!-- 4 cards de preset -->
+    <div class="presets-grid">
+
+      <!-- Econômico -->
+      <div class="preset-card preset-eco" onclick="selectPreset(this, 'eco')">
+        <div class="preset-emoji">🪙</div>
+        <div class="name">Econômico</div>
+        <div class="desc">Modelos baratos e rápidos. Ideal para atendimento de alto volume com perguntas simples.</div>
+        <div class="preset-stats">
+          <div class="preset-stat">
+            <div class="v">3</div>
+            <div class="l">modelos</div>
+          </div>
+          <div class="preset-stat">
+            <div class="v">R$ 12</div>
+            <div class="l">/mês est.</div>
+          </div>
+        </div>
+        <div class="preset-models">
+          <div class="preset-model"><span class="dot"></span>GPT-4o mini</div>
+          <div class="preset-model"><span class="dot"></span>Claude 3.5 Haiku</div>
+          <div class="preset-model"><span class="dot"></span>Llama 3.3 70B</div>
+        </div>
+        <button class="preset-pick-btn">Aplicar Econômico</button>
+      </div>
+
+      <!-- Balanceado (selecionado por padrão) -->
+      <div class="preset-card preset-bal selected" onclick="selectPreset(this, 'bal')">
+        <div class="preset-emoji">⚖️</div>
+        <div class="name">Balanceado</div>
+        <div class="desc">Mistura modelos rápidos e premium. Boa cobertura de casos sem explodir o custo.</div>
+        <div class="preset-stats">
+          <div class="preset-stat">
+            <div class="v">5</div>
+            <div class="l">modelos</div>
+          </div>
+          <div class="preset-stat">
+            <div class="v">R$ 38</div>
+            <div class="l">/mês est.</div>
+          </div>
+        </div>
+        <div class="preset-models">
+          <div class="preset-model"><span class="dot"></span>GPT-4o mini</div>
+          <div class="preset-model"><span class="dot"></span>GPT-4o</div>
+          <div class="preset-model"><span class="dot"></span>Claude 3.5 Haiku</div>
+          <div class="preset-model"><span class="dot"></span>Claude 3.5 Sonnet</div>
+          <div class="preset-model"><span class="dot"></span>Llama 3.3 70B</div>
+        </div>
+        <button class="preset-pick-btn">✓ Selecionado</button>
+      </div>
+
+      <!-- Premium -->
+      <div class="preset-card preset-pre" onclick="selectPreset(this, 'pre')">
+        <div class="preset-emoji">✨</div>
+        <div class="name">Premium</div>
+        <div class="desc">Modelos de topo de linha. Use quando qualidade da resposta importa mais que custo.</div>
+        <div class="preset-stats">
+          <div class="preset-stat">
+            <div class="v">4</div>
+            <div class="l">modelos</div>
+          </div>
+          <div class="preset-stat">
+            <div class="v">R$ 180</div>
+            <div class="l">/mês est.</div>
+          </div>
+        </div>
+        <div class="preset-models">
+          <div class="preset-model"><span class="dot"></span>GPT-4o</div>
+          <div class="preset-model"><span class="dot"></span>Claude 3.5 Sonnet</div>
+          <div class="preset-model"><span class="dot"></span>Claude Opus 4</div>
+          <div class="preset-model"><span class="dot"></span>o3-mini reasoning</div>
+        </div>
+        <button class="preset-pick-btn">Aplicar Premium</button>
+      </div>
+
+      <!-- Custom -->
+      <div class="preset-card preset-cus" onclick="selectPreset(this, 'cus')">
+        <div class="preset-emoji">🔧</div>
+        <div class="name">Personalizado</div>
+        <div class="desc">Parte do zero ou ajusta um preset escolhendo cada modelo manualmente. Controle total.</div>
+        <div class="preset-stats">
+          <div class="preset-stat">
+            <div class="v">—</div>
+            <div class="l">modelos</div>
+          </div>
+          <div class="preset-stat">
+            <div class="v">—</div>
+            <div class="l">custo</div>
+          </div>
+        </div>
+        <div class="preset-models">
+          <div class="preset-model" style="color: hsl(var(--muted-foreground));">Escolha os modelos<br>na lista abaixo</div>
+        </div>
+        <button class="preset-pick-btn">Modo Custom</button>
+      </div>
+
+    </div>
+
+    <!-- ===== Seção 3: Ajuste fino do preset ===== -->
+    <div class="section-header" style="margin-top: 32px;">
+      <div class="eyebrow">Passo 3 · Ajuste fino</div>
+      <h2>Refinando o preset "Balanceado"</h2>
+      <p>Ative ou desative modelos individualmente. Marque um como padrão (usado quando o usuário não escolhe outro).</p>
+    </div>
+
+    <!-- Detail card -->
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="detail-card-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div class="detail-card-title">5 modelos no preset · 6 sugestões para adicionar</div>
+          <div class="detail-card-desc">A regra "Apenas texto" continua aplicada — multimodais aparecem em amarelo com aviso.</div>
+        </div>
+        <button class="btn btn-outline" onclick="showToast('Voltando ao preset original')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          Resetar preset
+        </button>
+      </div>
+      <div class="detail-card-body">
+
+        <div class="preset-detail-models">
+
+          <!-- Permitidos -->
+          <div class="pmodel-row">
+            <div class="pmodel-icon openai">A</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">GPT-4o mini</div>
+              <div class="pmodel-id">openai/gpt-4o-mini · 128K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+                <span class="pmodel-tag default">★ padrão</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$0.15 in · <small>$0.60 out / 1M</small></div>
+            <button class="pmodel-default-btn active" onclick="setDefault(this)">Padrão</button>
+            <div class="switch on" onclick="toggleModel(this)"></div>
+          </div>
+
+          <div class="pmodel-row">
+            <div class="pmodel-icon openai">A</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">GPT-4o</div>
+              <div class="pmodel-id">openai/gpt-4o · 128K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$2.50 in · <small>$10.00 out / 1M</small></div>
+            <button class="pmodel-default-btn" onclick="setDefault(this)">Definir padrão</button>
+            <div class="switch on" onclick="toggleModel(this)"></div>
+          </div>
+
+          <div class="pmodel-row">
+            <div class="pmodel-icon anthropic">C</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">Claude 3.5 Haiku</div>
+              <div class="pmodel-id">anthropic/claude-3.5-haiku · 200K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$0.80 in · <small>$4.00 out / 1M</small></div>
+            <button class="pmodel-default-btn" onclick="setDefault(this)">Definir padrão</button>
+            <div class="switch on" onclick="toggleModel(this)"></div>
+          </div>
+
+          <div class="pmodel-row">
+            <div class="pmodel-icon anthropic">C</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">Claude 3.5 Sonnet</div>
+              <div class="pmodel-id">anthropic/claude-3.5-sonnet · 200K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$3.00 in · <small>$15.00 out / 1M</small></div>
+            <button class="pmodel-default-btn" onclick="setDefault(this)">Definir padrão</button>
+            <div class="switch on" onclick="toggleModel(this)"></div>
+          </div>
+
+          <div class="pmodel-row">
+            <div class="pmodel-icon meta">M</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">Llama 3.3 70B Instruct</div>
+              <div class="pmodel-id">meta-llama/llama-3.3-70b-instruct · 131K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$0.13 in · <small>$0.40 out / 1M</small></div>
+            <button class="pmodel-default-btn" onclick="setDefault(this)">Definir padrão</button>
+            <div class="switch on" onclick="toggleModel(this)"></div>
+          </div>
+
+          <!-- Sugestões -->
+          <div style="font-family: 'Cinzel', serif; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: hsl(var(--muted-foreground)); margin: 14px 0 4px;">
+            Sugestões para adicionar
+          </div>
+
+          <div class="pmodel-row add-suggestion" onclick="addToPreset(this)">
+            <div class="pmodel-icon deepseek">D</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">DeepSeek Chat</div>
+              <div class="pmodel-id">deepseek/deepseek-chat · 64K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$0.14 in · <small>$0.28 out / 1M</small></div>
+            <button class="pmodel-default-btn">+ Adicionar</button>
+            <div class="switch"></div>
+          </div>
+
+          <div class="pmodel-row add-suggestion multimodal" onclick="showToast('⚠ Modelo multimodal bloqueado pela regra base', 'success')">
+            <div class="pmodel-icon google">G</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">Gemini 2.5 Flash <span style="background:hsl(var(--warning-soft));color:hsl(var(--warning-soft-fg));padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:600;margin-left:4px;">bloqueado</span></div>
+              <div class="pmodel-id">google/gemini-2.5-flash · 1M contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+                <span class="pmodel-tag vision">visão</span>
+                <span class="pmodel-tag audio">áudio</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$0.075 in · <small>$0.30 out / 1M</small></div>
+            <button class="pmodel-default-btn" style="opacity:0.4;">Bloqueado</button>
+            <div class="switch" style="opacity:0.4;"></div>
+          </div>
+
+          <div class="pmodel-row add-suggestion" onclick="addToPreset(this)">
+            <div class="pmodel-icon openai">A</div>
+            <div class="pmodel-info">
+              <div class="pmodel-name">o3-mini · reasoning</div>
+              <div class="pmodel-id">openai/o3-mini · 200K contexto</div>
+              <div class="pmodel-tags">
+                <span class="pmodel-tag text">texto</span>
+              </div>
+            </div>
+            <div class="pmodel-price">$1.10 in · <small>$4.40 out / 1M</small></div>
+            <button class="pmodel-default-btn">+ Adicionar</button>
+            <div class="switch"></div>
+          </div>
+
+        </div>
+
+        <!-- Custom builder -->
+        <div class="custom-builder">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: hsl(var(--muted-foreground));"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span style="font-size: 12px; font-weight: 600; color: hsl(var(--foreground));">Adicionar modelo customizado</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" placeholder="provider/model-id (ex: anthropic/claude-3.5-haiku-20241022)">
+            <button class="btn btn-outline btn-sm" onclick="showToast('Modelo validado e adicionado', 'success')">Adicionar</button>
+          </div>
+          <div style="font-size: 11px; color: hsl(var(--muted-foreground)); margin-top: 6px;">
+            Aceita qualquer modelo do <kbd>GET /api/v1/models</kbd> da OpenRouter. Sistema valida antes de salvar.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== Seção 4: Custo estimado ===== -->
+    <div class="section-header">
+      <div class="eyebrow">Resumo</div>
+      <h2>Custo mensal projetado</h2>
+      <p>Estimativa baseada no número de usuários autorizados, frequência de uso e modelo padrão escolhido.</p>
+    </div>
+
+    <div class="cost-gauge">
+      <div class="cost-gauge-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="cost-gauge-text">
+        <div class="val">~ R$ 38 / mês</div>
+        <div class="l">Preset <strong>Balanceado</strong> · 5 usuários · 30 sessões/dia · padrão <strong>GPT-4o mini</strong></div>
+      </div>
+      <button class="btn btn-outline" onclick="showToast('Ajuste de cenário em breve')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Simular cenário
+      </button>
+    </div>
+
+    <!-- Save bar -->
+    <div class="save-bar">
+      <div class="save-bar-info">
+        Preset <strong>Balanceado</strong> · 5 modelos permitidos · <strong>GPT-4o mini</strong> como padrão · <span style="color: hsl(var(--warning));">3 alterações não salvas</span>
+      </div>
+      <button class="btn btn-ghost" onclick="showToast('Alterações descartadas')">Descartar</button>
+      <button class="btn btn-primary" onclick="showToast('✓ Configuração salva', 'success')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar configuração
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">toast</div>
+
+<script>
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function toggleRole(el) { el.classList.toggle('selected'); }
+
+  function selectPreset(el, type) {
+    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const btn = el.querySelector('.preset-pick-btn');
+    document.querySelectorAll('.preset-pick-btn').forEach(b => {
+      if (b.textContent.startsWith('✓')) {
+        b.textContent = b.textContent.replace('✓ Selecionado', 'Aplicar');
+      }
+    });
+    btn.textContent = '✓ Selecionado';
+
+    const labels = { eco: 'Econômico', bal: 'Balanceado', pre: 'Premium', cus: 'Personalizado' };
+    showToast(`✓ Preset "${labels[type]}" aplicado`, 'success');
+  }
+
+  function setDefault(btn) {
+    document.querySelectorAll('.pmodel-default-btn').forEach(b => {
+      b.classList.remove('active');
+      if (b.textContent === 'Padrão') b.textContent = 'Definir padrão';
+    });
+    document.querySelectorAll('.pmodel-tag.default').forEach(t => t.remove());
+
+    btn.classList.add('active');
+    btn.textContent = 'Padrão';
+
+    const tags = btn.closest('.pmodel-row').querySelector('.pmodel-tags');
+    const tag = document.createElement('span');
+    tag.className = 'pmodel-tag default';
+    tag.textContent = '★ padrão';
+    tags.appendChild(tag);
+
+    showToast('★ Modelo padrão atualizado', 'success');
+  }
+
+  function toggleModel(sw) {
+    sw.classList.toggle('on');
+    const row = sw.closest('.pmodel-row');
+    row.classList.toggle('disabled');
+    showToast(sw.classList.contains('on') ? '✓ Modelo no preset' : '✕ Modelo removido');
+  }
+
+  function addToPreset(row) {
+    row.classList.remove('add-suggestion');
+    const sw = row.querySelector('.switch');
+    sw.classList.add('on');
+    const btn = row.querySelector('.pmodel-default-btn');
+    btn.textContent = 'Definir padrão';
+    showToast('+ Modelo adicionado ao preset', 'success');
+  }
+</script>
+
+</body>
+</html>
