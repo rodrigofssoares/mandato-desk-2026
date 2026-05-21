@@ -38,9 +38,12 @@ import {
   antiInjectionInstruction,
   isRateLimited,
   registerAICall,
+  sanitizeFilenameForPrompt,
   sanitizeForLog,
+  sanitizeLLMOutput,
   wrapUserContent,
 } from '../_shared/ai-security.ts';
+import { cachedGetUser } from '../_shared/auth-cache.ts';
 import {
   callProvider,
   MULTIMODAL_MODELS,
@@ -52,7 +55,8 @@ const HISTORY_MSGS = 10;         // últimas N mensagens enviadas ao provider
 const MAX_SYSTEM_CHARS = 50_000; // truncar system prompt total a 50K chars
 
 // ── Autenticação básica (usuário autenticado) ─────────────────────────────────
-// Diferente de requireAdmin — aceita qualquer usuário ATIVO.
+// PEN-008: usa cachedGetUser para reduzir 2 round-trips de auth para 0 em bursts.
+// O cliente admin é criado uma vez por request (client é stateless — criação é barata).
 
 async function requireUserAuth(req: Request) {
   const url            = Deno.env.get('SUPABASE_URL');
@@ -67,35 +71,28 @@ async function requireUserAuth(req: Request) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (!token) return { error: jsonResponse(401, { error: 'Token ausente' }) };
 
-  const caller = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-
-  const { data: userData, error: userError } = await caller.auth.getUser(token);
-  if (userError || !userData.user) {
-    return { error: jsonResponse(401, { error: 'Sessão inválida' }) };
+  // PEN-008: cachedGetUser faz getUser + busca perfil com cache 60s por token.
+  // Reduz de 2 DB ops para 0 em request bursts no mesmo worker warm.
+  let authData: { userId: string; userEmail: string; role: string; status: string };
+  try {
+    authData = await cachedGetUser(url, anonKey, serviceRoleKey, token);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : '';
+    if (msg === 'sessao_invalida') return { error: jsonResponse(401, { error: 'Sessão inválida' }) };
+    if (msg === 'perfil_nao_autorizado') return { error: jsonResponse(403, { error: 'Perfil não autorizado' }) };
+    return { error: jsonResponse(500, { error: 'Erro ao validar perfil' }) };
   }
 
+  // Admin client para as queries subsequentes (criação é barata — sem I/O)
   const admin = createClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: profile, error: profileError } = await admin
-    .from('profiles')
-    .select('role, status_aprovacao')
-    .eq('id', userData.user.id)
-    .maybeSingle();
-
-  if (profileError) return { error: jsonResponse(500, { error: 'Erro ao validar perfil' }) };
-  if (!profile || profile.status_aprovacao !== 'ATIVO') {
-    return { error: jsonResponse(403, { error: 'Perfil não autorizado' }) };
-  }
-
   return {
     admin,
-    userId:    userData.user.id,
-    userEmail: userData.user.email ?? '',
-    userRole:  (profile.role ?? 'desconhecido') as string,
+    userId:    authData.userId,
+    userEmail: authData.userEmail,
+    userRole:  authData.role,
   };
 }
 
@@ -143,11 +140,12 @@ Deno.serve(async (req) => {
     }
 
     // ── 3. Carrega agente + budget ───────────────────────────────────────────
-    // Sem filtro intencional: o sistema tem um único agente (singleton por organização).
-    // maybeSingle() retorna null se nenhum existir e lança erro se houver >1 (bug de seed).
+    // PEN-006: .limit(1) garante que maybeSingle() não lança PGRST116 mesmo se
+    // houver >1 linha (constraint UNIQUE na migration 103 é a defesa primária).
     const { data: agent, error: agentErr } = await admin
       .from('ai_agents')
       .select('id, is_active, system_prompt, text_only_mode')
+      .limit(1)
       .maybeSingle();
 
     if (agentErr || !agent) {
@@ -188,66 +186,38 @@ Deno.serve(async (req) => {
       return jsonResponse(403, { error: 'Sem permissão para usar o agente de IA' });
     }
 
-    // ── 5. Validação de orçamento global (hard cap) ──────────────────────────
-    if (autoBlock) {
-      const { data: spendRaw } = await admin
-        .rpc('ai_agent_current_spend', { p_agent_id: agent.id });
+    // ── 5-7. Validação de orçamento (global + cap diário + cap mensal) ───────
+    // PEN-002: substituímos os 3 checks individuais (TOCTOU) por uma única RPC
+    // com pg_advisory_xact_lock que serializa o check por usuário.
+    // O lock é mantido até o commit do INSERT de custo (feito via RPC 101),
+    // fechando a janela de race condition em requisições paralelas.
+    {
+      const { data: quotaResult, error: quotaErr } = await admin
+        .rpc('ai_reserve_user_quota', {
+          p_user_id:           userId,
+          p_max_msgs_per_day:  maxMsgsPerDay,
+          p_max_brl_per_month: maxBrlPerUserMonth,
+          p_monthly_limit_brl: monthlyLimit,
+          p_auto_block:        autoBlock,
+        });
 
-      const currentSpend = Number(spendRaw ?? 0);
-      if (currentSpend >= monthlyLimit) {
+      if (quotaErr) {
+        console.warn('ai-agent-chat: erro ao verificar quota', quotaErr.code);
+        // Fail-safe: em caso de erro na RPC, bloqueia para proteger o budget
+        return jsonResponse(500, { error: 'Erro ao verificar orçamento. Tente novamente.' });
+      }
+
+      const quota = quotaResult as { allowed: boolean; reason?: string; count?: number; limit?: number; spent?: number };
+
+      if (!quota.allowed) {
         return jsonResponse(200, {
           skipped: true,
-          reason: 'budget_exceeded',
-          current_spend: currentSpend,
-          limit: monthlyLimit,
+          reason:  quota.reason,
+          ...(quota.count  !== undefined && { count:  quota.count }),
+          ...(quota.limit  !== undefined && { limit:  quota.limit }),
+          ...(quota.spent  !== undefined && { spent:  quota.spent }),
         });
       }
-    }
-
-    // ── 6. Cap diário por usuário ────────────────────────────────────────────
-    // Usa RPC parametrizada (ALTA-02: elimina interpolacao de userId em filtro raw)
-    const { data: todayMsgsRaw, error: todayMsgsErr } = await admin
-      .rpc('ai_count_user_messages_today', { p_user_id: userId });
-
-    if (todayMsgsErr) {
-      console.warn('ai-agent-chat: erro ao verificar cap diario', todayMsgsErr.code);
-    }
-
-    const todayMsgs = Number(todayMsgsRaw ?? 0);
-
-    if (todayMsgs >= maxMsgsPerDay) {
-      return jsonResponse(200, {
-        skipped: true,
-        reason:  'user_daily_cap',
-        count:   todayMsgs,
-        limit:   maxMsgsPerDay,
-      });
-    }
-
-
-    // ── 7. Cap mensal de custo por usuário ───────────────────────────────────
-    const monthStart = new Date();
-    monthStart.setUTCDate(1);
-    monthStart.setUTCHours(0, 0, 0, 0);
-
-    const { data: userCostRows } = await admin
-      .from('ai_chat_messages_cost')
-      .select('total_cost_brl')
-      .eq('user_id', userId)
-      .gte('created_at', monthStart.toISOString());
-
-    const userMonthlyCost = (userCostRows ?? []).reduce(
-      (sum, row) => sum + Number(row.total_cost_brl ?? 0),
-      0,
-    );
-
-    if (userMonthlyCost >= maxBrlPerUserMonth) {
-      return jsonResponse(200, {
-        skipped: true,
-        reason: 'user_monthly_cap',
-        spent: userMonthlyCost,
-        limit: maxBrlPerUserMonth,
-      });
     }
 
     // ── 8. Determina o modelo a usar ─────────────────────────────────────────
@@ -367,10 +337,20 @@ Deno.serve(async (req) => {
       .not('extracted_text', 'is', null)
       .order('created_at', { ascending: true });
 
+    // PEN-001 [CRÍTICA]: wrap anti-injection em CADA documento de contexto.
+    // Antes, extracted_text era concatenado cru no system_prompt — admin comprometido
+    // podia subir DOCX com payload que afetava TODOS os usuários persistentemente.
+    // Cada anexo recebe fence único; antiInjectionInstruction bilíngue cobre todos.
+    const docFenceIds: string[] = [];
+
     if (attachments && attachments.length > 0) {
-      const docSections = attachments
-        .map((a) => `\n\n---\n[Documento: ${a.filename}]\n${a.extracted_text}\n---`)
-        .join('');
+      const docSections = attachments.map((a) => {
+        // PEN-007: sanitizar filename para evitar quebra de contexto via chars bidi/markdown
+        const safeFilename = sanitizeFilenameForPrompt(a.filename as string);
+        const { wrapped, fenceId: docFenceId } = wrapUserContent(a.extracted_text as string, `documento ${safeFilename}`);
+        docFenceIds.push(docFenceId);
+        return `\n\n[Documento de contexto: ${safeFilename}]\n${wrapped}`;
+      }).join('');
       systemText += docSections;
     }
 
@@ -389,14 +369,27 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(HISTORY_MSGS);
 
+    // PEN-010 [MÉDIA]: re-aplicar wrap nas mensagens do usuário do histórico.
+    // Mensagens históricas iam cruas para o provider — multi-turn injection:
+    // turn 1 com payload malicioso ficava no histórico sem fence.
     const historyMessages = (historyRows ?? [])
       .reverse()
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content as string }));
+      .map((m) => {
+        if (m.role === 'user') {
+          const { wrapped } = wrapUserContent(m.content as string);
+          return { role: 'user' as const, content: wrapped };
+        }
+        return { role: 'assistant' as const, content: m.content as string };
+      });
 
-    // Wrap anti-prompt injection na mensagem do usuário
-    // MED-01: captura fenceId e injeta antiInjectionInstruction no system prompt
+    // Wrap anti-prompt injection na mensagem atual do usuário
+    // PEN-001: instrução consolidada cobre fence do user msg + todos os fences dos anexos
     const { wrapped: wrappedUserMsg, fenceId } = wrapUserContent(message);
-    systemText = antiInjectionInstruction(fenceId) + '\n\n' + systemText;
+
+    // Monta instrução de segurança cobrindo TODOS os fences (user + documentos)
+    const allFenceIds = [fenceId, ...docFenceIds];
+    const securityInstructions = allFenceIds.map((id) => antiInjectionInstruction(id)).join('\n');
+    systemText = securityInstructions + '\n\n' + systemText;
 
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
       ...historyMessages,
@@ -441,47 +434,41 @@ Deno.serve(async (req) => {
 
     if (userMsgErr || !userMsg) {
       console.error('ai-agent-chat: erro ao persistir msg user', userMsgErr?.code);
-      // Não bloqueia — retorna resposta mesmo sem persistir
+      // Não bloqueia — retorna resposta mesmo sem persistir a msg do usuário
     }
 
-    // INSERT da mensagem do assistente
-    const { data: assistantMsg, error: assistantMsgErr } = await admin
-      .from('ai_chat_messages')
-      .insert({
-        session_id:    sessionId,
-        role:          'assistant',
-        content:       providerResult.content,
-        provider:      provider,
-        model_id:      modelId,
-        tokens_input:  providerResult.tokens_input,
-        tokens_output: providerResult.tokens_output,
-        total_tokens:  providerResult.total_tokens,
-      })
-      .select('id')
-      .single();
+    // PEN-004: sanitizar output do LLM antes de persistir
+    // Remove <script>, <iframe>, event handlers e URIs javascript: preservando markdown válido
+    const sanitizedContent = sanitizeLLMOutput(providerResult.content);
 
-    if (assistantMsgErr) {
-      console.error('ai-agent-chat: erro ao persistir msg assistant', assistantMsgErr?.code);
-    }
-
-    // INSERT de custo (service_role bypassa RLS na tabela ai_chat_messages_cost)
-    await admin
-      .from('ai_chat_messages_cost')
-      .insert({
-        message_id:     assistantMsg?.id ?? null,
-        user_id:        userId,
-        provider:       provider,
-        model_id:       modelId,
-        tokens_input:   providerResult.tokens_input,
-        tokens_output:  providerResult.tokens_output,
-        cost_brl_input: providerResult.cost_brl_input,
-        cost_brl_output: providerResult.cost_brl_output,
-        total_cost_brl: providerResult.cost_brl,
-      })
-      .catch((e: unknown) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn('ai-agent-chat: cost insert falhou', sanitizeForLog(msg));
+    // PEN-003: INSERT atômico via RPC — mensagem do assistente + custo na mesma transação.
+    // Se o INSERT do custo falhar, a mensagem NÃO entra — elimina o fail-open silencioso
+    // que permitia consumo ilimitado sem rastreamento de budget.
+    const { data: atomicResult, error: atomicErr } = await admin
+      .rpc('ai_record_assistant_message', {
+        p_session_id:      sessionId,
+        p_content:         sanitizedContent,
+        p_provider:        provider,
+        p_model_id:        modelId,
+        p_tokens_input:    providerResult.tokens_input,
+        p_tokens_output:   providerResult.tokens_output,
+        p_total_tokens:    providerResult.total_tokens,
+        p_cost_brl_input:  providerResult.cost_brl_input,
+        p_cost_brl_output: providerResult.cost_brl_output,
+        p_total_cost_brl:  providerResult.cost_brl,
+        p_user_id:         userId,
       });
+
+    if (atomicErr) {
+      // Falha no INSERT atômico: retorna 500 para não servir resposta sem rastreamento de custo
+      console.error('ai-agent-chat: falha no INSERT atômico msg+custo', atomicErr.code);
+      return jsonResponse(500, {
+        error: 'Erro ao registrar resposta. Tente novamente.',
+        hint:  'budget_tracking_failed',
+      });
+    }
+
+    const assistantMsgId = (atomicResult as { message_id: string } | null)?.message_id ?? null;
 
     // UPDATE last_message_at na sessão
     await admin
@@ -532,9 +519,9 @@ Deno.serve(async (req) => {
     });
 
     return jsonResponse(200, {
-      reply:       providerResult.content,
+      reply:       sanitizedContent,
       session_id:  sessionId,
-      message_id:  assistantMsg?.id ?? null,
+      message_id:  assistantMsgId,
       model_used:  modelId,
       tokens: {
         input:  providerResult.tokens_input,
