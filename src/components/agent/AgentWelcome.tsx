@@ -1,46 +1,29 @@
 import { motion } from 'framer-motion';
-import { Home, FileText, Briefcase, CheckSquare } from 'lucide-react';
+import {
+  Home, FileText, Briefcase, CheckSquare, MessageCircle, Users, MapPin,
+  Calendar, Phone, Mail, ShieldCheck, Flag, Megaphone, BookOpen, Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { ConversationStarter } from '@/hooks/useAgentSettings';
 
-interface Suggestion {
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-  prompt: string;
-}
+// Mapa de icones lucide disponiveis pro admin escolher no editor.
+// Exportado pra UI do IdentityStep reusar.
+export const STARTER_ICONS: Record<string, LucideIcon> = {
+  Home, FileText, Briefcase, CheckSquare, MessageCircle, Users, MapPin,
+  Calendar, Phone, Mail, ShieldCheck, Flag, Megaphone, BookOpen, Sparkles,
+};
 
-const SUGGESTIONS: Suggestion[] = [
-  {
-    icon: <Home className="h-[15px] w-[15px]" />,
-    title: 'Atender pedido de obra pública',
-    text: 'Roteiro padrão para eleitor pedindo asfalto, iluminação, calçada...',
-    prompt: 'Como respondo a um eleitor pedindo asfalto?',
-  },
-  {
-    icon: <FileText className="h-[15px] w-[15px]" />,
-    title: 'Redigir ofício institucional',
-    text: 'Estrutura formal para Secretaria, Câmara, Ministério Público...',
-    prompt: 'Qual o modelo de ofício para Secretaria Municipal?',
-  },
-  {
-    icon: <Briefcase className="h-[15px] w-[15px]" />,
-    title: 'Classificar demanda jurídica',
-    text: 'Categorização, encaminhamento e priorização de casos legais.',
-    prompt: 'Como classificar uma demanda jurídica do eleitor?',
-  },
-  {
-    icon: <CheckSquare className="h-[15px] w-[15px]" />,
-    title: 'Organizar evento de campo',
-    text: 'Logística, segurança, mobilização e cobertura de imprensa.',
-    prompt: 'Checklist completo para evento no bairro',
-  },
-];
+const DEFAULT_ICON = MessageCircle;
 
 interface AgentWelcomeProps {
   onSelectSuggestion: (prompt: string) => void;
+  starters?: ConversationStarter[];
 }
 
-export function AgentWelcome({ onSelectSuggestion }: AgentWelcomeProps) {
+export function AgentWelcome({ onSelectSuggestion, starters = [] }: AgentWelcomeProps) {
+  const items = starters.length > 0 ? starters : [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, filter: 'blur(3px)' }}
@@ -78,37 +61,42 @@ export function AgentWelcome({ onSelectSuggestion }: AgentWelcomeProps) {
       </p>
 
       {/* Grid de sugestões */}
-      <div className="grid grid-cols-1 gap-3 mt-6 sm:grid-cols-2">
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s.title}
-            onClick={() => onSelectSuggestion(s.prompt)}
-            className={cn(
-              'group text-left flex gap-2.5 items-start p-[14px_16px] rounded-[14px] cursor-pointer',
-              'bg-card/70 backdrop-blur-[8px] border border-border/70',
-              'hover:border-primary/40 hover:bg-card hover:shadow-[0_6px_16px_hsl(var(--primary)/0.08)] hover:translate-y-[-1px]',
-              'transition-all duration-200'
-            )}
-          >
-            {/* Ícone */}
-            <div
-              className="flex-shrink-0 w-[30px] h-[30px] flex items-center justify-center rounded-[9px] text-primary"
-              style={{ background: 'hsl(var(--primary) / 0.1)' }}
-            >
-              {s.icon}
-            </div>
-            {/* Texto */}
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold mb-[2px] text-foreground">
-                {s.title}
-              </div>
-              <div className="text-[12px] text-muted-foreground leading-[1.45]">
-                {s.text}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
+      {items.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 mt-6 sm:grid-cols-2">
+          {items.map((s, idx) => {
+            const Icon = STARTER_ICONS[s.icon] ?? DEFAULT_ICON;
+            return (
+              <button
+                key={`${s.title}-${idx}`}
+                onClick={() => onSelectSuggestion(s.prompt)}
+                className={cn(
+                  'group text-left flex gap-2.5 items-start p-[14px_16px] rounded-[14px] cursor-pointer',
+                  'bg-card/70 backdrop-blur-[8px] border border-border/70',
+                  'hover:border-primary/40 hover:bg-card hover:shadow-[0_6px_16px_hsl(var(--primary)/0.08)] hover:translate-y-[-1px]',
+                  'transition-all duration-200'
+                )}
+              >
+                {/* Ícone */}
+                <div
+                  className="flex-shrink-0 w-[30px] h-[30px] flex items-center justify-center rounded-[9px] text-primary"
+                  style={{ background: 'hsl(var(--primary) / 0.1)' }}
+                >
+                  <Icon className="h-[15px] w-[15px]" />
+                </div>
+                {/* Texto */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold mb-[2px] text-foreground">
+                    {s.title}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground leading-[1.45]">
+                    {s.text}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLog';
+import type { ConversationStarter } from '@/hooks/useAgentSettings';
 
 // ============================================================================
 // Tipos
@@ -12,6 +13,7 @@ export interface AgentSettingsInput {
   system_prompt?: string | null;
   is_active?: boolean;
   text_only_mode?: boolean;
+  conversation_starters?: ConversationStarter[];
 }
 
 // ============================================================================

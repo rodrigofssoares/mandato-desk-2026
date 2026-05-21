@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { FileBadge, Trash2, Loader2 } from 'lucide-react';
 import { FileUploadDropzone } from './FileUploadDropzone';
+import { ConversationStartersEditor } from './ConversationStartersEditor';
 import {
   useAgentAttachments,
   useUploadAgentAttachment,
@@ -290,6 +291,14 @@ export function IdentityStep({ agentData }: IdentityStepProps) {
           </div>
 
         </div>
+      </div>
+
+      {/* Iniciadores de conversa (editor proprio com mutation separada) */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <ConversationStartersEditor
+          agentId={agentData.id}
+          initial={agentData.conversation_starters ?? []}
+        />
       </div>
     </div>
   );

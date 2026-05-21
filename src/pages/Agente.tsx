@@ -149,7 +149,10 @@ export default function Agente() {
       <div className="flex-1 overflow-y-auto px-6 pt-10 pb-6 scroll-smooth [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded">
         <div className="max-w-[740px] mx-auto">
           {showWelcome && (
-            <AgentWelcome onSelectSuggestion={handleSuggestion} />
+            <AgentWelcome
+              onSelectSuggestion={handleSuggestion}
+              starters={agentSettings?.conversation_starters ?? []}
+            />
           )}
 
           {(messages.length > 0 || isTyping) && (
