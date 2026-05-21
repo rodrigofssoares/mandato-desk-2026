@@ -67,46 +67,6 @@ function extractTxt(buffer: Uint8Array): string {
   return new TextDecoder('utf-8', { fatal: false }).decode(buffer);
 }
 
-function extractDocx(buffer: Uint8Array): string {
-  // DOCX é um arquivo ZIP contendo word/document.xml
-  // Deno tem suporte nativo a DecompressionStream, mas não a unzip.
-  // Usamos uma busca raw pelo XML dentro do ZIP:
-  // O ZIP tem cada entry prefixada por Local File Header (PK\x03\x04).
-  // Procuramos 'word/document.xml' e extraímos o bloco comprimido.
-  //
-  // Abordagem robusta: usar fflate via esm.sh para descompressão ZIP real.
-
-  // Importação dinâmica inline — Deno suporta top-level await mas não import()
-  // dinâmico em todos os contextos. Alternativa: parse manual de ZIP estrutura.
-  // Para manter sem dependência externa, usamos regex direta no buffer Uint8Array
-  // após localizar o PK header da entry 'word/document.xml'.
-
-  const xmlBytes = extractZipEntry(buffer, 'word/document.xml');
-  if (!xmlBytes) {
-    throw new Error('Arquivo DOCX inválido: não contém word/document.xml');
-  }
-
-  // Descomprime o bloco DEFLATE usando DecompressionStream nativo do Deno
-  const decompressed = decompressDeflate(xmlBytes);
-  const xml = new TextDecoder('utf-8', { fatal: false }).decode(decompressed);
-
-  // Extrai texto entre tags <w:t>...</w:t>
-  const matches = xml.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g);
-  const parts: string[] = [];
-  let prevWasSpace = false;
-
-  for (const match of matches) {
-    const text = match[1];
-    if (text.length === 0) continue;
-    // Adiciona espaço entre segmentos para não fundir palavras
-    if (!prevWasSpace && parts.length > 0) parts.push(' ');
-    parts.push(text);
-    prevWasSpace = text.endsWith(' ');
-  }
-
-  return parts.join('');
-}
-
 // Localiza uma entry específica no ZIP (Local File Header)
 function extractZipEntry(zip: Uint8Array, entryName: string): Uint8Array | null {
   const nameBytes = new TextEncoder().encode(entryName);
@@ -158,36 +118,6 @@ function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
     if (a[i] !== b[i]) return false;
   }
   return true;
-}
-
-function decompressDeflate(compressed: Uint8Array): Uint8Array {
-  // DecompressionStream nativo do Deno — suporta 'deflate-raw'
-  const stream = new DecompressionStream('deflate-raw');
-  const writer = stream.writable.getWriter();
-  const reader = stream.readable.getReader();
-
-  writer.write(compressed);
-  writer.close();
-
-  const chunks: Uint8Array[] = [];
-  const pump = async () => {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-  };
-
-  // Deno Edge Functions suportam top-level await via Deno.serve —
-  // mas dentro de funções síncronas precisamos de um workaround.
-  // Aqui usamos uma Promise que resolvemos de forma síncrona-like via
-  // Atomics.wait — não disponível em Workers. Solução: tornar a função async.
-  // Retornamos uma promise e o caller aguarda.
-  throw new Error('USE_ASYNC_DECOMPRESS');
-
-  // Nota: este código nunca é alcançado — a implementação real está em
-  // decompressDeflateAsync() abaixo.
-  return new Uint8Array(0);
 }
 
 async function decompressDeflateAsync(compressed: Uint8Array): Promise<Uint8Array> {
