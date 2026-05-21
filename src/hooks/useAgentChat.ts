@@ -102,7 +102,18 @@ export function useSendAgentMessage() {
         body,
       });
 
-      if (response.error) throw response.error;
+      // Captura body real do erro (supabase-js esconde por padrao)
+      if (response.error) {
+        let detail = response.error.message;
+        try {
+          const ctx = (response.error as { context?: Response }).context;
+          if (ctx instanceof Response) {
+            const errBody = await ctx.json().catch(() => null);
+            if (errBody?.error) detail = errBody.error;
+          }
+        } catch { /* ignora */ }
+        throw new Error(detail);
+      }
 
       const result = response.data as SendMessageResponse & { skipped?: boolean; reason?: string };
 

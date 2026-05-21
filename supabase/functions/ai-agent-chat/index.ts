@@ -470,12 +470,13 @@ Deno.serve(async (req) => {
 
     const assistantMsgId = (atomicResult as { message_id: string } | null)?.message_id ?? null;
 
-    // UPDATE last_message_at na sessão
-    await admin
-      .from('ai_chat_sessions')
-      .update({ last_message_at: new Date().toISOString() })
-      .eq('id', sessionId)
-      .catch(() => null);
+    // UPDATE last_message_at na sessão (best-effort — query builder sem .catch)
+    try {
+      await admin
+        .from('ai_chat_sessions')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', sessionId);
+    } catch { /* best-effort */ }
 
     // ── 14. Verifica thresholds pós-chamada ──────────────────────────────────
     try {
@@ -489,10 +490,11 @@ Deno.serve(async (req) => {
 
       const checkThreshold = async (level: 'yellow' | 'red', threshold: number) => {
         if (pct >= threshold) {
-          await admin
-            .from('ai_budget_alerts_sent')
-            .insert({ agent_id: agent.id, threshold_level: level, month_year: monthYear })
-            .catch(() => null); // ignora conflito UNIQUE (alerta já enviado este mês)
+          try {
+            await admin
+              .from('ai_budget_alerts_sent')
+              .insert({ agent_id: agent.id, threshold_level: level, month_year: monthYear });
+          } catch { /* conflito UNIQUE: alerta ja enviado este mes */ }
         }
       };
 
@@ -502,10 +504,11 @@ Deno.serve(async (req) => {
       ]);
 
       if (pct >= 100) {
-        await admin
-          .from('ai_budget_alerts_sent')
-          .insert({ agent_id: agent.id, threshold_level: 'hard_block', month_year: monthYear })
-          .catch(() => null);
+        try {
+          await admin
+            .from('ai_budget_alerts_sent')
+            .insert({ agent_id: agent.id, threshold_level: 'hard_block', month_year: monthYear });
+        } catch { /* conflito UNIQUE */ }
       }
     } catch {
       // Threshold check não deve bloquear a resposta
@@ -533,7 +536,8 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('ai-agent-chat crash:', sanitizeForLog(msg));
-    return jsonResponse(500, { error: 'Erro interno' });
+    const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 4).join(' | ') : '';
+    console.error('ai-agent-chat crash:', sanitizeForLog(msg), '|', sanitizeForLog(stack ?? ''));
+    return jsonResponse(500, { error: `Erro interno: ${msg}`, _debug_stack: stack });
   }
 });
