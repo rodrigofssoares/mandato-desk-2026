@@ -90,6 +90,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   ordenacao_filtros: () => false,
   // whatsapp — gate-keepado por can.accessWhatsapp() (migration 049: somente admin por padrão).
   whatsapp: (can) => can.accessWhatsapp(),
+  // agente_ia — item de sidebar adicionado na Onda 4 (RAQ-MAND-EM075). Por ora não exibe.
+  agente_ia: () => false,
 };
 
 export function AppSidebar() {
