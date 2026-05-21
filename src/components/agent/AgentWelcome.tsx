@@ -78,7 +78,7 @@ export function AgentWelcome({ onSelectSuggestion }: AgentWelcomeProps) {
       </p>
 
       {/* Grid de sugestões */}
-      <div className="grid grid-cols-2 gap-3 mt-6 sm:grid-cols-1">
+      <div className="grid grid-cols-1 gap-3 mt-6 sm:grid-cols-2">
         {SUGGESTIONS.map((s) => (
           <button
             key={s.title}
