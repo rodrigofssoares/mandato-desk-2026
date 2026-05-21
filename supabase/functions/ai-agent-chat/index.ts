@@ -35,6 +35,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/admin-guard.ts';
 import {
+  antiInjectionInstruction,
   isRateLimited,
   registerAICall,
   sanitizeForLog,
@@ -203,17 +204,17 @@ Deno.serve(async (req) => {
     }
 
     // ── 6. Cap diário por usuário ────────────────────────────────────────────
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
+    // Usa RPC parametrizada (ALTA-02: elimina interpolacao de userId em filtro raw)
+    const { data: todayMsgsRaw, error: todayMsgsErr } = await admin
+      .rpc('ai_count_user_messages_today', { p_user_id: userId });
 
-    const { count: todayMsgs } = await admin
-      .from('ai_chat_messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('role', 'user')
-      .gte('created_at', todayStart.toISOString())
-      .filter('session_id', 'in', `(SELECT id FROM ai_chat_sessions WHERE user_id = '${userId}')`);
+    if (todayMsgsErr) {
+      console.warn('ai-agent-chat: erro ao verificar cap diario', todayMsgsErr.code);
+    }
 
-    if ((todayMsgs ?? 0) >= maxMsgsPerDay) {
+    const todayMsgs = Number(todayMsgsRaw ?? 0);
+
+    if (todayMsgs >= maxMsgsPerDay) {
       return jsonResponse(200, {
         skipped: true,
         reason:  'user_daily_cap',
@@ -221,6 +222,7 @@ Deno.serve(async (req) => {
         limit:   maxMsgsPerDay,
       });
     }
+
 
     // ── 7. Cap mensal de custo por usuário ───────────────────────────────────
     const monthStart = new Date();
@@ -391,7 +393,9 @@ Deno.serve(async (req) => {
       .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content as string }));
 
     // Wrap anti-prompt injection na mensagem do usuário
-    const { wrapped: wrappedUserMsg } = wrapUserContent(message, 'mensagem_usuario');
+    // MED-01: captura fenceId e injeta antiInjectionInstruction no system prompt
+    const { wrapped: wrappedUserMsg, fenceId } = wrapUserContent(message, 'mensagem_usuario');
+    systemText = antiInjectionInstruction(fenceId) + '\n\n' + systemText;
 
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
       ...historyMessages,
