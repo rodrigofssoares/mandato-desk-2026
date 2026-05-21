@@ -4,7 +4,9 @@
 // Exporta callProvider() — interface unificada para OpenAI, Anthropic e OpenRouter.
 //
 // Tabela de preços embarcada (USD por 1M tokens) — convertida pra BRL com fator
-// configurável via env OPENAI_USD_TO_BRL (default 5.5).
+// configurável via env USD_TO_BRL (default 5.5).
+// Para sobrescrever: adicione USD_TO_BRL=5.80 nas env vars da Edge Function no Supabase Dashboard.
+// Se a variável estiver ausente ou inválida, o sistema usa 5.5 como fallback silencioso.
 //
 // RAQ-MAND-EM075 — Onda 2 (Edge Functions do agente IA)
 
