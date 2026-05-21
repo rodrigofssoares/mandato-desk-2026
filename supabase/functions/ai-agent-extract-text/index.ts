@@ -67,15 +67,26 @@ function extractTxt(buffer: Uint8Array): string {
   return new TextDecoder('utf-8', { fatal: false }).decode(buffer);
 }
 
+// PEN-009: limite de iterações no scan byte-a-byte para prevenir DoS via arquivo malformado
+// Admin comprometido pode subir ZIP com magic bytes válidos mas sem headers internos,
+// forçando 5M iterações × 5 MB = ~3s de CPU por upload bloqueando a EF.
+const MAX_PK_SCAN_ITERATIONS = 100_000;
+
 // Localiza uma entry específica no ZIP (Local File Header)
 function extractZipEntry(zip: Uint8Array, entryName: string): Uint8Array | null {
   const nameBytes = new TextEncoder().encode(entryName);
   const PK = 0x04034b50; // Local file header signature
 
   let pos = 0;
+  let iterations = 0;
   const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
 
   while (pos + 30 <= zip.byteLength) {
+    // PEN-009: early-exit se o scanner ultrapassar o limite de iterações
+    if (++iterations > MAX_PK_SCAN_ITERATIONS) {
+      throw new Error('zip_scan_limit_exceeded');
+    }
+
     const sig = view.getUint32(pos, true);
     if (sig !== PK) {
       pos++;
@@ -157,11 +168,17 @@ async function extractDocxAsync(buffer: Uint8Array): Promise<string> {
   const PK = 0x04034b50;
 
   let pos = 0;
+  let iterations = 0;
   const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
   let xmlBytes: Uint8Array | null = null;
   let compressionMethod = 0;
 
   while (pos + 30 <= buffer.byteLength) {
+    // PEN-009: early-exit no scan de DOCX também
+    if (++iterations > MAX_PK_SCAN_ITERATIONS) {
+      throw new Error('zip_scan_limit_exceeded');
+    }
+
     const sig = view.getUint32(pos, true);
     if (sig !== PK) {
       pos++;
