@@ -15,6 +15,7 @@ import {
   LogOut,
   User,
   MessageCircle,
+  Bot,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -63,6 +64,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Importação', icon: Upload, href: '/bulk-import', secao: 'importacao' },
   { label: 'Campos de Campanha', icon: ClipboardCheck, href: '/campos-campanha', secao: 'campanha' },
   { label: 'WhatsApp', icon: MessageCircle, href: '/integracoes/whatsapp', secao: 'whatsapp', dividerBefore: true },
+  { label: 'Agente', icon: Bot, href: '/agente', secao: 'agente_ia' },
   { label: 'Configurações', icon: Settings, href: '/settings', secao: 'configuracoes', dividerBefore: true },
 ];
 
@@ -90,8 +92,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   ordenacao_filtros: () => false,
   // whatsapp — gate-keepado por can.accessWhatsapp() (migration 049: somente admin por padrão).
   whatsapp: (can) => can.accessWhatsapp(),
-  // agente_ia — item de sidebar adicionado na Onda 4 (RAQ-MAND-EM075). Por ora não exibe.
-  agente_ia: () => false,
+  // agente_ia — exibe para usuários com permissão de visualização (Onda 4 RAQ-MAND-EM075)
+  agente_ia: (can) => can.viewAgente(),
 };
 
 export function AppSidebar() {
