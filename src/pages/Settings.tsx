@@ -9,6 +9,7 @@ import { TeamTab } from '@/components/settings/TeamTab';
 import { PermsTab } from '@/components/settings/PermsTab';
 import { IntegrationsTab } from '@/components/settings/IntegrationsTab';
 import { AISettingsTab } from '@/components/settings/AISettingsTab';
+import { AgentSettingsTab } from '@/components/settings/AgentSettingsTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
 import { FilterOrderTab } from '@/components/settings/FilterOrderTab';
 import { NavOrderTab } from '@/components/settings/NavOrderTab';
@@ -22,6 +23,7 @@ const TABS = [
   'permissoes',
   'integracoes',
   'ia',
+  'agente',
   'personalizacao',
   'filtros',
   'nav-ordem',
@@ -43,6 +45,7 @@ export default function Settings() {
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessSettings();
   const canAccessFiltros = can.accessOrdenacaoFiltros();
+  const canEditAgente = can.editAgente();
 
   if (isPermLoading) {
     return (
@@ -93,6 +96,14 @@ export default function Settings() {
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
           <TabsTrigger value="ia">IA</TabsTrigger>
+          {canEditAgente && (
+            <TabsTrigger value="agente">
+              Agente{' '}
+              <span className="ml-1 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-[hsl(40,62%,55%)] text-foreground leading-none">
+                novo
+              </span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
           {canAccessFiltros && (
             <TabsTrigger value="filtros">Ordenação de Filtros</TabsTrigger>
@@ -119,6 +130,11 @@ export default function Settings() {
         <TabsContent value="ia" className="mt-4">
           <AISettingsTab />
         </TabsContent>
+        {canEditAgente && (
+          <TabsContent value="agente" className="mt-4">
+            <AgentSettingsTab />
+          </TabsContent>
+        )}
         <TabsContent value="personalizacao" className="mt-4">
           <BrandingTab />
         </TabsContent>
