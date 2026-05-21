@@ -29,7 +29,6 @@ export default function Agente() {
   const { data: sessions = [] } = useAgentSessions();
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
@@ -44,26 +43,26 @@ export default function Agente() {
   // Determina o modelo padrão do preset ativo
   const defaultModel = getDefaultModel(presets);
 
-  // Seleciona o modelo atual: selectedModelId > default do preset
-  const currentModelLabel =
-    selectedModelId ?? defaultModel?.model_id ?? null;
+  // Exibe o modelo do preset ativo (seletor será implementado em onda futura)
+  const currentModelLabel = defaultModel?.model_id ?? null;
 
-  // Ao carregar, abre a sessão mais recente automaticamente
+  // Abre a sessão mais recente ao carregar pela primeira vez.
+  // currentSessionId intencionalmente fora das deps para não cancelar "Nova conversa"
+  // (quando handleNewSession seta null, o effect não deve re-setar sessions[0])
   useEffect(() => {
     if (!currentSessionId && sessions.length > 0) {
       setCurrentSessionId(sessions[0].id);
     }
-  }, [sessions, currentSessionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions]);
 
   // ============================================================================
   // Handlers
   // ============================================================================
 
-  const handleSend = useCallback(async () => {
-    const trimmed = inputValue.trim();
+  const dispatchMessage = useCallback(async (text: string) => {
+    const trimmed = text.trim();
     if (!trimmed) return;
-
-    setInputValue('');
 
     let sessionId = currentSessionId;
 
@@ -80,36 +79,17 @@ export default function Agente() {
     sendMessage.mutate({
       session_id: sessionId,
       message: trimmed,
-      ...(selectedModelId ? { model_id: selectedModelId } : {}),
     });
-  }, [inputValue, currentSessionId, selectedModelId, createSession, sendMessage]);
+  }, [currentSessionId, createSession, sendMessage]);
+
+  const handleSend = useCallback(async () => {
+    await dispatchMessage(inputValue);
+    setInputValue('');
+  }, [inputValue, dispatchMessage]);
 
   const handleSuggestion = useCallback((prompt: string) => {
-    setInputValue(prompt);
-    // Envia automaticamente após um tick para o state atualizar
-    setTimeout(async () => {
-      const trimmed = prompt.trim();
-      if (!trimmed) return;
-
-      setInputValue('');
-
-      let sessionId = currentSessionId;
-      if (!sessionId) {
-        try {
-          sessionId = await createSession.mutateAsync();
-          setCurrentSessionId(sessionId);
-        } catch {
-          return;
-        }
-      }
-
-      sendMessage.mutate({
-        session_id: sessionId,
-        message: trimmed,
-        ...(selectedModelId ? { model_id: selectedModelId } : {}),
-      });
-    }, 0);
-  }, [currentSessionId, selectedModelId, createSession, sendMessage]);
+    dispatchMessage(prompt);
+  }, [dispatchMessage]);
 
   const handleNewSession = useCallback(() => {
     setCurrentSessionId(null);
