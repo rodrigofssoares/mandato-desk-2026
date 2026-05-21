@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
-import { maskKey } from '@/hooks/useAISettings';
 
 // ============================================================================
 // Tipos
@@ -22,11 +21,11 @@ export interface ProviderStatus {
 
 /**
  * Dados de admin — chave mascarada incluída.
- * A chave NUNCA chega ao frontend em texto puro: usa maskKey() do useAISettings.
+ * Máscara aplicada no banco (view SQL) — a chave real NUNCA trafega no payload HTTP.
  */
 export interface ProviderCredentialAdmin extends ProviderStatus {
   id: string;
-  /** Chave mascarada: 'sk-•••••••••••••ABCD'. Nunca a chave real. */
+  /** Chave mascarada pela view SQL no banco: '•••sk-...ABCD'. Nunca a chave real. */
   api_key_masked: string | null;
   /** Indica se há chave configurada, mesmo sem o valor mascarado. */
   api_key_set: boolean;
@@ -66,13 +65,13 @@ export function useProviderCredentials() {
 }
 
 // ============================================================================
-// Hook: useAdminProviderCredentials (admin — chave mascarada)
+// Hook: useAdminProviderCredentials (admin — chave mascarada via view SQL)
 // ============================================================================
 
 /**
- * Lê a tabela `ai_provider_credentials` diretamente — apenas admin.
- * A api_key é mascarada no frontend usando maskKey() do useAISettings.
- * A chave real NUNCA é retornada ao componente.
+ * Lê `ai_provider_credentials_admin_view` — apenas admin.
+ * A máscara da api_key é aplicada pelo banco (migration 092): a chave real
+ * NUNCA trafega no payload HTTP — o campo api_key_masked já chega mascarado.
  */
 export function useAdminProviderCredentials() {
   const { isAdmin } = useUserRole();
@@ -82,27 +81,24 @@ export function useAdminProviderCredentials() {
     enabled: isAdmin,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ai_provider_credentials' as never)
-        .select('id, provider, api_key, is_active, last_test_status, last_tested_at, created_at, updated_at')
+        .from('ai_provider_credentials_admin_view' as never)
+        .select('id, provider, api_key_masked, api_key_set, is_active, last_test_status, last_tested_at, created_at, updated_at')
         .order('provider');
 
       if (error) throw error;
       if (!data) return [];
 
-      return (data as Array<Record<string, unknown>>).map((row) => {
-        const rawKey = row.api_key as string | null;
-        return {
-          id: row.id as string,
-          provider: row.provider as AIProviderName,
-          is_active: row.is_active as boolean,
-          last_test_status: (row.last_test_status ?? null) as TestStatus | null,
-          api_key_masked: rawKey ? maskKey(rawKey) : null,
-          api_key_set: !!rawKey,
-          last_tested_at: (row.last_tested_at ?? null) as string | null,
-          created_at: row.created_at as string,
-          updated_at: row.updated_at as string,
-        };
-      });
+      return (data as Array<Record<string, unknown>>).map((row) => ({
+        id: row.id as string,
+        provider: row.provider as AIProviderName,
+        is_active: row.is_active as boolean,
+        last_test_status: (row.last_test_status ?? null) as TestStatus | null,
+        api_key_masked: (row.api_key_masked ?? null) as string | null,
+        api_key_set: row.api_key_set as boolean,
+        last_tested_at: (row.last_tested_at ?? null) as string | null,
+        created_at: row.created_at as string,
+        updated_at: row.updated_at as string,
+      }));
     },
     staleTime: 2 * 60 * 1000,
   });
