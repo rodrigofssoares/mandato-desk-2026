@@ -104,7 +104,22 @@ export function useSendAgentMessage() {
 
       if (response.error) throw response.error;
 
-      const result = response.data as SendMessageResponse;
+      const result = response.data as SendMessageResponse & { skipped?: boolean; reason?: string };
+
+      if (result?.skipped) {
+        const messages: Record<string, string> = {
+          provider_not_configured: 'Nenhuma chave de API configurada. Vá em Configurações → Agente → Conexões.',
+          agent_inactive: 'O agente está desativado pelo administrador.',
+          budget_exceeded: 'Orçamento do mês atingiu o limite. Aguarde até o próximo mês ou ajuste o limite em Configurações.',
+          user_daily_cap: 'Você atingiu seu limite diário de mensagens. Tente amanhã.',
+          user_monthly_cap: 'Você atingiu seu limite mensal de custo. Aguarde o próximo mês.',
+          multimodal_blocked: 'O modelo selecionado não é permitido. O agente está em modo "apenas texto".',
+          provider_error: 'Erro ao chamar o provedor. Tente novamente em alguns instantes.',
+        };
+        const msg = messages[result.reason as string] || `Não foi possível processar: ${result.reason}`;
+        throw new Error(msg);
+      }
+
       if (!result?.reply) throw new Error('Resposta inválida do agente');
 
       return result;
