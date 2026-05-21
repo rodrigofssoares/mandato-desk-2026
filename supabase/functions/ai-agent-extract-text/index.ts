@@ -29,10 +29,11 @@
 import { corsHeaders, jsonResponse, requireAdmin } from '../_shared/admin-guard.ts';
 import { sanitizeForLog } from '../_shared/ai-security.ts';
 
-const MAX_FILE_BYTES    = 5 * 1024 * 1024; // 5 MB
-const MAX_TEXT_CHARS    = 100_000;          // salvaguarda: truncar em 100K chars
-const ATTACHMENTS_LIMIT = 10;
-const UUID_REGEX        = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_FILE_BYTES       = 5 * 1024 * 1024;  // 5 MB (input comprimido)
+const MAX_DECOMPRESSED     = 20 * 1024 * 1024; // 20 MB (output descomprimido — zip bomb guard)
+const MAX_TEXT_CHARS       = 100_000;           // salvaguarda: truncar em 100K chars
+const ATTACHMENTS_LIMIT    = 10;
+const UUID_REGEX           = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Rate limit: 1 req a cada 2 segundos por admin (não usa tabela — in-memory per invocation)
 // Implementado via timestamp check de last-call armazenado em ai_rate_limit
@@ -198,14 +199,21 @@ async function decompressDeflateAsync(compressed: Uint8Array): Promise<Uint8Arra
   await writer.close();
 
   const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
+    totalBytes += value.length;
+    // ZIP bomb guard: aborta se output exceder 20 MB
+    if (totalBytes > MAX_DECOMPRESSED) {
+      await reader.cancel().catch(() => null);
+      throw new Error('docx_too_large_decompressed');
+    }
     chunks.push(value);
   }
 
-  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
-  const result = new Uint8Array(totalLength);
+  const result = new Uint8Array(totalBytes);
   let offset = 0;
   for (const chunk of chunks) {
     result.set(chunk, offset);
@@ -277,6 +285,60 @@ async function extractDocxAsync(buffer: Uint8Array): Promise<string> {
   }
 
   return parts.join('');
+}
+
+// ── Validação de magic bytes ──────────────────────────────────────────────────
+// Previne file-type spoofing: um arquivo .pdf com payload ZIP (ou vice-versa)
+// é rejeitado antes de qualquer processamento.
+//
+//   PDF  : %PDF-  → 0x25 0x50 0x44 0x46 0x2D
+//   DOCX : PK\x03\x04 (ZIP) → 0x50 0x4B 0x03 0x04
+//   TXT  : sem magic bytes — valida que os primeiros 512 bytes são UTF-8 válido
+//
+// Retorna null se OK, ou string descrevendo o problema.
+
+function validateMagicBytes(buffer: Uint8Array, fileType: string): string | null {
+  if (fileType === 'pdf') {
+    // %PDF- (5 bytes)
+    if (
+      buffer.length < 5 ||
+      buffer[0] !== 0x25 || // %
+      buffer[1] !== 0x50 || // P
+      buffer[2] !== 0x44 || // D
+      buffer[3] !== 0x46 || // F
+      buffer[4] !== 0x2D    // -
+    ) {
+      return 'Arquivo não é um PDF válido (magic bytes incorretos)';
+    }
+    return null;
+  }
+
+  if (fileType === 'docx') {
+    // PK\x03\x04 — ZIP local file header (4 bytes)
+    if (
+      buffer.length < 4 ||
+      buffer[0] !== 0x50 || // P
+      buffer[1] !== 0x4B || // K
+      buffer[2] !== 0x03 ||
+      buffer[3] !== 0x04
+    ) {
+      return 'Arquivo não é um DOCX/ZIP válido (magic bytes incorretos)';
+    }
+    return null;
+  }
+
+  if (fileType === 'txt') {
+    // Valida que os primeiros 512 bytes são UTF-8 válido usando fatal=true
+    const sample = buffer.slice(0, Math.min(512, buffer.length));
+    try {
+      new TextDecoder('utf-8', { fatal: true }).decode(sample);
+    } catch {
+      return 'Arquivo TXT contém bytes inválidos (não é UTF-8)';
+    }
+    return null;
+  }
+
+  return null; // tipo desconhecido: não bloquear (a validação de extensão já cobrirá)
 }
 
 // ── Extração de PDF via OpenAI Files API ─────────────────────────────────────
@@ -442,6 +504,17 @@ Deno.serve(async (req) => {
     // ── 8. Lê o buffer do arquivo ────────────────────────────────────────────
     const buffer = new Uint8Array(await file.arrayBuffer());
 
+    // ── 8b. Valida magic bytes (previne file-type spoofing) ──────────────────
+    const magicError = validateMagicBytes(buffer, ext);
+    if (magicError) {
+      // Marca attachment como erro antes de retornar
+      await admin
+        .from('ai_agent_attachments')
+        .update({ status: 'error', error_message: magicError })
+        .eq('id', attachmentId);
+      return jsonResponse(400, { ok: false, error: 'invalid_file_type', hint: magicError });
+    }
+
     // ── 9. Extrai texto conforme tipo ────────────────────────────────────────
     let extractedText: string;
 
@@ -477,6 +550,15 @@ Deno.serve(async (req) => {
     } catch (extractErr) {
       const msg = extractErr instanceof Error ? extractErr.message : String(extractErr);
       console.error('ai-agent-extract-text: extração falhou', sanitizeForLog(msg));
+
+      // ZIP bomb: DOCX expandiu além de 20 MB após descompressão
+      if (msg === 'docx_too_large_decompressed') {
+        await admin
+          .from('ai_agent_attachments')
+          .update({ status: 'error', error_message: 'DOCX muito grande após descompressão (máx 20 MB). Reduza o arquivo.' })
+          .eq('id', attachmentId);
+        return jsonResponse(400, { ok: false, error: 'docx_too_large_decompressed', hint: 'O DOCX expande para mais de 20 MB após descompressão. Converta para TXT ou reduza o conteúdo.' });
+      }
 
       await admin
         .from('ai_agent_attachments')
