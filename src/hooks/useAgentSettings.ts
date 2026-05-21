@@ -39,7 +39,7 @@ export interface AgentPublicInfo {
 /**
  * Lê a linha singleton de `ai_agents`.
  *
- * - Admin: lê a tabela direta (dados completos, incluindo system_prompt).
+ * - Admin: lê `ai_agents_admin_view` (dados completos, incluindo system_prompt).
  * - Não-admin: lê `ai_agents_public_view` (apenas id, name, is_active).
  *
  * Retorna null quando não há agente configurado.
@@ -52,9 +52,9 @@ export function useAgentSettings() {
     queryKey: ['agent_settings', isAdmin],
     queryFn: async () => {
       if (isAdmin) {
-        // Admin lê dados completos diretamente da tabela
+        // Admin lê dados completos via view admin (tabela direta bloqueada após REVOKE da mig 095)
         const { data, error } = await supabase
-          .from('ai_agents' as never)
+          .from('ai_agents_admin_view' as never)
           .select('id, name, system_prompt, is_active, text_only_mode, created_by, updated_by, created_at, updated_at')
           .maybeSingle();
 
