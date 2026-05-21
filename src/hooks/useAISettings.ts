@@ -61,7 +61,8 @@ export interface AISettingsUpdate {
 
 /**
  * Mascara uma chave deixando os 3 primeiros e 4 últimos caracteres visíveis.
- * Nunca retorna a chave real para o frontend.
+ * Mantida apenas para compatibilidade com código legado que possa importá-la.
+ * Para dados do banco, a máscara agora é aplicada via view SQL (migration 096).
  */
 export function maskKey(key: string): string {
   if (!key) return '';
@@ -88,9 +89,11 @@ const DEFAULT_FEATURES: AIFeatures = {
 // ============================================================================
 
 /**
- * Lê a linha singleton de `ai_settings`. RLS já restringe SELECT a admins
- * ATIVOS — não-admin recebe `null`. Mesmo assim, o hook nunca devolve a chave
- * real ao componente: `api_key` vem mascarado e `api_key_set` indica presença.
+ * Lê `ai_settings_admin_view` (migration 096) para admins e `ai_settings`
+ * para não-admins.
+ *
+ * A máscara da api_key é aplicada pelo banco na view — a chave real NUNCA
+ * trafega no payload HTTP. Não-admins recebem null por RLS.
  */
 export function useAISettings() {
   const { isAdmin } = useUserRole();
@@ -98,39 +101,44 @@ export function useAISettings() {
   return useQuery<AISettings | null>({
     queryKey: ['ai_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ai_settings')
-        .select('*')
-        .maybeSingle();
+      if (isAdmin) {
+        // Lê via view com api_key já mascarada no banco
+        const { data, error } = await supabase
+          .from('ai_settings_admin_view' as never)
+          .select('id, provider, model, ai_enabled, features, updated_by, created_at, updated_at, api_key_masked, api_key_set')
+          .maybeSingle();
 
-      if (error) throw error;
-      if (!data) return null;
+        if (error) throw error;
+        if (!data) return null;
 
-      const features = (data.features ?? {}) as Partial<AIFeatures>;
+        const row = data as Record<string, unknown>;
+        const features = ((row.features ?? {}) as Partial<AIFeatures>);
 
-      return {
-        id: data.id,
-        provider: (data.provider ?? null) as AIProvider | null,
-        model: data.model ?? null,
-        api_key: isAdmin && data.api_key ? maskKey(data.api_key) : null,
-        api_key_set: !!data.api_key,
-        ai_enabled: data.ai_enabled,
-        features: {
-          // Demandas (existentes)
-          resumo_demandas: !!features.resumo_demandas,
-          sugestao_acoes: !!features.sugestao_acoes,
-          analise_risco: !!features.analise_risco,
-          // WhatsApp (T92 — Fase 7 Onda B) — default false se ausente
-          resumo_conversa: !!features.resumo_conversa,
-          sugestao_resposta: !!features.sugestao_resposta,
-          classificacao_assunto: !!features.classificacao_assunto,
-          analise_sentimento: !!features.analise_sentimento,
-          next_best_action: !!features.next_best_action,
-          transcricao_audio: !!features.transcricao_audio,
-        },
-        updated_by: data.updated_by,
-        updated_at: data.updated_at,
-      };
+        return {
+          id: row.id as string,
+          provider: (row.provider ?? null) as AIProvider | null,
+          model: (row.model ?? null) as string | null,
+          api_key: (row.api_key_masked ?? null) as string | null,
+          api_key_set: row.api_key_set as boolean,
+          ai_enabled: row.ai_enabled as boolean,
+          features: {
+            resumo_demandas: !!features.resumo_demandas,
+            sugestao_acoes: !!features.sugestao_acoes,
+            analise_risco: !!features.analise_risco,
+            resumo_conversa: !!features.resumo_conversa,
+            sugestao_resposta: !!features.sugestao_resposta,
+            classificacao_assunto: !!features.classificacao_assunto,
+            analise_sentimento: !!features.analise_sentimento,
+            next_best_action: !!features.next_best_action,
+            transcricao_audio: !!features.transcricao_audio,
+          },
+          updated_by: (row.updated_by ?? null) as string | null,
+          updated_at: row.updated_at as string,
+        };
+      }
+
+      // Não-admin: RLS bloqueia SELECT direto na tabela — retorna null
+      return null;
     },
   });
 }
