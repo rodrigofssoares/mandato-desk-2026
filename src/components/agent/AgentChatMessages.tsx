@@ -26,6 +26,7 @@ function formatTime(iso: string): string {
 // Typing indicator
 // ============================================================================
 
+// @keyframes agentBounce definido globalmente em src/index.css
 function TypingIndicator() {
   return (
     <div className="flex gap-1 items-center">
@@ -40,12 +41,6 @@ function TypingIndicator() {
           }}
         />
       ))}
-      <style>{`
-        @keyframes agentBounce {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-          30% { transform: translateY(-5px); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -221,17 +216,27 @@ export function AgentChatMessages({
   isLoading,
 }: AgentChatMessagesProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Mapa message_id → favorito para lookup O(1)
   const favByMessageId = new Map(favorites.map((f) => [f.message_id, f]));
 
-  // Scroll automático para a última mensagem
+  // Scroll automático apenas quando o usuário está perto do fim (< 120px)
+  // Se o usuário subiu para reler, não interrompe a leitura
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = containerRef.current?.closest('[class*="overflow-y-auto"]') as HTMLElement | null;
+    if (!container) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom < 120) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages.length, isLoading]);
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div ref={containerRef} className="flex flex-col gap-[18px]">
       {messages.map((msg) =>
         msg.role === 'user' ? (
           <UserMessage key={msg.id} message={msg} />
