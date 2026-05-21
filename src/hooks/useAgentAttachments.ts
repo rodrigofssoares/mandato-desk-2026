@@ -14,13 +14,13 @@ export interface AgentAttachment {
   id: string;
   agent_id: string;
   filename: string;
-  file_size: number;
-  mime_type: string;
+  file_size: number;     // alias derivado de file_size_bytes (compat com UI)
+  mime_type: string;     // alias derivado de file_type (compat com UI)
   status: AttachmentStatus;
   tokens_estimated: number | null;
   error_message: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at: string;    // derivado de created_at (tabela nao tem updated_at)
 }
 
 // ============================================================================
@@ -73,7 +73,7 @@ export function useAgentAttachments(agentId?: string) {
       const { data, error } = await supabase
         .from('ai_agent_attachments' as never)
         .select(
-          'id, agent_id, filename, file_size, mime_type, status, tokens_estimated, error_message, created_at, updated_at'
+          'id, agent_id, filename, file_type, file_size_bytes, status, tokens_estimated, error_message, created_at'
         )
         .eq('agent_id', agentId as never)
         .order('created_at', { ascending: false });
@@ -85,13 +85,13 @@ export function useAgentAttachments(agentId?: string) {
           id: row.id as string,
           agent_id: row.agent_id as string,
           filename: row.filename as string,
-          file_size: Number(row.file_size),
-          mime_type: row.mime_type as string,
+          file_size: row.file_size_bytes != null ? Number(row.file_size_bytes) : 0,
+          mime_type: (row.file_type as string) ?? '',
           status: row.status as AttachmentStatus,
           tokens_estimated: row.tokens_estimated != null ? Number(row.tokens_estimated) : null,
           error_message: (row.error_message ?? null) as string | null,
           created_at: row.created_at as string,
-          updated_at: row.updated_at as string,
+          updated_at: row.created_at as string,
         })
       );
     },
@@ -122,7 +122,25 @@ export function useUploadAgentAttachment(agentId?: string) {
         body: formData,
       });
 
-      if (error) throw error;
+      // Captura body real do erro pra mensagem util (supabase-js esconde por padrao).
+      if (error) {
+        let detail = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json().catch(() => null);
+            if (body?.error) detail = body.error;
+            else if (body?.hint) detail = body.hint;
+          }
+        } catch { /* ignora */ }
+        throw new Error(detail);
+      }
+
+      // EF pode retornar { ok: false, error } com status 2xx em casos esperados
+      const result = data as { ok?: boolean; error?: string; hint?: string };
+      if (result?.ok === false) {
+        throw new Error(result.error ?? result.hint ?? 'Falha ao processar arquivo');
+      }
       return data;
     },
     onSuccess: () => {
