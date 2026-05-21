@@ -361,11 +361,13 @@ Deno.serve(async (req) => {
       return jsonResponse(429, { error: 'Aguarde 2 segundos entre envios de arquivo' });
     }
 
-    // Registra a chamada antes de processar
-    await admin
-      .from('ai_rate_limit')
-      .insert({ user_id: callerId, ef_name: 'ai-agent-extract-text' })
-      .catch(() => null);
+    // Registra a chamada antes de processar (best-effort — query builder Supabase
+    // nao tem .catch nativo, entao usamos try/catch around the await)
+    try {
+      await admin
+        .from('ai_rate_limit')
+        .insert({ user_id: callerId, ef_name: 'ai-agent-extract-text' });
+    } catch { /* best-effort */ }
 
     // ── 3. Parse multipart ───────────────────────────────────────────────────
     let formData: FormData;

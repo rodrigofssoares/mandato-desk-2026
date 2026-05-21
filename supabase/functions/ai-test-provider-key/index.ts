@@ -185,13 +185,15 @@ Deno.serve(async (req) => {
     }
 
     // ── 4. Registra chamada pra rate-limit tracking ──────────────────────────
-    await admin
-      .from('ai_rate_limit')
-      .insert({ user_id: callerId, ef_name: 'ai-test-provider-key' })
-      .catch((e: unknown) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn('ai-test-provider-key: rate-limit insert falhou', sanitizeForLog(msg));
-      });
+    // Supabase query builder nao tem .catch — usar try/catch around the await
+    try {
+      await admin
+        .from('ai_rate_limit')
+        .insert({ user_id: callerId, ef_name: 'ai-test-provider-key' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('ai-test-provider-key: rate-limit insert falhou', sanitizeForLog(msg));
+    }
 
     // ── 5. Testa a chave no provider ─────────────────────────────────────────
     let result: TestResult;
@@ -211,14 +213,15 @@ Deno.serve(async (req) => {
 
     // ── 6. Atualiza last_test_status no banco (best-effort) ──────────────────
     const status = result.ok ? 'valid' : 'invalid';
-    await admin
-      .from('ai_provider_credentials')
-      .update({ last_tested_at: new Date().toISOString(), last_test_status: status })
-      .eq('provider', provider)
-      .catch((e: unknown) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn('ai-test-provider-key: update status falhou', sanitizeForLog(msg));
-      });
+    try {
+      await admin
+        .from('ai_provider_credentials')
+        .update({ last_tested_at: new Date().toISOString(), last_test_status: status })
+        .eq('provider', provider);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('ai-test-provider-key: update status falhou', sanitizeForLog(msg));
+    }
 
     console.log('ai-test-provider-key: teste executado', {
       caller: callerId,
