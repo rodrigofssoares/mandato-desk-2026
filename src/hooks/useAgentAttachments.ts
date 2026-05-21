@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -29,9 +30,41 @@ export interface AgentAttachment {
 /**
  * Lista os anexos do agente.
  * Apenas admin tem acesso (RLS).
+ *
+ * SF-4: subscribe a postgres_changes em ai_agent_attachments para invalidar
+ * o cache quando status muda de 'processing' para 'ready' (ou 'error').
+ * Cleanup do channel no unmount.
  */
 export function useAgentAttachments(agentId?: string) {
   const { isAdmin } = useUserRole();
+  const queryClient = useQueryClient();
+
+  // SF-4: realtime listener para status de indexação
+  useEffect(() => {
+    if (!isAdmin || !agentId) return;
+
+    const channel = supabase
+      .channel(`agent_attachments_${agentId}`)
+      .on(
+        'postgres_changes' as never,
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ai_agent_attachments',
+          filter: `agent_id=eq.${agentId}`,
+        } as never,
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ['agent_attachments', agentId],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [isAdmin, agentId, queryClient]);
 
   return useQuery<AgentAttachment[]>({
     queryKey: ['agent_attachments', agentId],

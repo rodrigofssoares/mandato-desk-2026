@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFormContext, Controller } from 'react-hook-form';
+import { useFormContext, Controller, useWatch } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import {
@@ -396,6 +396,8 @@ interface ModelsStepProps {
 
 export function ModelsStep({ agentData }: ModelsStepProps) {
   const { control } = useFormContext<AgentIdentityForm>();
+  // SF-2: useWatch em vez de control._formValues (API interna RHF)
+  const textOnlyMode = useWatch({ control, name: 'text_only_mode' });
   const { data: presets = [], isLoading } = useAgentPresets();
 
   return (
@@ -444,7 +446,7 @@ export function ModelsStep({ agentData }: ModelsStepProps) {
               key={preset.id}
               preset={preset}
               agentId={agentData.id}
-              textOnlyMode={control._formValues.text_only_mode}
+              textOnlyMode={textOnlyMode}
             />
           ))}
         </div>

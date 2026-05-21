@@ -11,8 +11,9 @@ export interface AgentBudget {
   id: string;
   agent_id: string;
   monthly_limit_brl: number;
-  threshold_yellow_pct: number;
-  threshold_red_pct: number;
+  // NULL = alerta desabilitado (migration 104)
+  threshold_yellow_pct: number | null;
+  threshold_red_pct: number | null;
   auto_block_at_100: boolean;
   max_tokens_per_response: number;
   max_messages_per_user_per_day: number;
@@ -61,8 +62,8 @@ export function useAgentBudget() {
         id: row.id as string,
         agent_id: row.agent_id as string,
         monthly_limit_brl: Number(row.monthly_limit_brl),
-        threshold_yellow_pct: Number(row.threshold_yellow_pct),
-        threshold_red_pct: Number(row.threshold_red_pct),
+        threshold_yellow_pct: row.threshold_yellow_pct != null ? Number(row.threshold_yellow_pct) : null,
+        threshold_red_pct: row.threshold_red_pct != null ? Number(row.threshold_red_pct) : null,
         auto_block_at_100: row.auto_block_at_100 as boolean,
         max_tokens_per_response: Number(row.max_tokens_per_response),
         max_messages_per_user_per_day: Number(row.max_messages_per_user_per_day),
@@ -114,12 +115,13 @@ export function useAgentBudgetSpend() {
           ? (currentSpend / budget.monthly_limit_brl) * 100
           : 0;
 
+      // NULL em threshold = alerta desabilitado → trata como threshold infinito
       const status: BudgetStatus =
         percentUsed >= 100
           ? 'blocked'
-          : percentUsed >= budget.threshold_red_pct
+          : budget.threshold_red_pct != null && percentUsed >= budget.threshold_red_pct
           ? 'red'
-          : percentUsed >= budget.threshold_yellow_pct
+          : budget.threshold_yellow_pct != null && percentUsed >= budget.threshold_yellow_pct
           ? 'yellow'
           : 'ok';
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -38,23 +38,41 @@ export function BudgetStep() {
   const { data: budget, isLoading } = useAgentBudget();
   const updateMutation = useUpdateBudget();
 
-  // Estado local controlado pelos sliders
+  // Estado local controlado pelos sliders/switches
   const [monthlyLimit, setMonthlyLimit] = useState<number | null>(null);
   const [maxTokens, setMaxTokens] = useState<number | null>(null);
   const [maxMsgsPerDay, setMaxMsgsPerDay] = useState<number | null>(null);
   const [maxBrlPerUser, setMaxBrlPerUser] = useState<number | null>(null);
+  // MF-2: yellowEnabled/redEnabled hidratam do banco — NULL = desabilitado
   const [yellowEnabled, setYellowEnabled] = useState(true);
   const [redEnabled, setRedEnabled] = useState(true);
   const [autoBlock, setAutoBlock] = useState(true);
 
   const [activeScenario, setActiveScenario] = useState('real');
   const [isDirty, setIsDirty] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Hidrata estado local quando budget carrega
-  const effectiveLimit = monthlyLimit ?? budget?.monthly_limit_brl ?? 50;
-  const effectiveTokens = maxTokens ?? budget?.max_tokens_per_response ?? 2048;
-  const effectiveMsgsDay = maxMsgsPerDay ?? budget?.max_messages_per_user_per_day ?? 50;
-  const effectiveBrlUser = maxBrlPerUser ?? budget?.max_brl_per_user_per_month ?? 25;
+  // SF-3: hidrata estado local quando budget carrega ou muda (ex: invalidação de cache)
+  useEffect(() => {
+    if (!budget) return;
+
+    setMonthlyLimit(budget.monthly_limit_brl);
+    setMaxTokens(budget.max_tokens_per_response);
+    setMaxMsgsPerDay(budget.max_messages_per_user_per_day);
+    setMaxBrlPerUser(budget.max_brl_per_user_per_month);
+    // NULL no banco = toggle desabilitado
+    setYellowEnabled(budget.threshold_yellow_pct != null);
+    setRedEnabled(budget.threshold_red_pct != null);
+    setAutoBlock(budget.auto_block_at_100);
+    setHydrated(true);
+    setIsDirty(false);
+  }, [budget]);
+
+  // Valores efetivos — fallback seguro enquanto não hidratou
+  const effectiveLimit = monthlyLimit ?? 50;
+  const effectiveTokens = maxTokens ?? 2048;
+  const effectiveMsgsDay = maxMsgsPerDay ?? 50;
+  const effectiveBrlUser = maxBrlPerUser ?? 25;
   const effectiveAutoBlock = autoBlock;
 
   const projectedCost = SCENARIOS.find((s) => s.key === activeScenario)
@@ -67,14 +85,15 @@ export function BudgetStep() {
 
   const markDirty = useCallback(() => setIsDirty(true), []);
 
+  // MF-2: threshold NULL quando toggle off — persistência correta no banco
   const handleSave = async () => {
     if (!budget) return;
     await updateMutation.mutateAsync({
       id: budget.id,
       data: {
         monthly_limit_brl: effectiveLimit,
-        threshold_yellow_pct: 70,
-        threshold_red_pct: 90,
+        threshold_yellow_pct: yellowEnabled ? 70 : null,
+        threshold_red_pct: redEnabled ? 90 : null,
         auto_block_at_100: effectiveAutoBlock,
         max_tokens_per_response: effectiveTokens,
         max_messages_per_user_per_day: effectiveMsgsDay,
@@ -84,7 +103,7 @@ export function BudgetStep() {
     setIsDirty(false);
   };
 
-  if (isLoading) {
+  if (isLoading || !hydrated) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -113,7 +132,9 @@ export function BudgetStep() {
                 <p className="text-xs font-semibold">Aviso amarelo</p>
                 <p className="text-[11px] text-muted-foreground">E-mail ao admin</p>
               </div>
-              <span className="font-bold text-sm font-mono text-primary">70%</span>
+              <span className={cn('font-bold text-sm font-mono', yellowEnabled ? 'text-primary' : 'text-muted-foreground/40')}>
+                70%
+              </span>
               <Switch
                 checked={yellowEnabled}
                 onCheckedChange={(v) => { setYellowEnabled(v); markDirty(); }}
@@ -130,7 +151,9 @@ export function BudgetStep() {
                 <p className="text-xs font-semibold">Aviso vermelho</p>
                 <p className="text-[11px] text-muted-foreground">Push + modal</p>
               </div>
-              <span className="font-bold text-sm font-mono text-primary">90%</span>
+              <span className={cn('font-bold text-sm font-mono', redEnabled ? 'text-primary' : 'text-muted-foreground/40')}>
+                90%
+              </span>
               <Switch
                 checked={redEnabled}
                 onCheckedChange={(v) => { setRedEnabled(v); markDirty(); }}

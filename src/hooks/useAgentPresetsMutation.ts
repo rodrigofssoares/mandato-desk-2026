@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 import type { PresetKey } from '@/hooks/useAgentPresets';
 
 // ============================================================================
@@ -8,8 +9,8 @@ import type { PresetKey } from '@/hooks/useAgentPresets';
 // ============================================================================
 
 /**
- * Marca is_active_preset=true no preset escolhido e false nos demais.
- * Opera via 2 UPDATEs em sequência.
+ * Ativa o preset escolhido via RPC atômica `set_active_preset`.
+ * Substitui os 2 UPDATEs sequenciais que geravam race condition (migration 105).
  */
 export function useSetActivePreset() {
   const queryClient = useQueryClient();
@@ -22,25 +23,27 @@ export function useSetActivePreset() {
       agent_id: string;
       preset_key: PresetKey;
     }) => {
-      // 1. Desativa todos os presets do agente
-      const { error: clearError } = await supabase
-        .from('ai_agent_model_presets' as never)
-        .update({ is_active_preset: false } as Record<string, unknown>)
-        .eq('agent_id', agent_id as never);
+      const { error } = await supabase.rpc(
+        'set_active_preset' as never,
+        { p_agent_id: agent_id, p_preset_key: preset_key } as never
+      );
 
-      if (clearError) throw clearError;
+      if (error) throw error;
 
-      // 2. Ativa o preset escolhido
-      const { error: activateError } = await supabase
-        .from('ai_agent_model_presets' as never)
-        .update({ is_active_preset: true } as Record<string, unknown>)
-        .eq('agent_id', agent_id as never)
-        .eq('preset_key', preset_key as never);
-
-      if (activateError) throw activateError;
+      return { agent_id, preset_key };
     },
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['agent_presets'] });
+
+      // Audit trail B1
+      void logActivity({
+        type: 'update',
+        entity_type: 'ai_agent_preset',
+        entity_name: `Preset ${variables.preset_key}`,
+        entity_id: variables.agent_id,
+        description: `Preset ativado: ${variables.preset_key}`,
+      });
+
       toast.success('Preset ativado');
     },
     onError: (error: Error) => {
@@ -88,7 +91,8 @@ export function useToggleModelInPreset() {
 // ============================================================================
 
 /**
- * Marca is_default=true no modelo escolhido e false nos demais do mesmo preset.
+ * Define o modelo padrão do preset via RPC atômica `set_default_model_in_preset`.
+ * Substitui os 2 UPDATEs sequenciais que geravam race condition (migration 106).
  */
 export function useSetDefaultModelInPreset() {
   const queryClient = useQueryClient();
@@ -101,21 +105,12 @@ export function useSetDefaultModelInPreset() {
       preset_id: string;
       model_id: string;
     }) => {
-      // 1. Desmarca todos do preset
-      const { error: clearError } = await supabase
-        .from('ai_agent_models' as never)
-        .update({ is_default: false } as Record<string, unknown>)
-        .eq('preset_id', preset_id as never);
+      const { error } = await supabase.rpc(
+        'set_default_model_in_preset' as never,
+        { p_preset_id: preset_id, p_model_id: model_id } as never
+      );
 
-      if (clearError) throw clearError;
-
-      // 2. Marca o escolhido
-      const { error: markError } = await supabase
-        .from('ai_agent_models' as never)
-        .update({ is_default: true } as Record<string, unknown>)
-        .eq('id', model_id as never);
-
-      if (markError) throw markError;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent_presets'] });
@@ -133,6 +128,7 @@ export function useSetDefaultModelInPreset() {
 
 /**
  * Insere um novo modelo no preset.
+ * SF-5: position é calculado como MAX(position) + 1 antes do INSERT.
  * Valida duplicata antes de inserir.
  */
 export function useAddModelToPreset() {
@@ -159,6 +155,21 @@ export function useAddModelToPreset() {
       if (checkError) throw checkError;
       if (existing) throw new Error(`Modelo "${model_id}" já está neste preset`);
 
+      // SF-5: calcula próxima position de forma dinâmica
+      const { data: maxData, error: maxError } = await supabase
+        .from('ai_agent_models' as never)
+        .select('position')
+        .eq('preset_id', preset_id as never)
+        .order('position', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (maxError) throw maxError;
+
+      const nextPosition = maxData
+        ? ((maxData as Record<string, unknown>).position as number) + 1
+        : 1;
+
       const { error } = await supabase
         .from('ai_agent_models' as never)
         .insert({
@@ -167,10 +178,19 @@ export function useAddModelToPreset() {
           model_id,
           enabled: true,
           is_default: false,
-          position: 99,
+          position: nextPosition,
         } as Record<string, unknown>);
 
       if (error) throw error;
+
+      // Audit trail B1
+      void logActivity({
+        type: 'create',
+        entity_type: 'ai_agent_model',
+        entity_name: model_id,
+        entity_id: preset_id,
+        description: `Modelo adicionado ao preset: ${model_id}`,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent_presets'] });
