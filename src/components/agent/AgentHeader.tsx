@@ -103,7 +103,7 @@ export function AgentHeader({
       <div className="flex-1" />
 
       {/* Pills */}
-      <div className="flex gap-2 md:hidden">
+      <div className="hidden md:flex gap-2">
         {/* Modelo */}
         <span className="inline-flex items-center gap-1.5 px-[11px] py-[5px] border border-border bg-card rounded-full text-[11px] font-medium text-muted-foreground">
           <Zap className="h-[11px] w-[11px] text-primary" />
