@@ -230,7 +230,8 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('ai-test-provider-key crash:', sanitizeForLog(msg));
-    return jsonResponse(500, { error: 'Erro interno' });
+    const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 4).join(' | ') : '';
+    console.error('ai-test-provider-key crash:', sanitizeForLog(msg), '|', sanitizeForLog(stack ?? ''));
+    return jsonResponse(500, { error: `Erro interno: ${msg}`, _debug_stack: stack });
   }
 });
