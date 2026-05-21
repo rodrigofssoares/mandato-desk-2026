@@ -25,7 +25,7 @@
 //
 // Segurança:
 //   - JWT obrigatório, service_role apenas para INSERTs de custo
-//   - Rate limit: 30 msgs/min por usuário
+//   - Rate limit: 20 msgs/min por usuário (RATE_LIMIT_PER_MIN em ai-security.ts)
 //   - Anti-prompt injection: wrap obrigatório do user content
 //   - Timeout fetch ao provider: 50s
 //   - Nenhuma chave ou conteúdo de mensagem em console.log
@@ -43,7 +43,6 @@ import {
 } from '../_shared/ai-security.ts';
 import {
   callProvider,
-  calculateCost,
   MULTIMODAL_MODELS,
   ProviderError,
 } from '../_shared/agent-providers.ts';
@@ -113,9 +112,9 @@ Deno.serve(async (req) => {
 
     const { admin, userId, userEmail, userRole } = authResult;
 
-    // ── Rate limit: 30 msgs/min por usuário ──────────────────────────────────
+    // ── Rate limit: 20 msgs/min por usuário ──────────────────────────────────
     if (await isRateLimited(admin, userId, 'ai-agent-chat')) {
-      return jsonResponse(429, { error: 'Limite de 30 mensagens por minuto atingido' });
+      return jsonResponse(429, { error: 'Limite de 20 mensagens por minuto atingido' });
     }
 
     // ── 2. Parse do body ─────────────────────────────────────────────────────
@@ -144,6 +143,8 @@ Deno.serve(async (req) => {
     }
 
     // ── 3. Carrega agente + budget ───────────────────────────────────────────
+    // Sem filtro intencional: o sistema tem um único agente (singleton por organização).
+    // maybeSingle() retorna null se nenhum existir e lança erro se houver >1 (bug de seed).
     const { data: agent, error: agentErr } = await admin
       .from('ai_agents')
       .select('id, is_active, system_prompt, text_only_mode')
@@ -394,7 +395,7 @@ Deno.serve(async (req) => {
 
     // Wrap anti-prompt injection na mensagem do usuário
     // MED-01: captura fenceId e injeta antiInjectionInstruction no system prompt
-    const { wrapped: wrappedUserMsg, fenceId } = wrapUserContent(message, 'mensagem_usuario');
+    const { wrapped: wrappedUserMsg, fenceId } = wrapUserContent(message);
     systemText = antiInjectionInstruction(fenceId) + '\n\n' + systemText;
 
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
@@ -423,7 +424,7 @@ Deno.serve(async (req) => {
       if (provErr instanceof ProviderError && provErr.httpStatus === 429) {
         return jsonResponse(200, { skipped: true, reason: 'provider_rate_limit' });
       }
-      return jsonResponse(200, { error: 'provider_error' });
+      return jsonResponse(200, { skipped: true, reason: 'provider_error' });
     }
 
     // ── 13. Persiste mensagens ───────────────────────────────────────────────
