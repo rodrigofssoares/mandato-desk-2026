@@ -194,7 +194,7 @@ export function sanitizeForLog(input: string): string {
  *   - fenceId   → UUID único da requisição (para instrução no prompt)
  *   - wrapped   → string pronta para inserir no prompt
  */
-export function wrapUserContent(content: string, label: string): { fenceId: string; wrapped: string } {
+export function wrapUserContent(content: string, _label?: string): { fenceId: string; wrapped: string } {
   const fenceId = crypto.randomUUID();
   const fence   = `---DADOS_EXTERNOS_${fenceId}---`;
   return {
