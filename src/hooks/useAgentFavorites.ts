@@ -36,7 +36,7 @@ export const FAVORITES_LIMIT = 500;
  */
 export function useAgentFavorites() {
   return useQuery<{ data: AgentFavorite[]; count: number; limit: number }>({
-    queryKey: ['agent_favorites'],
+    queryKey: ['agent-favorites'],
     queryFn: async () => {
       // Busca favoritos + conteúdo da mensagem via join
       const { data, error, count } = await supabase

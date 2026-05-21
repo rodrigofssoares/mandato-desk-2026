@@ -33,7 +33,7 @@ export function useToggleFavorite() {
 
       // Valida limite via cache antes de criar
       const cached = queryClient.getQueryData<{ data: unknown[]; count: number; limit: number }>(
-        ['agent_favorites']
+        ['agent-favorites']
       );
       const currentCount = cached?.count ?? 0;
 
@@ -56,7 +56,7 @@ export function useToggleFavorite() {
     },
 
     onSuccess: ({ action }) => {
-      queryClient.invalidateQueries({ queryKey: ['agent_favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['agent-favorites'] });
       if (action === 'added') {
         toast.success('Adicionado às favoritas');
       } else {
@@ -93,7 +93,7 @@ export function useUpdateFavoriteNote() {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agent_favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['agent-favorites'] });
       toast.success('Nota salva');
     },
 
