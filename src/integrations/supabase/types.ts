@@ -2326,6 +2326,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "zapi_chat_notes_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "zapi_chat_notes_chat_id_fkey"
             columns: ["chat_id"]
             isOneToOne: false
