@@ -78,6 +78,11 @@ export function usePermissions() {
     // WhatsApp — restrito por padrão a admin (migration 049)
     accessWhatsapp: () => canView('whatsapp'),
     editWhatsapp: () => canEdit('whatsapp'),
+
+    // Agente IA — aba de configuração restrita a admin (migration 095)
+    // viewAgente: qualquer usuário com permissão de visualização na seção agente_ia
+    viewAgente: () => canView('agente_ia'),
+    editAgente: () => canEdit('agente_ia'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };

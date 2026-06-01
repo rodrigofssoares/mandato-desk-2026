@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações — Agente IA · Layout C (Budget + Caps)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --success-soft-fg: 142 72% 26%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+    --danger: 0 73% 51%;
+    --danger-soft: 0 86% 97%;
+    --danger-soft-fg: 0 70% 35%;
+    --info: 199 89% 48%;
+    --info-soft: 204 94% 94%;
+    --info-soft-fg: 200 98% 28%;
+
+    --sidebar-bg: 40 47% 98%;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    min-height: 100dvh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-image:
+      radial-gradient(at 20% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .font-serif { font-family: 'Cinzel', serif; letter-spacing: 0.08em; }
+
+  .app { display: grid; grid-template-columns: 60px 1fr; min-height: 100dvh; }
+  @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .mini-sidebar { display: none; } }
+
+  .mini-sidebar {
+    background: hsl(var(--sidebar-bg));
+    border-right: 1px solid hsl(var(--border));
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 6px;
+  }
+  .mini-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+  }
+  .mini-icon:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .mini-icon.active { background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); }
+
+  .main { padding: 32px 32px 48px; max-width: 1400px; }
+  @media (max-width: 640px) { .main { padding: 20px 16px 32px; } }
+
+  /* PageHeader */
+  .page-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  .page-header-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%);
+    color: hsl(var(--primary-foreground));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+  }
+  .page-header-text { flex: 1; }
+  .page-header-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 10px; font-weight: 600;
+    color: hsl(var(--accent-foreground));
+    text-transform: uppercase; letter-spacing: 0.16em;
+  }
+  .page-header-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; }
+  .page-header-desc { font-size: 13px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+
+  .tabs-list {
+    display: flex; gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    background: hsl(var(--muted));
+    padding: 4px;
+    border-radius: 11px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .tab {
+    background: transparent; border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+  }
+  .tab:hover { color: hsl(var(--foreground)); }
+  .tab.active {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .tab .badge {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-size: 9.5px; font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+  }
+
+  /* ===== Layout 2 cols ===== */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  @media (max-width: 1100px) { .config-grid { grid-template-columns: 1fr; } }
+
+  /* Card */
+  .card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-icon {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14.5px; font-weight: 600;
+    flex: 1;
+  }
+  .card-desc { font-size: 12px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+  .card-body { padding: 16px 18px; }
+
+  /* ===== Budget control prominent ===== */
+  .budget-hero {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .budget-hero::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 200px; height: 200px;
+    background: hsl(var(--accent) / 0.18);
+    border-radius: 50%;
+    filter: blur(40px);
+  }
+  .budget-hero-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+    position: relative; z-index: 1;
+  }
+  .budget-hero-head .label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--accent));
+  }
+  .budget-hero-amount {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 14px;
+    position: relative; z-index: 1;
+  }
+  .budget-hero-amount .currency {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px; font-weight: 500;
+    opacity: 0.7;
+  }
+  .budget-hero-amount .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 42px; font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .budget-hero-amount .period {
+    font-size: 14px;
+    opacity: 0.7;
+    margin-left: 4px;
+  }
+
+  .budget-hero-bar {
+    background: rgba(255,255,255,0.18);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    position: relative; z-index: 1;
+  }
+  .budget-hero-bar-fill {
+    background: hsl(var(--accent));
+    height: 100%;
+    width: 32%;
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+  }
+  .budget-hero-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    border-radius: 999px;
+  }
+  .budget-hero-detail {
+    display: flex; justify-content: space-between;
+    font-size: 12px;
+    position: relative; z-index: 1;
+  }
+  .budget-hero-detail strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+  }
+  .budget-hero-controls {
+    display: flex; gap: 6px;
+    margin-top: 14px;
+    position: relative; z-index: 1;
+  }
+  .budget-input {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: inherit; font-size: 12.5px;
+    font-weight: 600;
+    width: 100px;
+    text-align: right;
+  }
+  .budget-input::placeholder { color: rgba(255,255,255,0.5); }
+  .budget-input:focus { outline: 2px solid rgba(255,255,255,0.6); outline-offset: 1px; }
+
+  /* Alert thresholds */
+  .threshold-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .threshold-row:last-child { border-bottom: none; }
+  .threshold-row .icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .threshold-row .icon.warn { background: hsl(var(--warning-soft)); color: hsl(var(--warning-soft-fg)); }
+  .threshold-row .icon.danger { background: hsl(var(--danger-soft)); color: hsl(var(--danger-soft-fg)); }
+  .threshold-row .info { flex: 1; }
+  .threshold-row .info .n { font-size: 13px; font-weight: 600; }
+  .threshold-row .info .h { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+  .threshold-row .pct {
+    font-family: 'Space Grotesk';
+    font-size: 18px; font-weight: 700;
+    color: hsl(var(--foreground));
+    width: 70px;
+    text-align: right;
+  }
+  .threshold-row .switch {
+    flex-shrink: 0;
+  }
+
+  /* Switch */
+  .switch {
+    position: relative;
+    display: inline-flex;
+    width: 36px; height: 20px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch.on { background: hsl(var(--primary)); }
+  .switch.on::after { transform: translateX(16px); }
+  .switch.on.warn { background: hsl(var(--warning)); }
+  .switch.on.danger { background: hsl(var(--danger)); }
+
+  /* Slider control */
+  .slider-row {
+    margin-bottom: 14px;
+  }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row .head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .slider-row .label { font-size: 12.5px; font-weight: 500; }
+  .slider-row .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: hsl(var(--primary));
+    font-variant-numeric: tabular-nums;
+  }
+  .slider-row .value small {
+    font-size: 11px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    margin-left: 3px;
+  }
+  .slider-row input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: hsl(var(--border));
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px; height: 16px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px hsl(var(--primary) / 0.3);
+  }
+  .slider-row input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    background: hsl(var(--primary));
+    border: none; border-radius: 50%; cursor: pointer;
+  }
+  .slider-row .hint {
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 4px;
+  }
+
+  /* Model matrix */
+  .matrix-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .matrix-toolbar .search {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .matrix-toolbar .search input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    background: hsl(var(--background));
+    font-family: inherit; font-size: 12.5px;
+  }
+  .matrix-toolbar .search input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+  .matrix-toolbar .search svg {
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    color: hsl(var(--muted-foreground));
+  }
+
+  .matrix-master-row {
+    background: hsl(var(--info-soft));
+    border: 1px solid hsl(var(--info) / 0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .matrix-master-row .icon {
+    width: 28px; height: 28px;
+    background: hsl(var(--info) / 0.18);
+    color: hsl(var(--info));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .matrix-master-row .text { flex: 1; }
+  .matrix-master-row .text .n { font-size: 12.5px; font-weight: 600; color: hsl(var(--foreground)); }
+  .matrix-master-row .text .h { font-size: 11px; color: hsl(var(--info-soft-fg)); margin-top: 1px; }
+
+  /* Compact model rows */
+  .matrix-rows {
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .matrix-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid hsl(var(--border));
+    align-items: center;
+  }
+  .matrix-row:last-child { border-bottom: none; }
+  .matrix-row:hover { background: hsl(var(--muted) / 0.4); }
+  .matrix-row.blocked { opacity: 0.5; }
+  .matrix-row.blocked-mm { background: hsl(var(--warning-soft) / 0.4); opacity: 0.65; }
+
+  @media (max-width: 768px) {
+    .matrix-row { grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; }
+    .matrix-row .price { grid-column: 2 / 4; font-size: 11px; }
+    .matrix-row .impact { display: none; }
+  }
+
+  .matrix-row .icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .matrix-row .icon.openai { background: #10A37F; }
+  .matrix-row .icon.anthropic { background: #D77655; }
+  .matrix-row .icon.meta { background: #1877F2; }
+  .matrix-row .icon.google { background: #4285F4; }
+  .matrix-row .icon.deepseek { background: #3D5AFE; }
+  .matrix-row .info { display: flex; flex-direction: column; min-width: 0; }
+  .matrix-row .info .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 600;
+  }
+  .matrix-row .info .id {
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 1px;
+  }
+  .matrix-row .info .mm-warn {
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-soft-fg));
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+
+  .matrix-row .price {
+    font-size: 11.5px;
+    color: hsl(var(--foreground));
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .matrix-row .price small { color: hsl(var(--muted-foreground)); }
+
+  /* Impact pill: shows what % of budget this model contributes */
+  .matrix-row .impact {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 56px;
+    white-space: nowrap;
+  }
+  .matrix-row .impact.high {
+    background: hsl(var(--danger-soft));
+    color: hsl(var(--danger-soft-fg));
+  }
+  .matrix-row .impact.med {
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-soft-fg));
+  }
+  .matrix-row .impact.low {
+    background: hsl(var(--success-soft));
+    color: hsl(var(--success-soft-fg));
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 9px;
+    cursor: pointer;
+    border: none;
+    padding: 8px 14px;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 2px 6px hsl(var(--primary) / 0.2);
+  }
+  .btn-primary:hover { background: hsl(var(--primary) / 0.92); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+  }
+  .btn-outline:hover { background: hsl(var(--muted)); }
+  .btn-ghost { background: transparent; color: hsl(var(--muted-foreground)); padding: 6px 10px; }
+  .btn-ghost:hover { color: hsl(var(--foreground)); background: hsl(var(--muted)); }
+
+  /* Fields */
+  .field { margin-bottom: 12px; }
+  .field-label {
+    display: block;
+    font-size: 12px; font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .input, .textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--background));
+    font-family: inherit;
+    font-size: 13.5px;
+  }
+  .input:focus, .textarea:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+  .textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  /* Roles */
+  .role-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: hsl(var(--muted));
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0 4px 4px 0;
+    border: 1px solid hsl(var(--border));
+  }
+  .role-chip.selected {
+    background: hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+  .role-chip.selected::before { content: '✓'; font-weight: 700; }
+
+  /* Right panel — Simulação */
+  .sim-panel {
+    position: sticky;
+    top: 16px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .sim-panel-header {
+    padding: 14px 18px;
+    background: hsl(var(--muted) / 0.5);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .sim-panel-header h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+  }
+  .sim-panel-body {
+    padding: 18px;
+  }
+
+  .sim-result {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .sim-result .v {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: hsl(var(--primary));
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sim-result .l {
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+  .sim-result.over .v { color: hsl(var(--danger)); }
+  .sim-result.near .v { color: hsl(var(--warning)); }
+
+  .sim-bar {
+    background: hsl(var(--muted));
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin: 14px 0 6px;
+    position: relative;
+  }
+  .sim-bar-fill {
+    height: 100%;
+    background: hsl(var(--success));
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s ease;
+  }
+  .sim-bar-fill.near { background: hsl(var(--warning)); }
+  .sim-bar-fill.over { background: hsl(var(--danger)); }
+  .sim-bar-detail {
+    display: flex; justify-content: space-between;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 4px;
+  }
+
+  .sim-divider {
+    height: 1px;
+    background: hsl(var(--border));
+    margin: 16px 0;
+  }
+
+  .sim-scenarios {
+    display: flex; flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .sim-scenario {
+    padding: 8px 10px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    background: hsl(var(--background));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s ease;
+  }
+  .sim-scenario:hover { background: hsl(var(--muted) / 0.5); }
+  .sim-scenario.active {
+    background: hsl(var(--primary) / 0.08);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+  .sim-scenario .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: hsl(var(--muted-foreground) / 0.3);
+    flex-shrink: 0;
+  }
+  .sim-scenario.active .dot { background: hsl(var(--primary)); }
+  .sim-scenario .name { font-size: 12px; font-weight: 500; flex: 1; }
+  .sim-scenario .vol { font-size: 11px; color: hsl(var(--muted-foreground)); font-variant-numeric: tabular-nums; }
+
+  /* Sim summary breakdown */
+  .sim-breakdown {
+    display: flex; flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+  .sim-breakdown-row {
+    display: flex; justify-content: space-between;
+    padding: 4px 0;
+  }
+  .sim-breakdown-row .l { color: hsl(var(--muted-foreground)); }
+  .sim-breakdown-row .v {
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    font-variant-numeric: tabular-nums;
+  }
+  .sim-breakdown-row.total {
+    border-top: 1px solid hsl(var(--border));
+    margin-top: 4px;
+    padding-top: 8px;
+    font-size: 13px;
+  }
+  .sim-breakdown-row.total .v {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 700;
+    color: hsl(var(--primary));
+  }
+
+  /* Save bar */
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: hsl(var(--card) / 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 12px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+  }
+  .save-bar-info {
+    flex: 1;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+  .save-bar-info strong { color: hsl(var(--foreground)); font-weight: 600; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px; right: 24px;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 11px 18px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(-80px);
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: hsl(var(--success)); color: white; }
+  .toast.warn { background: hsl(var(--warning)); color: white; }
+  .toast.danger { background: hsl(var(--danger)); color: white; }
+
+  /* Section header */
+  .section-h {
+    display: flex; align-items: center; gap: 10px;
+    margin: 16px 0 10px;
+  }
+  .section-h .label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+  }
+  .section-h .line { flex: 1; height: 1px; background: hsl(var(--border)); }
+
+  kbd {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="mini-sidebar">
+    <div class="mini-icon" title="Dashboard"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
+    <div class="mini-icon" title="Contatos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+    <div class="mini-icon" title="Agente"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg></div>
+    <div style="flex:1"></div>
+    <div class="mini-icon active" title="Configurações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6"/></svg></div>
+  </aside>
+
+  <main class="main">
+
+    <header class="page-header">
+      <div class="page-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <div class="page-header-text">
+        <div class="page-header-eyebrow">Sistema</div>
+        <div class="page-header-title">Configurações</div>
+        <div class="page-header-desc">Controle de custo, modelos permitidos e comportamento do agente.</div>
+      </div>
+    </header>
+
+    <div class="tabs-list">
+      <button class="tab">Geral</button>
+      <button class="tab">Funis</button>
+      <button class="tab">Equipe</button>
+      <button class="tab">Permissões</button>
+      <button class="tab">Integrações</button>
+      <button class="tab">IA</button>
+      <button class="tab active">Agente <span class="badge">novo</span></button>
+      <button class="tab">Personalização</button>
+      <button class="tab">Alertas</button>
+    </div>
+
+    <div class="config-grid">
+
+      <!-- ===== Coluna esquerda ===== -->
+      <div>
+
+        <!-- Budget hero -->
+        <div class="budget-hero">
+          <div class="budget-hero-head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--accent))" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="label">Orçamento mensal · Maio/2026</span>
+          </div>
+          <div class="budget-hero-amount">
+            <span class="currency">R$</span>
+            <span class="value">100</span>
+            <span class="period">/ mês</span>
+          </div>
+          <div class="budget-hero-bar">
+            <div class="budget-hero-bar-fill" id="budget-fill" style="width: 32%;"></div>
+          </div>
+          <div class="budget-hero-detail">
+            <span>Gasto até agora: <strong>R$ 32,40</strong></span>
+            <span>Restam: <strong>R$ 67,60</strong></span>
+          </div>
+          <div class="budget-hero-controls">
+            <input type="number" class="budget-input" value="100" min="10" max="5000" step="10" oninput="updateBudget(this.value)" title="Ajustar orçamento">
+            <button class="btn" style="background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="showToast('Configurar reset mensal automático')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Reset mensal
+            </button>
+          </div>
+        </div>
+
+        <!-- Alertas de threshold -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Alertas de gasto</div>
+              <div class="card-desc">Quando avisar e quando suspender o agente automaticamente.</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="threshold-row">
+              <div class="icon warn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg>
+              </div>
+              <div class="info">
+                <div class="n">Aviso amarelo</div>
+                <div class="h">E-mail para o admin quando atingir esta porcentagem do orçamento.</div>
+              </div>
+              <div class="pct">70%</div>
+              <div class="switch on warn" onclick="this.classList.toggle('on')"></div>
+            </div>
+
+            <div class="threshold-row">
+              <div class="icon danger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              </div>
+              <div class="info">
+                <div class="n">Aviso vermelho</div>
+                <div class="h">Notificação push + modal pra todos os admins.</div>
+              </div>
+              <div class="pct">90%</div>
+              <div class="switch on danger" onclick="this.classList.toggle('on')"></div>
+            </div>
+
+            <div class="threshold-row">
+              <div class="icon danger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+              </div>
+              <div class="info">
+                <div class="n">Bloqueio automático</div>
+                <div class="h">Agente para de responder novas mensagens até o admin liberar.</div>
+              </div>
+              <div class="pct">100%</div>
+              <div class="switch on danger" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caps por usuário/sessão -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Limites por uso</div>
+              <div class="card-desc">Quanto cada usuário ou sessão pode consumir.</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="slider-row">
+              <div class="head">
+                <span class="label">Máximo de tokens por resposta</span>
+                <span class="value" id="v-max-resp">2.048<small> tok</small></span>
+              </div>
+              <input type="range" min="512" max="8192" step="256" value="2048" oninput="updateSlider('v-max-resp', this.value, ' tok', true)">
+              <div class="hint">2K cobre 95% das respostas operacionais. Reduzir = economiza tokens.</div>
+            </div>
+
+            <div class="slider-row">
+              <div class="head">
+                <span class="label">Histórico enviado por chamada</span>
+                <span class="value" id="v-hist">10<small> msgs</small></span>
+              </div>
+              <input type="range" min="2" max="30" step="1" value="10" oninput="updateSlider('v-hist', this.value, ' msgs')">
+              <div class="hint">Mais histórico = mais contexto, mais caro. Sweet spot: 6-12.</div>
+            </div>
+
+            <div class="slider-row">
+              <div class="head">
+                <span class="label">Mensagens por usuário/dia</span>
+                <span class="value" id="v-msg-day">50<small> /dia</small></span>
+              </div>
+              <input type="range" min="10" max="500" step="10" value="50" oninput="updateSlider('v-msg-day', this.value, ' /dia')">
+              <div class="hint">Evita que um usuário sozinho gaste todo o orçamento.</div>
+            </div>
+
+            <div class="slider-row">
+              <div class="head">
+                <span class="label">Custo máximo por usuário/mês</span>
+                <span class="value">R$ <span id="v-cost-user">25</span><small> /mês</small></span>
+              </div>
+              <input type="range" min="5" max="100" step="5" value="25" oninput="document.getElementById('v-cost-user').textContent = this.value">
+              <div class="hint">Cap individual. Acima disso, o usuário é silenciado até o próximo mês.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modelos permitidos -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Modelos permitidos</div>
+              <div class="card-desc">A porcentagem ao lado mostra o impacto no orçamento.</div>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <div class="matrix-master-row">
+              <div class="icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+              </div>
+              <div class="text">
+                <div class="n">Apenas modelos de texto</div>
+                <div class="h">Multimodais bloqueados. Vision custa 5-15× mais.</div>
+              </div>
+              <div class="switch on" onclick="toggleTextOnly(this)"></div>
+            </div>
+
+            <div class="matrix-toolbar">
+              <div class="search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" placeholder="Buscar modelo..." oninput="filterMatrix(this.value)">
+              </div>
+              <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="showToast('Mostrando 5 permitidos')">5 permitidos</button>
+              <button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;">6 bloqueados</button>
+            </div>
+
+            <div class="matrix-rows" id="matrix-rows">
+
+              <div class="matrix-row" data-mm="0">
+                <div class="icon openai">A</div>
+                <div class="info">
+                  <span class="name">GPT-4o mini · <span style="color:hsl(var(--accent-foreground));background:hsl(var(--accent)/0.2);padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:700;">★ PADRÃO</span></span>
+                  <span class="id">openai/gpt-4o-mini · $0.15 in</span>
+                </div>
+                <div class="price">$0.60 out<br><small>/ 1M tok</small></div>
+                <div class="impact low">~ 38%</div>
+                <div class="switch on" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row" data-mm="0">
+                <div class="icon openai">A</div>
+                <div class="info">
+                  <span class="name">GPT-4o</span>
+                  <span class="id">openai/gpt-4o · $2.50 in</span>
+                </div>
+                <div class="price">$10 out<br><small>/ 1M tok</small></div>
+                <div class="impact med">~ 28%</div>
+                <div class="switch on" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row" data-mm="0">
+                <div class="icon anthropic">C</div>
+                <div class="info">
+                  <span class="name">Claude 3.5 Haiku</span>
+                  <span class="id">anthropic/claude-3.5-haiku · $0.80 in</span>
+                </div>
+                <div class="price">$4 out<br><small>/ 1M tok</small></div>
+                <div class="impact low">~ 12%</div>
+                <div class="switch on" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row" data-mm="0">
+                <div class="icon anthropic">C</div>
+                <div class="info">
+                  <span class="name">Claude 3.5 Sonnet</span>
+                  <span class="id">anthropic/claude-3.5-sonnet · $3.00 in</span>
+                </div>
+                <div class="price">$15 out<br><small>/ 1M tok</small></div>
+                <div class="impact high">~ 18%</div>
+                <div class="switch on" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row" data-mm="0">
+                <div class="icon meta">M</div>
+                <div class="info">
+                  <span class="name">Llama 3.3 70B Instruct</span>
+                  <span class="id">meta-llama/llama-3.3-70b-instruct · $0.13 in</span>
+                </div>
+                <div class="price">$0.40 out<br><small>/ 1M tok</small></div>
+                <div class="impact low">~ 4%</div>
+                <div class="switch on" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row blocked" data-mm="0">
+                <div class="icon anthropic">C</div>
+                <div class="info">
+                  <span class="name">Claude Opus 4 <span style="color:hsl(var(--danger-soft-fg));background:hsl(var(--danger-soft));padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:700;">$$$ caro</span></span>
+                  <span class="id">anthropic/claude-opus-4 · $15 in</span>
+                </div>
+                <div class="price">$75 out<br><small>/ 1M tok</small></div>
+                <div class="impact">—</div>
+                <div class="switch" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row blocked-mm" data-mm="1">
+                <div class="icon google">G</div>
+                <div class="info">
+                  <span class="name">Gemini 2.5 Flash <span class="mm-warn">multimodal</span></span>
+                  <span class="id">google/gemini-2.5-flash · $0.075 in</span>
+                </div>
+                <div class="price">$0.30 out<br><small>/ 1M tok</small></div>
+                <div class="impact">—</div>
+                <div class="switch" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row blocked" data-mm="0">
+                <div class="icon deepseek">D</div>
+                <div class="info">
+                  <span class="name">DeepSeek Chat</span>
+                  <span class="id">deepseek/deepseek-chat · $0.14 in</span>
+                </div>
+                <div class="price">$0.28 out<br><small>/ 1M tok</small></div>
+                <div class="impact">—</div>
+                <div class="switch" onclick="toggleM(this)"></div>
+              </div>
+
+              <div class="matrix-row blocked-mm" data-mm="1">
+                <div class="icon google">G</div>
+                <div class="info">
+                  <span class="name">Gemini 2.5 Pro <span class="mm-warn">multimodal</span></span>
+                  <span class="id">google/gemini-2.5-pro · $1.25 in</span>
+                </div>
+                <div class="price">$5 out<br><small>/ 1M tok</small></div>
+                <div class="impact">—</div>
+                <div class="switch" onclick="toggleM(this)"></div>
+              </div>
+
+            </div>
+
+            <div style="font-size:11.5px; color: hsl(var(--muted-foreground)); margin-top: 10px;">
+              💡 A porcentagem é o impacto estimado de cada modelo no orçamento total — depende de quanto a equipe usa cada um.
+            </div>
+          </div>
+        </div>
+
+        <!-- Identidade do agente (compacto) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Identidade & comportamento</div>
+              <div class="card-desc">Nome, prompt e quem pode acessar.</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size:12px; font-weight:500;">Ativo</span>
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="field">
+              <label class="field-label">Nome do agente</label>
+              <input class="input" value="Atendente Institucional">
+            </div>
+
+            <div class="field">
+              <label class="field-label">Prompt do sistema</label>
+              <textarea class="textarea" rows="4">Você é o Atendente Institucional do gabinete da Vereadora Raquel. Tom: formal, empático, claro. Sempre em português do Brasil.
+
+Regras:
+1. Nunca prometa o que não foi confirmado.
+2. Sempre sugira registrar a demanda no CRM.
+3. Não invente nomes de leis ou números de protocolo.</textarea>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Quem pode usar</label>
+              <div>
+                <span class="role-chip selected">Administrador</span>
+                <span class="role-chip selected">Proprietário</span>
+                <span class="role-chip selected">Assessor</span>
+                <span class="role-chip">Assistente</span>
+                <span class="role-chip">Estagiário</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save bar -->
+        <div class="save-bar">
+          <div class="save-bar-info">
+            Orçamento <strong>R$ 100/mês</strong> · 5 modelos permitidos · <strong>3 alterações não salvas</strong>
+          </div>
+          <button class="btn btn-ghost" onclick="showToast('Descartado')">Descartar</button>
+          <button class="btn btn-primary" onclick="showToast('✓ Configuração salva', 'success')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Salvar configuração
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ===== Coluna direita — Simulador ===== -->
+      <aside class="sim-panel">
+        <div class="sim-panel-header">
+          <h3>Simulador de gasto</h3>
+        </div>
+        <div class="sim-panel-body">
+
+          <div class="sim-result" id="sim-result">
+            <div class="v">R$ 78</div>
+            <div class="l">projeção mensal</div>
+          </div>
+
+          <div class="sim-bar">
+            <div class="sim-bar-fill" id="sim-bar" style="width: 78%;"></div>
+          </div>
+          <div class="sim-bar-detail">
+            <span>R$ 0</span>
+            <span><strong style="color:hsl(var(--foreground));">78%</strong> do orçamento</span>
+            <span>R$ 100</span>
+          </div>
+
+          <div class="sim-divider"></div>
+
+          <div style="font-family:'Cinzel',serif; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.16em; color:hsl(var(--muted-foreground)); margin-bottom:8px;">Cenário</div>
+
+          <div class="sim-scenarios">
+            <div class="sim-scenario" onclick="setScenario(this, 32)">
+              <div class="dot"></div>
+              <div class="name">Conservador</div>
+              <div class="vol">5 usr · 10 msg/dia</div>
+            </div>
+            <div class="sim-scenario active" onclick="setScenario(this, 78)">
+              <div class="dot"></div>
+              <div class="name">Real (atual)</div>
+              <div class="vol">5 usr · 30 msg/dia</div>
+            </div>
+            <div class="sim-scenario" onclick="setScenario(this, 145)">
+              <div class="dot"></div>
+              <div class="name">Pico</div>
+              <div class="vol">5 usr · 60 msg/dia</div>
+            </div>
+            <div class="sim-scenario" onclick="setScenario(this, 320)">
+              <div class="dot"></div>
+              <div class="name">Crise</div>
+              <div class="vol">5 usr · 120 msg/dia</div>
+            </div>
+          </div>
+
+          <div class="sim-divider"></div>
+
+          <div style="font-family:'Cinzel',serif; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.16em; color:hsl(var(--muted-foreground)); margin-bottom:8px;">Quebra por modelo</div>
+
+          <div class="sim-breakdown">
+            <div class="sim-breakdown-row">
+              <span class="l">GPT-4o mini (default · 60%)</span>
+              <span class="v">R$ 29,60</span>
+            </div>
+            <div class="sim-breakdown-row">
+              <span class="l">GPT-4o (15%)</span>
+              <span class="v">R$ 22,00</span>
+            </div>
+            <div class="sim-breakdown-row">
+              <span class="l">Claude 3.5 Sonnet (10%)</span>
+              <span class="v">R$ 14,00</span>
+            </div>
+            <div class="sim-breakdown-row">
+              <span class="l">Claude 3.5 Haiku (10%)</span>
+              <span class="v">R$ 9,80</span>
+            </div>
+            <div class="sim-breakdown-row">
+              <span class="l">Llama 3.3 70B (5%)</span>
+              <span class="v">R$ 2,60</span>
+            </div>
+            <div class="sim-breakdown-row total">
+              <span class="l">Total estimado</span>
+              <span class="v">R$ 78,00</span>
+            </div>
+          </div>
+
+          <div class="sim-divider"></div>
+
+          <button class="btn btn-outline" style="width:100%; justify-content:center;" onclick="showToast('Em breve: gráfico de gasto real x estimado')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Ver histórico real
+          </button>
+
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">toast</div>
+
+<script>
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function updateBudget(val) {
+    showToast(`Orçamento ajustado para R$ ${val}/mês`, 'success');
+    // recalcula bar
+    const fill = document.getElementById('budget-fill');
+    fill.style.width = Math.min(32.40 / val * 100, 100) + '%';
+  }
+
+  function updateSlider(id, val, suffix, withDot) {
+    const el = document.getElementById(id);
+    el.innerHTML = (withDot ? parseInt(val).toLocaleString('pt-BR') : val) + `<small>${suffix}</small>`;
+  }
+
+  function setScenario(el, value) {
+    document.querySelectorAll('.sim-scenario').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+
+    const result = document.getElementById('sim-result');
+    const bar = document.getElementById('sim-bar');
+    const pct = (value / 100) * 100;
+    result.querySelector('.v').textContent = `R$ ${value}`;
+    bar.style.width = Math.min(pct, 100) + '%';
+
+    if (value > 100) {
+      result.classList.add('over');
+      result.classList.remove('near');
+      bar.classList.add('over');
+      bar.classList.remove('near');
+      showToast(`⚠ Cenário excede orçamento em R$ ${value - 100}`, 'danger');
+    } else if (value > 70) {
+      result.classList.add('near');
+      result.classList.remove('over');
+      bar.classList.add('near');
+      bar.classList.remove('over');
+      showToast('⚠ Cenário próximo do limite', 'warn');
+    } else {
+      result.classList.remove('over', 'near');
+      bar.classList.remove('over', 'near');
+      showToast('✓ Cenário dentro do orçamento', 'success');
+    }
+  }
+
+  function toggleTextOnly(el) {
+    el.classList.toggle('on');
+    const isOn = el.classList.contains('on');
+    document.querySelectorAll('.matrix-row[data-mm="1"]').forEach(row => {
+      if (isOn) {
+        row.classList.add('blocked-mm');
+        row.querySelector('.switch').classList.remove('on');
+      } else {
+        row.classList.remove('blocked-mm');
+      }
+    });
+    showToast(isOn ? '✓ Multimodais bloqueados' : '⚠ Multimodais agora permitidos', isOn ? 'success' : 'warn');
+  }
+
+  function toggleM(sw) {
+    sw.classList.toggle('on');
+    const row = sw.closest('.matrix-row');
+    row.classList.toggle('blocked');
+    showToast(sw.classList.contains('on') ? '✓ Modelo permitido' : '✕ Modelo bloqueado');
+  }
+
+  function filterMatrix(q) {
+    const query = q.toLowerCase().trim();
+    document.querySelectorAll('.matrix-row').forEach(row => {
+      const name = row.querySelector('.name').textContent.toLowerCase();
+      const id = row.querySelector('.id').textContent.toLowerCase();
+      row.style.display = (name.includes(query) || id.includes(query)) ? '' : 'none';
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,122 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
+
+// ============================================================================
+// Tipos
+// ============================================================================
+
+/**
+ * Iniciador de conversa exibido na welcome screen do chat do agente.
+ * Editado pelo admin em Configurações → Agente → Identidade.
+ */
+export interface ConversationStarter {
+  icon: string;     // nome do icone lucide-react (ex: 'Home', 'FileText')
+  title: string;    // max 60 chars
+  text: string;     // max 120 chars
+  prompt: string;   // max 500 chars — enviado ao agente ao clicar
+}
+
+/**
+ * Dados completos do agente — acessíveis apenas por admin.
+ * system_prompt nunca chega ao frontend de não-admin.
+ */
+export interface AgentSettings {
+  id: string;
+  name: string;
+  system_prompt: string | null;
+  is_active: boolean;
+  text_only_mode: boolean;
+  conversation_starters: ConversationStarter[];
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Visão pública do agente — disponível a todos os usuários autenticados.
+ * Inclui starters porque a welcome screen renderiza pra qualquer usuario com acesso.
+ */
+export interface AgentPublicInfo {
+  id: string;
+  name: string;
+  is_active: boolean;
+  conversation_starters: ConversationStarter[];
+}
+
+// ============================================================================
+// Hook: useAgentSettings
+// ============================================================================
+
+/**
+ * Lê a linha singleton de `ai_agents`.
+ *
+ * - Admin: lê `ai_agents_admin_view` (dados completos, incluindo system_prompt).
+ * - Não-admin: lê `ai_agents_public_view` (apenas id, name, is_active).
+ *
+ * Retorna null quando não há agente configurado.
+ * Mutations vêm na Onda 3 (sub-aba Settings).
+ */
+export function useAgentSettings() {
+  const { isAdmin } = useUserRole();
+
+  return useQuery<AgentSettings | AgentPublicInfo | null>({
+    queryKey: ['agent_settings', isAdmin],
+    queryFn: async () => {
+      if (isAdmin) {
+        // Admin lê dados completos via view admin (tabela direta bloqueada após REVOKE da mig 095)
+        const { data, error } = await supabase
+          .from('ai_agents_admin_view' as never)
+          .select('id, name, system_prompt, is_active, text_only_mode, conversation_starters, created_by, updated_by, created_at, updated_at')
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data) return null;
+
+        const row = data as Record<string, unknown>;
+        return {
+          id: row.id as string,
+          name: row.name as string,
+          system_prompt: (row.system_prompt ?? null) as string | null,
+          is_active: row.is_active as boolean,
+          text_only_mode: row.text_only_mode as boolean,
+          conversation_starters: (row.conversation_starters ?? []) as ConversationStarter[],
+          created_by: (row.created_by ?? null) as string | null,
+          updated_by: (row.updated_by ?? null) as string | null,
+          created_at: row.created_at as string,
+          updated_at: row.updated_at as string,
+        } satisfies AgentSettings;
+      }
+
+      // Usuário comum lê apenas a view pública (sem system_prompt)
+      const { data, error } = await supabase
+        .from('ai_agents_public_view' as never)
+        .select('id, name, is_active, conversation_starters')
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      const row = data as Record<string, unknown>;
+      return {
+        id: row.id as string,
+        name: row.name as string,
+        is_active: row.is_active as boolean,
+        conversation_starters: (row.conversation_starters ?? []) as ConversationStarter[],
+      } satisfies AgentPublicInfo;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos — configuração raramente muda
+  });
+}
+
+// ============================================================================
+// Type guard
+// ============================================================================
+
+/** Verifica se o dado retornado tem acesso admin completo. */
+export function isFullAgentSettings(
+  data: AgentSettings | AgentPublicInfo | null | undefined
+): data is AgentSettings {
+  return !!data && 'system_prompt' in data;
+}

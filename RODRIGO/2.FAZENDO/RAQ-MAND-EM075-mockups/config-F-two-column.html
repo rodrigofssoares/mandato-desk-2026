@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações Agente — Layout F (Two-column · sticky simulador)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --success-soft-fg: 142 72% 26%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+    --danger: 0 73% 51%;
+    --danger-soft: 0 86% 97%;
+    --danger-soft-fg: 0 70% 35%;
+    --info: 199 89% 48%;
+    --info-soft: 204 94% 94%;
+    --info-soft-fg: 200 98% 28%;
+    --sidebar-bg: 40 47% 98%;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    min-height: 100dvh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-image:
+      radial-gradient(at 20% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+  .app { display: grid; grid-template-columns: 60px 1fr; min-height: 100dvh; }
+  @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .mini-sidebar { display: none; } }
+  .mini-sidebar {
+    background: hsl(var(--sidebar-bg));
+    border-right: 1px solid hsl(var(--border));
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 6px;
+  }
+  .mini-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--muted-foreground)); cursor: pointer;
+  }
+  .mini-icon:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .mini-icon.active { background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); }
+
+  .main { padding: 32px 32px 48px; max-width: 1500px; }
+  @media (max-width: 640px) { .main { padding: 20px 16px 32px; } }
+
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .page-header-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%);
+    color: white; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+  }
+  .page-header-text { flex: 1; }
+  .page-header-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 10px; font-weight: 600;
+    color: hsl(var(--accent-foreground));
+    text-transform: uppercase; letter-spacing: 0.16em;
+  }
+  .page-header-title { font-family: 'Space Grotesk'; font-size: 22px; font-weight: 600; }
+  .page-header-desc { font-size: 13px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+
+  .tabs-list {
+    display: flex; gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+    background: hsl(var(--muted));
+    padding: 4px;
+    border-radius: 11px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .tab {
+    background: transparent; border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+  }
+  .tab.active {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .tab .badge {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-size: 9.5px; font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+  }
+
+  /* ====== Two-column grid ====== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  @media (max-width: 1200px) { .two-col { grid-template-columns: 1fr; } .right-col { position: static !important; } }
+
+  .right-col {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+  }
+  .right-col::-webkit-scrollbar { width: 5px; }
+  .right-col::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
+
+  /* ====== Section / cards ====== */
+  .section-h {
+    display: flex; align-items: center; gap: 10px;
+    margin: 24px 0 12px;
+  }
+  .section-h:first-child { margin-top: 0; }
+  .section-h .num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section-h h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 600;
+  }
+  .section-h .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+    margin-left: auto;
+  }
+
+  .card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card-body { padding: 16px 18px; }
+
+  /* Fields */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .field-hint { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-top: 4px; line-height: 1.4; }
+  .input, .textarea, .password-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--background));
+    font-family: inherit; font-size: 13.5px;
+  }
+  .input:focus, .textarea:focus, .password-input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; border-color: hsl(var(--ring)); }
+  .textarea {
+    resize: vertical; min-height: 100px;
+    font-family: ui-monospace, monospace; font-size: 12.5px; line-height: 1.55;
+  }
+  .password-input { font-family: ui-monospace, monospace; font-size: 12.5px; padding-right: 36px; }
+  .password-wrap { position: relative; }
+  .password-toggle {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; cursor: pointer;
+    padding: 6px; border-radius: 6px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Switch */
+  .switch {
+    position: relative; display: inline-flex;
+    width: 36px; height: 20px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: ''; position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch.on { background: hsl(var(--primary)); }
+  .switch.on::after { transform: translateX(16px); }
+  .switch.sm { width: 28px; height: 16px; }
+  .switch.sm::after { width: 12px; height: 12px; }
+  .switch.sm.on::after { transform: translateX(12px); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    border-radius: 9px; cursor: pointer; border: none;
+    padding: 8px 14px;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary { background: hsl(var(--primary)); color: white; box-shadow: 0 2px 6px hsl(var(--primary) / 0.2); }
+  .btn-primary:hover { background: hsl(var(--primary) / 0.92); }
+  .btn-outline { background: transparent; color: hsl(var(--foreground)); border: 1px solid hsl(var(--border)); }
+  .btn-outline:hover { background: hsl(var(--muted)); }
+  .btn-ghost { background: transparent; color: hsl(var(--muted-foreground)); padding: 6px 10px; }
+  .btn-ghost:hover { color: hsl(var(--foreground)); background: hsl(var(--muted)); }
+  .btn-sm { font-size: 12px; padding: 6px 10px; }
+
+  /* Files */
+  .files-upload {
+    border: 2px dashed hsl(var(--border));
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background: hsl(var(--muted) / 0.3);
+  }
+  .files-upload:hover { border-color: hsl(var(--primary) / 0.5); background: hsl(var(--primary) / 0.04); }
+  .files-upload.drag-over { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.06); }
+  .files-upload-icon {
+    width: 34px; height: 34px;
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .files-upload-title { font-family: 'Space Grotesk'; font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
+  .files-upload-hint { font-size: 11.5px; color: hsl(var(--muted-foreground)); }
+  .files-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .file-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 11px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--card));
+  }
+  .file-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Space Grotesk'; font-size: 9.5px; font-weight: 700;
+  }
+  .file-icon.pdf { background: hsl(var(--danger-soft)); color: hsl(var(--danger-soft-fg)); }
+  .file-icon.docx { background: hsl(var(--info-soft)); color: hsl(var(--info-soft-fg)); }
+  .file-icon.txt { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 12.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-meta { font-size: 10.5px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+  .file-status {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 5px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .file-status.ready { background: hsl(var(--success-soft)); color: hsl(var(--success-soft-fg)); }
+  .file-status.processing { background: hsl(var(--warning-soft)); color: hsl(var(--warning-soft-fg)); }
+  .file-action {
+    background: transparent; border: none; cursor: pointer;
+    padding: 5px; border-radius: 6px;
+    color: hsl(var(--muted-foreground));
+  }
+  .file-action:hover { color: hsl(var(--destructive)); background: hsl(var(--muted)); }
+
+  /* ====== Conexões (cards verticais compactos no two-col) ====== */
+  .conn-list {
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .conn-row {
+    border: 2px solid hsl(var(--border));
+    border-radius: 12px;
+    overflow: hidden;
+    background: hsl(var(--card));
+    transition: all 0.18s ease;
+  }
+  .conn-row.connected { border-color: var(--ck, hsl(var(--primary))); }
+  .conn-row.openai { --ck: #10A37F; }
+  .conn-row.anthropic { --ck: #D77655; }
+  .conn-row.openrouter { --ck: hsl(var(--primary)); }
+
+  .conn-row-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    background: hsl(var(--muted));
+  }
+  .conn-row.connected .conn-row-head {
+    background: var(--ck);
+    color: white;
+  }
+  .conn-row .logo {
+    width: 30px; height: 30px;
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk'; font-weight: 700; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .conn-row.connected .logo { background: rgba(255,255,255,0.25); }
+  .conn-row .name {
+    font-family: 'Space Grotesk'; font-size: 13.5px; font-weight: 700;
+    flex: 1;
+  }
+  .conn-row .meta { font-size: 11px; opacity: 0.85; margin-top: 1px; }
+  .conn-row .info-text { flex: 1; min-width: 0; }
+  .conn-row .st {
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    background: hsl(var(--muted-foreground) / 0.15);
+    color: hsl(var(--muted-foreground));
+  }
+  .conn-row.connected .st {
+    background: rgba(255,255,255,0.2);
+    color: white;
+  }
+  .conn-row .expand-icon {
+    color: hsl(var(--muted-foreground));
+    transition: transform 0.2s ease;
+  }
+  .conn-row.connected .expand-icon { color: rgba(255,255,255,0.85); }
+  .conn-row.open .expand-icon { transform: rotate(180deg); }
+
+  .conn-row-body {
+    padding: 14px 16px;
+    border-top: 1px solid hsl(var(--border));
+    display: none;
+  }
+  .conn-row.open .conn-row-body { display: block; }
+  /* Por padrão abre OpenAI (primeira) — está com .open também*/
+
+  /* ====== Master rule ====== */
+  .master-rule {
+    background: hsl(var(--info-soft));
+    border: 1px solid hsl(var(--info) / 0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .master-rule-icon {
+    width: 30px; height: 30px;
+    background: hsl(var(--info) / 0.18);
+    color: hsl(var(--info));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .master-rule-text { flex: 1; }
+  .master-rule-text .n { font-size: 12.5px; font-weight: 600; }
+  .master-rule-text .h { font-size: 11px; color: hsl(var(--info-soft-fg)); margin-top: 1px; line-height: 1.4; }
+
+  /* ====== Presets em caixas com toggle granular ====== */
+  .presets-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 1100px) { .presets-row { grid-template-columns: 1fr; } }
+
+  .preset-box {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    --preset-color: hsl(var(--primary));
+  }
+  .preset-box.selected { border-color: var(--preset-color); box-shadow: 0 0 0 3px hsl(from var(--preset-color) h s l / 0.15); }
+  .preset-box.eco { --preset-color: hsl(var(--success)); }
+  .preset-box.bal { --preset-color: hsl(var(--info)); }
+  .preset-box.pre { --preset-color: hsl(var(--primary)); }
+
+  .preset-box-head {
+    padding: 12px 14px;
+    background: hsl(from var(--preset-color) h s l / 0.08);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .preset-box-head .top {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .preset-emoji { font-size: 20px; line-height: 1; }
+  .preset-name { font-family: 'Space Grotesk'; font-size: 14px; font-weight: 700; flex: 1; }
+  .preset-mark {
+    display: none;
+    font-family: 'Cinzel'; font-size: 8.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--preset-color);
+    background: hsl(from var(--preset-color) h s l / 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .preset-box.selected .preset-mark { display: inline-block; }
+  .preset-desc {
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.4;
+  }
+
+  .preset-stats {
+    display: flex; padding: 8px 14px;
+    background: hsl(var(--muted) / 0.4);
+    border-bottom: 1px solid hsl(var(--border));
+    gap: 6px;
+  }
+  .preset-stat { flex: 1; text-align: center; }
+  .preset-stat .v {
+    font-family: 'Space Grotesk'; font-size: 14px; font-weight: 700;
+    color: var(--preset-color);
+    line-height: 1;
+  }
+  .preset-stat .l { font-size: 8.5px; color: hsl(var(--muted-foreground)); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-top: 2px; }
+
+  .preset-models {
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+
+  .pm-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 8px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    background: hsl(var(--background));
+    transition: all 0.15s ease;
+  }
+  .pm-row.off { opacity: 0.5; }
+  .pm-row.mm {
+    background: hsl(var(--warning-soft) / 0.5);
+    border-color: hsl(var(--warning) / 0.3);
+  }
+
+  .pm-dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+  .pm-dot.openai { background: #10A37F; }
+  .pm-dot.anthropic { background: #D77655; }
+  .pm-dot.openrouter { background: hsl(var(--primary)); }
+
+  .pm-info { flex: 1; min-width: 0; }
+  .pm-name { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .pm-name .star { color: hsl(var(--accent)); font-size: 11px; }
+  .pm-meta { font-size: 10px; color: hsl(var(--muted-foreground)); margin-top: 1px; font-variant-numeric: tabular-nums; }
+
+  .pm-tag-mm {
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-soft-fg));
+    font-size: 8px; font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .pm-default {
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    padding: 1px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 9px; font-weight: 600;
+    text-transform: uppercase;
+    font-family: inherit;
+  }
+  .pm-default.active {
+    background: hsl(var(--accent) / 0.15);
+    border-color: hsl(var(--accent) / 0.4);
+    color: hsl(var(--accent-foreground));
+  }
+
+  .preset-actions {
+    padding: 8px 10px 10px;
+    border-top: 1px solid hsl(var(--border));
+    display: flex; gap: 6px;
+  }
+  .preset-actions button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 11px; font-weight: 500;
+    cursor: pointer;
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    transition: all 0.18s ease;
+  }
+  .preset-actions button:hover {
+    border-color: var(--preset-color);
+    color: var(--preset-color);
+    background: hsl(from var(--preset-color) h s l / 0.05);
+  }
+  .preset-actions button.use-btn.active {
+    background: var(--preset-color);
+    color: white;
+    border-color: var(--preset-color);
+  }
+
+  /* ========== RIGHT COLUMN (sticky budget+sim) ========== */
+  /* Budget hero compact */
+  .budget-hero {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .budget-hero::after {
+    content: ''; position: absolute;
+    right: -30px; top: -30px;
+    width: 140px; height: 140px;
+    background: hsl(var(--accent) / 0.18);
+    border-radius: 50%;
+    filter: blur(30px);
+  }
+  .budget-hero > * { position: relative; z-index: 1; }
+  .bh-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .bh-head .label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.16em;
+    color: hsl(var(--accent));
+  }
+  .bh-amount {
+    display: flex; align-items: baseline; gap: 6px;
+    margin-bottom: 12px;
+  }
+  .bh-amount .c { font-size: 15px; opacity: 0.7; }
+  .bh-amount .v {
+    font-family: 'Space Grotesk';
+    font-size: 32px; font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .bh-amount .p { font-size: 12px; opacity: 0.7; }
+  .bh-bar {
+    background: rgba(255,255,255,0.18);
+    border-radius: 999px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .bh-bar-fill {
+    background: hsl(var(--accent));
+    height: 100%;
+    width: 32%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+  .bh-detail {
+    display: flex; justify-content: space-between;
+    font-size: 11px;
+  }
+  .bh-controls {
+    display: flex; gap: 6px;
+    margin-top: 10px;
+  }
+  .budget-input {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-family: inherit; font-size: 11.5px;
+    font-weight: 600;
+    width: 80px;
+    text-align: right;
+  }
+
+  /* Simulator card */
+  .sim-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .sim-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sim-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+    flex: 1;
+  }
+  .sim-result {
+    display: flex; align-items: baseline; gap: 6px;
+    margin-bottom: 6px;
+  }
+  .sim-result .v {
+    font-family: 'Space Grotesk';
+    font-size: 24px; font-weight: 700;
+    color: hsl(var(--primary));
+    line-height: 1;
+  }
+  .sim-result.over .v { color: hsl(var(--danger)); }
+  .sim-result.near .v { color: hsl(var(--warning)); }
+  .sim-result .l { font-size: 11px; color: hsl(var(--muted-foreground)); }
+
+  .sim-bar {
+    background: hsl(var(--muted));
+    border-radius: 999px;
+    height: 6px;
+    overflow: hidden;
+    margin: 8px 0 12px;
+  }
+  .sim-bar-fill { height: 100%; background: hsl(var(--success)); border-radius: 999px; transition: all 0.4s ease; }
+  .sim-bar-fill.near { background: hsl(var(--warning)); }
+  .sim-bar-fill.over { background: hsl(var(--danger)); }
+
+  .sim-scenarios {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sim-scenario {
+    padding: 7px 10px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: all 0.15s ease;
+  }
+  .sim-scenario:hover { background: hsl(var(--muted) / 0.5); }
+  .sim-scenario.active {
+    background: hsl(var(--primary) / 0.08);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+  .sim-scenario .dot { width: 6px; height: 6px; border-radius: 50%; background: hsl(var(--muted-foreground) / 0.3); }
+  .sim-scenario.active .dot { background: hsl(var(--primary)); }
+  .sim-scenario .nm { font-size: 11.5px; font-weight: 500; flex: 1; }
+  .sim-scenario .vl { font-size: 10px; color: hsl(var(--muted-foreground)); }
+  .sim-scenario .pr { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 700; }
+
+  /* Status card sticky */
+  .status-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    padding: 14px 18px;
+  }
+  .status-title {
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 10px;
+  }
+  .status-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0;
+    font-size: 11.5px;
+  }
+  .status-row .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: hsl(var(--success));
+    flex-shrink: 0;
+  }
+  .status-row.warn .dot { background: hsl(var(--warning)); }
+  .status-row.off .dot { background: hsl(var(--muted-foreground) / 0.3); }
+  .status-row .label { flex: 1; font-weight: 500; }
+  .status-row .v { color: hsl(var(--muted-foreground)); font-size: 11px; }
+
+  /* Slider */
+  .slider-row { margin-bottom: 12px; }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+  .slider-row .label { font-size: 12px; font-weight: 500; }
+  .slider-row .value {
+    font-family: 'Space Grotesk'; font-size: 13.5px; font-weight: 700;
+    color: hsl(var(--primary));
+  }
+  .slider-row .value small { font-size: 10.5px; font-weight: 500; color: hsl(var(--muted-foreground)); margin-left: 3px; }
+  .slider-row input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none; appearance: none;
+    height: 4px;
+    background: hsl(var(--border));
+    border-radius: 999px;
+    outline: none; cursor: pointer;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    background: hsl(var(--primary));
+    border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 6px hsl(var(--primary) / 0.3);
+  }
+
+  /* Threshold */
+  .threshold-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .threshold-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .threshold-row .ti {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ti.warn { background: hsl(var(--warning-soft)); color: hsl(var(--warning-soft-fg)); }
+  .ti.danger { background: hsl(var(--danger-soft)); color: hsl(var(--danger-soft-fg)); }
+  .threshold-row .info { flex: 1; }
+  .threshold-row .info .n { font-size: 12px; font-weight: 600; }
+  .threshold-row .info .h { font-size: 10.5px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+  .threshold-row .pct {
+    font-family: 'Space Grotesk'; font-size: 13px; font-weight: 700;
+    width: 40px; text-align: right;
+  }
+
+  /* Save bar */
+  .save-bar {
+    position: sticky;
+    bottom: 8px;
+    background: hsl(var(--card) / 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 12px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  }
+  .save-bar-info { flex: 1; font-size: 12px; color: hsl(var(--muted-foreground)); }
+  .save-bar-info strong { color: hsl(var(--foreground)); font-weight: 600; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px; right: 24px;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 11px 18px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(-80px);
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: hsl(var(--success)); color: white; }
+  .toast.danger { background: hsl(var(--danger)); color: white; }
+
+  kbd { background: hsl(var(--muted)); border: 1px solid hsl(var(--border)); border-radius: 4px; padding: 1px 5px; font-family: ui-monospace, monospace; font-size: 10px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="mini-sidebar">
+    <div class="mini-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
+    <div class="mini-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg></div>
+    <div style="flex:1"></div>
+    <div class="mini-icon active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6"/></svg></div>
+  </aside>
+
+  <main class="main">
+
+    <header class="page-header">
+      <div class="page-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <div class="page-header-text">
+        <div class="page-header-eyebrow">Sistema · Subaba Agente</div>
+        <div class="page-header-title">Configurações</div>
+        <div class="page-header-desc">Configure tudo aqui — orçamento e status sempre visíveis à direita.</div>
+      </div>
+    </header>
+
+    <div class="tabs-list">
+      <button class="tab">Geral</button>
+      <button class="tab">Funis</button>
+      <button class="tab">Equipe</button>
+      <button class="tab">Permissões</button>
+      <button class="tab">Integrações</button>
+      <button class="tab">IA</button>
+      <button class="tab active">Agente <span class="badge">novo</span></button>
+      <button class="tab">Personalização</button>
+      <button class="tab">Alertas</button>
+    </div>
+
+    <div class="two-col">
+
+      <!-- ============ COLUNA ESQUERDA (config) ============ -->
+      <div>
+
+        <!-- Identidade + arquivos -->
+        <div class="section-h">
+          <div class="num">1</div>
+          <h2>Identidade & documentos</h2>
+          <span class="eyebrow">Personalidade do agente</span>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+
+            <div style="display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: hsl(var(--success-soft)); border-radius: 10px; margin-bottom: 16px;">
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+              <div style="flex:1;">
+                <div style="font-size:13px; font-weight:600; color:hsl(var(--success-soft-fg));">Agente ativo</div>
+                <div style="font-size:11.5px; color:hsl(var(--success-soft-fg));">Aparece no menu pra quem tem permissão (Permissões).</div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Nome</label>
+              <input class="input" value="Atendente Institucional">
+            </div>
+
+            <div class="field">
+              <label class="field-label">Prompt do sistema</label>
+              <textarea class="textarea" rows="5">Você é o Atendente Institucional do gabinete da Vereadora Raquel.
+
+Tom: formal, empático, claro. Sempre em português do Brasil.
+
+Regras:
+1. Nunca prometa o que não foi confirmado.
+2. Sugira registrar a demanda no CRM.
+3. Use os documentos de referência como base.</textarea>
+              <div class="field-hint"><strong>1.180/32.000</strong> caracteres</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Documentos de referência</label>
+
+              <div class="files-upload" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="dropFile(event, this)" onclick="addMockFile()">
+                <div class="files-upload-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <div class="files-upload-title">Arraste arquivos ou clique aqui</div>
+                <div class="files-upload-hint">PDF, DOCX, TXT · 5 MB cada · Máx 10</div>
+              </div>
+
+              <div class="files-list">
+                <div class="file-item">
+                  <div class="file-icon pdf">PDF</div>
+                  <div class="file-info">
+                    <div class="file-name">Manual de Atendimento ao Eleitor — 2026.pdf</div>
+                    <div class="file-meta">1.8 MB · 24 pág · 28K tokens</div>
+                  </div>
+                  <span class="file-status ready">Pronto</span>
+                  <button class="file-action" onclick="removeFile(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </div>
+                <div class="file-item">
+                  <div class="file-icon docx">DOC</div>
+                  <div class="file-info">
+                    <div class="file-name">Templates de Ofício Institucional.docx</div>
+                    <div class="file-meta">0.4 MB · 12 pág · 7K tokens</div>
+                  </div>
+                  <span class="file-status ready">Pronto</span>
+                  <button class="file-action" onclick="removeFile(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </div>
+                <div class="file-item">
+                  <div class="file-icon txt">TXT</div>
+                  <div class="file-info">
+                    <div class="file-name">Glossário Câmara.txt</div>
+                    <div class="file-meta">28 KB · 1.4K tokens</div>
+                  </div>
+                  <span class="file-status processing">Indexando</span>
+                  <button class="file-action" onclick="removeFile(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </div>
+              </div>
+              <div class="field-hint" style="margin-top:8px;">💡 3/10 arquivos · 36.4K tokens indexados.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conexões (accordion compacto) -->
+        <div class="section-h">
+          <div class="num">2</div>
+          <h2>Conexões com provedores</h2>
+          <span class="eyebrow">API Keys</span>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding-bottom: 14px;">
+
+            <p style="font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-bottom: 12px; line-height: 1.5;">
+              Conecte uma ou mais. Cada modelo usa a chave do seu provedor. <strong>Dica:</strong> OpenRouter dá acesso a 200+ modelos com uma chave só.
+            </p>
+
+            <div class="conn-list">
+
+              <div class="conn-row openai connected open">
+                <div class="conn-row-head" onclick="toggleConn(this.parentElement)">
+                  <div class="logo">AI</div>
+                  <div class="info-text">
+                    <div class="name">OpenAI</div>
+                    <div class="meta">GPT-4o, GPT-4o mini, o3</div>
+                  </div>
+                  <span class="st"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="margin-right:3px;"><circle cx="12" cy="12" r="6"/></svg>Conectado</span>
+                  <svg class="expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="conn-row-body">
+                  <label class="field-label" style="font-size: 11.5px;">Chave API</label>
+                  <div class="password-wrap">
+                    <input class="password-input" type="password" value="sk-proj-1234567890abcdefghij">
+                    <button class="password-toggle" onclick="togglePass(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  </div>
+                  <div style="display:flex; gap:6px; margin-top:8px;">
+                    <button class="btn btn-outline btn-sm" onclick="testKey(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Testar</button>
+                    <a href="https://platform.openai.com/api-keys" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none; color:hsl(var(--primary));">Gerar chave ↗</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="conn-row anthropic connected">
+                <div class="conn-row-head" onclick="toggleConn(this.parentElement)">
+                  <div class="logo">C</div>
+                  <div class="info-text">
+                    <div class="name">Anthropic</div>
+                    <div class="meta">Claude Sonnet, Haiku, Opus</div>
+                  </div>
+                  <span class="st"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="margin-right:3px;"><circle cx="12" cy="12" r="6"/></svg>Conectado</span>
+                  <svg class="expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="conn-row-body">
+                  <label class="field-label" style="font-size: 11.5px;">Chave API</label>
+                  <div class="password-wrap">
+                    <input class="password-input" type="password" value="sk-ant-api03-xxxxxxxxxxxxxxxx">
+                    <button class="password-toggle" onclick="togglePass(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  </div>
+                  <div style="display:flex; gap:6px; margin-top:8px;">
+                    <button class="btn btn-outline btn-sm" onclick="testKey(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Testar</button>
+                    <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none; color:hsl(var(--primary));">Gerar chave ↗</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="conn-row openrouter">
+                <div class="conn-row-head" onclick="toggleConn(this.parentElement)">
+                  <div class="logo">OR</div>
+                  <div class="info-text">
+                    <div class="name">OpenRouter</div>
+                    <div class="meta">200+ modelos (Llama, Gemini, DeepSeek...)</div>
+                  </div>
+                  <span class="st">Não conectado</span>
+                  <svg class="expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="conn-row-body">
+                  <label class="field-label" style="font-size: 11.5px;">Chave API</label>
+                  <div class="password-wrap">
+                    <input class="password-input" type="password" placeholder="sk-or-v1-...">
+                    <button class="password-toggle" onclick="togglePass(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  </div>
+                  <div style="display:flex; gap:6px; margin-top:8px;">
+                    <button class="btn btn-outline btn-sm" onclick="testKey(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Testar</button>
+                    <a href="https://openrouter.ai/keys" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none; color:hsl(var(--primary));">Gerar chave ↗</a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Presets de modelos -->
+        <div class="section-h">
+          <div class="num">3</div>
+          <h2>Modelos permitidos</h2>
+          <span class="eyebrow">Presets com toggle granular</span>
+        </div>
+
+        <div class="master-rule">
+          <div class="master-rule-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          </div>
+          <div class="master-rule-text">
+            <div class="n">Apenas modelos de texto</div>
+            <div class="h">Multimodais bloqueados. Vision custa 5-15× mais.</div>
+          </div>
+          <div class="switch on" onclick="toggleTextOnly(this)"></div>
+        </div>
+
+        <div class="presets-row">
+
+          <div class="preset-box eco">
+            <div class="preset-box-head">
+              <div class="top">
+                <span class="preset-emoji">🪙</span>
+                <span class="preset-name">Econômico</span>
+                <span class="preset-mark">em uso</span>
+              </div>
+              <p class="preset-desc">Modelos baratos. Alto volume com perguntas simples.</p>
+            </div>
+            <div class="preset-stats">
+              <div class="preset-stat"><div class="v" id="eco-c">3</div><div class="l">ativos</div></div>
+              <div class="preset-stat"><div class="v">R$ 12</div><div class="l">/mês</div></div>
+            </div>
+            <div class="preset-models">
+              <div class="pm-row">
+                <span class="pm-dot openai"></span>
+                <div class="pm-info">
+                  <div class="pm-name">GPT-4o mini</div>
+                  <div class="pm-meta">$0.15/$0.60</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'eco-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot anthropic"></span>
+                <div class="pm-info">
+                  <div class="pm-name">Claude Haiku</div>
+                  <div class="pm-meta">$0.80/$4</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'eco-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot openrouter"></span>
+                <div class="pm-info">
+                  <div class="pm-name">Llama 3.3 70B</div>
+                  <div class="pm-meta">$0.13/$0.40</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'eco-c')"></div>
+              </div>
+            </div>
+            <div class="preset-actions">
+              <button onclick="showToast('Adicionar modelo (eco)')">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <button class="use-btn" onclick="usePreset(this, 'Econômico')">Usar</button>
+            </div>
+          </div>
+
+          <div class="preset-box bal selected">
+            <div class="preset-box-head">
+              <div class="top">
+                <span class="preset-emoji">⚖️</span>
+                <span class="preset-name">Balanceado</span>
+                <span class="preset-mark">em uso</span>
+              </div>
+              <p class="preset-desc">Mistura rápidos e premium. Cobertura sem inflar custo.</p>
+            </div>
+            <div class="preset-stats">
+              <div class="preset-stat"><div class="v" id="bal-c">4</div><div class="l">ativos</div></div>
+              <div class="preset-stat"><div class="v">R$ 38</div><div class="l">/mês</div></div>
+            </div>
+            <div class="preset-models">
+              <div class="pm-row">
+                <span class="pm-dot openai"></span>
+                <div class="pm-info">
+                  <div class="pm-name">GPT-4o mini <span class="star">★</span></div>
+                  <div class="pm-meta">$0.15/$0.60</div>
+                </div>
+                <button class="pm-default active" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'bal-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot openai"></span>
+                <div class="pm-info">
+                  <div class="pm-name">GPT-4o</div>
+                  <div class="pm-meta">$2.50/$10</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'bal-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot anthropic"></span>
+                <div class="pm-info">
+                  <div class="pm-name">Claude Sonnet</div>
+                  <div class="pm-meta">$3/$15</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'bal-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot openrouter"></span>
+                <div class="pm-info">
+                  <div class="pm-name">Llama 3.3 70B</div>
+                  <div class="pm-meta">$0.13/$0.40</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'bal-c')"></div>
+              </div>
+            </div>
+            <div class="preset-actions">
+              <button onclick="showToast('Adicionar modelo (bal)')">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <button class="use-btn active" onclick="usePreset(this, 'Balanceado')">✓ Em uso</button>
+            </div>
+          </div>
+
+          <div class="preset-box pre">
+            <div class="preset-box-head">
+              <div class="top">
+                <span class="preset-emoji">✨</span>
+                <span class="preset-name">Premium</span>
+                <span class="preset-mark">em uso</span>
+              </div>
+              <p class="preset-desc">Modelos topo de linha. Qualidade acima de custo.</p>
+            </div>
+            <div class="preset-stats">
+              <div class="preset-stat"><div class="v" id="pre-c">3</div><div class="l">ativos</div></div>
+              <div class="preset-stat"><div class="v">R$ 180</div><div class="l">/mês</div></div>
+            </div>
+            <div class="preset-models">
+              <div class="pm-row">
+                <span class="pm-dot openai"></span>
+                <div class="pm-info">
+                  <div class="pm-name">GPT-4o</div>
+                  <div class="pm-meta">$2.50/$10</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'pre-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot anthropic"></span>
+                <div class="pm-info">
+                  <div class="pm-name">Claude Sonnet</div>
+                  <div class="pm-meta">$3/$15</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'pre-c')"></div>
+              </div>
+              <div class="pm-row">
+                <span class="pm-dot anthropic"></span>
+                <div class="pm-info">
+                  <div class="pm-name">Claude Opus 4 <span class="pm-tag-mm" style="background:hsl(var(--danger-soft));color:hsl(var(--danger-soft-fg));">$$$</span></div>
+                  <div class="pm-meta">$15/$75</div>
+                </div>
+                <button class="pm-default" onclick="setDef(this)">★</button>
+                <div class="switch sm on" onclick="togglePM(this, 'pre-c')"></div>
+              </div>
+            </div>
+            <div class="preset-actions">
+              <button onclick="showToast('Adicionar modelo (pre)')">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <button class="use-btn" onclick="usePreset(this, 'Premium')">Usar</button>
+            </div>
+          </div>
+
+        </div>
+
+        <p style="font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-top: 12px; line-height: 1.5;">
+          💡 Dentro de cada caixa você pode <strong>ativar/desativar</strong> modelos individuais, <strong>+ Add</strong> pra incluir outros, ou <strong>★</strong> pra marcar o padrão. O preset "em uso" é o que aparece no chat.
+        </p>
+
+        <!-- Alertas & limites -->
+        <div class="section-h">
+          <div class="num">4</div>
+          <h2>Alertas & limites de uso</h2>
+          <span class="eyebrow">Controle de custo</span>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="threshold-row">
+              <div class="ti warn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+              <div class="info"><div class="n">Aviso amarelo</div><div class="h">E-mail ao admin</div></div>
+              <div class="pct">70%</div>
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="threshold-row">
+              <div class="ti danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+              <div class="info"><div class="n">Aviso vermelho</div><div class="h">Push + modal</div></div>
+              <div class="pct">90%</div>
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="threshold-row">
+              <div class="ti danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></div>
+              <div class="info"><div class="n">Bloqueio automático</div><div class="h">Agente para de responder</div></div>
+              <div class="pct">100%</div>
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="slider-row">
+              <div class="head"><span class="label">Tokens máx/resposta</span><span class="value" id="v-mt">2.048<small> tok</small></span></div>
+              <input type="range" min="512" max="8192" step="256" value="2048" oninput="document.getElementById('v-mt').innerHTML = parseInt(this.value).toLocaleString('pt-BR') + '<small> tok</small>'">
+            </div>
+            <div class="slider-row">
+              <div class="head"><span class="label">Mensagens/usuário/dia</span><span class="value" id="v-md">50<small> /dia</small></span></div>
+              <input type="range" min="10" max="500" step="10" value="50" oninput="document.getElementById('v-md').innerHTML = this.value + '<small> /dia</small>'">
+            </div>
+            <div class="slider-row">
+              <div class="head"><span class="label">Custo máx/usuário/mês</span><span class="value">R$ <span id="v-cu">25</span></span></div>
+              <input type="range" min="5" max="100" step="5" value="25" oninput="document.getElementById('v-cu').textContent = this.value">
+            </div>
+          </div>
+        </div>
+
+        <!-- Save bar -->
+        <div class="save-bar">
+          <div class="save-bar-info">
+            2 conexões · <strong>4 modelos no Balanceado</strong> · 3 docs · <span style="color:hsl(var(--warning));">3 alterações não salvas</span>
+          </div>
+          <button class="btn btn-ghost" onclick="showToast('Descartado')">Descartar</button>
+          <button class="btn btn-primary" onclick="showToast('✓ Configuração salva', 'success')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Salvar
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ============ COLUNA DIREITA (sticky) ============ -->
+      <aside class="right-col">
+
+        <!-- Budget hero compact -->
+        <div class="budget-hero">
+          <div class="bh-head">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--accent))" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="label">Orçamento · Maio/2026</span>
+          </div>
+          <div class="bh-amount">
+            <span class="c">R$</span>
+            <span class="v" id="bh-val">100</span>
+            <span class="p">/ mês</span>
+          </div>
+          <div class="bh-bar"><div class="bh-bar-fill" id="bh-fill" style="width:32%;"></div></div>
+          <div class="bh-detail">
+            <span>Gasto: <strong>R$ 32,40</strong></span>
+            <span>Restam: <strong>R$ 67,60</strong></span>
+          </div>
+          <div class="bh-controls">
+            <input type="number" class="budget-input" value="100" min="20" step="10" oninput="updateBudget(this.value)">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.18); color:white; border:1px solid rgba(255,255,255,0.3);">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="status-card">
+          <div class="status-title">Status atual</div>
+          <div class="status-row">
+            <div class="dot"></div>
+            <div class="label">Agente ativo</div>
+            <div class="v">on</div>
+          </div>
+          <div class="status-row">
+            <div class="dot"></div>
+            <div class="label">2 conexões ativas</div>
+            <div class="v">OpenAI, Anthropic</div>
+          </div>
+          <div class="status-row off">
+            <div class="dot"></div>
+            <div class="label">OpenRouter</div>
+            <div class="v">desconectado</div>
+          </div>
+          <div class="status-row">
+            <div class="dot"></div>
+            <div class="label">Modelos permitidos</div>
+            <div class="v">4</div>
+          </div>
+          <div class="status-row">
+            <div class="dot"></div>
+            <div class="label">Modelo padrão</div>
+            <div class="v">GPT-4o mini</div>
+          </div>
+          <div class="status-row">
+            <div class="dot"></div>
+            <div class="label">Documentos</div>
+            <div class="v">3 anexados</div>
+          </div>
+          <div class="status-row warn">
+            <div class="dot"></div>
+            <div class="label">Multimodais</div>
+            <div class="v">bloqueados</div>
+          </div>
+        </div>
+
+        <!-- Simulator -->
+        <div class="sim-card">
+          <div class="sim-head">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--muted-foreground))" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <div class="sim-title">Projeção mensal</div>
+          </div>
+
+          <div class="sim-result" id="sim-result">
+            <span class="v">R$ 78</span>
+            <span class="l">78%</span>
+          </div>
+          <div class="sim-bar"><div class="sim-bar-fill" id="sim-fill" style="width:78%;"></div></div>
+
+          <div style="font-family:'Cinzel',serif; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.16em; color:hsl(var(--muted-foreground)); margin-bottom:6px;">Cenário</div>
+          <div class="sim-scenarios">
+            <div class="sim-scenario" onclick="setSc(this, 32)">
+              <div class="dot"></div>
+              <div class="nm">Conservador</div>
+              <div class="vl">10/dia</div>
+              <div class="pr">R$ 32</div>
+            </div>
+            <div class="sim-scenario active" onclick="setSc(this, 78)">
+              <div class="dot"></div>
+              <div class="nm">Real</div>
+              <div class="vl">30/dia</div>
+              <div class="pr">R$ 78</div>
+            </div>
+            <div class="sim-scenario" onclick="setSc(this, 145)">
+              <div class="dot"></div>
+              <div class="nm">Pico</div>
+              <div class="vl">60/dia</div>
+              <div class="pr">R$ 145</div>
+            </div>
+            <div class="sim-scenario" onclick="setSc(this, 320)">
+              <div class="dot"></div>
+              <div class="nm">Crise</div>
+              <div class="vl">120/dia</div>
+              <div class="pr">R$ 320</div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">toast</div>
+
+<script>
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function togglePass(btn) {
+    const input = btn.previousElementSibling;
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+  function testKey(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite;"><path d="M12 2v4"/><path d="M12 18v4"/></svg> Testando';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Testar';
+      showToast('✓ Chave válida', 'success');
+    }, 1200);
+  }
+
+  function toggleConn(row) {
+    row.classList.toggle('open');
+  }
+
+  function dropFile(e, el) {
+    e.preventDefault(); el.classList.remove('drag-over');
+    addMockFile();
+  }
+  function addMockFile() { showToast('Arquivo enviado — indexando...', 'success'); }
+  function removeFile(btn) {
+    const item = btn.closest('.file-item');
+    item.style.transition = 'all 0.2s ease';
+    item.style.opacity = '0';
+    item.style.transform = 'translateX(20px)';
+    setTimeout(() => item.remove(), 200);
+    showToast('Arquivo removido');
+  }
+
+  function toggleTextOnly(el) {
+    el.classList.toggle('on');
+    showToast(el.classList.contains('on') ? '✓ Multimodais bloqueados' : '⚠ Multimodais ativáveis');
+  }
+
+  function togglePM(sw, counterId) {
+    sw.classList.toggle('on');
+    sw.closest('.pm-row').classList.toggle('off');
+    if (counterId) {
+      const c = document.getElementById(counterId);
+      c.textContent = parseInt(c.textContent) + (sw.classList.contains('on') ? 1 : -1);
+    }
+    showToast(sw.classList.contains('on') ? '✓ Modelo no preset' : '✕ Removido');
+  }
+
+  function setDef(btn) {
+    const preset = btn.closest('.preset-box');
+    preset.querySelectorAll('.pm-default').forEach(b => b.classList.remove('active'));
+    preset.querySelectorAll('.pm-name .star').forEach(s => s.remove());
+    btn.classList.add('active');
+    const name = btn.closest('.pm-row').querySelector('.pm-name');
+    const star = document.createElement('span');
+    star.className = 'star';
+    star.textContent = '★';
+    name.appendChild(star);
+    showToast('★ Padrão atualizado', 'success');
+  }
+
+  function usePreset(btn, name) {
+    document.querySelectorAll('.preset-box').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.use-btn').forEach(b => {
+      b.classList.remove('active');
+      if (b.textContent.includes('✓')) b.textContent = 'Usar';
+    });
+    btn.closest('.preset-box').classList.add('selected');
+    btn.classList.add('active');
+    btn.textContent = '✓ Em uso';
+    showToast(`✓ Preset "${name}" em uso`, 'success');
+  }
+
+  function updateBudget(val) {
+    document.getElementById('bh-val').textContent = val;
+    document.getElementById('bh-fill').style.width = Math.min(32.40 / val * 100, 100) + '%';
+  }
+
+  function setSc(el, value) {
+    document.querySelectorAll('.sim-scenario').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    const r = document.getElementById('sim-result');
+    const f = document.getElementById('sim-fill');
+    r.querySelector('.v').textContent = `R$ ${value}`;
+    r.querySelector('.l').textContent = `${Math.min(value, 100)}%`;
+    f.style.width = Math.min(value, 100) + '%';
+    r.classList.remove('over', 'near');
+    f.classList.remove('over', 'near');
+    if (value > 100) { r.classList.add('over'); f.classList.add('over'); showToast('⚠ Excede orçamento', 'danger'); }
+    else if (value > 70) { r.classList.add('near'); f.classList.add('near'); showToast('⚠ Próximo do limite'); }
+    else showToast('✓ Dentro do orçamento', 'success');
+  }
+
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+</script>
+
+</body>
+</html>

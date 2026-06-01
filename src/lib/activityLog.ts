@@ -23,7 +23,11 @@ interface LogActivityParams {
     | 'ai_settings'
     // Checklist orientativo por etapa do funil (RAQ-MAND-EM044)
     | 'stage_checklist_item'
-    | 'stage_message_template';
+    | 'stage_message_template'
+    // Agente IA — orçamento e presets (RAQ-MAND-EM075)
+    | 'ai_agent_budget'
+    | 'ai_agent_preset'
+    | 'ai_agent_model';
   entity_name?: string;
   entity_id?: string;
   description?: string;

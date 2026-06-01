@@ -1,0 +1,30 @@
+{
+  "results": [
+    {
+      "ct": "FASE1-dispensou",
+      "status": "PASS",
+      "notes": "3 alertas dispensados"
+    },
+    {
+      "ct": "CT03-estado-vazio",
+      "status": "WARN",
+      "notes": "Estado vazio não detectado"
+    },
+    {
+      "ct": "CT03-restaurar-todos-oculto",
+      "status": "FAIL",
+      "notes": "\"Restaurar todos\" visível com lista vazia (bug)"
+    },
+    {
+      "ct": "CT03-restaurar-individual",
+      "status": "WARN",
+      "notes": "Lista vazia — sem dados para restaurar nesta sessão"
+    }
+  ],
+  "consoleErrors": [],
+  "summary": {
+    "passed": 1,
+    "failed": 1,
+    "warned": 2
+  }
+}

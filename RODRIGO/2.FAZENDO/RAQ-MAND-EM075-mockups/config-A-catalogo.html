@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações — Agente IA · Layout A (Catálogo granular)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --secondary-foreground: 353 35% 13%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --input: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --success-soft-fg: 142 72% 26%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+    --danger: 0 73% 51%;
+    --danger-soft: 0 86% 97%;
+    --danger-soft-fg: 0 70% 35%;
+    --info: 199 89% 48%;
+    --info-soft: 204 94% 94%;
+    --info-soft-fg: 200 98% 28%;
+
+    --sidebar-bg: 40 47% 98%;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    min-height: 100dvh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-image:
+      radial-gradient(at 20% 0%, hsl(var(--accent) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--primary) / 0.04) 0px, transparent 50%);
+  }
+
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .font-serif { font-family: 'Cinzel', serif; letter-spacing: 0.08em; }
+
+  /* ===== Layout: sidebar mock + main ===== */
+  .app { display: grid; grid-template-columns: 60px 1fr; min-height: 100dvh; }
+  @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .mini-sidebar { display: none; } }
+
+  .mini-sidebar {
+    background: hsl(var(--sidebar-bg));
+    border-right: 1px solid hsl(var(--border));
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 6px;
+  }
+  .mini-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .mini-icon:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .mini-icon.active {
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+  }
+
+  /* ===== Main ===== */
+  .main { padding: 32px 32px 48px; max-width: 1400px; }
+  @media (max-width: 640px) { .main { padding: 20px 16px 32px; } }
+
+  /* PageHeader */
+  .page-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  .page-header-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%);
+    color: hsl(var(--primary-foreground));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
+  }
+  .page-header-text { flex: 1; }
+  .page-header-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: hsl(var(--accent-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 2px;
+  }
+  .page-header-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; }
+  .page-header-desc { font-size: 13px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+
+  /* Tabs */
+  .tabs-list {
+    display: flex; gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    background: hsl(var(--muted));
+    padding: 4px;
+    border-radius: 11px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .tab:hover { color: hsl(var(--foreground)); }
+  .tab.active {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .tab .badge {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Layout 2 cols dentro da subaba do agente */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  @media (max-width: 1100px) { .agent-grid { grid-template-columns: 1fr; } }
+
+  /* Card padrão */
+  .card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .card-desc { font-size: 12px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+  .card-body { padding: 16px 18px; }
+
+  /* Identidade do card-header com ícone */
+  .card-icon {
+    width: 28px; height: 28px;
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Form fields */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block;
+    font-size: 12px; font-weight: 600;
+    color: hsl(var(--foreground));
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+  .field-hint {
+    font-size: 11.5px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .input, .select, .textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    background: hsl(var(--background));
+    font-family: inherit;
+    font-size: 13.5px;
+    color: hsl(var(--foreground));
+    transition: all 0.18s ease;
+  }
+  .input:focus, .select:focus, .textarea:focus {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 1px;
+    border-color: hsl(var(--ring));
+  }
+  .textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .input-with-prefix {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Switch (toggle) */
+  .switch {
+    position: relative;
+    display: inline-flex;
+    width: 36px;
+    height: 20px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch.on { background: hsl(var(--primary)); }
+  .switch.on::after { transform: translateX(16px); }
+  .switch.on.accent { background: hsl(var(--accent)); }
+
+  /* Switch row */
+  .switch-row {
+    display: flex; align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .switch-row-label {
+    flex: 1;
+    font-size: 13px; font-weight: 500;
+  }
+  .switch-row-hint {
+    font-size: 11.5px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* Provider tabs */
+  .provider-tabs {
+    display: flex;
+    gap: 4px;
+    background: hsl(var(--muted));
+    padding: 3px;
+    border-radius: 9px;
+    margin-bottom: 14px;
+    width: fit-content;
+  }
+  .provider-tab {
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s ease;
+  }
+  .provider-tab.active {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .provider-tab .count {
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    font-weight: 600;
+  }
+
+  /* Master switch banner */
+  .master-toggle {
+    background: hsl(var(--info-soft));
+    border: 1px solid hsl(var(--info) / 0.3);
+    border-radius: 11px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .master-toggle-icon {
+    width: 32px; height: 32px;
+    background: hsl(var(--info) / 0.18);
+    color: hsl(var(--info));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .master-toggle-text { flex: 1; }
+  .master-toggle-text .name {
+    font-size: 13px; font-weight: 600; color: hsl(var(--foreground));
+  }
+  .master-toggle-text .hint {
+    font-size: 11.5px;
+    color: hsl(var(--info-soft-fg));
+    margin-top: 1px;
+    line-height: 1.4;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-search {
+    flex: 1;
+    min-width: 180px;
+    position: relative;
+  }
+  .filter-search input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    background: hsl(var(--background));
+    font-family: inherit; font-size: 12.5px;
+  }
+  .filter-search input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+  .filter-search svg {
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    color: hsl(var(--muted-foreground));
+  }
+  .filter-chip {
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    padding: 6px 10px;
+    border-radius: 9px;
+    font-family: inherit; font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .filter-chip:hover { background: hsl(var(--muted)); }
+  .filter-chip.active {
+    background: hsl(var(--primary) / 0.08);
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
+  /* Model row */
+  .models-table {
+    border: 1px solid hsl(var(--border));
+    border-radius: 11px;
+    overflow: hidden;
+  }
+  .model-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto auto;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid hsl(var(--border));
+    align-items: center;
+    transition: background 0.15s ease;
+  }
+  .model-row:last-child { border-bottom: none; }
+  .model-row:hover { background: hsl(var(--muted) / 0.4); }
+  .model-row.blocked { opacity: 0.6; background: hsl(var(--muted) / 0.3); }
+  .model-row.multimodal-warn {
+    background: hsl(var(--warning-soft) / 0.5);
+  }
+  .model-row.multimodal-warn .model-name { color: hsl(var(--warning-soft-fg)); }
+
+  @media (max-width: 768px) {
+    .model-row {
+      grid-template-columns: auto 1fr auto;
+      grid-template-rows: auto auto;
+    }
+    .model-context, .model-price { grid-column: 2 / 3; font-size: 11px; }
+    .model-caps { display: none; }
+    .model-default-pill { grid-row: 1 / 2; }
+  }
+
+  .model-icon {
+    width: 32px; height: 32px;
+    background: hsl(var(--muted));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .model-icon.openai { background: #10A37F; color: white; }
+  .model-icon.anthropic { background: #D77655; color: white; }
+  .model-icon.openrouter { background: hsl(var(--primary)); color: white; }
+  .model-icon.google { background: #4285F4; color: white; }
+  .model-icon.meta { background: #1877F2; color: white; }
+  .model-icon.deepseek { background: #3D5AFE; color: white; }
+  .model-icon.mistral { background: #FF7000; color: white; }
+
+  .model-info { display: flex; flex-direction: column; min-width: 0; }
+  .model-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+  .model-id {
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 1px;
+  }
+  .model-caps {
+    display: flex; gap: 4px;
+    margin-top: 4px;
+  }
+  .cap-pill {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .cap-pill.text { background: hsl(var(--success-soft)); color: hsl(var(--success-soft-fg)); }
+  .cap-pill.vision { background: hsl(var(--warning-soft)); color: hsl(var(--warning-soft-fg)); }
+  .cap-pill.audio { background: hsl(var(--info-soft)); color: hsl(var(--info-soft-fg)); }
+
+  .model-context {
+    font-size: 11.5px;
+    color: hsl(var(--muted-foreground));
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .model-price {
+    font-size: 11.5px;
+    color: hsl(var(--foreground));
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .model-price small { color: hsl(var(--muted-foreground)); font-weight: 400; }
+
+  .model-default-pill {
+    background: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent-foreground));
+    border: 1px solid hsl(var(--accent) / 0.4);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .model-default-pill.inactive {
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    border-color: hsl(var(--border));
+  }
+  .model-default-pill.inactive:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+  .model-default-pill.active {
+    box-shadow: 0 0 0 3px hsl(var(--accent) / 0.15);
+  }
+
+  /* Custom model add */
+  .custom-model-add {
+    padding: 12px 14px;
+    background: hsl(var(--muted) / 0.5);
+    border-top: 1px dashed hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .custom-model-add input {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    background: hsl(var(--card));
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+  }
+  .custom-model-add input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 9px;
+    cursor: pointer;
+    border: none;
+    padding: 8px 14px;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 2px 6px hsl(var(--primary) / 0.2);
+  }
+  .btn-primary:hover { background: hsl(var(--primary) / 0.92); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+  }
+  .btn-outline:hover { background: hsl(var(--muted)); }
+  .btn-ghost {
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    padding: 6px 10px;
+  }
+  .btn-ghost:hover { color: hsl(var(--foreground)); background: hsl(var(--muted)); }
+
+  .btn-sm { font-size: 12px; padding: 6px 10px; }
+
+  /* Sticky save bar */
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid hsl(var(--border));
+    border-radius: 0 0 14px 14px;
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 8px;
+  }
+  .save-bar-info {
+    flex: 1;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+  .save-bar-info strong { color: hsl(var(--foreground)); font-weight: 600; }
+
+  /* Preview panel (right) */
+  .preview-panel {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    padding: 0;
+    position: sticky;
+    top: 16px;
+    overflow: hidden;
+  }
+  .preview-panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex; align-items: center; gap: 8px;
+  }
+  .preview-panel-header h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: hsl(var(--muted-foreground));
+    flex: 1;
+  }
+  .preview-panel-body {
+    padding: 16px 18px;
+  }
+
+  /* Mini agent preview (chat input simulado) */
+  .preview-chat {
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.5) 100%);
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .preview-chat-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px 10px;
+    border-bottom: 1px solid hsl(var(--border));
+    margin-bottom: 10px;
+  }
+  .preview-chat-avatar {
+    width: 26px; height: 26px;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview-chat-info { flex: 1; line-height: 1.1; }
+  .preview-chat-info .n { font-size: 11.5px; font-weight: 600; }
+  .preview-chat-info .m { font-size: 9.5px; color: hsl(var(--muted-foreground)); }
+
+  /* Mini model selector preview */
+  .model-selector-preview {
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    background: hsl(var(--card));
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+  }
+  .model-selector-preview:hover { border-color: hsl(var(--primary) / 0.4); }
+  .model-selector-preview .left {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .model-selector-preview .label-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: hsl(var(--muted-foreground));
+  }
+  .model-selector-preview .current {
+    font-size: 11px; font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  /* Dropdown simulado de modelos permitidos */
+  .model-dropdown-preview {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  }
+  .dropdown-item {
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    color: hsl(var(--foreground));
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .dropdown-item:hover { background: hsl(var(--muted)); }
+  .dropdown-item.selected {
+    background: hsl(var(--primary) / 0.08);
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+  .dropdown-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: hsl(var(--muted-foreground) / 0.3);
+  }
+  .dropdown-item.selected .dot { background: hsl(var(--primary)); }
+  .dropdown-item .cost {
+    margin-left: auto;
+    font-size: 9.5px;
+    color: hsl(var(--muted-foreground));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .preview-input-fake {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .preview-send-fake {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-radius: 7px;
+    padding: 4px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Summary stats no preview */
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .summary-card {
+    background: hsl(var(--muted) / 0.4);
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    padding: 8px 10px;
+  }
+  .summary-card .val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: hsl(var(--primary));
+  }
+  .summary-card .label {
+    font-size: 10px;
+    color: hsl(var(--muted-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px; right: 24px;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 11px 18px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(-80px);
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: hsl(var(--success)); color: white; }
+  .toast.warn { background: hsl(var(--warning)); color: white; }
+
+  /* Tag de roles */
+  .role-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0 4px 4px 0;
+    transition: all 0.15s ease;
+    border: 1px solid hsl(var(--border));
+  }
+  .role-chip:hover { background: hsl(var(--card)); }
+  .role-chip.selected {
+    background: hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+  .role-chip.selected::before {
+    content: '✓';
+    font-weight: 700;
+  }
+
+  /* Limit slider */
+  .limit-control {
+    margin-bottom: 10px;
+  }
+  .limit-control-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .limit-control-head .label { font-size: 12px; font-weight: 500; }
+  .limit-control-head .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: hsl(var(--primary));
+    font-variant-numeric: tabular-nums;
+  }
+  .limit-control input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    background: hsl(var(--border));
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+  }
+  .limit-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px; height: 16px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px hsl(var(--primary) / 0.3);
+  }
+  .limit-control input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    background: hsl(var(--primary));
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  kbd {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: hsl(var(--border));
+    margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Mini sidebar mock pra dar contexto de "estou no CRM" -->
+  <aside class="mini-sidebar">
+    <div class="mini-icon" title="Dashboard">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+    </div>
+    <div class="mini-icon" title="Contatos">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <div class="mini-icon" title="Funil">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    </div>
+    <div class="mini-icon" title="Agente">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+    </div>
+    <div style="flex:1"></div>
+    <div class="mini-icon active" title="Configurações">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ===== PageHeader ===== -->
+    <header class="page-header">
+      <div class="page-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <div class="page-header-text">
+        <div class="page-header-eyebrow">Sistema</div>
+        <div class="page-header-title">Configurações</div>
+        <div class="page-header-desc">Personalize seu mandato, equipe, integrações e permissões.</div>
+      </div>
+    </header>
+
+    <!-- ===== Tabs principais ===== -->
+    <div class="tabs-list" role="tablist">
+      <button class="tab">Geral</button>
+      <button class="tab">Funis</button>
+      <button class="tab">Equipe</button>
+      <button class="tab">Permissões</button>
+      <button class="tab">Integrações</button>
+      <button class="tab">IA</button>
+      <button class="tab active">Agente <span class="badge">novo</span></button>
+      <button class="tab">Personalização</button>
+      <button class="tab">Ordem das Abas</button>
+      <button class="tab">Alertas</button>
+    </div>
+
+    <!-- ===== Grid principal: form + preview ===== -->
+    <div class="agent-grid">
+
+      <!-- ===== Coluna esquerda — Configurações ===== -->
+      <div>
+
+        <!-- Identidade do agente -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Identidade do agente</div>
+              <div class="card-desc">Como o agente aparece para a equipe.</div>
+            </div>
+            <div class="switch-row" style="padding:0;">
+              <span style="font-size:12px; font-weight:500;">Ativo</span>
+              <div class="switch on" onclick="this.classList.toggle('on'); showToast('Status atualizado')"></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="field">
+              <label class="field-label" for="agent-name">Nome do agente</label>
+              <input id="agent-name" class="input" type="text" value="Atendente Institucional" placeholder="Ex: Atendente do Gabinete">
+              <div class="field-hint">Aparece no topo da tela do chat e na sidebar.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="agent-prompt">Prompt do sistema</label>
+              <textarea id="agent-prompt" class="textarea" rows="5">Você é o Atendente Institucional do gabinete da Vereadora Raquel.
+
+Tom: formal, empático, claro. Sempre responda em português do Brasil.
+
+Regras:
+1. Nunca prometa o que não foi confirmado.
+2. Sempre sugira registrar a demanda no CRM com tag apropriada.
+3. Em casos jurídicos, oriente o assessor a escalar para o proprietário.
+4. Não invente nomes de leis, decretos ou números de protocolo.</textarea>
+              <div class="field-hint">Define como o agente se comporta. Limite: 32.000 caracteres. <strong>1.180/32.000</strong></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Quem pode usar o agente</label>
+              <div style="margin-top: 4px;">
+                <span class="role-chip selected" onclick="toggleRole(this)">Administrador</span>
+                <span class="role-chip selected" onclick="toggleRole(this)">Proprietário</span>
+                <span class="role-chip selected" onclick="toggleRole(this)">Assessor</span>
+                <span class="role-chip" onclick="toggleRole(this)">Assistente</span>
+                <span class="role-chip" onclick="toggleRole(this)">Estagiário</span>
+              </div>
+              <div class="field-hint">A aba "Agente" só aparece para os perfis selecionados.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modelos permitidos -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Modelos permitidos</div>
+              <div class="card-desc">Quais modelos a equipe pode usar e qual é o padrão.</div>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- Master switch: somente texto -->
+            <div class="master-toggle">
+              <div class="master-toggle-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+              </div>
+              <div class="master-toggle-text">
+                <div class="name">Apenas modelos de texto</div>
+                <div class="hint">Bloqueia automaticamente modelos multimodais (visão/áudio) para evitar custo extra. Vision custa 5-15× mais por tarefa.</div>
+              </div>
+              <div class="switch on accent" id="text-only" onclick="toggleTextOnly(this)" role="switch" aria-checked="true"></div>
+            </div>
+
+            <!-- Provider tabs -->
+            <div class="provider-tabs" role="tablist">
+              <button class="provider-tab active" onclick="filterProvider(this, 'all')">
+                Todos <span class="count">11</span>
+              </button>
+              <button class="provider-tab" onclick="filterProvider(this, 'openai')">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:#10A37F;"></span>
+                OpenAI <span class="count">3</span>
+              </button>
+              <button class="provider-tab" onclick="filterProvider(this, 'anthropic')">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:#D77655;"></span>
+                Anthropic <span class="count">3</span>
+              </button>
+              <button class="provider-tab" onclick="filterProvider(this, 'openrouter')">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:hsl(var(--primary));"></span>
+                OpenRouter <span class="count">5</span>
+              </button>
+            </div>
+
+            <!-- Filter bar -->
+            <div class="filter-bar">
+              <div class="filter-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" placeholder="Buscar modelo..." oninput="filterModels(this.value)">
+              </div>
+              <button class="filter-chip active">Permitidos (5)</button>
+              <button class="filter-chip">Bloqueados (6)</button>
+              <button class="filter-chip">$ &lt; 1/M</button>
+              <button class="filter-chip">$ 1-10/M</button>
+              <button class="filter-chip">$ &gt; 10/M</button>
+            </div>
+
+            <!-- Models table -->
+            <div class="models-table" id="models-table">
+
+              <!-- OpenAI -->
+              <div class="model-row" data-provider="openai" data-mm="0">
+                <div class="model-icon openai">A</div>
+                <div class="model-info">
+                  <div class="model-name">GPT-4o mini</div>
+                  <div class="model-id">openai/gpt-4o-mini</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                  </div>
+                </div>
+                <div class="model-context">128K ctx</div>
+                <div class="model-price">$0.15 in<br><small>$0.60 out / 1M</small></div>
+                <span class="model-default-pill active" onclick="setDefault(this)">✓ Padrão</span>
+                <div class="switch on" onclick="toggleModel(this)" role="switch" aria-checked="true"></div>
+              </div>
+
+              <div class="model-row" data-provider="openai" data-mm="0">
+                <div class="model-icon openai">A</div>
+                <div class="model-info">
+                  <div class="model-name">GPT-4o</div>
+                  <div class="model-id">openai/gpt-4o</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                    <span class="cap-pill vision">visão</span>
+                  </div>
+                </div>
+                <div class="model-context">128K ctx</div>
+                <div class="model-price">$2.50 in<br><small>$10.00 out / 1M</small></div>
+                <span class="model-default-pill inactive" onclick="setDefault(this)">Definir padrão</span>
+                <div class="switch on" onclick="toggleModel(this)" role="switch" aria-checked="true"></div>
+              </div>
+
+              <div class="model-row blocked multimodal-warn" data-provider="openai" data-mm="1">
+                <div class="model-icon openai">A</div>
+                <div class="model-info">
+                  <div class="model-name">o3-mini · reasoning <span title="Bloqueado pelo master switch 'Apenas texto'" style="background:hsl(var(--warning-soft));color:hsl(var(--warning-soft-fg));padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:600;margin-left:4px;">⚠ caro</span></div>
+                  <div class="model-id">openai/o3-mini</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                  </div>
+                </div>
+                <div class="model-context">200K ctx</div>
+                <div class="model-price">$1.10 in<br><small>$4.40 out / 1M</small></div>
+                <span class="model-default-pill inactive" style="opacity:0.4;">—</span>
+                <div class="switch" onclick="toggleModel(this)" role="switch" aria-checked="false"></div>
+              </div>
+
+              <!-- Anthropic -->
+              <div class="model-row" data-provider="anthropic" data-mm="0">
+                <div class="model-icon anthropic">C</div>
+                <div class="model-info">
+                  <div class="model-name">Claude 3.5 Haiku</div>
+                  <div class="model-id">anthropic/claude-3.5-haiku</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                  </div>
+                </div>
+                <div class="model-context">200K ctx</div>
+                <div class="model-price">$0.80 in<br><small>$4.00 out / 1M</small></div>
+                <span class="model-default-pill inactive" onclick="setDefault(this)">Definir padrão</span>
+                <div class="switch on" onclick="toggleModel(this)" role="switch" aria-checked="true"></div>
+              </div>
+
+              <div class="model-row" data-provider="anthropic" data-mm="0">
+                <div class="model-icon anthropic">C</div>
+                <div class="model-info">
+                  <div class="model-name">Claude 3.5 Sonnet</div>
+                  <div class="model-id">anthropic/claude-3.5-sonnet</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                    <span class="cap-pill vision">visão</span>
+                  </div>
+                </div>
+                <div class="model-context">200K ctx</div>
+                <div class="model-price">$3.00 in<br><small>$15.00 out / 1M</small></div>
+                <span class="model-default-pill inactive" onclick="setDefault(this)">Definir padrão</span>
+                <div class="switch on" onclick="toggleModel(this)" role="switch" aria-checked="true"></div>
+              </div>
+
+              <div class="model-row blocked" data-provider="anthropic" data-mm="0">
+                <div class="model-icon anthropic">C</div>
+                <div class="model-info">
+                  <div class="model-name">Claude Opus 4 <span style="background:hsl(var(--danger-soft));color:hsl(var(--danger-soft-fg));padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:600;margin-left:4px;">$$$ caro</span></div>
+                  <div class="model-id">anthropic/claude-opus-4</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                    <span class="cap-pill vision">visão</span>
+                  </div>
+                </div>
+                <div class="model-context">200K ctx</div>
+                <div class="model-price">$15.00 in<br><small>$75.00 out / 1M</small></div>
+                <span class="model-default-pill inactive" style="opacity:0.4;">—</span>
+                <div class="switch" onclick="toggleModel(this)" role="switch" aria-checked="false"></div>
+              </div>
+
+              <!-- OpenRouter -->
+              <div class="model-row" data-provider="openrouter" data-mm="0">
+                <div class="model-icon meta">M</div>
+                <div class="model-info">
+                  <div class="model-name">Llama 3.3 70B Instruct</div>
+                  <div class="model-id">meta-llama/llama-3.3-70b-instruct</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                  </div>
+                </div>
+                <div class="model-context">131K ctx</div>
+                <div class="model-price">$0.13 in<br><small>$0.40 out / 1M</small></div>
+                <span class="model-default-pill inactive" onclick="setDefault(this)">Definir padrão</span>
+                <div class="switch on" onclick="toggleModel(this)" role="switch" aria-checked="true"></div>
+              </div>
+
+              <div class="model-row blocked multimodal-warn" data-provider="openrouter" data-mm="1">
+                <div class="model-icon google">G</div>
+                <div class="model-info">
+                  <div class="model-name">Gemini 2.5 Flash <span style="background:hsl(var(--warning-soft));color:hsl(var(--warning-soft-fg));padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:600;margin-left:4px;">multimodal</span></div>
+                  <div class="model-id">google/gemini-2.5-flash</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                    <span class="cap-pill vision">visão</span>
+                    <span class="cap-pill audio">áudio</span>
+                  </div>
+                </div>
+                <div class="model-context">1M ctx</div>
+                <div class="model-price">$0.075 in<br><small>$0.30 out / 1M</small></div>
+                <span class="model-default-pill inactive" style="opacity:0.4;">—</span>
+                <div class="switch" onclick="toggleModel(this)" role="switch" aria-checked="false"></div>
+              </div>
+
+              <div class="model-row" data-provider="openrouter" data-mm="0">
+                <div class="model-icon deepseek">D</div>
+                <div class="model-info">
+                  <div class="model-name">DeepSeek Chat</div>
+                  <div class="model-id">deepseek/deepseek-chat</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                  </div>
+                </div>
+                <div class="model-context">64K ctx</div>
+                <div class="model-price">$0.14 in<br><small>$0.28 out / 1M</small></div>
+                <span class="model-default-pill inactive" onclick="setDefault(this)">Definir padrão</span>
+                <div class="switch" onclick="toggleModel(this)" role="switch" aria-checked="false"></div>
+              </div>
+
+              <div class="model-row blocked" data-provider="openrouter" data-mm="0">
+                <div class="model-icon mistral">M</div>
+                <div class="model-info">
+                  <div class="model-name">Mistral Large</div>
+                  <div class="model-id">mistralai/mistral-large</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                  </div>
+                </div>
+                <div class="model-context">128K ctx</div>
+                <div class="model-price">$2.00 in<br><small>$6.00 out / 1M</small></div>
+                <span class="model-default-pill inactive" style="opacity:0.4;">—</span>
+                <div class="switch" onclick="toggleModel(this)" role="switch" aria-checked="false"></div>
+              </div>
+
+              <div class="model-row blocked multimodal-warn" data-provider="openrouter" data-mm="1">
+                <div class="model-icon google">G</div>
+                <div class="model-info">
+                  <div class="model-name">Gemini 2.5 Pro <span style="background:hsl(var(--warning-soft));color:hsl(var(--warning-soft-fg));padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:600;margin-left:4px;">multimodal</span></div>
+                  <div class="model-id">google/gemini-2.5-pro</div>
+                  <div class="model-caps">
+                    <span class="cap-pill text">texto</span>
+                    <span class="cap-pill vision">visão</span>
+                  </div>
+                </div>
+                <div class="model-context">1M ctx</div>
+                <div class="model-price">$1.25 in<br><small>$5.00 out / 1M</small></div>
+                <span class="model-default-pill inactive" style="opacity:0.4;">—</span>
+                <div class="switch" onclick="toggleModel(this)" role="switch" aria-checked="false"></div>
+              </div>
+
+              <!-- Custom model add -->
+              <div class="custom-model-add">
+                <input type="text" placeholder="Adicionar modelo OpenRouter (ex: deepseek/deepseek-r1)">
+                <button class="btn btn-outline btn-sm" onclick="showToast('Modelo verificado e adicionado')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Adicionar
+                </button>
+              </div>
+            </div>
+
+            <div class="field-hint" style="margin-top: 12px;">
+              💡 O usuário verá apenas os modelos <strong>permitidos</strong> no seletor do chat. O modelo marcado como <strong>padrão</strong> é usado quando ele não seleciona nenhum.
+            </div>
+          </div>
+        </div>
+
+        <!-- Limites de uso -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Limites por mensagem</div>
+              <div class="card-desc">Controla o tamanho máximo da resposta e contexto.</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="limit-control">
+              <div class="limit-control-head">
+                <span class="label">Tokens máximos por resposta</span>
+                <span class="value" id="val-max-tokens">2.048</span>
+              </div>
+              <input type="range" min="512" max="8192" step="256" value="2048" oninput="document.getElementById('val-max-tokens').textContent = parseInt(this.value).toLocaleString('pt-BR')">
+              <div class="field-hint">Quanto menor, mais barato. 2K cobre 95% das respostas operacionais.</div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="limit-control">
+              <div class="limit-control-head">
+                <span class="label">Histórico enviado por chamada</span>
+                <span class="value" id="val-hist">10 msgs</span>
+              </div>
+              <input type="range" min="2" max="30" step="1" value="10" oninput="document.getElementById('val-hist').textContent = this.value + ' msgs'">
+              <div class="field-hint">Quanto mais histórico, mais coerente — mas mais caro.</div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="limit-control">
+              <div class="limit-control-head">
+                <span class="label">Temperatura</span>
+                <span class="value" id="val-temp">0.7</span>
+              </div>
+              <input type="range" min="0" max="1.5" step="0.1" value="0.7" oninput="document.getElementById('val-temp').textContent = parseFloat(this.value).toFixed(1)">
+              <div class="field-hint">0 = determinístico · 1+ = mais criativo. Para CRM, 0.5-0.8.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save bar -->
+        <div class="save-bar">
+          <div class="save-bar-info">
+            <strong>5 modelos permitidos</strong> · 1 padrão · <strong>2 alterações não salvas</strong>
+          </div>
+          <button class="btn btn-ghost" onclick="showToast('Alterações descartadas')">Descartar</button>
+          <button class="btn btn-primary" onclick="showToast('✓ Configuração salva', 'success')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Salvar configuração
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ===== Coluna direita — Preview ===== -->
+      <aside class="preview-panel">
+        <div class="preview-panel-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <h3>O que o usuário vê</h3>
+        </div>
+        <div class="preview-panel-body">
+
+          <div class="preview-chat">
+            <div class="preview-chat-header">
+              <div class="preview-chat-avatar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+              </div>
+              <div class="preview-chat-info">
+                <div class="n">Atendente Institucional</div>
+                <div class="m">5 modelos disponíveis</div>
+              </div>
+            </div>
+
+            <!-- Seletor de modelo (dropdown aberto) -->
+            <div class="model-selector-preview">
+              <div class="left">
+                <span class="label-tag">Modelo</span>
+                <span class="current">GPT-4o mini</span>
+              </div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+
+            <div class="model-dropdown-preview">
+              <div class="dropdown-item selected">
+                <span class="dot"></span>
+                GPT-4o mini
+                <span class="cost">★ padrão</span>
+              </div>
+              <div class="dropdown-item">
+                <span class="dot"></span>
+                GPT-4o
+                <span class="cost">$$ texto+visão</span>
+              </div>
+              <div class="dropdown-item">
+                <span class="dot"></span>
+                Claude 3.5 Haiku
+                <span class="cost">$ rápido</span>
+              </div>
+              <div class="dropdown-item">
+                <span class="dot"></span>
+                Claude 3.5 Sonnet
+                <span class="cost">$$$ premium</span>
+              </div>
+              <div class="dropdown-item">
+                <span class="dot"></span>
+                Llama 3.3 70B
+                <span class="cost">$ open</span>
+              </div>
+            </div>
+
+            <div class="preview-input-fake">
+              Pergunte ao agente...
+              <div class="preview-send-fake">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div class="summary-card">
+              <div class="val">5</div>
+              <div class="label">Permitidos</div>
+            </div>
+            <div class="summary-card">
+              <div class="val">6</div>
+              <div class="label">Bloqueados</div>
+            </div>
+            <div class="summary-card">
+              <div class="val">0</div>
+              <div class="label">Multimodais</div>
+            </div>
+            <div class="summary-card">
+              <div class="val">$0.15</div>
+              <div class="label">Menor preço/M</div>
+            </div>
+          </div>
+
+          <div class="sep" style="margin-top: 16px;"></div>
+
+          <div style="font-family: 'Cinzel', serif; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: hsl(var(--muted-foreground)); margin-bottom: 8px;">
+            Estimativa mensal
+          </div>
+          <div style="background: hsl(var(--success-soft)); border-radius: 10px; padding: 12px;">
+            <div style="font-family: 'Space Grotesk'; font-size: 20px; font-weight: 700; color: hsl(var(--success-soft-fg));">
+              ~ R$ 38 / mês
+            </div>
+            <div style="font-size: 11px; color: hsl(var(--success-soft-fg)); margin-top: 2px;">
+              5 usuários · 30 sessões/dia · GPT-4o mini default
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">toast</div>
+
+<script>
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function toggleRole(el) {
+    el.classList.toggle('selected');
+  }
+
+  function toggleTextOnly(el) {
+    el.classList.toggle('on');
+    const isOn = el.classList.contains('on');
+    document.querySelectorAll('.model-row').forEach(row => {
+      const mm = row.dataset.mm === '1';
+      if (isOn && mm) {
+        // bloqueia multimodal
+        row.classList.add('blocked');
+        const sw = row.querySelector('.switch');
+        sw.classList.remove('on');
+        sw.setAttribute('aria-checked', 'false');
+      }
+    });
+    showToast(isOn ? '✓ Multimodais bloqueados' : '⚠ Multimodais agora podem ser ativados', isOn ? 'success' : 'warn');
+  }
+
+  function toggleModel(el) {
+    el.classList.toggle('on');
+    const row = el.closest('.model-row');
+    row.classList.toggle('blocked');
+    const isOn = el.classList.contains('on');
+    el.setAttribute('aria-checked', isOn);
+    showToast(isOn ? '✓ Modelo permitido' : '✕ Modelo bloqueado');
+  }
+
+  function setDefault(el) {
+    if (el.classList.contains('inactive')) {
+      // Marca esse como padrão e desmarca os outros
+      document.querySelectorAll('.model-default-pill').forEach(p => {
+        p.classList.remove('active');
+        p.classList.add('inactive');
+        if (p.textContent.trim() !== '—') p.textContent = 'Definir padrão';
+      });
+      el.classList.remove('inactive');
+      el.classList.add('active');
+      el.textContent = '✓ Padrão';
+      showToast('★ Modelo padrão atualizado', 'success');
+    }
+  }
+
+  function filterProvider(btn, provider) {
+    document.querySelectorAll('.provider-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.model-row').forEach(row => {
+      if (provider === 'all' || row.dataset.provider === provider) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  function filterModels(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.model-row').forEach(row => {
+      const name = row.querySelector('.model-name').textContent.toLowerCase();
+      const id = row.querySelector('.model-id').textContent.toLowerCase();
+      row.style.display = (name.includes(q) || id.includes(q)) ? '' : 'none';
+    });
+  }
+</script>
+
+</body>
+</html>

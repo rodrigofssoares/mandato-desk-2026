@@ -1,0 +1,69 @@
+{
+  "results": [
+    {
+      "ct": "CT03-lista-com-dados",
+      "status": "PASS",
+      "notes": "11 alertas dispensados com botão Restaurar"
+    },
+    {
+      "ct": "CT03-botao-restaurar-todos-visivel",
+      "status": "PASS",
+      "notes": "\"Restaurar todos\" visível"
+    },
+    {
+      "ct": "CT03-label-formatado",
+      "status": "PASS",
+      "notes": "Labels: [\"Contato parado no funil — Parado há 17 dias no funil\",\"Contato parado no funil — Parado há 17 dias no funil\",\"Contato parado no funil — Parado há 17 dias no funil\"]"
+    },
+    {
+      "ct": "CT03-data-ptbr",
+      "status": "WARN",
+      "notes": "Datas: "
+    },
+    {
+      "ct": "CT03-toast",
+      "status": "PASS",
+      "notes": "Toast: \"Alerta restaurado\""
+    },
+    {
+      "ct": "CT03-item-removido",
+      "status": "PASS",
+      "notes": "11 → 10"
+    },
+    {
+      "ct": "CT04-botao-restaurar-todos",
+      "status": "PASS",
+      "notes": "Presente"
+    },
+    {
+      "ct": "CT04-dialog",
+      "status": "PASS",
+      "notes": "AlertDialog abriu"
+    },
+    {
+      "ct": "CT04-dialog-menciona-N",
+      "status": "PASS",
+      "notes": "Número: true"
+    },
+    {
+      "ct": "CT04-dialog-texto-restaurar",
+      "status": "PASS",
+      "notes": "Menciona \"restaurar\""
+    },
+    {
+      "ct": "CT04-lista-vazia",
+      "status": "PASS",
+      "notes": "Vazio exibido"
+    },
+    {
+      "ct": "CT04-restaurar-todos-oculto",
+      "status": "PASS",
+      "notes": "Corretamente oculto"
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "warned": 1
+  }
+}

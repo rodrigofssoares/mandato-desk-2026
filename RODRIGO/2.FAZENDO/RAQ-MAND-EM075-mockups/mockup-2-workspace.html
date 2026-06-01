@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente IA — Layout 2: Workspace Triplo (favoritos sempre à mão)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: 36 50% 96%;
+    --foreground: 353 35% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 353 35% 13%;
+    --primary: 351 61% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 35% 90%;
+    --muted: 36 35% 90%;
+    --muted-foreground: 354 12% 43%;
+    --accent: 40 62% 55%;
+    --accent-foreground: 353 35% 13%;
+    --destructive: 4 65% 45%;
+    --border: 36 35% 84%;
+    --input: 36 35% 84%;
+    --ring: 351 61% 30%;
+    --radius: 0.875rem;
+
+    --success: 142 71% 45%;
+    --success-soft: 142 76% 95%;
+    --warning: 38 92% 50%;
+    --warning-soft: 48 96% 89%;
+    --warning-soft-fg: 26 83% 30%;
+    --danger: 0 73% 51%;
+
+    --sidebar-bg: 40 47% 98%;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    height: 100dvh;
+    overflow: hidden;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+
+  /* ===== Grid de 3 colunas ===== */
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr 320px;
+    height: 100dvh;
+  }
+  @media (max-width: 1100px) {
+    .app { grid-template-columns: 220px 1fr; }
+    .favorites-panel { display: none; }
+    .favorites-panel.mobile-open { display: flex; position: fixed; right: 0; top: 0; bottom: 0; width: 320px; z-index: 25; box-shadow: -10px 0 30px rgba(0,0,0,0.1); }
+  }
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .history-panel { position: fixed; left: -100%; top: 0; bottom: 0; width: 80vw; z-index: 25; transition: left 0.22s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+    .history-panel.mobile-open { left: 0; }
+    .favorites-panel.mobile-open { width: 88vw; }
+  }
+
+  /* ===== Coluna 1: histórico ===== */
+  .history-panel {
+    background: hsl(var(--sidebar-bg));
+    border-right: 1px solid hsl(var(--border));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    flex-shrink: 0;
+  }
+  .panel-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: hsl(var(--muted-foreground));
+  }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    border-radius: 10px; cursor: pointer; border: none;
+    padding: 8px 12px;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  .btn-primary:hover { background: hsl(var(--primary) / 0.9); }
+  .btn-ghost {
+    background: transparent;
+    color: hsl(var(--foreground));
+    padding: 6px 10px;
+  }
+  .btn-ghost:hover { background: hsl(var(--muted)); }
+  .btn-icon {
+    padding: 6px; width: 32px; height: 32px;
+  }
+
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .history-list::-webkit-scrollbar { width: 5px; }
+  .history-list::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
+
+  .section-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: hsl(var(--muted-foreground));
+    padding: 12px 10px 4px 10px;
+  }
+
+  .session-item {
+    display: flex; align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin-bottom: 1px;
+  }
+  .session-item:hover { background: hsl(var(--muted)); }
+  .session-item.active {
+    background: hsl(var(--primary) / 0.08);
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 7px;
+  }
+  .session-item-icon {
+    width: 24px; height: 24px;
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: hsl(var(--primary));
+    flex-shrink: 0;
+  }
+  .session-item-title {
+    font-size: 12.5px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ===== Coluna 2: chat ===== */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    background: hsl(var(--card));
+    overflow: hidden;
+  }
+  .chat-header {
+    height: 60px;
+    border-bottom: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .mobile-toggle, .fav-toggle {
+    display: none;
+    background: transparent; border: none; cursor: pointer; padding: 8px;
+    color: hsl(var(--foreground));
+    border-radius: 8px;
+  }
+  .mobile-toggle:hover, .fav-toggle:hover { background: hsl(var(--muted)); }
+  @media (max-width: 768px) { .mobile-toggle { display: inline-flex; } }
+  @media (max-width: 1100px) { .fav-toggle { display: inline-flex; } }
+
+  .chat-header-info { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+  .chat-header-info .name { font-size: 14.5px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
+  .chat-header-info .meta { font-size: 11.5px; color: hsl(var(--muted-foreground)); }
+
+  .lgpd-warning {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px;
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-soft-fg));
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  @media (max-width: 640px) { .lgpd-warning span:not(.icon) { display: none; } }
+
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    scroll-behavior: smooth;
+  }
+  .messages-area::-webkit-scrollbar { width: 7px; }
+  .messages-area::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.22); border-radius: 4px; }
+
+  .message {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+    animation: fadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px; font-weight: 600;
+  }
+  .message.user .message-avatar {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  .message.assistant .message-avatar {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .message-content { flex: 1; min-width: 0; }
+  .message-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .message-author { font-size: 12.5px; font-weight: 600; }
+  .message-author.assistant { color: hsl(var(--primary)); font-family: 'Space Grotesk', sans-serif; }
+  .message-time { font-size: 11px; color: hsl(var(--muted-foreground)); }
+
+  .message-body {
+    font-size: 14px;
+    line-height: 1.6;
+    color: hsl(var(--foreground));
+  }
+  .message-body p { margin-bottom: 8px; }
+  .message-body p:last-child { margin-bottom: 0; }
+  .message-body strong { font-weight: 600; }
+
+  .message-actions {
+    display: flex; gap: 4px;
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+  .message:hover .message-actions { opacity: 1; }
+  .message-actions button {
+    background: transparent; border: 1px solid transparent;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 7px;
+    color: hsl(var(--muted-foreground));
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .message-actions button:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+  .message-actions button.favorited {
+    background: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent-foreground));
+    border-color: hsl(var(--accent) / 0.4);
+  }
+
+  /* Draggable handle quando favoritado */
+  .message[draggable="true"] {
+    cursor: grab;
+  }
+  .message[draggable="true"]:active { cursor: grabbing; }
+
+  /* Typing */
+  .typing { display: flex; gap: 4px; align-items: center; padding: 8px 0; }
+  .typing-dot {
+    width: 7px; height: 7px;
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Input */
+  .input-area {
+    border-top: 1px solid hsl(var(--border));
+    padding: 14px 20px 16px;
+    flex-shrink: 0;
+  }
+  .input-wrap {
+    display: flex; align-items: flex-end; gap: 6px;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    padding: 6px 6px 6px 12px;
+    transition: all 0.18s ease;
+  }
+  .input-wrap:focus-within {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.12);
+  }
+  .input-textarea {
+    flex: 1; border: none; outline: none; background: transparent; resize: none;
+    font-family: inherit; font-size: 14px;
+    color: hsl(var(--foreground));
+    padding: 6px 0;
+    max-height: 140px; min-height: 24px;
+    line-height: 1.5;
+  }
+  .input-textarea::placeholder { color: hsl(var(--muted-foreground)); }
+  .input-actions { display: flex; gap: 4px; padding-bottom: 2px; }
+  .attach-btn, .send-btn {
+    background: transparent; border: none; cursor: pointer;
+    padding: 7px; width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .attach-btn { color: hsl(var(--muted-foreground)); }
+  .attach-btn:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .send-btn {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  .send-btn:hover { background: hsl(var(--primary) / 0.9); }
+
+  .input-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px;
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ===== Coluna 3: favoritos sempre visível ===== */
+  .favorites-panel {
+    background: hsl(var(--sidebar-bg));
+    border-left: 1px solid hsl(var(--border));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .fav-search {
+    padding: 0 16px 12px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .fav-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9px;
+    font-family: inherit; font-size: 12.5px;
+    background: hsl(var(--card));
+  }
+  .fav-search input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+
+  .fav-counter {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px;
+    background: hsl(var(--accent) / 0.1);
+    border-bottom: 1px solid hsl(var(--border));
+    font-size: 11.5px;
+    font-weight: 500;
+    color: hsl(var(--accent-foreground));
+  }
+  .fav-counter .count strong { font-weight: 700; color: hsl(var(--accent-foreground)); }
+
+  .fav-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+  .fav-list::-webkit-scrollbar { width: 5px; }
+  .fav-list::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
+
+  .fav-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 11px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    position: relative;
+    transition: all 0.18s ease;
+  }
+  .fav-card:hover {
+    border-color: hsl(var(--accent) / 0.5);
+    box-shadow: 0 2px 8px hsl(var(--accent) / 0.1);
+  }
+  .fav-card.drag-over {
+    border-color: hsl(var(--accent));
+    background: hsl(var(--accent) / 0.08);
+    transform: scale(1.01);
+  }
+  .fav-card-text {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: hsl(var(--foreground));
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    margin-bottom: 6px;
+  }
+  .fav-card-note {
+    font-size: 11px;
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--accent) / 0.08);
+    padding: 4px 8px;
+    border-radius: 5px;
+    border-left: 2px solid hsl(var(--accent));
+    margin: 6px 0;
+  }
+  .fav-card-meta {
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    margin-top: 6px;
+  }
+  .fav-card-actions {
+    display: flex; gap: 3px;
+    margin-top: 8px;
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 6px;
+  }
+  .fav-card-actions button {
+    background: transparent; border: none; cursor: pointer;
+    padding: 3px 6px;
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+    font-family: inherit;
+    border-radius: 5px;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .fav-card-actions button:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .fav-card-actions button.danger:hover { color: hsl(var(--destructive)); }
+
+  .drop-zone {
+    border: 2px dashed hsl(var(--accent) / 0.3);
+    border-radius: 11px;
+    padding: 16px;
+    text-align: center;
+    color: hsl(var(--muted-foreground));
+    font-size: 11.5px;
+    margin: 8px 0;
+    transition: all 0.18s ease;
+  }
+  .drop-zone.active {
+    border-color: hsl(var(--accent));
+    background: hsl(var(--accent) / 0.06);
+    color: hsl(var(--accent-foreground));
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 12px 18px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* Backdrop mobile */
+  .backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 20; }
+  @media (max-width: 768px) { .backdrop.show { display: block; } }
+  @media (max-width: 1100px) { .backdrop.fav.show { display: block; } }
+
+  /* hint badge no card draggable */
+  .drag-hint {
+    position: absolute;
+    top: 6px; right: 6px;
+    font-size: 9px;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--background));
+    padding: 1px 5px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .message:hover .drag-hint { opacity: 0.6; }
+
+  kbd {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .empty-fav {
+    text-align: center;
+    padding: 32px 16px;
+    color: hsl(var(--muted-foreground));
+    font-size: 12px;
+  }
+  .empty-fav svg { color: hsl(var(--accent) / 0.4); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== COLUNA 1: HISTÓRICO ===== -->
+  <aside class="history-panel" id="history-panel">
+    <div class="panel-header">
+      <h2>Conversas</h2>
+      <button class="btn btn-primary btn-icon" onclick="newSession()" title="Nova conversa" aria-label="Nova conversa">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="history-list">
+      <div class="section-label">Hoje</div>
+
+      <div class="session-item active" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Asfalto para rua dele</div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Ofício para Secretaria</div>
+      </div>
+
+      <div class="section-label">Ontem</div>
+
+      <div class="session-item" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Visita de campo no bairro</div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Classificar demanda jurídica</div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Reclamação de transporte</div>
+      </div>
+
+      <div class="section-label">Semana passada</div>
+
+      <div class="session-item" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Checklist evento no bairro</div>
+      </div>
+
+      <div class="session-item" onclick="loadSession(this)">
+        <div class="session-item-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="session-item-title">Resposta a denúncia anônima</div>
+      </div>
+    </div>
+
+    <div style="padding: 12px 16px; border-top: 1px solid hsl(var(--border)); font-size: 10.5px; color: hsl(var(--muted-foreground)); line-height: 1.4;">
+      Histórico expira após 30 dias.
+    </div>
+  </aside>
+
+  <div class="backdrop" id="backdrop-hist" onclick="closeMobileHist()"></div>
+
+  <!-- ===== COLUNA 2: CHAT ===== -->
+  <main class="chat-panel">
+    <header class="chat-header">
+      <button class="mobile-toggle" onclick="openMobileHist()" aria-label="Abrir conversas">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <div style="display:flex; align-items: center; gap: 10px;">
+        <div class="message-avatar" style="width: 34px; height: 34px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        </div>
+        <div class="chat-header-info">
+          <span class="name">Atendente do Gabinete</span>
+          <span class="meta">claude-3.5-sonnet · ativo</span>
+        </div>
+      </div>
+
+      <div style="flex: 1;"></div>
+
+      <div class="lgpd-warning" title="Sem dados pessoais (CPF, nome, telefone)">
+        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>LGPD</span>
+      </div>
+
+      <button class="fav-toggle" onclick="openMobileFav()" aria-label="Abrir favoritos">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      </button>
+    </header>
+
+    <div class="messages-area" id="messages-area">
+
+      <article class="message user">
+        <div class="message-avatar">RS</div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author">Você</span>
+            <span class="message-time">14:32</span>
+          </div>
+          <div class="message-body">
+            <p>Um eleitor mandou áudio no WhatsApp pedindo asfaltamento da rua dele. Como respondo?</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="message assistant" draggable="true" ondragstart="handleDragStart(event, this)" ondragend="handleDragEnd(event)">
+        <span class="drag-hint">arraste →</span>
+        <div class="message-avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        </div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author assistant">Atendente</span>
+            <span class="message-time">14:32</span>
+          </div>
+          <div class="message-body">
+            <p>Boa pergunta. Fluxo padrão do gabinete pra pedido de obra pública:</p>
+            <p><strong>1.</strong> Confirme recebimento e registre demanda com tag <em>obra-asfalto</em>.</p>
+            <p><strong>2.</strong> Responda algo como:</p>
+            <p style="background: hsl(var(--muted)); padding: 10px 12px; border-radius: 9px; border-left: 3px solid hsl(var(--accent));"><em>"Olá! Sua solicitação foi registrada com protocolo XXXX. Vou encaminhar para a Secretaria de Obras para avaliação técnica. Te aviso assim que tiver retorno."</em></p>
+            <p><strong>3.</strong> Crie demanda no funil Obras Públicas, prioridade média.</p>
+            <p><strong>4.</strong> Aguarde até 15 dias úteis para retorno.</p>
+          </div>
+          <div class="message-actions">
+            <button onclick="favoriteFromMessage(this)" aria-label="Favoritar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              Favoritar
+            </button>
+            <button onclick="copyMessage(this)" aria-label="Copiar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar
+            </button>
+            <button onclick="regenerateMessage(this)" aria-label="Regenerar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+              Regenerar
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <article class="message user">
+        <div class="message-avatar">RS</div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author">Você</span>
+            <span class="message-time">14:34</span>
+          </div>
+          <div class="message-body">
+            <p>E se ele já tiver mandado há 3 meses e nada foi feito?</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="message assistant" draggable="true" ondragstart="handleDragStart(event, this)" ondragend="handleDragEnd(event)">
+        <span class="drag-hint">arraste →</span>
+        <div class="message-avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        </div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author assistant">Atendente</span>
+            <span class="message-time">14:35</span>
+          </div>
+          <div class="message-body">
+            <p>Nesse caso, acolha sem prometer:</p>
+            <p style="background: hsl(var(--muted)); padding: 10px 12px; border-radius: 9px; border-left: 3px solid hsl(var(--accent));"><em>"Entendo a frustração. Vou puxar o protocolo agora e checar onde parou. Te retorno hoje com status."</em></p>
+            <p>Depois <strong>busque o protocolo antigo no CRM</strong> e, se realmente parou, escale como prioridade alta.</p>
+          </div>
+          <div class="message-actions">
+            <button onclick="favoriteFromMessage(this)" aria-label="Favoritar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              Favoritar
+            </button>
+            <button onclick="copyMessage(this)" aria-label="Copiar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar
+            </button>
+            <button onclick="regenerateMessage(this)" aria-label="Regenerar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+              Regenerar
+            </button>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea
+          id="input"
+          class="input-textarea"
+          placeholder="Pergunte ao agente..."
+          rows="1"
+          aria-label="Mensagem"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"></textarea>
+        <div class="input-actions">
+          <button class="attach-btn" title="Anexar (em breve)" aria-label="Anexar" disabled style="opacity: 0.4;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button class="send-btn" onclick="sendMessage()" aria-label="Enviar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="input-footer">
+        <span>💡 Arraste respostas para o painel direito para favoritar</span>
+        <span><kbd>Enter</kbd> envia · <kbd>Shift+Enter</kbd> quebra linha</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== COLUNA 3: FAVORITOS SEMPRE VISÍVEL ===== -->
+  <aside class="favorites-panel" id="fav-panel"
+    ondragover="handleDragOver(event)"
+    ondragleave="handleDragLeave(event)"
+    ondrop="handleDrop(event)">
+    <div class="panel-header">
+      <h2>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: hsl(var(--accent)); vertical-align: middle; margin-right: 4px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Favoritas
+      </h2>
+      <button class="btn btn-ghost btn-icon" title="Filtros" aria-label="Filtrar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      </button>
+    </div>
+
+    <div class="fav-counter">
+      <span class="count"><strong id="fav-count">14</strong> / 500 favoritas</span>
+      <span style="font-size: 10.5px; color: hsl(var(--muted-foreground));">não expiram</span>
+    </div>
+
+    <div class="fav-search">
+      <input type="search" placeholder="Buscar..." aria-label="Buscar favoritas">
+    </div>
+
+    <div class="fav-list" id="fav-list">
+
+      <div class="drop-zone" id="drop-zone">
+        ✨ Arraste respostas aqui pra favoritar
+      </div>
+
+      <div class="fav-card">
+        <div class="fav-card-text">
+          O fluxo padrão do gabinete para pedidos de obra pública é: confirmar recebimento, registrar demanda no CRM com tag "obra-asfalto", responder com protocolo e encaminhar para Secretaria...
+        </div>
+        <div class="fav-card-note">
+          📝 Para pedido novo. Adaptar nome da rua.
+        </div>
+        <div class="fav-card-meta">18/05 · Asfalto para rua dele</div>
+        <div class="fav-card-actions">
+          <button onclick="showToast('Copiado!')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Nota</button>
+          <button class="danger" onclick="removeFavorite(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        </div>
+      </div>
+
+      <div class="fav-card">
+        <div class="fav-card-text">
+          Para reclamações de transporte público, identifique linha + horário + descrição. Se for empresa concessionária, o caminho é abrir denúncia na BHTrans...
+        </div>
+        <div class="fav-card-meta">14/05 · Reclamação de transporte</div>
+        <div class="fav-card-actions">
+          <button onclick="showToast('Copiado!')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Nota</button>
+          <button class="danger" onclick="removeFavorite(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        </div>
+      </div>
+
+      <div class="fav-card">
+        <div class="fav-card-text">
+          Modelo de ofício para Secretaria: cabeçalho institucional, protocolo, exposição em até 3 parágrafos, fundamentação legal (se aplicável), prazo de retorno 15 dias...
+        </div>
+        <div class="fav-card-note">
+          📝 Salvar como template no Drive.
+        </div>
+        <div class="fav-card-meta">10/05 · Ofício para Secretaria</div>
+        <div class="fav-card-actions">
+          <button onclick="showToast('Copiado!')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Nota</button>
+          <button class="danger" onclick="removeFavorite(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        </div>
+      </div>
+
+      <div class="fav-card">
+        <div class="fav-card-text">
+          Checklist para evento no bairro: alinhar segurança 5 dias antes, confirmar mobilização local (lideranças + carros de som), prever atendimento jurídico, kit de imprensa...
+        </div>
+        <div class="fav-card-meta">12/05 · Checklist evento</div>
+        <div class="fav-card-actions">
+          <button onclick="showToast('Copiado!')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+          <button><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Nota</button>
+          <button class="danger" onclick="removeFavorite(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <div class="backdrop fav" id="backdrop-fav" onclick="closeMobileFav()"></div>
+
+</div>
+
+<div class="toast" id="toast">toast</div>
+
+<script>
+  const mockResponses = [
+    "Boa pergunta. Para essa situação:\n\n**1.** Verifique se o eleitor já é contato cadastrado.\n**2.** Confirme o pedido por escrito.\n**3.** Registre no funil correspondente.\n**4.** Dê prazo realista — nunca prometa o que não está confirmado.",
+    "Entendo. O caminho:\n\nEscalonar pra chefia se urgente. Senão, fluxo padrão: registrar protocolo, encaminhar formalmente, prazo 5-15 dias úteis.",
+    "Cuidado — caso pode escalar. Sugiro:\n\n• Acolha sem prometer\n• Documente no CRM\n• Avise o proprietário antes de responder\n• Linguagem formal e empática"
+  ];
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const area = document.getElementById('messages-area');
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    area.insertAdjacentHTML('beforeend', `
+      <article class="message user">
+        <div class="message-avatar">RS</div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author">Você</span>
+            <span class="message-time">${timeStr}</span>
+          </div>
+          <div class="message-body"><p>${escapeHtml(text)}</p></div>
+        </div>
+      </article>
+    `);
+
+    input.value = '';
+    autoResize(input);
+
+    const typingId = 'typing-' + Date.now();
+    area.insertAdjacentHTML('beforeend', `
+      <article class="message assistant" id="${typingId}">
+        <div class="message-avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        </div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-author assistant">Atendente</span>
+            <span class="message-time">digitando...</span>
+          </div>
+          <div class="message-body">
+            <div class="typing"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+          </div>
+        </div>
+      </article>
+    `);
+    scrollToBottom();
+
+    setTimeout(() => {
+      const t = document.getElementById(typingId);
+      const r = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+      t.outerHTML = `
+        <article class="message assistant" draggable="true" ondragstart="handleDragStart(event, this)" ondragend="handleDragEnd(event)">
+          <span class="drag-hint">arraste →</span>
+          <div class="message-avatar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+          </div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author assistant">Atendente</span>
+              <span class="message-time">${timeStr}</span>
+            </div>
+            <div class="message-body">${formatResponse(r)}</div>
+            <div class="message-actions">
+              <button onclick="favoriteFromMessage(this)" aria-label="Favoritar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                Favoritar
+              </button>
+              <button onclick="copyMessage(this)" aria-label="Copiar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copiar
+              </button>
+              <button onclick="regenerateMessage(this)" aria-label="Regenerar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                Regenerar
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+      scrollToBottom();
+    }, 1400);
+  }
+
+  function formatResponse(text) {
+    return text.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('');
+  }
+  function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function scrollToBottom() { const a = document.getElementById('messages-area'); a.scrollTop = a.scrollHeight; }
+
+  // ===== Drag & drop pra favoritar =====
+  let draggedMessage = null;
+
+  function handleDragStart(e, el) {
+    draggedMessage = el;
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', el.querySelector('.message-body').innerText);
+    document.getElementById('drop-zone').classList.add('active');
+  }
+  function handleDragEnd() {
+    draggedMessage = null;
+    document.getElementById('drop-zone').classList.remove('active');
+    document.getElementById('fav-panel').classList.remove('drag-over');
+  }
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    document.getElementById('drop-zone').classList.add('active');
+  }
+  function handleDragLeave(e) {
+    if (e.target.id === 'fav-panel' || e.target.id === 'drop-zone') {
+      document.getElementById('drop-zone').classList.remove('active');
+    }
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    if (!draggedMessage) return;
+    const text = draggedMessage.querySelector('.message-body').innerText;
+    addFavorite(text, 'arrastado da conversa atual');
+    document.getElementById('drop-zone').classList.remove('active');
+    draggedMessage = null;
+  }
+
+  function addFavorite(text, source) {
+    const list = document.getElementById('fav-list');
+    const dropZone = document.getElementById('drop-zone');
+    const now = new Date();
+    const dateStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
+
+    const card = document.createElement('div');
+    card.className = 'fav-card';
+    card.innerHTML = `
+      <div class="fav-card-text">${escapeHtml(text.substring(0, 220))}${text.length > 220 ? '...' : ''}</div>
+      <div class="fav-card-meta">${dateStr} · ${source}</div>
+      <div class="fav-card-actions">
+        <button onclick="showToast('Copiado!')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+        <button><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Nota</button>
+        <button class="danger" onclick="removeFavorite(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+    `;
+    dropZone.after(card);
+
+    // bump counter
+    const counter = document.getElementById('fav-count');
+    counter.textContent = parseInt(counter.textContent) + 1;
+    showToast('✨ Resposta favoritada');
+  }
+
+  function favoriteFromMessage(btn) {
+    const text = btn.closest('.message-content').querySelector('.message-body').innerText;
+    addFavorite(text, 'da conversa atual');
+    btn.style.color = 'hsl(var(--accent))';
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> Favoritado';
+  }
+
+  function copyMessage(btn) {
+    const text = btn.closest('.message-content').querySelector('.message-body').innerText;
+    navigator.clipboard.writeText(text).then(() => showToast('Copiado!'));
+  }
+
+  function regenerateMessage(btn) { showToast('Gerando nova resposta...'); }
+
+  function removeFavorite(btn) {
+    const card = btn.closest('.fav-card');
+    card.style.transition = 'all 0.2s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+      card.remove();
+      const counter = document.getElementById('fav-count');
+      counter.textContent = parseInt(counter.textContent) - 1;
+    }, 200);
+    showToast('Favorito removido');
+  }
+
+  function newSession() {
+    document.getElementById('messages-area').innerHTML = `
+      <div style="text-align: center; padding: 60px 20px; color: hsl(var(--muted-foreground));">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="margin-bottom: 12px; opacity: 0.5;"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 6px;">Nova conversa</h3>
+        <p style="font-size: 13px;">Comece digitando sua pergunta abaixo.</p>
+      </div>
+    `;
+    document.querySelectorAll('.session-item').forEach(s => s.classList.remove('active'));
+    showToast('Nova conversa iniciada');
+  }
+
+  function loadSession(el) {
+    document.querySelectorAll('.session-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    showToast('Conversa carregada');
+  }
+
+  function openMobileHist() { document.getElementById('history-panel').classList.add('mobile-open'); document.getElementById('backdrop-hist').classList.add('show'); }
+  function closeMobileHist() { document.getElementById('history-panel').classList.remove('mobile-open'); document.getElementById('backdrop-hist').classList.remove('show'); }
+  function openMobileFav() { document.getElementById('fav-panel').classList.add('mobile-open'); document.getElementById('backdrop-fav').classList.add('show'); }
+  function closeMobileFav() { document.getElementById('fav-panel').classList.remove('mobile-open'); document.getElementById('backdrop-fav').classList.remove('show'); }
+
+  let toastTimer;
+  function showToast(m) {
+    const t = document.getElementById('toast');
+    t.textContent = m;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  scrollToBottom();
+</script>
+
+</body>
+</html>

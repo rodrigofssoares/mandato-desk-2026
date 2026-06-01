@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "ct": "CT03-lista-dados",
+      "status": "WARN",
+      "notes": "0 items no seletor principal, 0 no alternativo"
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 0,
+    "warned": 1
+  }
+}
