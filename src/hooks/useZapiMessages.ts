@@ -142,10 +142,12 @@ export function useZapiMessagesByChat(chatId: string | null | undefined) {
     refetchInterval: chatId ? POLL_INTERVAL_MS : false,
     refetchIntervalInBackground: false,
     queryFn: async (): Promise<ZapiMessage[]> => {
+      // EM082: filtrar mensagens na lixeira (soft-delete)
       const { data, error } = await supabase
         .from('zapi_messages')
         .select('*')
         .eq('chat_id', chatId!)
+        .is('deleted_at', null)
         .order('sent_at', { ascending: true });
 
       if (error) throw error;

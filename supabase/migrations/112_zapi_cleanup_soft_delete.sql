@@ -28,6 +28,10 @@
 --     forje ou liste batches de outras contas.
 --   - deleted_by referencia auth.users (ON DELETE SET NULL): auditoria de quem apagou.
 --     Não impede purge definitivo após 7 dias (cron usa service_role).
+--   - Defeito corrigido (2026-06-04): initiated_by em zapi_cleanup_batches é NOT NULL.
+--     ON DELETE SET NULL seria contraditório — violaria NOT NULL ao deletar o usuário.
+--     Correto: ON DELETE RESTRICT (impede exclusão do usuário enquanto há batches;
+--     batches expiram em 7 dias, após isso o usuário pode ser excluído normalmente).
 --   - Cron purge-trash: deleta na ordem FK-safe (filhos antes do pai).
 --
 -- RBAC (canDelete / canBulkDelete em 'whatsapp'):
@@ -217,7 +221,11 @@ COMMENT ON INDEX public.idx_zapi_chats_active_ordered IS
 CREATE TABLE IF NOT EXISTS public.zapi_cleanup_batches (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id       UUID        NOT NULL REFERENCES public.zapi_accounts(id) ON DELETE CASCADE,
-  initiated_by     UUID        NOT NULL REFERENCES auth.users(id) ON DELETE SET NULL,
+  -- ON DELETE RESTRICT: initiated_by é NOT NULL, logo SET NULL violaria a constraint.
+  -- Se o usuário for removido do sistema, o admin deve primeiro transferir ou
+  -- arquivar os batches manualmente (ou o cron de expiração os marca como 'expired').
+  -- RESTRICT garante integridade sem surpresas silenciosas.
+  initiated_by     UUID        NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
   mode             TEXT        NOT NULL CHECK (mode IN ('period', 'all', 'chats', 'granular')),
   filters          JSONB       NOT NULL DEFAULT '{}'::jsonb,
   status           TEXT        NOT NULL DEFAULT 'pending'
@@ -238,8 +246,9 @@ COMMENT ON COLUMN public.zapi_cleanup_batches.account_id IS
   'Conta Z-API afetada pela limpeza. ON DELETE CASCADE: batch removido se conta for deletada.';
 
 COMMENT ON COLUMN public.zapi_cleanup_batches.initiated_by IS
-  'Usuário que iniciou a limpeza (auditoria). '
-  'ON DELETE SET NULL: batch permanece mesmo se usuário for removido do sistema.';
+  'Usuário que iniciou a limpeza (auditoria). NOT NULL. '
+  'ON DELETE RESTRICT: impede exclusão do usuário enquanto há batches vinculados. '
+  'Após 7 dias os batches expiram e o usuário pode ser excluído normalmente.';
 
 COMMENT ON COLUMN public.zapi_cleanup_batches.mode IS
   'Modo de limpeza: period (período), all (tudo), chats (conversas específicas), '
