@@ -109,3 +109,9 @@ Log automatico de sessoes do Claude Code neste projeto. Cada entrada eh criada a
 - **Branch**: `rodrigo/feature/RAQ-MAND-EM073-evolucao2-no-whastapp-whatsapp` · **Ultimo commit**: `ed5e8e5 fix(banco): purga do webhook_logs e throttle de crons após apagão por sobrecarga`
 - **Status**: em andamento
 - **Resumo**: (sessao encerrada sem /encerrar — sem resumo manual)
+
+## 2026-06-04 10:15 — PID 1
+- **Ultimo pedido**: "npx wrangler pages deploy dist --project-name=mandato-desk-2026 --branch=master  pr aprovado pode mergiar"
+- **Branch**: `rodrigo/feature/RAQ-MAND-EM080-controle-de-acesso-no-whatsapp-whatsapp` · **Ultimo commit**: `0c3a80c feat(whatsapp): controle de acesso por cargo e vínculo de contas [RAQ-MAND-EM080]`
+- **Status**: em andamento
+- **Resumo**: (sessao encerrada sem /encerrar — sem resumo manual)
