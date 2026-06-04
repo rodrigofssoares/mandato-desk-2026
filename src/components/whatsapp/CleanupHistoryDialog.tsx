@@ -510,7 +510,7 @@ export function CleanupHistoryDialog({
                 Confirme a limpeza
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-500">
-                <span className="font-medium">{resumo}</span> sera{modo !== 'chats' ? 'o' : ''} enviado{modo === 'chats' ? 's' : ''} para a lixeira.
+                <span className="font-medium">{resumo}</span> serão enviados para a lixeira.
                 Os dados ficam disponíveis por 7 dias e só um administrador pode recuperá-los.
               </p>
             </div>

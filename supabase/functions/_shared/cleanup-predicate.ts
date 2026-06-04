@@ -166,7 +166,7 @@ async function execAll(
   // Isso garante que só os registros deste lote específico são revertidos —
   // registros apagados por outros batches na mesma conta não são tocados.
 
-  // 1. Mensagens
+  // 1. Mensagens (tem account_id — filtro direto)
   {
     let q = admin
       .from('zapi_messages')
@@ -183,55 +183,74 @@ async function execAll(
     total += countRows(count);
   }
 
-  // 2. Notas
+  // 2-4. Notas, Etiquetas e Flags — NÃO têm account_id (criadas na mig 057 só com
+  // chat_id como FK). Precisamos resolver os chat_ids da conta primeiro e usar .in().
+  // BUG-01 FIX: antes usava .eq('account_id') nessas tabelas → PostgREST 42703.
   {
-    let q = admin
-      .from('zapi_chat_notes')
-      .update(payload, { count: 'exact' })
+    // Coleta chat_ids da conta (todos, inclusive os que serão soft-deletados a seguir,
+    // pois os filhos precisam ser apagados junto). Na restauração, filtra por
+    // deleted_batch_id via restoreChatChildren — não passa por aqui.
+    const { data: chatsData, error: chatsErr } = await admin
+      .from('zapi_chats')
+      .select('id')
       .eq('account_id', accountId);
-    if (restore) {
-      q = q.not('deleted_at', 'is', null);
-      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
-    } else {
-      q = q.is('deleted_at', null);
-    }
-    const { count, error } = await q;
-    if (error) throw new Error(`all/notes: ${error.message}`);
-    total += countRows(count);
-  }
+    if (chatsErr) throw new Error(`all/resolve_chat_ids: ${chatsErr.message}`);
 
-  // 3. Etiquetas
-  {
-    let q = admin
-      .from('zapi_chat_tags')
-      .update(payload, { count: 'exact' })
-      .eq('account_id', accountId);
-    if (restore) {
-      q = q.not('deleted_at', 'is', null);
-      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
-    } else {
-      q = q.is('deleted_at', null);
-    }
-    const { count, error } = await q;
-    if (error) throw new Error(`all/tags: ${error.message}`);
-    total += countRows(count);
-  }
+    const allChatIds = (chatsData ?? []).map((c: { id: string }) => c.id);
 
-  // 4. Flags (favoritos)
-  {
-    let q = admin
-      .from('zapi_chat_message_flags')
-      .update(payload, { count: 'exact' })
-      .eq('account_id', accountId);
-    if (restore) {
-      q = q.not('deleted_at', 'is', null);
-      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
-    } else {
-      q = q.is('deleted_at', null);
+    if (allChatIds.length > 0) {
+      // 2. Notas
+      {
+        let q = admin
+          .from('zapi_chat_notes')
+          .update(payload, { count: 'exact' })
+          .in('chat_id', allChatIds);
+        if (restore) {
+          q = q.not('deleted_at', 'is', null);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
+        } else {
+          q = q.is('deleted_at', null);
+        }
+        const { count, error } = await q;
+        if (error) throw new Error(`all/notes: ${error.message}`);
+        total += countRows(count);
+      }
+
+      // 3. Etiquetas
+      {
+        let q = admin
+          .from('zapi_chat_tags')
+          .update(payload, { count: 'exact' })
+          .in('chat_id', allChatIds);
+        if (restore) {
+          q = q.not('deleted_at', 'is', null);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
+        } else {
+          q = q.is('deleted_at', null);
+        }
+        const { count, error } = await q;
+        if (error) throw new Error(`all/tags: ${error.message}`);
+        total += countRows(count);
+      }
+
+      // 4. Flags (favoritos)
+      {
+        let q = admin
+          .from('zapi_chat_message_flags')
+          .update(payload, { count: 'exact' })
+          .in('chat_id', allChatIds);
+        if (restore) {
+          q = q.not('deleted_at', 'is', null);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
+        } else {
+          q = q.is('deleted_at', null);
+        }
+        const { count, error } = await q;
+        if (error) throw new Error(`all/flags: ${error.message}`);
+        total += countRows(count);
+      }
     }
-    const { count, error } = await q;
-    if (error) throw new Error(`all/flags: ${error.message}`);
-    total += countRows(count);
+    // allChatIds vazio = conta sem chats → pula as 3 tabelas filhas (nada a apagar)
   }
 
   // 5. Webhook log — deleted_at + deleted_batch_id (sem deleted_by — log de sistema)
@@ -524,66 +543,58 @@ async function execGranular(
         break;
       }
 
-      case 'notes': {
-        let q = admin
-          .from('zapi_chat_notes')
-          .update(payload, { count: 'exact' })
-          .eq('account_id', accountId);
-
-        if (validChatIds) q = q.in('chat_id', validChatIds);
-
-        if (restore) {
-          q = q.not('deleted_at', 'is', null);
-          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
-        } else {
-          q = q.is('deleted_at', null);
-        }
-
-        const { count, error } = await q;
-        if (error) throw new Error(`granular/notes: ${error.message}`);
-        total += countRows(count);
-        break;
-      }
-
-      case 'tags': {
-        let q = admin
-          .from('zapi_chat_tags')
-          .update(payload, { count: 'exact' })
-          .eq('account_id', accountId);
-
-        if (validChatIds) q = q.in('chat_id', validChatIds);
-
-        if (restore) {
-          q = q.not('deleted_at', 'is', null);
-          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
-        } else {
-          q = q.is('deleted_at', null);
-        }
-
-        const { count, error } = await q;
-        if (error) throw new Error(`granular/tags: ${error.message}`);
-        total += countRows(count);
-        break;
-      }
-
+      case 'notes':
+      case 'tags':
       case 'flags': {
-        let q = admin
-          .from('zapi_chat_message_flags')
-          .update(payload, { count: 'exact' })
-          .eq('account_id', accountId);
+        // BUG-01 FIX: zapi_chat_notes, zapi_chat_tags e zapi_chat_message_flags NÃO
+        // têm account_id — só chat_id. Quando validChatIds já foi resolvido (escopo
+        // de chats específicos), usamos .in('chat_id', validChatIds) direto.
+        // Quando é escopo de conta inteira (validChatIds === null), precisamos
+        // primeiro resolver os chat_ids da conta e então filtrar por .in().
+        // Nunca usar .eq('account_id') nessas 3 tabelas.
 
-        if (validChatIds) q = q.in('chat_id', validChatIds);
+        const tableMap: Record<'notes' | 'tags' | 'flags', string> = {
+          notes: 'zapi_chat_notes',
+          tags: 'zapi_chat_tags',
+          flags: 'zapi_chat_message_flags',
+        };
+        const table = tableMap[item as 'notes' | 'tags' | 'flags'];
 
-        if (restore) {
-          q = q.not('deleted_at', 'is', null);
-          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
+        let scopeChatIds: string[];
+
+        if (validChatIds !== null) {
+          // Escopo de chats específicos já validados
+          scopeChatIds = validChatIds;
         } else {
-          q = q.is('deleted_at', null);
+          // Escopo de conta inteira: resolver chat_ids via zapi_chats
+          const { data: chatsData, error: chatsErr } = await admin
+            .from('zapi_chats')
+            .select('id')
+            .eq('account_id', accountId);
+          if (chatsErr) throw new Error(`granular/${item}/resolve_chats: ${chatsErr.message}`);
+          scopeChatIds = (chatsData ?? []).map((c: { id: string }) => c.id);
         }
 
-        const { count, error } = await q;
-        if (error) throw new Error(`granular/flags: ${error.message}`);
-        total += countRows(count);
+        // Conta sem chats → nada a apagar nesta tabela
+        if (scopeChatIds.length === 0) break;
+
+        {
+          let q = admin
+            .from(table)
+            .update(payload, { count: 'exact' })
+            .in('chat_id', scopeChatIds);
+
+          if (restore) {
+            q = q.not('deleted_at', 'is', null);
+            if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
+          } else {
+            q = q.is('deleted_at', null);
+          }
+
+          const { count, error } = await q;
+          if (error) throw new Error(`granular/${item}: ${error.message}`);
+          total += countRows(count);
+        }
         break;
       }
 
