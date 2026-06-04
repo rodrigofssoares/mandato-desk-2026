@@ -7,7 +7,7 @@ import { zapiChatKeys } from '@/hooks/useZapiChats';
 
 export type CleanupMode = 'period' | 'all' | 'chats' | 'granular';
 
-export type GranularItem = 'messages' | 'notes' | 'tags' | 'flags' | 'logs';
+export type GranularItem = 'messages' | 'media' | 'notes' | 'tags' | 'flags' | 'logs';
 
 export interface CleanupFilters {
   /** Modo 'period': data de início em ISO8601 */

@@ -52,8 +52,9 @@ export function useZapiTrash() {
   const batchesQuery = useQuery<CleanupBatch[]>({
     queryKey: zapiCleanupKeys.all,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('zapi_cleanup_batches' as 'activities') // cast temporário até types.ts ser regenerado
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('zapi_cleanup_batches') // TODO: remover cast após regenerar types.ts com migration 112
         .select('*')
         .order('created_at', { ascending: false });
 

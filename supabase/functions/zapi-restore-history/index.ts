@@ -9,16 +9,24 @@
 //      Admin sempre passa.
 //   3. Valida body { batch_id } (UUID válido).
 //   4. Busca o batch. Retorna 404 se não existe, 410 se expirado, 409 se já restaurado.
-//   5. Re-executa o predicado dos filtros do batch com UPDATE deleted_at=NULL
+//   5. FIX 1 — IDOR: verifica acesso à conta do batch via can_access_zapi_account.
+//      (Restore é admin-only na prática, mas defense-in-depth garante que mesmo
+//       um proprietário com pode_deletar_em_massa=true só restaura contas acessíveis.)
+//   6. FIX 5 — TOCTOU: verifica que ainda há registros com deleted_batch_id=batch.id.
+//      Se count=0 → dados já foram hard-deletados pelo cron → 410.
+//   7. Re-executa o predicado dos filtros do batch com UPDATE deleted_at=NULL
 //      (usando cleanup-predicate.ts, flag restore=true).
-//   6. Atualiza batch.status='restored'.
-//   7. Retorna { ok, restored_count }.
+//      FIX 2: usa restore_batch_id=batch.id (determinístico, não deleted_by).
+//   8. Atualiza batch.status='restored'.
+//   9. Retorna { ok, restored_count }.
 //
 // Segurança:
 //   - Verificação de permissão server-side (admin-only por padrão — não delegável).
+//   - IDOR: can_access_zapi_account verifica acesso à conta do batch (FIX 1).
 //   - batch_id validado como UUID.
-//   - Predicado de restauração usa deleted_by=batch.initiated_by para não tocar
-//     registros apagados por outros batches/operações na mesma conta.
+//   - TOCTOU: verifica existência real dos dados antes de restaurar (FIX 5).
+//   - FIX 2: restore usa deleted_batch_id (determinístico) — não mistura batches.
+//   - Erros internos retornam mensagem genérica ao client (FIX 12).
 //   - Log de auditoria sem PII de conteúdo.
 //
 // Referência: RAQ-MAND-EM082 — T03
@@ -66,8 +74,7 @@ Deno.serve(async (req) => {
     // ── 2. Autorização: pode_deletar_em_massa em 'whatsapp' (admin-only) ─────
     //
     // Restauração de lixeira é restrita a quem tem pode_deletar_em_massa=true.
-    // Por padrão, apenas admin tem essa flag. Não é delegável via matriz de permissões
-    // (a coluna existe mas o seed mantém apenas admin=true).
+    // Por padrão, apenas admin tem essa flag.
     const isAdmin = callerRole === 'admin';
     if (!isAdmin) {
       const { data: perm, error: permErr } = await admin
@@ -136,7 +143,6 @@ Deno.serve(async (req) => {
 
     // Verificação extra de expires_at (o cron pode ter atrasado)
     if (new Date(batch.expires_at) < new Date()) {
-      // Marcar como expirado e retornar 410
       await admin
         .from('zapi_cleanup_batches')
         .update({ status: 'expired' })
@@ -144,12 +150,71 @@ Deno.serve(async (req) => {
       return jsonResponse(410, { error: 'Prazo de restauração expirado. Os dados foram removidos definitivamente.' });
     }
 
-    // ── 5. Re-executar predicado em modo restauração ─────────────────────────
+    // ── 5. FIX 1 — IDOR: verifica acesso à conta do batch ───────────────────
     //
-    // O predicado usa os filtros gravados no batch (modo + filters originais).
-    // A flag restore=true inverte o UPDATE: deleted_at=NULL / deleted_by=NULL.
-    // O parâmetro restore_initiated_by=batch.initiated_by garante que só os
-    // registros apagados por ESTA operação são restaurados — não toca registros
+    // Defense-in-depth: mesmo que o caller tenha pode_deletar_em_massa=true,
+    // ele só pode restaurar lotes de contas às quais tem acesso.
+    // Na prática é admin-only, mas previne escalada lateral se a flag for delegada.
+    if (!isAdmin) {
+      const { data: canAccess, error: accessErr } = await admin
+        .rpc('can_access_zapi_account', { _uid: callerId, _account_id: batch.account_id });
+
+      if (accessErr) {
+        console.error('zapi-restore-history: erro ao verificar acesso à conta', {
+          code: accessErr.code,
+          callerId,
+          account_id: batch.account_id,
+        });
+        return jsonResponse(500, { error: 'Erro ao verificar acesso à conta' });
+      }
+
+      if (!canAccess) {
+        console.warn('zapi-restore-history: tentativa de IDOR bloqueada', {
+          callerId,
+          callerRole,
+          batch_id,
+          account_id: batch.account_id,
+        });
+        return jsonResponse(403, { error: 'Sem acesso a esta conta WhatsApp' });
+      }
+    }
+
+    // ── 6. FIX 5 — TOCTOU: verificar que dados ainda existem no lote ─────────
+    //
+    // O cron zapi-purge-trash pode ter rodado entre o check de expires_at e agora.
+    // Verificamos se há pelo menos 1 registro com deleted_batch_id = batch.id.
+    // Se count=0, os dados já foram hard-deletados e não há o que restaurar.
+    //
+    // Verificamos em zapi_messages (tabela com mais registros por lote).
+    // Se o lote apagou apenas notes/tags/flags (granular), pode ser 0 em messages —
+    // portanto checamos em todas as 6 tabelas em paralelo.
+    const toctouChecks = await Promise.all([
+      admin.from('zapi_messages').select('id', { count: 'exact', head: true }).eq('deleted_batch_id', batch.id),
+      admin.from('zapi_chats').select('id', { count: 'exact', head: true }).eq('deleted_batch_id', batch.id),
+      admin.from('zapi_chat_notes').select('id', { count: 'exact', head: true }).eq('deleted_batch_id', batch.id),
+      admin.from('zapi_chat_tags').select('id', { count: 'exact', head: true }).eq('deleted_batch_id', batch.id),
+      admin.from('zapi_chat_message_flags').select('id', { count: 'exact', head: true }).eq('deleted_batch_id', batch.id),
+      admin.from('zapi_webhook_log').select('id', { count: 'exact', head: true }).eq('deleted_batch_id', batch.id),
+    ]);
+
+    const totalRemaining = toctouChecks.reduce((sum, r) => sum + (r.count ?? 0), 0);
+
+    if (totalRemaining === 0) {
+      // Marcar como expirado para consistência do painel
+      await admin
+        .from('zapi_cleanup_batches')
+        .update({ status: 'expired' })
+        .eq('id', batch.id);
+      return jsonResponse(410, {
+        error: 'Os dados deste lote foram permanentemente removidos. O prazo de restauração expirou.',
+      });
+    }
+
+    // ── 7. Re-executar predicado em modo restauração ─────────────────────────
+    //
+    // FIX 2: usa restore_batch_id=batch.id em vez de restore_initiated_by.
+    // O predicado filtra por deleted_batch_id = batch.id (determinístico):
+    // só os registros deste lote específico são revertidos — não toca registros
     // apagados por outros batches na mesma conta.
     let restoredCount = 0;
     try {
@@ -160,7 +225,7 @@ Deno.serve(async (req) => {
           filters: batch.filters as CleanupFilters,
           account_id: batch.account_id,
           caller_id: callerId,
-          restore_initiated_by: batch.initiated_by,
+          restore_batch_id: batch.id, // FIX 2: determinístico por batch.id
         },
         true, // restore
       );
@@ -172,10 +237,10 @@ Deno.serve(async (req) => {
         batch_id,
         error: msg,
       });
-      return jsonResponse(500, { error: `Erro ao restaurar histórico: ${msg}` });
+      return jsonResponse(500, { error: 'Erro ao restaurar histórico' }); // FIX 12: mensagem genérica
     }
 
-    // ── 6. Atualizar batch.status = 'restored' ────────────────────────────────
+    // ── 8. Atualizar batch.status = 'restored' ────────────────────────────────
     const { error: updateErr } = await admin
       .from('zapi_cleanup_batches')
       .update({ status: 'restored' })
@@ -183,14 +248,13 @@ Deno.serve(async (req) => {
 
     if (updateErr) {
       // Não é fatal — os dados já foram restaurados; só o status ficou desatualizado.
-      // O cron de expiração vai marcar 'expired' depois, mas os dados voltaram.
       console.warn('zapi-restore-history: falha ao atualizar status do batch', {
         code: updateErr.code,
         batch_id,
       });
     }
 
-    // ── 7. Retorno + log de auditoria ─────────────────────────────────────────
+    // ── 9. Retorno + log de auditoria ─────────────────────────────────────────
     console.log('zapi-restore-history: restauração concluída', {
       caller: callerEmail,
       callerId,
@@ -207,6 +271,6 @@ Deno.serve(async (req) => {
   } catch (err) {
     const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
     console.error('zapi-restore-history crash:', msg);
-    return jsonResponse(500, { error: 'Erro interno' });
+    return jsonResponse(500, { error: 'Erro interno' }); // FIX 12: nunca vaza detalhe interno
   }
 });

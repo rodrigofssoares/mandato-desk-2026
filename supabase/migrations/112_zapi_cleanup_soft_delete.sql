@@ -155,6 +155,54 @@ COMMENT ON COLUMN public.zapi_webhook_log.deleted_at IS
   'Hard-delete pelo cron zapi-purge-trash após 7 dias. '
   'Referência: RAQ-MAND-EM082.';
 
+-- ─── 2b. Coluna deleted_batch_id nas 6 tabelas (FIX 2 — restore determinístico) ──
+--
+-- Por que: o restore anterior filtrava por deleted_by = batch.initiated_by, que mistura
+-- registros de batches diferentes do mesmo usuário na mesma conta. Com deleted_batch_id
+-- o restore é scoped exatamente ao lote — elimina drift completamente.
+-- deleted_by é mantido para auditoria.
+--
+-- ON DELETE SET NULL: se o batch for deletado (cenário de rollback manual), os registros
+-- perdem o vínculo com o batch mas mantêm deleted_at (continuam ocultos até o purge-trash).
+
+ALTER TABLE public.zapi_messages
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chats
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chat_notes
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chat_tags
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chat_message_flags
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_webhook_log
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+COMMENT ON COLUMN public.zapi_messages.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. NULL = ativo ou apagado antes do EM082. '
+  'Usado pelo restore para reverter exatamente este lote (evita drift com outros batches). '
+  'Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chats.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chat_notes.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chat_tags.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chat_message_flags.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_webhook_log.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
 -- ─── 3. Partial indexes WHERE deleted_at IS NULL ──────────────────────────────
 --
 -- Partial indexes cobrem apenas registros ativos (99%+ dos acessos) — o planner
@@ -279,6 +327,18 @@ COMMENT ON COLUMN public.zapi_cleanup_batches.expires_at IS
 CREATE INDEX IF NOT EXISTS idx_zapi_cleanup_batches_account
   ON public.zapi_cleanup_batches (account_id, created_at DESC);
 
+-- FIX 4 — Race condition: garante no máximo 1 batch pending por conta
+-- (previne que duas requisições simultâneas criem dois batches pending para a mesma conta)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_zapi_cleanup_batches_unique_pending
+  ON public.zapi_cleanup_batches (account_id)
+  WHERE status = 'pending';
+
+COMMENT ON INDEX public.idx_zapi_cleanup_batches_unique_pending IS
+  'Garante que cada conta tenha no máximo 1 batch em status pending por vez. '
+  'Previne race condition de limpezas simultâneas na mesma conta. '
+  'A EF trata violação deste constraint como 409 Conflict. '
+  'Referência: RAQ-MAND-EM082.';
+
 CREATE INDEX IF NOT EXISTS idx_zapi_cleanup_batches_status_expires
   ON public.zapi_cleanup_batches (status, expires_at);
 
@@ -289,6 +349,69 @@ COMMENT ON INDEX public.idx_zapi_cleanup_batches_account IS
 COMMENT ON INDEX public.idx_zapi_cleanup_batches_status_expires IS
   'Suporta job zapi-expire-cleanup-batches (filtro status + expires_at) e '
   'query de batches pendentes no painel de lixeira. '
+  'Referência: RAQ-MAND-EM082.';
+
+-- ─── 4b. Helper can_access_zapi_account (FIX 1 — IDOR cross-account) ────────
+--
+-- Por que aqui e não na migration 111:
+--   A migration 111 criou is_zapi_privileged(_uid) para controle de acesso ao painel
+--   de abas/contas do WhatsApp. Este helper é específico para o contexto de limpeza:
+--   valida que UM usuário específico pode operar EM UMA conta específica.
+--
+-- Lógica espelhando a RLS de zapi_accounts_select (migration 111):
+--   - Privilegiados (admin/proprietário ATIVOS): acesso a TODAS as contas.
+--   - Restritos (assessor/assistente/estagiário ATIVOS): somente contas com vínculo
+--     explícito em zapi_account_users.
+--
+-- Usado pelas EFs zapi-cleanup-history e zapi-restore-history para verificar
+-- se o caller tem permissão de operar na conta informada no payload.
+-- Sem este check um usuário restrito com pode_deletar=true poderia passar
+-- qualquer account_id arbitrário e apagar dados de qualquer conta (IDOR).
+
+CREATE OR REPLACE FUNCTION public.can_access_zapi_account(
+  _uid        UUID,
+  _account_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+DECLARE
+  _role TEXT;
+  _status TEXT;
+BEGIN
+  -- Lê role e status do perfil
+  SELECT role, status_aprovacao
+    INTO _role, _status
+    FROM public.profiles
+   WHERE id = _uid;
+
+  -- Perfil inativo ou inexistente: sem acesso
+  IF _status IS DISTINCT FROM 'ATIVO' THEN
+    RETURN FALSE;
+  END IF;
+
+  -- Privilegiados: acesso irrestrito (espelho de is_zapi_privileged)
+  IF _role IN ('admin', 'proprietario') THEN
+    RETURN TRUE;
+  END IF;
+
+  -- Restritos: verifica vínculo na tabela de controle de acesso criada pelo EM080
+  RETURN EXISTS (
+    SELECT 1
+      FROM public.zapi_account_users
+     WHERE account_id = _account_id
+       AND user_id    = _uid
+  );
+END;
+$$;
+
+COMMENT ON FUNCTION public.can_access_zapi_account(UUID, UUID) IS
+  'Verifica se o usuário _uid pode operar na conta _account_id. '
+  'Privilegiados (admin/proprietário) têm acesso irrestrito. '
+  'Restritos (assessor/assistente/estagiário) precisam de vínculo em zapi_account_users. '
+  'Usado pelas EFs de limpeza/restauração para prevenir IDOR cross-account. '
   'Referência: RAQ-MAND-EM082.';
 
 -- ─── 5. RLS em zapi_cleanup_batches ──────────────────────────────────────────
@@ -660,8 +783,39 @@ BEGIN
     RAISE EXCEPTION 'FALHA: partial index idx_zapi_chats_active não criado';
   END IF;
 
+  -- Helper can_access_zapi_account
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'can_access_zapi_account'
+  ) THEN
+    RAISE EXCEPTION 'FALHA: função can_access_zapi_account não criada';
+  END IF;
+
+  -- Unique index de batch pending
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename  = 'zapi_cleanup_batches'
+      AND indexname  = 'idx_zapi_cleanup_batches_unique_pending'
+  ) THEN
+    RAISE EXCEPTION 'FALHA: unique index idx_zapi_cleanup_batches_unique_pending não criado';
+  END IF;
+
+  -- Coluna deleted_batch_id em zapi_messages
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'zapi_messages'
+      AND column_name  = 'deleted_batch_id'
+  ) THEN
+    RAISE EXCEPTION 'FALHA: coluna deleted_batch_id não adicionada em zapi_messages';
+  END IF;
+
   RAISE NOTICE 'Migration 112_zapi_cleanup_soft_delete aplicada com sucesso. '
-               '6 tabelas com deleted_at, zapi_cleanup_batches criada com RLS, '
+               '6 tabelas com deleted_at + deleted_batch_id, zapi_cleanup_batches criada '
+               'com RLS + unique index pending, helper can_access_zapi_account criado, '
                '4 cron jobs configurados (purge-trash, expire-batches, '
                'purge-messages atualizado, purge-webhook-logs atualizado).';
 END;

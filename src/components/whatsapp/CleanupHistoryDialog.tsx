@@ -43,6 +43,7 @@ const PRESETS_DIA = [
 
 const GRANULAR_ITEMS: { id: GranularItem; label: string; desc: string }[] = [
   { id: 'messages', label: 'Mensagens', desc: 'Todas as mensagens de texto e mídia.' },
+  { id: 'media', label: 'Mídias', desc: 'Apenas mídias (imagens, áudios, documentos).' },
   { id: 'notes', label: 'Anotações', desc: 'Notas internas das conversas.' },
   { id: 'tags', label: 'Etiquetas', desc: 'Etiquetas associadas às conversas.' },
   { id: 'flags', label: 'Favoritos', desc: 'Mensagens marcadas como favoritas.' },
@@ -115,13 +116,22 @@ export function CleanupHistoryDialog({
 
   // ─── Passo 2: validação ───────────────────────────────────────────────────
 
+  // FIX 8: detecta intervalo invertido para exibir feedback visual
+  const intervaloInvertido = (() => {
+    if (state.modo !== 'period' && state.modo !== 'granular') return false;
+    if (!state.startDate || !state.endDate) return false;
+    return new Date(state.endDate) < new Date(state.startDate);
+  })();
+
   const passo2Valido = (() => {
     if (!state.modo) return false;
     if (state.modo === 'all') return true;
     if (state.modo === 'period') {
-      // preset selecionado (null="Tudo", number=X dias) OU datas manuais preenchidas
+      // preset selecionado (null="Tudo", number=X dias) OU datas manuais preenchidas e válidas
       if (state.presetDays !== undefined) return true;
-      return state.startDate.length > 0 && state.endDate.length > 0;
+      if (state.startDate.length === 0 || state.endDate.length === 0) return false;
+      // FIX 8: impede avançar com intervalo invertido
+      return !intervaloInvertido;
     }
     if (state.modo === 'chats') return state.selectedChatIds.size > 0;
     if (state.modo === 'granular') return state.granularItems.size > 0;
@@ -134,16 +144,27 @@ export function CleanupHistoryDialog({
 
   // ─── Executa cleanup ─────────────────────────────────────────────────────
 
+  function buildModeAndFilters(): { mode: CleanupMode; filters: ReturnType<typeof buildFilters> } {
+    const { modo, presetDays } = state;
+
+    // FIX 7: preset "Tudo" em modo 'period' deve enviar mode='all' com filtros vazios,
+    // não mode='period' sem datas (que a EF rejeita com 400 pois start_date é obrigatório).
+    if (modo === 'period' && presetDays === null) {
+      return { mode: 'all', filters: {} };
+    }
+
+    return { mode: modo!, filters: buildFilters() };
+  }
+
   function buildFilters() {
     const { modo, presetDays, startDate, endDate, selectedChatIds, granularItems } = state;
 
     if (modo === 'all') return {};
 
     if (modo === 'period') {
-      // presetDays === null → preset "Tudo" (sem filtro de data)
+      // presetDays === null → tratado em buildModeAndFilters (não chega aqui)
       // presetDays === undefined → modo manual (datas do input)
-      if (presetDays === null) return {};
-      if (presetDays !== undefined) {
+      if (presetDays !== undefined && presetDays !== null) {
         const end = new Date();
         const start = subDays(end, presetDays);
         return { start_date: start.toISOString(), end_date: end.toISOString() };
@@ -172,13 +193,10 @@ export function CleanupHistoryDialog({
   async function handleConfirmar() {
     if (!state.modo || !confirmacaoCorreta) return;
 
-    const filters = buildFilters();
+    const { mode, filters } = buildModeAndFilters();
 
     try {
-      const result = await cleanupMutation.mutateAsync({
-        mode: state.modo,
-        filters,
-      });
+      const result = await cleanupMutation.mutateAsync({ mode, filters });
       setPartial({ step: 4, result });
     } catch {
       // toast.error já exibido pelo hook
@@ -307,7 +325,7 @@ export function CleanupHistoryDialog({
                 type="date"
                 value={state.startDate}
                 onChange={(e) => setPartial({ startDate: e.target.value, presetDays: undefined })}
-                className="h-8 text-xs"
+                className={cn('h-8 text-xs', intervaloInvertido && 'border-destructive')}
               />
             </div>
             <div className="space-y-1.5">
@@ -317,10 +335,16 @@ export function CleanupHistoryDialog({
                 type="date"
                 value={state.endDate}
                 onChange={(e) => setPartial({ endDate: e.target.value, presetDays: undefined })}
-                className="h-8 text-xs"
+                className={cn('h-8 text-xs', intervaloInvertido && 'border-destructive')}
               />
             </div>
           </div>
+          {/* FIX 8: feedback visual de intervalo invertido */}
+          {intervaloInvertido && (
+            <p className="text-xs text-destructive">
+              A data de fim não pode ser anterior à data de início.
+            </p>
+          )}
         </div>
       );
     }

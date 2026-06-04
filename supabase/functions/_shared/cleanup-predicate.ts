@@ -69,8 +69,17 @@ export interface CleanupParams {
   account_id: string;
   /** Para soft-delete: UUID do usuário que executou a limpeza. */
   caller_id: string;
-  /** Para restauração: UUID do usuário que INICIOU a limpeza original (= batch.initiated_by). */
-  restore_initiated_by?: string;
+  /**
+   * Para soft-delete: UUID do batch registrado em zapi_cleanup_batches.
+   * Gravado em deleted_batch_id para restore determinístico (FIX 2).
+   */
+  batch_id?: string;
+  /**
+   * Para restauração: UUID do batch a ser revertido (= batch.id).
+   * O restore filtra por deleted_batch_id = batch_id (determinístico).
+   * @deprecated restore_initiated_by — substituído por batch_id para evitar drift.
+   */
+  restore_batch_id?: string;
 }
 
 export interface CleanupResult {
@@ -80,14 +89,16 @@ export interface CleanupResult {
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const SOFT_DELETE_PAYLOAD = (callerId: string) => ({
+const SOFT_DELETE_PAYLOAD = (callerId: string, batchId?: string) => ({
   deleted_at: new Date().toISOString(),
   deleted_by: callerId,
+  ...(batchId ? { deleted_batch_id: batchId } : {}),
 });
 
 const RESTORE_PAYLOAD = {
   deleted_at: null,
   deleted_by: null,
+  deleted_batch_id: null,
 };
 
 // ─── Utilitários internos ─────────────────────────────────────────────────────
@@ -113,25 +124,26 @@ export async function executeCleanupPredicate(
   params: CleanupParams,
   restore = false,
 ): Promise<CleanupResult> {
-  const { mode, filters, account_id, caller_id, restore_initiated_by } = params;
-  const payload = restore ? RESTORE_PAYLOAD : SOFT_DELETE_PAYLOAD(caller_id);
+  const { mode, filters, account_id, caller_id, batch_id, restore_batch_id } = params;
+  // FIX 2: soft-delete grava deleted_batch_id; restore filtra por deleted_batch_id
+  const payload = restore ? RESTORE_PAYLOAD : SOFT_DELETE_PAYLOAD(caller_id, batch_id);
   let total = 0;
 
   switch (mode) {
     case 'all':
-      total += await execAll(admin, account_id, payload, restore, restore_initiated_by);
+      total += await execAll(admin, account_id, payload, restore, restore_batch_id);
       break;
 
     case 'period':
-      total += await execPeriod(admin, account_id, filters, payload, restore, restore_initiated_by);
+      total += await execPeriod(admin, account_id, filters, payload, restore, restore_batch_id);
       break;
 
     case 'chats':
-      total += await execChats(admin, account_id, filters.chat_ids ?? [], payload, restore, restore_initiated_by);
+      total += await execChats(admin, account_id, filters.chat_ids ?? [], payload, restore, restore_batch_id);
       break;
 
     case 'granular':
-      total += await execGranular(admin, account_id, filters, payload, restore, restore_initiated_by);
+      total += await execGranular(admin, account_id, filters, payload, restore, restore_batch_id);
       break;
   }
 
@@ -146,13 +158,13 @@ async function execAll(
   accountId: string,
   payload: Record<string, unknown>,
   restore: boolean,
-  initiatedBy?: string,
+  restoreBatchId?: string,
 ): Promise<number> {
   let total = 0;
 
-  // Para restauração: filtrar apenas registros apagados pelo iniciador original do batch
-  // (evita restaurar registros apagados por outros batches/operações)
-  const restoreFilter = restore && initiatedBy ? initiatedBy : null;
+  // FIX 2: restore usa deleted_batch_id (determinístico) em vez de deleted_by.
+  // Isso garante que só os registros deste lote específico são revertidos —
+  // registros apagados por outros batches na mesma conta não são tocados.
 
   // 1. Mensagens
   {
@@ -162,7 +174,7 @@ async function execAll(
       .eq('account_id', accountId);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -179,7 +191,7 @@ async function execAll(
       .eq('account_id', accountId);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -196,7 +208,7 @@ async function execAll(
       .eq('account_id', accountId);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -213,7 +225,7 @@ async function execAll(
       .eq('account_id', accountId);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -222,11 +234,16 @@ async function execAll(
     total += countRows(count);
   }
 
-  // 5. Webhook log — só deleted_at (sem deleted_by)
+  // 5. Webhook log — deleted_at + deleted_batch_id (sem deleted_by — log de sistema)
   {
     const logPayload = restore
-      ? { deleted_at: null }
-      : { deleted_at: (payload as { deleted_at: string }).deleted_at };
+      ? { deleted_at: null, deleted_batch_id: null }
+      : {
+          deleted_at: (payload as { deleted_at: string }).deleted_at,
+          ...(payload as { deleted_batch_id?: string }).deleted_batch_id
+            ? { deleted_batch_id: (payload as { deleted_batch_id: string }).deleted_batch_id }
+            : {},
+        };
 
     let q = admin
       .from('zapi_webhook_log')
@@ -234,6 +251,7 @@ async function execAll(
       .eq('account_id', accountId);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -250,7 +268,7 @@ async function execAll(
       .eq('account_id', accountId);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -269,7 +287,7 @@ async function execPeriod(
   filters: CleanupFilters,
   payload: Record<string, unknown>,
   restore: boolean,
-  initiatedBy?: string,
+  restoreBatchId?: string,
 ): Promise<number> {
   const { start_date, end_date } = filters;
   if (!start_date || !end_date) {
@@ -277,7 +295,6 @@ async function execPeriod(
   }
 
   let total = 0;
-  const restoreFilter = restore && initiatedBy ? initiatedBy : null;
 
   // 1. Mensagens no período
   {
@@ -289,7 +306,7 @@ async function execPeriod(
       .lte('sent_at', end_date);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -353,13 +370,13 @@ async function execPeriod(
       );
     }
   } else {
-    // Restauração: busca chats soft-deletados pelo iniciador original
+    // FIX 2: Restauração busca chats pelo deleted_batch_id (determinístico)
     let q = admin
       .from('zapi_chats')
       .select('id')
       .eq('account_id', accountId)
       .not('deleted_at', 'is', null);
-    if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+    if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     const { data, error } = await q;
     if (error) throw new Error(`period/restore_chats: ${error.message}`);
     chatIds = (data ?? []).map((c: { id: string }) => c.id);
@@ -385,7 +402,7 @@ async function execPeriod(
     if (!restore) {
       total += await softDeleteChatChildren(admin, chatIds, payload);
     } else {
-      total += await restoreChatChildren(admin, chatIds, restoreFilter);
+      total += await restoreChatChildren(admin, chatIds, restoreBatchId);
     }
   }
 
@@ -399,14 +416,13 @@ async function execChats(
   chatIds: string[],
   payload: Record<string, unknown>,
   restore: boolean,
-  initiatedBy?: string,
+  restoreBatchId?: string,
 ): Promise<number> {
   if (chatIds.length === 0) {
     throw new Error('chats: chat_ids não pode ser vazio');
   }
 
   let total = 0;
-  const restoreFilter = restore && initiatedBy ? initiatedBy : null;
 
   // Verifica que os chat_ids pertencem à conta (anti-IDOR)
   const { data: validChats, error: validErr } = await admin
@@ -428,7 +444,7 @@ async function execChats(
       .in('id', validIds);
     if (restore) {
       q = q.not('deleted_at', 'is', null);
-      if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+      if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
     } else {
       q = q.is('deleted_at', null);
     }
@@ -441,7 +457,7 @@ async function execChats(
   if (!restore) {
     total += await softDeleteChatChildren(admin, validIds, payload);
   } else {
-    total += await restoreChatChildren(admin, validIds, restoreFilter);
+    total += await restoreChatChildren(admin, validIds, restoreBatchId);
   }
 
   return total;
@@ -454,7 +470,7 @@ async function execGranular(
   filters: CleanupFilters,
   payload: Record<string, unknown>,
   restore: boolean,
-  initiatedBy?: string,
+  restoreBatchId?: string,
 ): Promise<number> {
   const { items = [], chat_ids, start_date, end_date } = filters;
   if (items.length === 0) {
@@ -462,7 +478,6 @@ async function execGranular(
   }
 
   let total = 0;
-  const restoreFilter = restore && initiatedBy ? initiatedBy : null;
 
   // Filtra chat_ids pela conta se informado (anti-IDOR)
   let validChatIds: string[] | null = null;
@@ -496,7 +511,7 @@ async function execGranular(
 
         if (restore) {
           q = q.not('deleted_at', 'is', null);
-          if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
         } else {
           q = q.is('deleted_at', null);
         }
@@ -517,7 +532,7 @@ async function execGranular(
 
         if (restore) {
           q = q.not('deleted_at', 'is', null);
-          if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
         } else {
           q = q.is('deleted_at', null);
         }
@@ -538,7 +553,7 @@ async function execGranular(
 
         if (restore) {
           q = q.not('deleted_at', 'is', null);
-          if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
         } else {
           q = q.is('deleted_at', null);
         }
@@ -559,7 +574,7 @@ async function execGranular(
 
         if (restore) {
           q = q.not('deleted_at', 'is', null);
-          if (restoreFilter) q = q.eq('deleted_by', restoreFilter);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
         } else {
           q = q.is('deleted_at', null);
         }
@@ -571,10 +586,15 @@ async function execGranular(
       }
 
       case 'logs': {
-        // webhook_log só tem deleted_at (sem deleted_by)
+        // webhook_log: deleted_at + deleted_batch_id (sem deleted_by — log de sistema)
         const logPayload = restore
-          ? { deleted_at: null }
-          : { deleted_at: (payload as { deleted_at: string }).deleted_at };
+          ? { deleted_at: null, deleted_batch_id: null }
+          : {
+              deleted_at: (payload as { deleted_at: string }).deleted_at,
+              ...(payload as { deleted_batch_id?: string }).deleted_batch_id
+                ? { deleted_batch_id: (payload as { deleted_batch_id: string }).deleted_batch_id }
+                : {},
+            };
 
         let q = admin
           .from('zapi_webhook_log')
@@ -583,6 +603,7 @@ async function execGranular(
 
         if (restore) {
           q = q.not('deleted_at', 'is', null);
+          if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
         } else {
           q = q.is('deleted_at', null);
         }
@@ -628,11 +649,14 @@ async function softDeleteChatChildren(
   return total;
 }
 
-/** Restaura todos os filhos soft-deletados dos chats informados. */
+/**
+ * Restaura todos os filhos soft-deletados dos chats informados.
+ * FIX 2: filtra por deleted_batch_id (determinístico) em vez de deleted_by.
+ */
 async function restoreChatChildren(
   admin: SupabaseClient,
   chatIds: string[],
-  initiatedBy: string | null,
+  restoreBatchId?: string,
 ): Promise<number> {
   let total = 0;
   const tables = [
@@ -645,11 +669,11 @@ async function restoreChatChildren(
   for (const table of tables) {
     let q = admin
       .from(table)
-      .update({ deleted_at: null, deleted_by: null }, { count: 'exact' })
+      .update({ deleted_at: null, deleted_by: null, deleted_batch_id: null }, { count: 'exact' })
       .in('chat_id', chatIds)
       .not('deleted_at', 'is', null);
 
-    if (initiatedBy) q = q.eq('deleted_by', initiatedBy);
+    if (restoreBatchId) q = q.eq('deleted_batch_id', restoreBatchId);
 
     const { count, error } = await q;
     if (error) throw new Error(`restore/${table}: ${error.message}`);
