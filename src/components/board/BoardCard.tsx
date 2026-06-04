@@ -1,8 +1,10 @@
 import { useDraggable } from '@dnd-kit/core';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertTriangle, Star, Phone, MoreVertical, Trash2 } from 'lucide-react';
+import { AlertTriangle, Star, Phone, MoreVertical, Trash2, MessageCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTarefasPendentesCount } from '@/hooks/useTarefas';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { BoardItemWithContact } from '@/hooks/useBoardItems';
 import { cn } from '@/lib/utils';
 import { getContactDisplayName } from '@/lib/contactDisplay';
@@ -40,6 +43,8 @@ export function BoardCard({
   selected,
   onToggleSelect,
 }: BoardCardProps) {
+  const navigate = useNavigate();
+  const { can } = usePermissions();
   const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({
     id: item.id,
     disabled: selectionMode,
@@ -49,7 +54,16 @@ export function BoardCard({
 
   const stale = daysSince(item.moved_at);
   const isStale = stale >= 5;
+  // WhatsApp tem prioridade sobre telefone para o deep-link interno (mesma regra do ContactCard)
   const phone = item.contact?.whatsapp || item.contact?.telefone || null;
+  const canConversar = !selectionMode && !!phone && can.accessWhatsapp();
+
+  function handleConversar(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!phone) return;
+    const normalized = phone.replace(/\D/g, '');
+    navigate(`/integracoes/whatsapp?tab=conversas&chat=${normalized}`);
+  }
 
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -161,6 +175,24 @@ export function BoardCard({
               </Badge>
             </TooltipTrigger>
             <TooltipContent>Parado há {stale} dias neste estágio</TooltipContent>
+          </Tooltip>
+        )}
+
+        {canConversar && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-6 w-6 shrink-0 text-success hover:text-success"
+                aria-label="Conversar no WhatsApp"
+                onClick={handleConversar}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Conversar no WhatsApp</TooltipContent>
           </Tooltip>
         )}
       </div>
