@@ -2549,6 +2549,45 @@ export type Database = {
         }
         Relationships: []
       }
+      zapi_account_users: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_account_users_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_account_users_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zapi_accounts: {
         Row: {
           client_token: string
@@ -2834,6 +2873,9 @@ export type Database = {
         Row: {
           chat_id: string
           created_at: string
+          deleted_at: string | null
+          deleted_batch_id: string | null
+          deleted_by: string | null
           flagged_by: string
           id: string
           message_id: string
@@ -2841,6 +2883,9 @@ export type Database = {
         Insert: {
           chat_id: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           flagged_by: string
           id?: string
           message_id: string
@@ -2848,6 +2893,9 @@ export type Database = {
         Update: {
           chat_id?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           flagged_by?: string
           id?: string
           message_id?: string
@@ -2860,6 +2908,13 @@ export type Database = {
             referencedRelation: "zapi_chats"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "zapi_chat_message_flags_deleted_batch_id_fkey"
+            columns: ["deleted_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_cleanup_batches"
+            referencedColumns: ["id"]
+          },
         ]
       }
       zapi_chat_notes: {
@@ -2868,6 +2923,9 @@ export type Database = {
           chat_id: string
           corpo: string
           created_at: string
+          deleted_at: string | null
+          deleted_batch_id: string | null
+          deleted_by: string | null
           id: string
           mencoes: Json | null
           updated_at: string
@@ -2877,6 +2935,9 @@ export type Database = {
           chat_id: string
           corpo: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           id?: string
           mencoes?: Json | null
           updated_at?: string
@@ -2886,6 +2947,9 @@ export type Database = {
           chat_id?: string
           corpo?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           id?: string
           mencoes?: Json | null
           updated_at?: string
@@ -2905,6 +2969,13 @@ export type Database = {
             referencedRelation: "zapi_chats"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "zapi_chat_notes_deleted_batch_id_fkey"
+            columns: ["deleted_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_cleanup_batches"
+            referencedColumns: ["id"]
+          },
         ]
       }
       zapi_chat_tags: {
@@ -2912,6 +2983,9 @@ export type Database = {
           chat_id: string
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_batch_id: string | null
+          deleted_by: string | null
           id: string
           tag_id: string
         }
@@ -2919,6 +2993,9 @@ export type Database = {
           chat_id: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           id?: string
           tag_id: string
         }
@@ -2926,6 +3003,9 @@ export type Database = {
           chat_id?: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           id?: string
           tag_id?: string
         }
@@ -2935,6 +3015,13 @@ export type Database = {
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "zapi_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_chat_tags_deleted_batch_id_fkey"
+            columns: ["deleted_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_cleanup_batches"
             referencedColumns: ["id"]
           },
           {
@@ -2957,6 +3044,9 @@ export type Database = {
           assigned_to: string | null
           contact_id: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_batch_id: string | null
+          deleted_by: string | null
           demand_id: string | null
           id: string
           last_message_at: string | null
@@ -2979,6 +3069,9 @@ export type Database = {
           assigned_to?: string | null
           contact_id?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           demand_id?: string | null
           id?: string
           last_message_at?: string | null
@@ -3001,6 +3094,9 @@ export type Database = {
           assigned_to?: string | null
           contact_id?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           demand_id?: string | null
           id?: string
           last_message_at?: string | null
@@ -3036,10 +3132,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "zapi_chats_deleted_batch_id_fkey"
+            columns: ["deleted_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_cleanup_batches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "zapi_chats_demand_id_fkey"
             columns: ["demand_id"]
             isOneToOne: false
             referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_cleanup_batches: {
+        Row: {
+          account_id: string
+          created_at: string
+          expires_at: string
+          filters: Json
+          id: string
+          initiated_by: string
+          mode: string
+          row_count_estimate: number
+          status: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          expires_at?: string
+          filters?: Json
+          id?: string
+          initiated_by: string
+          mode: string
+          row_count_estimate?: number
+          status?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          expires_at?: string
+          filters?: Json
+          id?: string
+          initiated_by?: string
+          mode?: string
+          row_count_estimate?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_cleanup_batches_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_atendimento"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "zapi_cleanup_batches_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -3051,6 +3205,8 @@ export type Database = {
           chat_id: string
           created_at: string
           deleted_at: string | null
+          deleted_batch_id: string | null
+          deleted_by: string | null
           direction: string
           edited_at: string | null
           edited_body: string | null
@@ -3076,6 +3232,8 @@ export type Database = {
           chat_id: string
           created_at?: string
           deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           direction: string
           edited_at?: string | null
           edited_body?: string | null
@@ -3101,6 +3259,8 @@ export type Database = {
           chat_id?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_batch_id?: string | null
+          deleted_by?: string | null
           direction?: string
           edited_at?: string | null
           edited_body?: string | null
@@ -3142,50 +3302,11 @@ export type Database = {
             referencedRelation: "zapi_chats"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      zapi_account_users: {
-        Row: {
-          account_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          account_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          account_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "zapi_account_users_account_id_fkey"
-            columns: ["account_id"]
+            foreignKeyName: "zapi_messages_deleted_batch_id_fkey"
+            columns: ["deleted_batch_id"]
             isOneToOne: false
-            referencedRelation: "zapi_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "zapi_account_users_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "zapi_account_users_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "zapi_cleanup_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -3326,15 +3447,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "zapi_panel_settings_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       zapi_quick_replies: {
         Row: {
@@ -3518,6 +3631,8 @@ export type Database = {
       zapi_webhook_log: {
         Row: {
           account_id: string | null
+          deleted_at: string | null
+          deleted_batch_id: string | null
           error_detail: string | null
           event_type: string
           id: string
@@ -3527,6 +3642,8 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
           error_detail?: string | null
           event_type: string
           id?: string
@@ -3536,6 +3653,8 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          deleted_at?: string | null
+          deleted_batch_id?: string | null
           error_detail?: string | null
           event_type?: string
           id?: string
@@ -3556,6 +3675,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_webhook_log_deleted_batch_id_fkey"
+            columns: ["deleted_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_cleanup_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -3868,6 +3994,10 @@ export type Database = {
         Args: { p_contact_id: string }
         Returns: number
       }
+      can_access_zapi_account: {
+        Args: { _account_id: string; _uid: string }
+        Returns: boolean
+      }
       cleanup_ai_rate_limit: { Args: never; Returns: undefined }
       dispatch_webhooks: {
         Args: { p_event: string; p_payload: Json }
@@ -3931,14 +4061,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_user_active: { Args: { user_id: string }; Returns: boolean }
-      is_zapi_privileged: {
-        Args: { _uid: string }
-        Returns: boolean
-      }
-      zapi_require_password_for_privileged: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_zapi_privileged: { Args: { _uid: string }; Returns: boolean }
       normalize_phone: { Args: { phone_number: string }; Returns: string }
       registrar_optin_whatsapp: {
         Args: { p_contact_id: string; p_origem: string; p_valor: boolean }
@@ -3961,6 +4084,7 @@ export type Database = {
         Args: { _account_id: string }
         Returns: string
       }
+      zapi_require_password_for_privileged: { Args: never; Returns: boolean }
       zapi_rl_bump: {
         Args: {
           _account: string

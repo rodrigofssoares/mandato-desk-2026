@@ -9,9 +9,9 @@ import { zapiCleanupKeys, type CleanupMode, type CleanupFilters } from '@/hooks/
 /**
  * Representa um lote de limpeza registrado em `zapi_cleanup_batches`.
  *
- * Nota: types.ts ainda não tem `zapi_cleanup_batches` (migration 112 aplicada,
- * mas types não foram regenerados). Definição manual até próxima regeneração via
- * `npx supabase gen types typescript --linked > src/integrations/supabase/types.ts`.
+ * Os campos do banco espelham `Tables<'zapi_cleanup_batches'>` (types.ts regenerado
+ * após a migration 112). Mantido como interface explícita para tipar `mode`/`filters`/
+ * `status` de forma mais estreita e carregar os campos enriquecidos no componente.
  */
 export interface CleanupBatch {
   id: string;
@@ -52,9 +52,8 @@ export function useZapiTrash() {
   const batchesQuery = useQuery<CleanupBatch[]>({
     queryKey: zapiCleanupKeys.all,
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('zapi_cleanup_batches') // TODO: remover cast após regenerar types.ts com migration 112
+      const { data, error } = await supabase
+        .from('zapi_cleanup_batches')
         .select('*')
         .order('created_at', { ascending: false });
 
