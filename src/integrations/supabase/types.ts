@@ -2571,6 +2571,45 @@ export type Database = {
           },
         ]
       }
+      zapi_panel_grants: {
+        Row: {
+          account_id: string
+          expires_at: string
+          granted_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          expires_at: string
+          granted_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_panel_grants_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_panel_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zapi_panel_passwords: {
         Row: {
           account_id: string

@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { RecursosConfig } from '@/lib/featureFlags';
 
+// URL do Supabase para chamadas diretas às Edge Functions
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
 /**
@@ -290,39 +293,161 @@ export function useDeleteZapiAccount() {
   });
 }
 
+// ─── useZapiPanelPasswordStatus ─────────────────────────────────────────────
+
+/** Chave de query para status de senha por conta. */
+export const zapiPanelPasswordStatusKeys = {
+  all: ['zapi-panel-password-status'] as const,
+  byAccount: (accountId: string) => [...zapiPanelPasswordStatusKeys.all, accountId] as const,
+};
+
+/**
+ * Verifica se uma conta Z-API tem senha de painel definida.
+ * Lê apenas a existência do registro em zapi_panel_passwords (admin-only via RLS).
+ * Não-admin recebe null (sem acesso).
+ */
+export function useZapiPanelPasswordStatus(accountId: string | null) {
+  return useQuery({
+    queryKey: accountId ? zapiPanelPasswordStatusKeys.byAccount(accountId) : [],
+    enabled: !!accountId,
+    queryFn: async (): Promise<boolean> => {
+      if (!accountId) return false;
+      const { data, error } = await supabase
+        .from('zapi_panel_passwords')
+        .select('account_id')
+        .eq('account_id', accountId)
+        .maybeSingle();
+
+      if (error) {
+        // RLS bloqueia não-admin — retorna false silenciosamente
+        if (error.code === 'PGRST301' || /permission denied/i.test(error.message)) {
+          return false;
+        }
+        throw error;
+      }
+      return data !== null;
+    },
+  });
+}
+
+/**
+ * Retorna o status de senha para todas as contas de uma lista.
+ * Lê todos os registros em zapi_panel_passwords (admin-only via RLS).
+ */
+export function useZapiAllPanelPasswordStatuses() {
+  return useQuery({
+    queryKey: [...zapiPanelPasswordStatusKeys.all, 'all-accounts'],
+    queryFn: async (): Promise<Record<string, boolean>> => {
+      const { data, error } = await supabase
+        .from('zapi_panel_passwords')
+        .select('account_id');
+
+      if (error) {
+        // Não-admin não tem SELECT — retorna vazio silenciosamente
+        if (error.code === 'PGRST301' || /permission denied/i.test(error.message)) {
+          return {};
+        }
+        throw error;
+      }
+
+      const map: Record<string, boolean> = {};
+      for (const row of data ?? []) {
+        map[row.account_id] = true;
+      }
+      return map;
+    },
+  });
+}
+
 // ─── useResetZapiPanelPassword ──────────────────────────────────────────────
 
 /**
- * Redefine a senha extra do painel para uma conta.
+ * Define ou altera a senha do painel de conversas de uma conta Z-API.
+ * Chama a Edge Function `zapi-set-panel-password` que gera hash PBKDF2-SHA256
+ * server-side. Somente admin pode chamar esta função (enforced pela EF).
  *
- * AVISO MVP: senha inserida em texto puro temporariamente.
- * Bcrypt hash server-side será aplicado via Edge Function em sessão futura (T03).
+ * EM078: substitui o upsert de texto puro anterior.
  */
 export function useResetZapiPanelPassword() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: ResetPanelPasswordInput) => {
-      // Tenta upsert — cria linha se ainda não existe para esta conta
+      // Obtém o token JWT do usuário para autenticar a chamada à EF
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/zapi-set-panel-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            account_id: input.account_id,
+            new_password: input.new_password,
+          }),
+        },
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error((data as { error?: string }).error ?? 'Erro ao definir senha');
+      }
+    },
+    onSuccess: (_data, input) => {
+      // Invalida status de senha desta conta para refletir o novo estado
+      queryClient.invalidateQueries({
+        queryKey: zapiPanelPasswordStatusKeys.byAccount(input.account_id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...zapiPanelPasswordStatusKeys.all, 'all-accounts'],
+      });
+      toast.success('Senha do painel definida com sucesso');
+    },
+    onError: (error: Error) => {
+      toast.error(sanitizeError(error, 'Erro ao definir senha'));
+    },
+  });
+}
+
+// ─── useRemoveZapiPanelPassword ──────────────────────────────────────────────
+
+/**
+ * Remove a senha do painel de uma conta Z-API.
+ * Apenas admin (via RLS admin-only em zapi_panel_passwords).
+ * Sem senha → todas as contas acessam as conversas livremente (sem cadeado).
+ */
+export function useRemoveZapiPanelPassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
       const { error } = await supabase
         .from('zapi_panel_passwords')
-        .upsert(
-          {
-            account_id: input.account_id,
-            password_hash: input.new_password,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'account_id' }
-        );
+        .delete()
+        .eq('account_id', accountId);
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: zapiAccountKeys.all });
-      toast.success('Senha do painel redefinida com sucesso');
+    onSuccess: (_data, accountId) => {
+      queryClient.invalidateQueries({
+        queryKey: zapiPanelPasswordStatusKeys.byAccount(accountId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...zapiPanelPasswordStatusKeys.all, 'all-accounts'],
+      });
+      toast.success('Senha removida — conta acessível sem senha');
     },
     onError: (error: Error) => {
-      toast.error(sanitizeError(error, 'Erro ao redefinir senha'));
+      toast.error(sanitizeError(error, 'Erro ao remover senha'));
     },
   });
 }
