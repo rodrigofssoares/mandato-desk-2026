@@ -130,3 +130,15 @@ verify_jwt = false
 # Triple Gate: ai_enabled + c37 por conta. Persiste em contacts.ai_next_action.
 [functions.zapi-ai-next-action]
 verify_jwt = false
+
+# zapi-set-panel-password: define/altera/remove hash PBKDF2 da senha de painel por
+# conta. Auth manual via requireAuth + cheque callerRole='admin'. verify_jwt=false
+# para retornar erros JSON legíveis (EM078).
+[functions.zapi-set-panel-password]
+verify_jwt = false
+
+# zapi-validate-panel-password: valida a senha da conta e emite grant server-side
+# (zapi_panel_grants). Auth manual via requireAuth. verify_jwt=false para retornar
+# erros JSON legíveis (EM078).
+[functions.zapi-validate-panel-password]
+verify_jwt = false

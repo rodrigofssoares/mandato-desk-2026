@@ -330,7 +330,9 @@ export const zapiPanelPasswordStatusKeys = {
  */
 export function useZapiPanelPasswordStatus(accountId: string | null) {
   return useQuery({
-    queryKey: accountId ? zapiPanelPasswordStatusKeys.byAccount(accountId) : [],
+    queryKey: accountId
+      ? zapiPanelPasswordStatusKeys.byAccount(accountId)
+      : [...zapiPanelPasswordStatusKeys.all, '__disabled__'],
     enabled: !!accountId,
     queryFn: async (): Promise<boolean> => {
       if (!accountId) return false;

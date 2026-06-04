@@ -24,6 +24,8 @@ import { useImpersonation } from '@/context/ImpersonationContext';
 
 // ─── Estado module-level (sobrevive a re-renders, não a reload) ──────────────
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+
 /** Mapa de account_id → timestamp de expiração (ms desde epoch). */
 const sessionMap = new Map<string, number>();
 
@@ -84,9 +86,8 @@ export function useZapiPanelSession(accountId: string | null): ZapiPanelSessionS
         return false;
       }
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/zapi-validate-panel-password`,
+        `${SUPABASE_URL}/functions/v1/zapi-validate-panel-password`,
         {
           method: 'POST',
           headers: {
