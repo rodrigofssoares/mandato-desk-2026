@@ -37,6 +37,7 @@ import {
   Pencil,
   Sparkles,
   Lock,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
@@ -143,6 +144,7 @@ import { useAISuggestReply } from '@/hooks/useAISuggestReply';
 import { useTranscribeAudio } from '@/hooks/useTranscribeAudio';
 import { useZapiPanelSession } from '@/hooks/useZapiPanelSession';
 import { PanelLockScreen } from './PanelLockScreen';
+import { CleanupHistoryDialog } from './CleanupHistoryDialog';
 
 // ─── Conversa pendente ───────────────────────────────────────────────────────
 
@@ -160,6 +162,8 @@ interface PendingChat {
 interface ConversasTabContentProps {
   initialChatPhone?: string;
   initialContactId?: string;
+  /** EM082: callback para navegar para a aba de lixeira (admin) */
+  onViewTrash?: () => void;
 }
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -185,6 +189,7 @@ function userInitials(name: string): string {
 export function ConversasTabContent({
   initialChatPhone,
   initialContactId,
+  onViewTrash,
 }: ConversasTabContentProps) {
   const [, setSearchParams] = useSearchParams();
   const { data: accounts = [], isLoading: accountsLoading } = useZapiAccounts();
@@ -219,9 +224,14 @@ export function ConversasTabContent({
   // T30: filtro por atendente específico (modo supervisor)
   const [filterByAssignee, setFilterByAssignee] = useState<string | null>(null);
 
+  // EM082: dialog de limpeza de histórico
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+
   const { user } = useAuth();
   const { can } = usePermissions();
   const canEdit = can.editWhatsapp();
+  const canDelete = can.deleteWhatsapp();
+  const canBulkDelete = can.bulkDeleteWhatsapp();
   const { activeRole } = useImpersonation();
   // EM080 F-01: privilegiado baseado na role real (não em impersonation) para decisões
   // de exibição que afetam defense in depth. Restrito nunca vê "Todos os números".
@@ -669,6 +679,20 @@ export function ConversasTabContent({
           <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${chatsLoading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
+
+        {/* EM082: botão de limpeza — visível apenas para quem tem permissão de delete no WhatsApp */}
+        {canDelete && selectedAccountId && selectedAccountId !== '__all__' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCleanupDialogOpen(true)}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            title="Limpar histórico de conversas desta conta"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+            Limpar histórico
+          </Button>
+        )}
       </div>
 
       {/* EM078: cadeado — conta selecionada e não desbloqueada → exibe tela de senha */}
@@ -1089,6 +1113,17 @@ export function ConversasTabContent({
           openPendingChat(phone, contactId, contactName);
         }}
       />
+
+      {/* EM082: dialog de limpeza de histórico */}
+      {canDelete && selectedAccountId && selectedAccountId !== '__all__' && (
+        <CleanupHistoryDialog
+          open={cleanupDialogOpen}
+          onOpenChange={setCleanupDialogOpen}
+          accountId={selectedAccountId}
+          accountName={accounts.find((a) => a.id === selectedAccountId)?.name ?? 'esta conta'}
+          onViewTrash={canBulkDelete ? onViewTrash : undefined}
+        />
+      )}
     </div>
   );
 }

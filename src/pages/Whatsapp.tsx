@@ -13,6 +13,7 @@ import { BroadcastsTabContent } from '@/components/whatsapp/BroadcastsTabContent
 import { EventosTabContent } from '@/components/whatsapp/EventosTabContent';
 import { DashboardAtendimentoTab } from '@/components/whatsapp/DashboardAtendimentoTab';
 import { AuditLogTab } from '@/components/whatsapp/AuditLogTab';
+import { TrashPanel } from '@/components/whatsapp/TrashPanel';
 import { useZapiAccounts } from '@/hooks/useZapiAccounts';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useImpersonation } from '@/context/ImpersonationContext';
@@ -23,7 +24,8 @@ import { isFeatureEnabled } from '@/lib/featureFlags';
 // T90 (Fase 7 Onda B): aba de dashboard de atendimento — visível para admins com contas
 // T91 (Fase 7 Onda B): aba de auditoria — visível somente para admins
 // EM080: tier-based tab gating — privilegiado (admin|proprietario) vs. restrito (demais)
-const TABS = ['contas', 'conversas', 'campanhas', 'eventos', 'dashboard', 'auditoria', 'webhooks', 'logs'] as const;
+// EM082: aba de lixeira — admin-only (canBulkDelete whatsapp)
+const TABS = ['contas', 'conversas', 'campanhas', 'eventos', 'dashboard', 'auditoria', 'webhooks', 'logs', 'lixeira'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(value: string | null): value is Tab {
@@ -39,6 +41,7 @@ export default function Whatsapp() {
 
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessWhatsapp();
+  const canViewTrash = can.bulkDeleteWhatsapp();
   const { activeRole } = useImpersonation();
 
   // EM080: privilegiado = admin | proprietario; restrito = demais
@@ -69,7 +72,7 @@ export default function Whatsapp() {
 
   // EM080: calcula conjunto de abas disponíveis para o tier atual
   // Restrito: apenas 'conversas'. Privilegiado: conversas + contas + campanhas + eventos.
-  // Admin-only: dashboard, auditoria, webhooks, logs.
+  // Admin-only: dashboard, auditoria, webhooks, logs, lixeira.
   const availableTabs = useMemo(() => {
     const tabs = new Set<Tab>(['conversas']);
     if (isPrivileged) {
@@ -83,8 +86,10 @@ export default function Whatsapp() {
       tabs.add('webhooks');
       tabs.add('logs');
     }
+    // EM082: lixeira — visível apenas para quem tem canBulkDelete('whatsapp')
+    if (canViewTrash) tabs.add('lixeira');
     return tabs;
-  }, [isPrivileged, isAdmin, accounts.length, hasBroadcastEnabled, hasEventosEnabled]);
+  }, [isPrivileged, isAdmin, canViewTrash, accounts.length, hasBroadcastEnabled, hasEventosEnabled]);
 
   // Resolve a aba ativa: deep-link força conversas; aba pedida não disponível → fallback conversas
   const resolvedTab: Tab = hasDeepLink
@@ -213,15 +218,22 @@ export default function Whatsapp() {
           {isAdmin && (
             <TabsTrigger value="logs">Logs</TabsTrigger>
           )}
+
+          {/* EM082: Lixeira — admin-only (canBulkDelete whatsapp) */}
+          {canViewTrash && (
+            <TabsTrigger value="lixeira">Lixeira</TabsTrigger>
+          )}
         </TabsList>
 
         {/* EM080: TabsContent condicionais — restrito não consegue forçar via ?tab= */}
 
         <TabsContent value="conversas">
           {/* T15: passa deep-link params para que ConversasTabContent selecione o chat */}
+          {/* EM082: onViewTrash navega para a aba lixeira após confirmar limpeza */}
           <ConversasTabContent
             initialChatPhone={chatParam ?? undefined}
             initialContactId={contactParam ?? undefined}
+            onViewTrash={canViewTrash ? () => handleTabChange('lixeira') : undefined}
           />
         </TabsContent>
 
@@ -270,6 +282,13 @@ export default function Whatsapp() {
         {isAdmin && (
           <TabsContent value="logs">
             <LogsTabContent />
+          </TabsContent>
+        )}
+
+        {/* EM082: Lixeira — admin-only (canBulkDelete whatsapp) */}
+        {canViewTrash && (
+          <TabsContent value="lixeira" className="space-y-4">
+            <TrashPanel />
           </TabsContent>
         )}
       </Tabs>

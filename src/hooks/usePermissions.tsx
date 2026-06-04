@@ -78,6 +78,9 @@ export function usePermissions() {
     // WhatsApp — restrito por padrão a admin (migration 049)
     accessWhatsapp: () => canView('whatsapp'),
     editWhatsapp: () => canEdit('whatsapp'),
+    // EM082: limpar histórico (canDelete) e recuperar lixeira (canBulkDelete)
+    deleteWhatsapp: () => canDelete('whatsapp'),
+    bulkDeleteWhatsapp: () => canBulkDelete('whatsapp'),
 
     // Agente IA — aba de configuração restrita a admin (migration 095)
     // viewAgente: qualquer usuário com permissão de visualização na seção agente_ia
