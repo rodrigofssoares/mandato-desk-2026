@@ -5,8 +5,11 @@
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// F5 Security-Fix: origem configurável via env ALLOWED_ORIGIN.
+// Fallback '*' mantém comportamento atual em dev/ambientes sem a variável.
+// Em produção: defina ALLOWED_ORIGIN="https://seu-dominio.com" nas env vars da EF.
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? '*',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };

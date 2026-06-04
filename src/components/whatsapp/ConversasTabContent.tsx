@@ -140,6 +140,8 @@ import { QuotedMessageBlock } from './MessageBubble';
 import { ExtractToContactDialog } from './ExtractToContactDialog';
 import { useAISuggestReply } from '@/hooks/useAISuggestReply';
 import { useTranscribeAudio } from '@/hooks/useTranscribeAudio';
+import { useZapiPanelSession } from '@/hooks/useZapiPanelSession';
+import { PanelLockScreen } from './PanelLockScreen';
 
 // ─── Conversa pendente ───────────────────────────────────────────────────────
 
@@ -220,6 +222,13 @@ export function ConversasTabContent({
   const { can } = usePermissions();
   const canEdit = can.editWhatsapp();
   const { activeRole } = useImpersonation();
+
+  // EM078: cadeado de senha por conta — estado em memória (reload re-tranca)
+  // Em modo __all__ (todos os números, valor '__all__'), não aplica cadeado (admin feature)
+  const effectiveLockAccountId = selectedAccountId && selectedAccountId !== '__all__'
+    ? selectedAccountId
+    : null;
+  const panelSession = useZapiPanelSession(effectiveLockAccountId);
 
   // T15: resolve ?contact= → número para usar como deep-link
   const { data: deepLinkContact, isLoading: deepLinkContactLoading } = useContact(initialContactId);
@@ -645,8 +654,20 @@ export function ConversasTabContent({
         </Button>
       </div>
 
-      {/* 3 colunas */}
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_280px] gap-3 h-[calc(100vh-280px)] min-h-[480px]">
+      {/* EM078: cadeado — conta selecionada e não desbloqueada → exibe tela de senha */}
+      {effectiveLockAccountId && !panelSession.isUnlocked && (
+        <div className="border rounded-lg bg-card flex h-[calc(100vh-280px)] min-h-[480px]">
+          <PanelLockScreen
+            accountName={accounts.find((a) => a.id === effectiveLockAccountId)?.name ?? 'esta conta'}
+            session={panelSession}
+          />
+        </div>
+      )}
+
+      {/* 3 colunas — visível apenas quando conta desbloqueada (ou admin / modo __all__) */}
+      <div
+        className={`grid grid-cols-1 lg:grid-cols-[320px_1fr_280px] gap-3 h-[calc(100vh-280px)] min-h-[480px] ${effectiveLockAccountId && !panelSession.isUnlocked ? 'hidden' : ''}`}
+      >
         {/* ── Coluna 1: lista de chats ───────────────────────────────── */}
         <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b bg-muted/30 space-y-2">
