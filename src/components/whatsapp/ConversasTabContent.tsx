@@ -150,6 +150,12 @@ import { CleanupHistoryDialog } from './CleanupHistoryDialog';
 
 const PENDING_CHAT_ID = '__pending__';
 
+// RAQ-MAND-EM084: chave de persistência (por-aba) da conta selecionada nas
+// conversas. Usa sessionStorage — copiado ao duplicar a aba e mantido na
+// navegação SPA, porém isolado entre abas distintas (uma aba não sobrescreve
+// a seleção da outra).
+const ACCOUNT_STORAGE_KEY = 'whatsapp:selected-account';
+
 interface PendingChat {
   id: typeof PENDING_CHAT_ID;
   phone: string;
@@ -193,7 +199,15 @@ export function ConversasTabContent({
 }: ConversasTabContentProps) {
   const [, setSearchParams] = useSearchParams();
   const { data: accounts = [], isLoading: accountsLoading } = useZapiAccounts();
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  // RAQ-MAND-EM084: restaura a conta selecionada do sessionStorage (por-aba).
+  // Evita que duplicar a aba / sair e voltar resete para a primeira conta.
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem(ACCOUNT_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [pendingChat, setPendingChat] = useState<PendingChat | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -253,11 +267,33 @@ export function ConversasTabContent({
 
   const deepLinkAppliedRef = useRef(false);
 
+  // RAQ-MAND-EM084: seleciona a conta default — mas só quando não há seleção
+  // válida. Valida também a conta restaurada do sessionStorage: se ela não
+  // existe mais (deletada) ou não é acessível, cai no default. '__all__' só é
+  // válido para usuários privilegiados.
   useEffect(() => {
-    if (selectedAccountId) return;
+    if (accountsLoading) return;
+    const isValidSelection =
+      selectedAccountId === '__all__'
+        ? isPrivileged
+        : accounts.some((a) => a.id === selectedAccountId);
+    if (selectedAccountId && isValidSelection) return;
     const first = accounts.find((a) => a.status !== 'disconnected') ?? accounts[0];
     if (first) setSelectedAccountId(first.id);
-  }, [accounts, selectedAccountId]);
+  }, [accounts, accountsLoading, selectedAccountId, isPrivileged]);
+
+  // RAQ-MAND-EM084: persiste a conta selecionada por-aba (sessionStorage).
+  useEffect(() => {
+    try {
+      if (selectedAccountId) {
+        sessionStorage.setItem(ACCOUNT_STORAGE_KEY, selectedAccountId);
+      } else {
+        sessionStorage.removeItem(ACCOUNT_STORAGE_KEY);
+      }
+    } catch {
+      /* sessionStorage indisponível (modo privado/quota) — ignora */
+    }
+  }, [selectedAccountId]);
 
   // Reset tudo ao trocar de conta
   useEffect(() => {

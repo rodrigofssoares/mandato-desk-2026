@@ -57,6 +57,12 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000,
       retry: 1,
+      // RAQ-MAND-EM084: não refazer queries só por focar a aba do navegador.
+      // O default `true` do react-query fazia o sistema "recarregar sozinho"
+      // (flash de loading) toda vez que o usuário alternava entre abas do Chrome.
+      // Atualizações em tempo real vêm de subscriptions Supabase / refetch manual,
+      // não do foco da janela.
+      refetchOnWindowFocus: false,
     },
   },
 });
