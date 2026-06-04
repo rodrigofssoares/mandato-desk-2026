@@ -6,7 +6,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   proprietario: 'Proprietário',
   assessor: 'Assessor',
   assistente: 'Assistente',
-  estagiario: 'Estagiário',
+  estagiario: 'Agente de Relacionamento',
 };
 
 export const ROLE_LEVELS: Record<Role, number> = {
