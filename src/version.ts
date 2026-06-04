@@ -7,5 +7,5 @@
  *
  * Atualizado automaticamente pela skill /git-finish-task a cada release.
  */
-export const APP_VERSION = '2.12.0';
-export const LAST_UPDATE = '03/06/2026 22:42';
+export const APP_VERSION = '2.12.1';
+export const LAST_UPDATE = '03/06/2026 22:48';

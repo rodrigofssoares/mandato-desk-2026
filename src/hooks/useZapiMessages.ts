@@ -115,17 +115,32 @@ export function useSendZapiMessage() {
  * Lista mensagens de um chat em ordem cronológica ascendente (mais antiga
  * primeiro — pra renderizar de cima pra baixo no scroll).
  *
- * Realtime: subscribe em INSERT/UPDATE em zapi_messages filtrando por chat_id,
- * invalida a query a cada evento. Cleanup no unmount.
+ * Sincronização em duas camadas (belt-and-suspenders):
+ *   1. Realtime (instantâneo): subscribe em INSERT/UPDATE em zapi_messages
+ *      filtrando por chat_id, invalida a query a cada evento. Cleanup no unmount.
+ *   2. Polling de fallback (refetchInterval): o Realtime postgres_changes é
+ *      best-effort e pode perder eventos sob carga (já houve apagão por
+ *      sobrecarga no projeto). Sem fallback, mensagens recebidas via webhook só
+ *      apareciam após refresh manual. O polling garante que a conversa aberta
+ *      sincronize em no máximo POLL_INTERVAL_MS mesmo se o Realtime falhar.
+ *      Só a conversa ATIVA poleia (o hook só monta pra ela) e nunca em
+ *      background — carga negligenciável (query indexada por chat_id).
  *
  * Quando chatId é null/undefined retorna [] sem query.
  */
+const POLL_INTERVAL_MS = 4_000;
+
 export function useZapiMessagesByChat(chatId: string | null | undefined) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: zapiMessageKeys.byChat(chatId ?? null),
     enabled: !!chatId,
+    // Fallback de sincronização — complementa o Realtime, não o substitui.
+    // O ternário é redundante com `enabled` (sem chatId não há poll), mas
+    // mantido explícito pra deixar a intenção clara na leitura.
+    refetchInterval: chatId ? POLL_INTERVAL_MS : false,
+    refetchIntervalInBackground: false,
     queryFn: async (): Promise<ZapiMessage[]> => {
       const { data, error } = await supabase
         .from('zapi_messages')

@@ -37,7 +37,7 @@ export function useChatNotes(chatId: string | null | undefined) {
     queryFn: async (): Promise<ChatNote[]> => {
       const { data, error } = await supabase
         .from('zapi_chat_notes')
-        .select('*, autor:autor_id(nome)')
+        .select('*, autor:profiles!autor_id(nome)')
         .eq('chat_id', resolvedId!)
         .order('created_at', { ascending: true });
 
@@ -75,7 +75,7 @@ export function useChatNotes(chatId: string | null | undefined) {
           mencoes: mencoes && mencoes.length > 0 ? (mencoes as unknown as Tables<'zapi_chat_notes'>['mencoes']) : null,
           autor_id,
         })
-        .select('*, autor:autor_id(nome)')
+        .select('*, autor:profiles!autor_id(nome)')
         .single();
 
       if (error) throw error;
@@ -95,7 +95,8 @@ export function useChatNotes(chatId: string | null | undefined) {
       const { error } = await supabase
         .from('zapi_chat_notes')
         .delete()
-        .eq('id', noteId);
+        .eq('id', noteId)
+        .eq('chat_id', resolvedId!); // defesa em profundidade — amarra o escopo da conversa (RLS já cobre)
 
       if (error) throw error;
     },
