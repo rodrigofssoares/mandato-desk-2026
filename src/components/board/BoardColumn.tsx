@@ -71,7 +71,14 @@ export function BoardColumn({
         <StageChecklistTrigger stage={stage} />
       </div>
 
-      <ScrollArea className="flex-1 h-[calc(100vh-340px)] min-h-[300px]">
+      {/*
+        O viewport do Radix ScrollArea envolve os filhos num <div style="display:table;min-width:100%">.
+        Com display:table esse wrapper CRESCE pra caber nomes longos (white-space:nowrap do truncate),
+        empurrando os cards alem da largura da coluna e quebrando o truncate. Forcamos esse wrapper
+        interno a display:block (so neste ScrollArea vertical) pra que os cards respeitem a largura
+        fixa da coluna e os nomes truncem com reticencias. Nao afeta o scroll horizontal do Kanban.
+      */}
+      <ScrollArea className="flex-1 h-[calc(100vh-340px)] min-h-[300px] [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="p-2">
           {items.length === 0 ? (
             <p className="text-center text-xs text-muted-foreground py-8">
