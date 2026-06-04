@@ -121,7 +121,26 @@ export function BoardCard({
           {phone && (
             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 min-w-0">
               <Phone className="h-3 w-3 shrink-0" />
-              <span className="truncate min-w-0 flex-1">{formatPhoneDisplay(phone)}</span>
+              <span className="truncate min-w-0">{formatPhoneDisplay(phone)}</span>
+              {/* Botão Conversar logo após o número (lado esquerdo) — shrink-0
+                  garante que nunca seja cortado pelo overflow-hidden da coluna. */}
+              {canConversar && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 -my-1 ml-0.5 text-success hover:text-success"
+                      aria-label="Conversar no WhatsApp"
+                      onClick={handleConversar}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Conversar no WhatsApp</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           )}
         </div>
@@ -175,24 +194,6 @@ export function BoardCard({
               </Badge>
             </TooltipTrigger>
             <TooltipContent>Parado há {stale} dias neste estágio</TooltipContent>
-          </Tooltip>
-        )}
-
-        {canConversar && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-auto h-6 w-6 shrink-0 text-success hover:text-success"
-                aria-label="Conversar no WhatsApp"
-                onClick={handleConversar}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Conversar no WhatsApp</TooltipContent>
           </Tooltip>
         )}
       </div>
