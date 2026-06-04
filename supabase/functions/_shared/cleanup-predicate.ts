@@ -384,7 +384,9 @@ async function execPeriod(
 
   // 3. Soft-delete/restaura chats completamente no período
   if (chatIds.length > 0) {
-    const chatPayload = restore ? { deleted_at: null, deleted_by: null } : payload;
+    // FIX C: restore usa RESTORE_PAYLOAD completo (inclui deleted_batch_id: null)
+    // para não deixar dado órfão — os outros modos de restore já zeravam deleted_batch_id.
+    const chatPayload = restore ? { deleted_at: null, deleted_by: null, deleted_batch_id: null } : payload;
     let q = admin
       .from('zapi_chats')
       .update(chatPayload, { count: 'exact' })

@@ -155,54 +155,6 @@ COMMENT ON COLUMN public.zapi_webhook_log.deleted_at IS
   'Hard-delete pelo cron zapi-purge-trash após 7 dias. '
   'Referência: RAQ-MAND-EM082.';
 
--- ─── 2b. Coluna deleted_batch_id nas 6 tabelas (FIX 2 — restore determinístico) ──
---
--- Por que: o restore anterior filtrava por deleted_by = batch.initiated_by, que mistura
--- registros de batches diferentes do mesmo usuário na mesma conta. Com deleted_batch_id
--- o restore é scoped exatamente ao lote — elimina drift completamente.
--- deleted_by é mantido para auditoria.
---
--- ON DELETE SET NULL: se o batch for deletado (cenário de rollback manual), os registros
--- perdem o vínculo com o batch mas mantêm deleted_at (continuam ocultos até o purge-trash).
-
-ALTER TABLE public.zapi_messages
-  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
-
-ALTER TABLE public.zapi_chats
-  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
-
-ALTER TABLE public.zapi_chat_notes
-  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
-
-ALTER TABLE public.zapi_chat_tags
-  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
-
-ALTER TABLE public.zapi_chat_message_flags
-  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
-
-ALTER TABLE public.zapi_webhook_log
-  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
-
-COMMENT ON COLUMN public.zapi_messages.deleted_batch_id IS
-  'ID do lote de limpeza que gerou este soft-delete. NULL = ativo ou apagado antes do EM082. '
-  'Usado pelo restore para reverter exatamente este lote (evita drift com outros batches). '
-  'Referência: RAQ-MAND-EM082.';
-
-COMMENT ON COLUMN public.zapi_chats.deleted_batch_id IS
-  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
-
-COMMENT ON COLUMN public.zapi_chat_notes.deleted_batch_id IS
-  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
-
-COMMENT ON COLUMN public.zapi_chat_tags.deleted_batch_id IS
-  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
-
-COMMENT ON COLUMN public.zapi_chat_message_flags.deleted_batch_id IS
-  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
-
-COMMENT ON COLUMN public.zapi_webhook_log.deleted_batch_id IS
-  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
-
 -- ─── 3. Partial indexes WHERE deleted_at IS NULL ──────────────────────────────
 --
 -- Partial indexes cobrem apenas registros ativos (99%+ dos acessos) — o planner
@@ -351,7 +303,84 @@ COMMENT ON INDEX public.idx_zapi_cleanup_batches_status_expires IS
   'query de batches pendentes no painel de lixeira. '
   'Referência: RAQ-MAND-EM082.';
 
--- ─── 4b. Helper can_access_zapi_account (FIX 1 — IDOR cross-account) ────────
+-- ─── 4b. Coluna deleted_batch_id nas 6 tabelas (FIX 2 — restore determinístico) ─
+--
+-- Movido para APÓS o CREATE TABLE zapi_cleanup_batches (seção 4) para que a FK
+-- possa referenciar a tabela recém-criada. Colocar antes da seção 4 causava
+-- "relation does not exist" e rollback imediato da migration inteira.
+--
+-- Por que: o restore anterior filtrava por deleted_by = batch.initiated_by, que mistura
+-- registros de batches diferentes do mesmo usuário na mesma conta. Com deleted_batch_id
+-- o restore é scoped exatamente ao lote — elimina drift completamente.
+-- deleted_by é mantido para auditoria.
+--
+-- ON DELETE SET NULL: se o batch for deletado (cenário de rollback manual), os registros
+-- perdem o vínculo com o batch mas mantêm deleted_at (continuam ocultos até o purge-trash).
+
+ALTER TABLE public.zapi_messages
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chats
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chat_notes
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chat_tags
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_chat_message_flags
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+ALTER TABLE public.zapi_webhook_log
+  ADD COLUMN IF NOT EXISTS deleted_batch_id UUID REFERENCES public.zapi_cleanup_batches(id) ON DELETE SET NULL;
+
+COMMENT ON COLUMN public.zapi_messages.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. NULL = ativo ou apagado antes do EM082. '
+  'Usado pelo restore para reverter exatamente este lote (evita drift com outros batches). '
+  'Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chats.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chat_notes.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chat_tags.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_chat_message_flags.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+COMMENT ON COLUMN public.zapi_webhook_log.deleted_batch_id IS
+  'ID do lote de limpeza que gerou este soft-delete. Referência: RAQ-MAND-EM082.';
+
+-- Partial index em deleted_batch_id (queries de restore e auditoria de lote)
+CREATE INDEX IF NOT EXISTS idx_zapi_messages_batch
+  ON public.zapi_messages (deleted_batch_id)
+  WHERE deleted_batch_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_zapi_chats_batch
+  ON public.zapi_chats (deleted_batch_id)
+  WHERE deleted_batch_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_zapi_chat_notes_batch
+  ON public.zapi_chat_notes (deleted_batch_id)
+  WHERE deleted_batch_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_zapi_chat_tags_batch
+  ON public.zapi_chat_tags (deleted_batch_id)
+  WHERE deleted_batch_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_zapi_chat_message_flags_batch
+  ON public.zapi_chat_message_flags (deleted_batch_id)
+  WHERE deleted_batch_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_zapi_webhook_log_batch
+  ON public.zapi_webhook_log (deleted_batch_id)
+  WHERE deleted_batch_id IS NOT NULL;
+
+-- ─── 4c. Helper can_access_zapi_account (FIX 1 — IDOR cross-account) ────────
 --
 -- Por que aqui e não na migration 111:
 --   A migration 111 criou is_zapi_privileged(_uid) para controle de acesso ao painel
@@ -374,8 +403,9 @@ CREATE OR REPLACE FUNCTION public.can_access_zapi_account(
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
-SECURITY DEFINER
 STABLE
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   _role TEXT;
