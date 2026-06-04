@@ -78,7 +78,8 @@ async function verifyPassword(password: string, storedHash: string): Promise<boo
   const saltHex = parts[2];
   const expectedHashHex = parts[3];
 
-  if (isNaN(iterations) || iterations < 1) return false;
+  // B-02: piso de 100 000 iterações — rejeita hashes fracos de import legado
+  if (isNaN(iterations) || iterations < 100000) return false;
 
   const encoder = new TextEncoder();
   const passwordBytes = encoder.encode(password);
@@ -214,31 +215,44 @@ Deno.serve(async (req) => {
     if (!valid) {
       console.warn('zapi-validate-panel-password: senha incorreta', { callerId, accountId });
 
-      // Atualiza rate-limit no banco
-      const windowStart = rlRow?.window_start
-        ? new Date(rlRow.window_start)
-        : now;
-      const windowExpired = now.getTime() - windowStart.getTime() >= RATE_LIMIT_WINDOW_MS;
+      // M-01: incremento atômico via RPC — elimina race condition TOCTOU
+      // O banco faz INSERT ... ON CONFLICT DO UPDATE em uma única operação.
+      const { data: rlResult, error: rlBumpErr } = await admin.rpc('zapi_rl_bump', {
+        _user: callerId,
+        _account: accountId,
+        _window_ms: RATE_LIMIT_WINDOW_MS,
+        _max: RATE_LIMIT_MAX,
+        _lockout_ms: LOCKOUT_DURATION_MS,
+      });
 
-      const newWindowStart = windowExpired ? now.toISOString() : rlRow!.window_start ?? now.toISOString();
-      const newAttempts = windowExpired ? 1 : (rlRow?.failed_attempts ?? 0) + 1;
-      const newLockedUntil =
-        newAttempts >= RATE_LIMIT_MAX
-          ? new Date(now.getTime() + LOCKOUT_DURATION_MS).toISOString()
-          : null;
+      if (rlBumpErr) {
+        console.error('zapi-validate-panel-password: erro ao incrementar rate-limit', { code: rlBumpErr.code });
+        // Não vazar estado — retorna genérico
+        return jsonResponse(500, { error: 'Erro interno' });
+      }
 
-      await admin
-        .from('zapi_panel_rate_limits')
-        .upsert(
+      // rlResult é um array de linhas (RETURNS TABLE); pega a primeira
+      const rl = Array.isArray(rlResult) ? rlResult[0] : rlResult;
+
+      if (rl?.locked) {
+        const retryAfterSec = rl.retry_after_sec ?? Math.ceil(LOCKOUT_DURATION_MS / 1000);
+        console.warn('zapi-validate-panel-password: lockout ativado agora', { callerId, accountId, retryAfterSec });
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: 'Muitas tentativas. Aguarde antes de tentar novamente.',
+            retry_after_seconds: retryAfterSec,
+          }),
           {
-            user_id: callerId,
-            account_id: accountId,
-            failed_attempts: newAttempts,
-            window_start: newWindowStart,
-            locked_until: newLockedUntil,
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'Retry-After': String(retryAfterSec),
+            },
           },
-          { onConflict: 'user_id,account_id' },
         );
+      }
 
       return jsonResponse(401, { ok: false, error: 'Credenciais inválidas' });
     }

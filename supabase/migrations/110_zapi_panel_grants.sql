@@ -168,7 +168,69 @@ CREATE POLICY "zapi_messages_select"
 GRANT SELECT ON public.zapi_panel_grants TO authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.zapi_panel_grants TO service_role;
 
--- ─── 6. Verificação final ─────────────────────────────────────────────────────
+-- ─── 6. Função RPC zapi_rl_bump — incremento atômico de rate-limit ──────────
+--
+-- Incrementa failed_attempts de forma atômica via INSERT ... ON CONFLICT DO UPDATE
+-- (operação única no banco — elimina race condition TOCTOU do read-modify-write JS).
+-- Retorna (locked boolean, retry_after_sec int) para a EF usar direto na resposta.
+-- SECURITY DEFINER + REVOKE garantem execução apenas via service_role (a EF).
+--
+-- Parâmetros:
+--   _user        — auth.users.id do caller
+--   _account     — zapi_accounts.id da conta sendo validada
+--   _window_ms   — janela de rate-limit em ms (ex: 900000 = 15min)
+--   _max         — máximo de tentativas falhas antes do lockout (ex: 5)
+--   _lockout_ms  — duração do lockout em ms (ex: 900000 = 15min)
+--
+-- Referência: RAQ-MAND-EM078 Pentest M-01 (TOCTOU fix)
+
+CREATE OR REPLACE FUNCTION public.zapi_rl_bump(
+  _user       uuid,
+  _account    uuid,
+  _window_ms  int,
+  _max        int,
+  _lockout_ms int
+)
+RETURNS TABLE(locked boolean, retry_after_sec int)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  r public.zapi_panel_rate_limits;
+BEGIN
+  INSERT INTO public.zapi_panel_rate_limits(user_id, account_id, failed_attempts, window_start)
+  VALUES (_user, _account, 1, now())
+  ON CONFLICT (user_id, account_id) DO UPDATE
+    SET failed_attempts = CASE
+          WHEN now() - zapi_panel_rate_limits.window_start >= (_window_ms || ' milliseconds')::interval
+          THEN 1
+          ELSE zapi_panel_rate_limits.failed_attempts + 1
+        END,
+        window_start = CASE
+          WHEN now() - zapi_panel_rate_limits.window_start >= (_window_ms || ' milliseconds')::interval
+          THEN now()
+          ELSE zapi_panel_rate_limits.window_start
+        END
+  RETURNING * INTO r;
+
+  IF r.failed_attempts >= _max THEN
+    UPDATE public.zapi_panel_rate_limits
+       SET locked_until = now() + (_lockout_ms || ' milliseconds')::interval
+     WHERE user_id = _user AND account_id = _account;
+    RETURN QUERY SELECT true, (_lockout_ms / 1000);
+  ELSE
+    RETURN QUERY SELECT false, 0;
+  END IF;
+END;
+$$;
+
+-- Revoga acesso público e de usuários autenticados — só service_role executa
+REVOKE ALL ON FUNCTION public.zapi_rl_bump(uuid, uuid, int, int, int) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.zapi_rl_bump(uuid, uuid, int, int, int) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.zapi_rl_bump(uuid, uuid, int, int, int) TO service_role;
+
+-- ─── 7. Verificação final ─────────────────────────────────────────────────────
 -- Confirma que as novas tabelas e policies existem com os nomes esperados.
 
 DO $$

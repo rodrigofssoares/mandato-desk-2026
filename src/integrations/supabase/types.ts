@@ -3059,6 +3059,19 @@ export type Database = {
         Args: { _account_id: string }
         Returns: string
       }
+      zapi_rl_bump: {
+        Args: {
+          _user: string
+          _account: string
+          _window_ms: number
+          _max: number
+          _lockout_ms: number
+        }
+        Returns: {
+          locked: boolean
+          retry_after_sec: number
+        }[]
+      }
     }
     Enums: {
       activity_type:
