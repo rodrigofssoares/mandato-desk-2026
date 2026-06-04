@@ -2,7 +2,14 @@
 //
 // Gerencia o estado de desbloqueio de uma conta Z-API para visualização
 // de conversas. A sessão é EM MEMÓRIA (module-level Map) — reload força
-// nova validação de senha. Admin sempre desbloqueado (bypass de cadeado).
+// nova validação de senha.
+//
+// Fluxo EM080:
+//   1. isPrivileged (admin|proprietario) + !requirePasswordForPrivileged → bypass (sempre desbloqueado).
+//   2. isPrivileged + requirePasswordForPrivileged → fluxo normal de senha.
+//   3. Não-privilegiado → sempre precisa de senha (sem bypass).
+//   4. unlock(password) → chama zapi-validate-panel-password; sucesso atualiza map.
+//   5. lock() → remove entrada do map.
 //
 // Por que module-level e não sessionStorage:
 //   - Spec EM078 exige que reload re-tranca: sessionStorage sobrevive a
@@ -10,28 +17,28 @@
 //     que qualquer reload/navegação limpa o estado sem persistência.
 //   - Conteúdo sensível (conversas) não deve sobreviver a reload sem nova autenticação.
 //
-// Fluxo:
-//   1. Admin → isUnlocked sempre true, sem chamada à EF.
-//   2. Não-admin → isUnlocked depende da presença de entrada válida em sessionMap.
-//   3. unlock(password) → chama zapi-validate-panel-password; sucesso atualiza map.
-//   4. lock() → remove entrada do map.
-//
-// Reference: RAQ-MAND-EM078 — T3 (hook frontend)
+// Reference: RAQ-MAND-EM078 — T3 (hook frontend); RAQ-MAND-EM080 — T6 (bypass privilegiado)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useImpersonation } from '@/context/ImpersonationContext';
+import { useZapiPanelSettings } from '@/hooks/useZapiPanelSettings';
 
 // ─── Estado module-level (sobrevive a re-renders, não a reload) ──────────────
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
-/** Mapa de account_id → timestamp de expiração (ms desde epoch). */
+/** Mapa de (account_id + '::' + activeRole) → timestamp de expiração (ms desde epoch).
+ *
+ * A chave composta garante que trocar de role via impersonation re-tranca a sessão —
+ * o admin que desbloqueou como 'admin' não herda o unlock ao simular 'estagiario'.
+ * Fix P-02/F-02 (Security/Pentest EM080): sessionMap infiel sob impersonation.
+ */
 const sessionMap = new Map<string, number>();
 
-/** Verifica se há sessão válida (não expirada) para uma conta. */
-function isSessionValid(accountId: string): boolean {
-  const expiresAt = sessionMap.get(accountId);
+/** Verifica se há sessão válida (não expirada) para uma conta + role específica. */
+function isSessionValid(sessionKey: string): boolean {
+  const expiresAt = sessionMap.get(sessionKey);
   if (!expiresAt) return false;
   return Date.now() < expiresAt;
 }
@@ -55,13 +62,24 @@ export interface ZapiPanelSessionState {
 
 export function useZapiPanelSession(accountId: string | null): ZapiPanelSessionState {
   const { activeRole } = useImpersonation();
-  const isAdmin = activeRole === 'admin';
+  // EM080: proprietario também é privilegiado
+  const isPrivileged = activeRole === 'admin' || activeRole === 'proprietario';
 
-  // Admin nunca precisa validar — bypass direto
+  // EM080: lê toggle global — DEVE ser chamado incondicionalmente (regra dos hooks)
+  const { data: panelSettings } = useZapiPanelSettings();
+  const requirePasswordForPrivileged = panelSettings?.requirePasswordForPrivileged ?? false;
+
+  // Privilegiado sem exigência de senha → bypass direto
+  const bypass = isPrivileged && !requirePasswordForPrivileged;
+
+  // Fix P-02/F-02: chave composta por conta + role — troca de role via impersonation
+  // invalida grants em memória adquiridos na role anterior.
+  const sessionKey = accountId ? `${accountId}::${activeRole}` : null;
+
   const [unlocked, setUnlocked] = useState<boolean>(() => {
-    if (isAdmin) return true;
-    if (!accountId) return false;
-    return isSessionValid(accountId);
+    if (bypass) return true;
+    if (!sessionKey) return false;
+    return isSessionValid(sessionKey);
   });
 
   const [loading, setLoading] = useState(false);
@@ -69,8 +87,8 @@ export function useZapiPanelSession(accountId: string | null): ZapiPanelSessionS
   const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState(0);
 
   const unlock = useCallback(async (password: string): Promise<boolean> => {
-    if (isAdmin) return true;
-    if (!accountId) return false;
+    if (bypass) return true;
+    if (!accountId || !sessionKey) return false;
 
     setLoading(true);
     setError(null);
@@ -104,8 +122,9 @@ export function useZapiPanelSession(accountId: string | null): ZapiPanelSessionS
         // Rate-limit
         const retryAfter = data.retry_after_seconds ?? 60;
         setRateLimitRetryAfter(retryAfter);
+        const minutes = Math.ceil(retryAfter / 60);
         setError(
-          `Muitas tentativas incorretas. Aguarde ${Math.ceil(retryAfter / 60)} minuto${retryAfter > 60 ? 's' : ''}.`,
+          `Muitas tentativas incorretas. Aguarde ${minutes} minuto${minutes > 1 ? 's' : ''}.`,
         );
         return false;
       }
@@ -115,12 +134,12 @@ export function useZapiPanelSession(accountId: string | null): ZapiPanelSessionS
         return false;
       }
 
-      // Sucesso — armazena expiração em memória
+      // Sucesso — armazena expiração em memória pela chave composta (conta + role)
       const expiresAt = data.expires_at
         ? new Date(data.expires_at as string).getTime()
         : Date.now() + 8 * 60 * 60 * 1000;
 
-      sessionMap.set(accountId, expiresAt);
+      sessionMap.set(sessionKey, expiresAt);
       setUnlocked(true);
       return true;
     } catch (err) {
@@ -130,18 +149,28 @@ export function useZapiPanelSession(accountId: string | null): ZapiPanelSessionS
     } finally {
       setLoading(false);
     }
-  }, [accountId, isAdmin]);
+  }, [accountId, sessionKey, bypass]);
 
   const lock = useCallback(() => {
-    if (!accountId) return;
-    sessionMap.delete(accountId);
+    if (!sessionKey) return;
+    sessionMap.delete(sessionKey);
     setUnlocked(false);
     setError(null);
     setRateLimitRetryAfter(0);
-  }, [accountId]);
+  }, [sessionKey]);
 
-  // Admin → sempre desbloqueado
-  if (isAdmin) {
+  // EM080 F02: re-sincroniza o estado de desbloqueio quando o bypass deixa de valer
+  // (ex: admin liga o toggle "exigir senha" enquanto um privilegiado está na página)
+  // ou quando a conta/role muda. Sem isso, `unlocked` ficaria preso em true (stale do
+  // init) e o usuário veria lista vazia (RLS bloqueia) sem o lock screen aparecer.
+  useEffect(() => {
+    if (!bypass) {
+      setUnlocked(sessionKey ? isSessionValid(sessionKey) : false);
+    }
+  }, [bypass, sessionKey]);
+
+  // Privilegiado sem exigência de senha → bypass direto (sempre desbloqueado)
+  if (bypass) {
     return {
       isUnlocked: true,
       loading: false,

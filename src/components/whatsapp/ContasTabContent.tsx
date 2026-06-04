@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Lock, MessageCircle, Plus, Layers } from 'lucide-react';
+import { Lock, MessageCircle, Plus, Layers, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -26,6 +29,7 @@ import {
 import type { RecursosConfig } from '@/lib/featureFlags';
 import { isFeatureEnabled } from '@/lib/featureFlags';
 import type { BusinessHoursConfig } from '@/hooks/useBusinessHours';
+import { useZapiPanelSettings, useUpdateZapiPanelSettings } from '@/hooks/useZapiPanelSettings';
 import { toast } from 'sonner';
 
 export function ContasTabContent() {
@@ -40,6 +44,9 @@ export function ContasTabContent() {
   const removePasswordMutation = useRemoveZapiPanelPassword();
   // EM078: status de senha por conta (admin-only — não-admin recebe {} silenciosamente)
   const { data: passwordStatuses = {} } = useZapiAllPanelPasswordStatuses();
+  // EM080: toggle global de senha para privilegiados
+  const { data: panelSettings } = useZapiPanelSettings();
+  const updatePanelSettings = useUpdateZapiPanelSettings();
 
   // ─── Estado dos dialogs ──────────────────────────────────────────────────
   const [formOpen, setFormOpen] = useState(false);
@@ -187,6 +194,37 @@ export function ContasTabContent() {
 
   return (
     <>
+      {/* EM080: toggle global de exigência de senha para privilegiados — só admin vê */}
+      {isAdmin && (
+        <Card className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-1">
+                <Label
+                  htmlFor="toggle-privileged-password"
+                  className="text-sm font-medium text-amber-900 dark:text-amber-100 cursor-pointer"
+                >
+                  Exigir senha de painel para Administradores e Proprietários
+                </Label>
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Quando ligado, admins e proprietários também precisarão digitar a senha de cada
+                  conta para abrir as conversas. Desligado (padrão): acesso direto.
+                </p>
+              </div>
+              <Switch
+                id="toggle-privileged-password"
+                checked={panelSettings?.requirePasswordForPrivileged ?? false}
+                disabled={updatePanelSettings.isPending}
+                onCheckedChange={(checked) =>
+                  updatePanelSettings.mutate({ require_password_for_privileged: checked })
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Aviso para nao-admin */}
       {!isAdmin && (
         <Alert className="mb-4 border-info/30 bg-info-soft text-info-soft-foreground">

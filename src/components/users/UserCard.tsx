@@ -13,12 +13,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Shield, UserCheck, UserX, RefreshCw, KeyRound, Pencil, Phone } from 'lucide-react';
+import { MoreVertical, Shield, UserCheck, UserX, RefreshCw, KeyRound, Pencil, Phone, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUpdateUserRole, useUpdateUserStatus, type UserProfile } from '@/hooks/useUsers';
 import { ROLES, ROLE_LABELS, ROLE_LEVELS, type Role } from '@/types/permissions';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { EditUserDialog } from './EditUserDialog';
+import { LinkWhatsappAccountsDialog } from './LinkWhatsappAccountsDialog';
 
 interface UserCardProps {
   user: UserProfile;
@@ -53,6 +54,7 @@ export function UserCard({ user }: UserCardProps) {
   const updateStatus = useUpdateUserStatus();
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [linkWhatsappOpen, setLinkWhatsappOpen] = useState(false);
 
   const isOwnCard = currentUser?.id === user.id;
   const currentUserLevel = ROLE_LEVELS[(currentUser?.role as Role) ?? 'estagiario'];
@@ -159,6 +161,20 @@ export function UserCard({ user }: UserCardProps) {
                     <KeyRound className="h-4 w-4 mr-2" />
                     Alterar Senha
                   </DropdownMenuItem>
+
+                  {/* EM080 F01: gestão de vínculo de contas é admin-only (a RLS de
+                      zapi_account_users só permite INSERT/DELETE pra admin). Não expor
+                      ao proprietário a ação que ele não consegue completar. */}
+                  {currentUser?.role === 'admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem onClick={() => setLinkWhatsappOpen(true)}>
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Vincular contas WhatsApp
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -203,6 +219,13 @@ export function UserCard({ user }: UserCardProps) {
         user={user}
         isOwnProfile={isOwnCard}
         currentUserRole={(currentUser?.role as Role) ?? 'estagiario'}
+      />
+
+      <LinkWhatsappAccountsDialog
+        open={linkWhatsappOpen}
+        onOpenChange={setLinkWhatsappOpen}
+        userId={user.id}
+        userName={user.nome?.trim() || user.email}
       />
     </>
   );

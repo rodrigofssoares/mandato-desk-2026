@@ -7,18 +7,25 @@
 //   1. Valida JWT (qualquer usuário autenticado com perfil ATIVO).
 //   2. Guard de Content-Length (máx 4KB).
 //   3. Valida { account_id, password } do body.
-//   4. Rate-limit persistente no banco (tabela zapi_panel_rate_limits):
+//   4. [EM080] Verifica role do caller (admin/client ou admin/proprietario = privilegiado).
+//      Se restrito: exige vínculo em zapi_account_users — sem vínculo → 403 antes de qualquer
+//      validação de senha (não vaza se senha está correta pra conta que ele não pode ver).
+//      Se privilegiado: segue fluxo normal (permite que admin/proprietário também obtenham
+//      grant quando toggle require_password_for_privileged = true).
+//   5. Rate-limit persistente no banco (tabela zapi_panel_rate_limits):
 //      máx 5 tentativas falhas / 15min por (user_id, account_id).
 //      Sobrevive a cold starts de workers Deno isolados.
 //      Após lockout → 429 com tempo restante.
-//   5. Busca hash em zapi_panel_passwords (service_role).
-//   6. Compare constant-time PBKDF2-SHA256.
-//   7. Sucesso → upsert grant em zapi_panel_grants com expires_at = now() + 8h.
+//   6. Busca hash em zapi_panel_passwords (service_role).
+//   7. Compare constant-time PBKDF2-SHA256.
+//   8. Sucesso → upsert grant em zapi_panel_grants com expires_at = now() + 8h.
 //      Zera linha de rate-limit. Limpa grants expirados do próprio usuário.
-//   8. Falha → incrementa failed_attempts no banco; se ≥ 5 dentro de 15min,
+//   9. Falha → incrementa failed_attempts no banco; se ≥ 5 dentro de 15min,
 //      seta locked_until = now() + 15min. Nunca confirma se conta tem ou não senha.
 //
 // Segurança:
+//   - [EM080] Verificação de vínculo ANTES da senha: defesa em profundidade.
+//     Restrito sem vínculo recebe 403 sem entrar no fluxo de senha (não conta no rate-limit).
 //   - Rate-limit no banco: persiste entre workers Deno (F1 Security-Fix).
 //   - Compare constant-time via implementação manual (Web Crypto / Deno).
 //   - Resposta de erro genérica ("credenciais inválidas") — não vaza detalhes.
@@ -26,6 +33,7 @@
 //   - TTL do grant: 8 horas. Após expirar, RLS bloqueia SELECT nas tabelas.
 //
 // Reference: RAQ-MAND-EM078 — T2 (EF validate-password) + Security-Fix F1/F6
+// Reference: RAQ-MAND-EM080 — defesa em profundidade (verificação de vínculo)
 
 import { corsHeaders, jsonResponse } from '../_shared/admin-guard.ts';
 import { requireAuth } from '../_shared/auth-guard.ts';
@@ -148,7 +156,72 @@ Deno.serve(async (req) => {
       return jsonResponse(400, { error: 'password é obrigatório' });
     }
 
-    // ── 3. Rate-limit persistente no banco (F1) ──────────────────────────────
+    // ── [EM080] 3. Verificação de role + vínculo (defesa em profundidade) ────
+    //
+    // Determinamos se o caller é privilegiado (admin/proprietário ATIVO) ou
+    // restrito (assessor/assistente/estagiário). Fazemos isso aqui (server-side,
+    // service_role) para não confiar no JWT claims nem em has_role (bug documentado:
+    // has_role(uid, role≠admin) retorna true para qualquer usuário ATIVO).
+    //
+    // Se restrito: exige vínculo explícito em zapi_account_users.
+    //   - Sem vínculo → 403 ANTES de qualquer validação de senha.
+    //   - Não conta como tentativa de rate-limit (é bloqueio de autorização, não de senha).
+    //   - Não vaza se a senha está certa ou errada para a conta.
+    //
+    // Se privilegiado: segue o fluxo normal. Isso permite que admin/proprietário
+    //   também validem e obtenham grant quando toggle require_password_for_privileged=true.
+
+    const { data: profileData, error: profileErr } = await admin
+      .from('profiles')
+      .select('role, status_aprovacao')
+      .eq('id', callerId)
+      .maybeSingle();
+
+    if (profileErr || !profileData) {
+      console.error('zapi-validate-panel-password: erro ao buscar perfil do caller', {
+        code: profileErr?.code,
+        callerId,
+      });
+      return jsonResponse(500, { error: 'Erro interno' });
+    }
+
+    const isPrivileged =
+      profileData.status_aprovacao === 'ATIVO' &&
+      (profileData.role === 'admin' || profileData.role === 'proprietario');
+
+    if (!isPrivileged) {
+      // Restrito: verifica se tem vínculo com a conta solicitada
+      const { data: vinculo, error: vinculoErr } = await admin
+        .from('zapi_account_users')
+        .select('id')
+        .eq('account_id', accountId)
+        .eq('user_id', callerId)
+        .maybeSingle();
+
+      if (vinculoErr) {
+        console.error('zapi-validate-panel-password: erro ao verificar vínculo', {
+          code: vinculoErr.code,
+          callerId,
+          accountId,
+        });
+        return jsonResponse(500, { error: 'Erro interno' });
+      }
+
+      if (!vinculo) {
+        // Sem vínculo: nega acesso antes de qualquer checagem de senha.
+        // Não conta no rate-limit (bloqueio de autorização, não de credencial).
+        console.warn('zapi-validate-panel-password: restrito sem vínculo para conta', {
+          callerId,
+          accountId,
+        });
+        return jsonResponse(403, {
+          ok: false,
+          error: 'Conta não vinculada ao seu usuário. Peça ao administrador.',
+        });
+      }
+    }
+
+    // ── 4. Rate-limit persistente no banco (F1) ──────────────────────────────
     // Lê o registro de rate-limit atual via service_role.
     const { data: rlRow, error: rlReadErr } = await admin
       .from('zapi_panel_rate_limits')
@@ -189,7 +262,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── 4. Busca hash armazenado (service_role) ──────────────────────────────
+    // ── 5. Busca hash armazenado (service_role) ──────────────────────────────
     const { data: row, error: passErr } = await admin
       .from('zapi_panel_passwords')
       .select('password_hash')
@@ -209,7 +282,7 @@ Deno.serve(async (req) => {
       return jsonResponse(401, { ok: false, error: 'Credenciais inválidas' });
     }
 
-    // ── 5. Compare constant-time ─────────────────────────────────────────────
+    // ── 6. Compare constant-time ─────────────────────────────────────────────
     const valid = await verifyPassword(password, row.password_hash);
 
     if (!valid) {
@@ -257,7 +330,7 @@ Deno.serve(async (req) => {
       return jsonResponse(401, { ok: false, error: 'Credenciais inválidas' });
     }
 
-    // ── 6. Senha correta → zera rate-limit e emite grant ────────────────────
+    // ── 7. Senha correta → zera rate-limit e emite grant ────────────────────
 
     // Zera o registro de rate-limit (sucesso cancela penalidade)
     await admin
