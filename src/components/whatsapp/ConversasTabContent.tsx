@@ -36,6 +36,7 @@ import {
   Keyboard,
   Pencil,
   Sparkles,
+  Lock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
@@ -222,6 +223,9 @@ export function ConversasTabContent({
   const { can } = usePermissions();
   const canEdit = can.editWhatsapp();
   const { activeRole } = useImpersonation();
+  // EM080 F-01: privilegiado baseado na role real (não em impersonation) para decisões
+  // de exibição que afetam defense in depth. Restrito nunca vê "Todos os números".
+  const isPrivileged = activeRole === 'admin' || activeRole === 'proprietario';
 
   // EM078: cadeado de senha por conta — estado em memória (reload re-tranca)
   // Em modo __all__ (todos os números, valor '__all__'), não aplica cadeado (admin feature)
@@ -568,6 +572,17 @@ export function ConversasTabContent({
   }
 
   if (accounts.length === 0) {
+    // EM080: restrito sem contas vinculadas → aviso específico pedindo admin
+    // isPrivileged derivado no escopo do componente (acima)
+    if (!isPrivileged) {
+      return (
+        <EmptyState
+          icon={Lock}
+          title="Nenhuma conta de WhatsApp liberada para você"
+          description="Peça ao administrador para vincular uma conta ao seu usuário na área de Equipe."
+        />
+      );
+    }
     return (
       <EmptyState
         icon={MessageSquare}
@@ -614,7 +629,9 @@ export function ConversasTabContent({
             </SelectTrigger>
             <SelectContent>
               {/* T87 (Fase 7): C26 — visão consolidada multi-instância */}
-              {accounts.length >= 1 && (
+              {/* EM080 F-01: opção restrita a privilegiados — restrito sempre
+                  escolhe uma conta específica para passar pelo lock screen */}
+              {accounts.length >= 1 && isPrivileged && (
                 <SelectItem value={ALL_ACCOUNTS_VALUE}>
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full shrink-0 bg-primary/60" aria-hidden="true" />

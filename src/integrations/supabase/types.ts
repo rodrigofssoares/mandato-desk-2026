@@ -3144,6 +3144,52 @@ export type Database = {
           },
         ]
       }
+      zapi_account_users: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_account_users_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_account_users_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_account_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zapi_panel_grants: {
         Row: {
           account_id: string
@@ -3257,6 +3303,35 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zapi_panel_settings: {
+        Row: {
+          id: boolean
+          require_password_for_privileged: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          require_password_for_privileged?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          require_password_for_privileged?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_panel_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3856,6 +3931,14 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_user_active: { Args: { user_id: string }; Returns: boolean }
+      is_zapi_privileged: {
+        Args: { _uid: string }
+        Returns: boolean
+      }
+      zapi_require_password_for_privileged: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       normalize_phone: { Args: { phone_number: string }; Returns: string }
       registrar_optin_whatsapp: {
         Args: { p_contact_id: string; p_origem: string; p_valor: boolean }

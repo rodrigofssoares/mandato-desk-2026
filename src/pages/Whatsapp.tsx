@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Loader2, Lock, MessageCircle, Send } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui-system';
@@ -22,6 +22,7 @@ import { isFeatureEnabled } from '@/lib/featureFlags';
 // T70 (Fase 6 Onda B): aba de eventos visível se ao menos 1 conta tem c20 ativo
 // T90 (Fase 7 Onda B): aba de dashboard de atendimento — visível para admins com contas
 // T91 (Fase 7 Onda B): aba de auditoria — visível somente para admins
+// EM080: tier-based tab gating — privilegiado (admin|proprietario) vs. restrito (demais)
 const TABS = ['contas', 'conversas', 'campanhas', 'eventos', 'dashboard', 'auditoria', 'webhooks', 'logs'] as const;
 type Tab = (typeof TABS)[number];
 
@@ -32,35 +33,32 @@ function isValidTab(value: string | null): value is Tab {
 export default function Whatsapp() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  // T15: se ?chat= ou ?contact= presente e tab inválida/ausente, força aba conversas
   const chatParam = searchParams.get('chat');
   const contactParam = searchParams.get('contact');
   const hasDeepLink = !!(chatParam || contactParam);
-  const activeTab: Tab = isValidTab(rawTab)
-    ? rawTab
-    : hasDeepLink
-      ? 'conversas'
-      : 'contas';
 
   const { can, isLoading: isPermLoading } = usePermissions();
   const canAccess = can.accessWhatsapp();
   const { activeRole } = useImpersonation();
+
+  // EM080: privilegiado = admin | proprietario; restrito = demais
+  const isPrivileged = activeRole === 'admin' || activeRole === 'proprietario';
   const isAdmin = activeRole === 'admin';
 
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const { data: accounts = [] } = useZapiAccounts();
   const hasSendableAccount = accounts.some((a) => a.status !== 'disconnected');
-  // T65 (Fase 6 Onda A): aba campanhas visível se alguma conta tem c17 ativo
+
+  // T65: aba campanhas visível se alguma conta tem c17 ativo
   const hasBroadcastEnabled = accounts.some((a) =>
     isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c17'),
   );
-  // Primeira conta com c17 para usar na aba de campanhas
   const broadcastAccountId =
     accounts.find((a) =>
       isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c17'),
     )?.id ?? accounts[0]?.id ?? '';
 
-  // T70 (Fase 6 Onda B): aba de eventos visível se alguma conta tem c20 ativo
+  // T70: aba eventos visível se alguma conta tem c20 ativo
   const hasEventosEnabled = accounts.some((a) =>
     isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c20'),
   );
@@ -68,6 +66,34 @@ export default function Whatsapp() {
     accounts.find((a) =>
       isFeatureEnabled(a.recursos_config as Record<string, boolean> | null, 'c20'),
     )?.id ?? accounts[0]?.id ?? '';
+
+  // EM080: calcula conjunto de abas disponíveis para o tier atual
+  // Restrito: apenas 'conversas'. Privilegiado: conversas + contas + campanhas + eventos.
+  // Admin-only: dashboard, auditoria, webhooks, logs.
+  const availableTabs = useMemo(() => {
+    const tabs = new Set<Tab>(['conversas']);
+    if (isPrivileged) {
+      tabs.add('contas');
+      if (hasBroadcastEnabled) tabs.add('campanhas');
+      if (hasEventosEnabled) tabs.add('eventos');
+    }
+    if (isAdmin) {
+      if (accounts.length > 0) tabs.add('dashboard');
+      tabs.add('auditoria');
+      tabs.add('webhooks');
+      tabs.add('logs');
+    }
+    return tabs;
+  }, [isPrivileged, isAdmin, accounts.length, hasBroadcastEnabled, hasEventosEnabled]);
+
+  // Resolve a aba ativa: deep-link força conversas; aba pedida não disponível → fallback conversas
+  const resolvedTab: Tab = hasDeepLink
+    ? 'conversas'
+    : isValidTab(rawTab) && availableTabs.has(rawTab as Tab)
+      ? (rawTab as Tab)
+      : 'conversas';
+
+  const activeTab = resolvedTab;
 
   // T15: quando há deep-link e aba é diferente de conversas, corrige a tab na URL
   useEffect(() => {
@@ -82,6 +108,13 @@ export default function Whatsapp() {
     }
   }, [hasDeepLink, rawTab, setSearchParams]);
 
+  // EM080: quando aba pedida na URL não está disponível pro tier, redireciona pra conversas
+  useEffect(() => {
+    if (!isPermLoading && rawTab && isValidTab(rawTab) && !availableTabs.has(rawTab)) {
+      setSearchParams({ tab: 'conversas' }, { replace: true });
+    }
+  }, [isPermLoading, rawTab, availableTabs, setSearchParams]);
+
   // T13: ouve evento do ConversaPaletteDialog para abrir o NewMessageDialog (número avulso)
   useEffect(() => {
     function handleOpenNewMessage() {
@@ -92,6 +125,8 @@ export default function Whatsapp() {
   }, []);
 
   function handleTabChange(value: string) {
+    // Segurança extra: restrito não consegue navegar pra aba proibida via clique
+    if (!availableTabs.has(value as Tab)) return;
     setSearchParams({ tab: value }, { replace: true });
   }
 
@@ -141,31 +176,46 @@ export default function Whatsapp() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="contas">Contas</TabsTrigger>
+          {/* EM080: Conversas — sempre visível */}
           <TabsTrigger value="conversas">Conversas</TabsTrigger>
-          {/* T65 (Fase 6 Onda A): aba de campanhas — só visível quando c17 ativo */}
-          {hasBroadcastEnabled && (
+
+          {/* EM080: Contas — somente privilegiado */}
+          {isPrivileged && (
+            <TabsTrigger value="contas">Contas</TabsTrigger>
+          )}
+
+          {/* T65 (Fase 6 Onda A): Campanhas — privilegiado + c17 ativo */}
+          {isPrivileged && hasBroadcastEnabled && (
             <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
           )}
-          {/* T70 (Fase 6 Onda B): aba de eventos — só visível quando c20 ativo */}
-          {hasEventosEnabled && (
+
+          {/* T70 (Fase 6 Onda B): Eventos — privilegiado + c20 ativo */}
+          {isPrivileged && hasEventosEnabled && (
             <TabsTrigger value="eventos">Eventos</TabsTrigger>
           )}
-          {/* T90 (Fase 7 Onda B): dashboard de atendimento — visível para admins */}
+
+          {/* T90 (Fase 7 Onda B): Dashboard — admin-only com contas */}
           {isAdmin && accounts.length > 0 && (
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           )}
-          {/* T91 (Fase 7 Onda B): auditoria de atendimentos — somente admins */}
+
+          {/* T91 (Fase 7 Onda B): Auditoria — admin-only */}
           {isAdmin && (
             <TabsTrigger value="auditoria">Auditoria</TabsTrigger>
           )}
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+
+          {/* EM080: Webhooks — admin-only (antes vazava pra todos) */}
+          {isAdmin && (
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          )}
+
+          {/* EM080: Logs — admin-only (antes vazava pra todos) */}
+          {isAdmin && (
+            <TabsTrigger value="logs">Logs</TabsTrigger>
+          )}
         </TabsList>
 
-        <TabsContent value="contas" className="space-y-4">
-          <ContasTabContent />
-        </TabsContent>
+        {/* EM080: TabsContent condicionais — restrito não consegue forçar via ?tab= */}
 
         <TabsContent value="conversas">
           {/* T15: passa deep-link params para que ConversasTabContent selecione o chat */}
@@ -175,15 +225,21 @@ export default function Whatsapp() {
           />
         </TabsContent>
 
+        {isPrivileged && (
+          <TabsContent value="contas" className="space-y-4">
+            <ContasTabContent />
+          </TabsContent>
+        )}
+
         {/* T65 (Fase 6 Onda A): gestão de campanhas broadcast */}
-        {hasBroadcastEnabled && (
+        {isPrivileged && hasBroadcastEnabled && (
           <TabsContent value="campanhas" className="h-[700px]">
             <BroadcastsTabContent accountId={broadcastAccountId} />
           </TabsContent>
         )}
 
         {/* T70 (Fase 6 Onda B): gestão de eventos com convite e RSVP */}
-        {hasEventosEnabled && (
+        {isPrivileged && hasEventosEnabled && (
           <TabsContent value="eventos" className="space-y-4">
             <EventosTabContent accountId={eventosAccountId} />
           </TabsContent>
@@ -203,13 +259,19 @@ export default function Whatsapp() {
           </TabsContent>
         )}
 
-        <TabsContent value="webhooks">
-          <WebhooksTabContent />
-        </TabsContent>
+        {/* EM080: Webhooks — admin-only */}
+        {isAdmin && (
+          <TabsContent value="webhooks">
+            <WebhooksTabContent />
+          </TabsContent>
+        )}
 
-        <TabsContent value="logs">
-          <LogsTabContent />
-        </TabsContent>
+        {/* EM080: Logs — admin-only */}
+        {isAdmin && (
+          <TabsContent value="logs">
+            <LogsTabContent />
+          </TabsContent>
+        )}
       </Tabs>
 
       <NewMessageDialog open={newMessageOpen} onOpenChange={setNewMessageOpen} />
