@@ -19,6 +19,8 @@ import {
   useUpdateZapiAccount,
   useDeleteZapiAccount,
   useResetZapiPanelPassword,
+  useRemoveZapiPanelPassword,
+  useZapiAllPanelPasswordStatuses,
   type ZapiAccount,
 } from '@/hooks/useZapiAccounts';
 import type { RecursosConfig } from '@/lib/featureFlags';
@@ -35,6 +37,9 @@ export function ContasTabContent() {
   const updateMutation = useUpdateZapiAccount();
   const deleteMutation = useDeleteZapiAccount();
   const resetPasswordMutation = useResetZapiPanelPassword();
+  const removePasswordMutation = useRemoveZapiPanelPassword();
+  // EM078: status de senha por conta (admin-only — não-admin recebe {} silenciosamente)
+  const { data: passwordStatuses = {} } = useZapiAllPanelPasswordStatuses();
 
   // ─── Estado dos dialogs ──────────────────────────────────────────────────
   const [formOpen, setFormOpen] = useState(false);
@@ -144,6 +149,10 @@ export function ContasTabContent() {
     );
   }
 
+  function handleRemovePassword(accountId: string) {
+    removePasswordMutation.mutate(accountId);
+  }
+
   // T51: salvar horário de atendimento
   function handleSaveBusinessHours(config: BusinessHoursConfig | null) {
     if (!editingAccount) return;
@@ -234,6 +243,7 @@ export function ContasTabContent() {
             <AccountCard
               key={account.id}
               account={account}
+              hasPassword={isAdmin ? (passwordStatuses[account.id] ?? false) : undefined}
               onEdit={isAdmin ? handleEdit : undefined}
               onDelete={isAdmin ? handleDelete : undefined}
               onResetPassword={isAdmin ? handleResetPassword : undefined}
@@ -293,8 +303,11 @@ export function ContasTabContent() {
         open={resetPassOpen}
         onOpenChange={setResetPassOpen}
         account={resetPassAccount}
+        hasPassword={resetPassAccount ? (passwordStatuses[resetPassAccount.id] ?? false) : false}
         isLoading={resetPasswordMutation.isPending}
+        isRemoving={removePasswordMutation.isPending}
         onSubmit={handleResetPasswordSubmit}
+        onRemove={isAdmin ? handleRemovePassword : undefined}
       />
 
       {/* T46: Gerenciador de respostas rápidas */}

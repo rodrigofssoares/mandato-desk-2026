@@ -1,4 +1,4 @@
-import { MessageCircle, Pencil, Trash2, KeyRound, Sparkles, Zap } from 'lucide-react';
+import { MessageCircle, Pencil, Trash2, KeyRound, Sparkles, Zap, Lock, LockOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { countEnabledFeatures } from '@/lib/featureFlags';
 
 interface AccountCardProps {
   account: ZapiAccount;
+  /** EM078: indica se a conta tem senha do painel definida. Exibe badge no card. */
+  hasPassword?: boolean;
   /** Quando ausente, oculta o botão (gating por role — non-admin não vê). */
   onEdit?: (account: ZapiAccount) => void;
   /** Quando ausente, oculta o botão. */
@@ -18,7 +20,7 @@ interface AccountCardProps {
   onQuickReplies?: (account: ZapiAccount) => void;
 }
 
-export function AccountCard({ account, onEdit, onDelete, onResetPassword, onQuickReplies }: AccountCardProps) {
+export function AccountCard({ account, hasPassword, onEdit, onDelete, onResetPassword, onQuickReplies }: AccountCardProps) {
   const hasAnyAction = onEdit || onDelete || onResetPassword || onQuickReplies;
   const createdAt = new Date(account.created_at).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -50,6 +52,28 @@ export function AccountCard({ account, onEdit, onDelete, onResetPassword, onQuic
                   <Sparkles className="h-2.5 w-2.5" />
                   {activeResourceCount} recurso{activeResourceCount !== 1 ? 's' : ''}
                 </Badge>
+              )}
+              {/* EM078: indicador de senha do painel */}
+              {hasPassword !== undefined && (
+                hasPassword ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] gap-1 font-medium py-0 px-1.5 border-green-300 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-400 dark:bg-green-950/30"
+                    title="Acesso às conversas protegido por senha"
+                  >
+                    <Lock className="h-2.5 w-2.5" />
+                    Com senha
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] gap-1 font-medium py-0 px-1.5 border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:bg-amber-950/30"
+                    title="Conversas acessíveis sem senha"
+                  >
+                    <LockOpen className="h-2.5 w-2.5" />
+                    Sem senha
+                  </Badge>
+                )
               )}
             </div>
           </div>
