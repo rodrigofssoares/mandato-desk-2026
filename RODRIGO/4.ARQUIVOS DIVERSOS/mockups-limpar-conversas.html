@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAQ-MAND-EM082 · 12 formatos para Limpar Conversas</title>
+<style>
+  :root{
+    --bg:#0b141a; --panel:#111b21; --panel2:#202c33; --line:#2a3942;
+    --txt:#e9edef; --muted:#8696a0; --green:#00a884; --green-d:#017561;
+    --red:#f15c6d; --red-d:#b23b48; --amber:#f0b429; --blue:#53bdeb;
+    --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#070d11;color:var(--txt)}
+  header.top{padding:18px 24px;background:linear-gradient(90deg,#0b141a,#111b21);border-bottom:1px solid var(--line)}
+  header.top h1{margin:0;font-size:18px;font-weight:700}
+  header.top p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .wrap{display:flex;min-height:calc(100vh - 70px)}
+  /* sidebar */
+  nav.side{width:300px;flex:0 0 300px;background:var(--panel);border-right:1px solid var(--line);padding:14px;overflow:auto}
+  nav.side .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 6px 6px}
+  nav.side button{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:transparent;color:var(--txt);border:1px solid transparent;border-radius:10px;padding:10px 12px;cursor:pointer;margin-bottom:4px;transition:.15s}
+  nav.side button:hover{background:var(--panel2)}
+  nav.side button.active{background:var(--panel2);border-color:var(--green-d)}
+  nav.side .num{flex:0 0 26px;height:26px;border-radius:7px;background:var(--panel2);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--green)}
+  nav.side button.active .num{background:var(--green);color:#04231d}
+  nav.side .nt{font-size:13.5px;font-weight:600;line-height:1.25}
+  nav.side .nd{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+  /* stage */
+  main.stage{flex:1;padding:30px;display:grid;place-items:start center;overflow:auto}
+  .device{width:100%;max-width:560px}
+  .meta{max-width:560px;margin:0 auto 16px;color:var(--muted);font-size:12.5px}
+  .meta b{color:var(--txt)}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--panel2);color:var(--green);border:1px solid var(--green-d);margin-left:6px}
+  /* generic card / dialog */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .card .hd{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .card .hd .ic{width:38px;height:38px;border-radius:10px;background:rgba(241,92,109,.12);color:var(--red);display:grid;place-items:center;font-size:18px;flex:0 0 38px}
+  .card .hd h3{margin:0;font-size:16px}
+  .card .hd p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+  .card .bd{padding:18px 20px}
+  .card .ft{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:rgba(255,255,255,.015)}
+  /* buttons */
+  .btn{border:none;border-radius:9px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .btn.ghost:hover{color:var(--txt);border-color:var(--muted)}
+  .btn.danger{background:var(--red-d);color:#fff}
+  .btn.danger:hover{background:var(--red)}
+  .btn.danger:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:var(--green);color:#04231d}
+  .btn.sm{padding:7px 12px;font-size:12.5px}
+  /* segmented */
+  .seg{display:flex;background:var(--panel2);border-radius:10px;padding:4px;gap:4px}
+  .seg button{flex:1;border:none;background:transparent;color:var(--muted);padding:8px 6px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--green);color:#04231d}
+  /* tabs */
+  .tabs{display:flex;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:13px 6px;font-size:13px;font-weight:600;cursor:pointer}
+  .tabs button.on{color:var(--green);border-bottom-color:var(--green)}
+  /* chips */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:999px;padding:8px 14px;font-size:12.5px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--muted)}
+  .chip.on{background:var(--green);color:#04231d;border-color:var(--green)}
+  .chip.danger.on{background:var(--red);border-color:var(--red);color:#fff}
+  /* rows / checks */
+  .row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:.15s}
+  .row:hover{background:var(--panel2)}
+  .row.on{border-color:var(--green-d);background:rgba(0,168,132,.07)}
+  .row .cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--muted);flex:0 0 20px;display:grid;place-items:center;font-size:12px;color:#04231d}
+  .row.on .cb{background:var(--green);border-color:var(--green)}
+  .row .tx{flex:1}
+  .row .tx b{display:block;font-size:13.5px}
+  .row .tx span{font-size:12px;color:var(--muted)}
+  .row .cnt{font-size:12px;color:var(--muted);background:var(--panel2);border-radius:999px;padding:3px 10px}
+  /* count box */
+  .est{background:var(--panel2);border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;margin-top:14px}
+  .est .n{font-size:26px;font-weight:800;color:var(--red)}
+  .est .l{font-size:12px;color:var(--muted)}
+  /* input */
+  .inp{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:11px 13px;font-size:13.5px}
+  .inp:focus{outline:none;border-color:var(--green)}
+  label.fl{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  /* warning banner */
+  .warn{display:flex;gap:10px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.35);border-radius:10px;padding:12px;font-size:12.5px;color:#f6d27a;margin-top:14px}
+  .danger-banner{background:rgba(241,92,109,.1);border:1px solid rgba(241,92,109,.4);color:#f6a3ad}
+  /* whatsapp list mock */
+  .wa{display:flex;flex-direction:column}
+  .wa .top{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .wa .chat{display:flex;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+  .wa .chat:hover{background:var(--panel2)}
+  .wa .av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#2a3942,#3b4a54);flex:0 0 42px;display:grid;place-items:center;color:var(--muted);font-weight:700}
+  .wa .chat .info{flex:1;min-width:0}
+  .wa .chat .info b{font-size:14px}
+  .wa .chat .info p{margin:2px 0 0;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wa .chat .cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--muted);display:none;place-items:center;color:#04231d;font-size:13px;flex:0 0 22px}
+  .wa.select .chat .cb{display:grid}
+  .wa .chat.on{background:rgba(0,168,132,.08)}
+  .wa .chat.on .cb{background:var(--green);border-color:var(--green)}
+  .actionbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--red-d);color:#fff;border-radius:0}
+  /* kebab menu */
+  .menu{position:relative;display:inline-block}
+  .menu .pop{position:absolute;right:0;top:42px;width:280px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:none;z-index:5}
+  .menu.open .pop{display:block}
+  .menu .pop button{display:flex;gap:12px;width:100%;align-items:center;background:transparent;border:none;color:var(--txt);padding:12px 14px;font-size:13px;cursor:pointer;text-align:left}
+  .menu .pop button:hover{background:var(--panel2)}
+  .menu .pop button.danger{color:var(--red)}
+  .menu .pop .sep{height:1px;background:var(--line)}
+  .icbtn{width:38px;height:38px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);cursor:pointer;font-size:18px}
+  /* wizard steps */
+  .steps{display:flex;gap:6px;margin-bottom:18px}
+  .steps .s{flex:1;height:5px;border-radius:999px;background:var(--panel2)}
+  .steps .s.on{background:var(--green)}
+  .stepno{font-size:12px;color:var(--green);font-weight:700;margin-bottom:4px}
+  /* storage bars */
+  .bar{height:10px;border-radius:999px;background:var(--panel2);overflow:hidden;margin:8px 0}
+  .bar i{display:block;height:100%;border-radius:999px}
+  /* calendar */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal .d{aspect-ratio:1;display:grid;place-items:center;border-radius:8px;background:var(--panel2);font-size:12px;cursor:pointer;color:var(--muted)}
+  .cal .d.in{background:rgba(0,168,132,.18);color:var(--txt)}
+  .cal .d.edge{background:var(--green);color:#04231d;font-weight:700}
+  .cal .dow{text-align:center;font-size:10px;color:var(--muted);padding-bottom:2px}
+  .switch{width:42px;height:24px;border-radius:999px;background:var(--panel2);position:relative;cursor:pointer;flex:0 0 42px;transition:.15s;border:1px solid var(--line)}
+  .switch i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:.15s}
+  .switch.on{background:var(--green)}
+  .switch.on i{left:21px;background:#04231d}
+  .small{font-size:12px;color:var(--muted)}
+  .center{text-align:center}
+  .pill{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--panel);border:1px solid var(--green-d);color:var(--txt);padding:14px 20px;border-radius:12px;box-shadow:var(--shadow);font-size:13.5px;transition:.35s;z-index:50}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  hr.d{border:none;border-top:1px solid var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>RAQ-MAND-EM082 · Limpar conversas do WhatsApp <span class="badge">12 formatos interativos</span></h1>
+  <p>Conta de exemplo: <b style="color:#e9edef">RaquelTesteRodrigo</b> — 142 conversas · 3.870 mensagens. Clique nas opções e teste cada formato. Escolha o nº que preferir.</p>
+</header>
+<div class="wrap">
+  <nav class="side" id="side"></nav>
+  <main class="stage"><div id="stage" class="device"></div></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ───────── dados mock ───────── */
+const EST = { '7':{c:12,m:210}, '30':{c:41,m:980}, '90':{c:88,m:2400}, 'all':{c:142,m:3870}, 'custom':{c:27,m:640} };
+const CHATS = [
+  {n:'João Silva', p:'Obrigado pelo retorno, deputada!', a:'JS'},
+  {n:'Maria Souza', p:'Quando sai a resposta do ofício?', a:'MS'},
+  {n:'Pedro Lima', p:'📎 Documento.pdf', a:'PL'},
+  {n:'Ana Costa', p:'Bom dia! Gostaria de agendar...', a:'AC'},
+  {n:'Carlos Eaposto', p:'🎤 Áudio (0:42)', a:'CE'},
+];
+function fmt(o){ return o.c+' conversas · '+o.m.toLocaleString('pt-BR')+' mensagens'; }
+function toast(t){ const el=document.getElementById('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2600); }
+
+/* ───────── definição dos 12 formatos ───────── */
+const MOCKS = [
+ {t:'Modal com abas', d:'Diálogo único, 3 abas: Por período · Por conversa · Tudo', grp:'Diálogos', r:m1},
+ {t:'Assistente (wizard)', d:'Passo a passo: escopo → filtro → confirmar', grp:'Diálogos', r:m2},
+ {t:'Confirmação destrutiva', d:'Estilo GitHub: digite o nome p/ liberar o botão', grp:'Diálogos', r:m3},
+ {t:'Painel lateral (drawer)', d:'Desliza da direita, contagem ao vivo', grp:'Diálogos', r:m4},
+ {t:'Chips de atalho rápido', d:'Pílulas: +7d, +30d, +90d, não lidas, tudo', grp:'Rápido', r:m5},
+ {t:'Menu de ações (kebab)', d:'⋮ no topo da conta → opções de limpeza', grp:'Rápido', r:m6},
+ {t:'Seleção múltipla na lista', d:'Modo seleção com checkboxes + barra de ação', grp:'Rápido', r:m7},
+ {t:'Período por presets', d:'Botões de período + barra estimando o impacto', grp:'Por período', r:m8},
+ {t:'Calendário / intervalo', d:'Escolhe início e fim visualmente no calendário', grp:'Por período', r:m9},
+ {t:'Critérios granulares', d:'Toggles: mensagens, mídias, notas, tags, logs', grp:'Granular', r:m10},
+ {t:'Central de dados (página)', d:'Tela dedicada estilo "Privacidade & Dados"', grp:'Granular', r:m11},
+ {t:'Tudo-em-um (combinado)', d:'Escopo + período + critérios + confirmação juntos', grp:'Combinado', r:m12},
+];
+
+/* ───────── render sidebar ───────── */
+const side=document.getElementById('side'); let lastGrp='';
+MOCKS.forEach((mk,i)=>{
+  if(mk.grp!==lastGrp){ const g=document.createElement('div'); g.className='grp'; g.textContent=mk.grp; side.appendChild(g); lastGrp=mk.grp; }
+  const b=document.createElement('button'); b.dataset.i=i;
+  b.innerHTML='<span class="num">'+(i+1)+'</span><span><span class="nt">'+mk.t+'</span><span class="nd">'+mk.d+'</span></span>';
+  b.onclick=()=>select(i); side.appendChild(b);
+});
+function select(i){
+  document.querySelectorAll('nav.side button').forEach(b=>b.classList.toggle('active',+b.dataset.i===i));
+  const stage=document.getElementById('stage');
+  stage.innerHTML='<div class="meta">Formato <b>'+(i+1)+'</b> — <b>'+MOCKS[i].t+'</b>. '+MOCKS[i].d+'.</div>';
+  const host=document.createElement('div'); stage.appendChild(host); MOCKS[i].r(host);
+}
+
+/* ════════ FORMATO 1 — Modal com abas ════════ */
+function m1(host){
+  host.innerHTML=`
+  <div class="card">
+    <div class="hd"><div class="ic">🗑️</div><div><h3>Limpar conversas</h3><p>RaquelTesteRodrigo</p></div></div>
+    <div class="tabs"><button class="on" data-t="per">Por período</button><button data-t="conv">Por conversa</button><button data-t="all">Tudo</button></div>
+    <div class="bd" id="m1bd"></div>
+    <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m1go">Limpar</button></div>
+  </div>`;
+  const bd=host.querySelector('#m1bd'); let tab='per', per='30';
+  function paint(){
+    if(tab==='per'){ bd.innerHTML=`<label class="fl">Apagar mensagens dos últimos:</label>
+      <div class="seg" id="m1seg"><button data-p="7">7 dias</button><button data-p="30">30 dias</button><button data-p="90">90 dias</button><button data-p="all">Tudo</button></div>
+      <div class="est"><div class="n" id="m1n"></div><div class="l">serão apagadas neste período</div></div>`;
+      bd.querySelectorAll('#m1seg button').forEach(b=>{b.classList.toggle('on',b.dataset.p===per);b.onclick=()=>{per=b.dataset.p;paint();};});
+      bd.querySelector('#m1n').textContent=EST[per].m.toLocaleString('pt-BR')+' msgs';
+    } else if(tab==='conv'){ bd.innerHTML='<p class="small">Selecione conversas específicas para apagar:</p>'+
+      CHATS.map((c,i)=>`<div class="row ${i<2?'on':''}"><div class="cb">✓</div><div class="tx"><b>${c.n}</b><span>${c.p}</span></div></div>`).join('');
+      bd.querySelectorAll('.row').forEach(r=>r.onclick=()=>r.classList.toggle('on'));
+    } else { bd.innerHTML=`<div class="warn danger-banner">⚠️ Isto apaga <b>todas as 142 conversas e 3.870 mensagens</b> desta conta. Não há como desfazer.</div>`; }
+  }
+  host.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{host.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tab=b.dataset.t;paint();});
+  host.querySelector('#m1go').onclick=()=>toast('✅ Limpeza executada ('+tab+')');
+  paint();
+}
+
+/* ════════ FORMATO 2 — Wizard ════════ */
+function m2(host){
+  let step=1, escopo='', per='30';
+  function paint(){
+    let body='';
+    if(step===1){ body=`<div class="stepno">PASSO 1 DE 3</div><h3 style="margin:0 0 4px">O que você quer limpar?</h3><p class="small" style="margin:0 0 14px">Escolha o escopo da limpeza.</p>
+      ${[['acc','Toda a conta','142 conversas · 3.870 msgs'],['per','Por período','escolher intervalo no próximo passo'],['sel','Conversas específicas','selecionar manualmente']].map(o=>`<div class="row ${escopo===o[0]?'on':''}" data-e="${o[0]}"><div class="cb">✓</div><div class="tx"><b>${o[1]}</b><span>${o[2]}</span></div></div>`).join('')}`;
+    } else if(step===2){ body=`<div class="stepno">PASSO 2 DE 3</div><h3 style="margin:0 0 4px">Refine o filtro</h3><p class="small" style="margin:0 0 14px">Período das mensagens a apagar.</p>
+      <div class="seg" id="m2seg"><button data-p="7">7d</button><button data-p="30">30d</button><button data-p="90">90d</button><button data-p="all">Tudo</button></div>
+      <div class="est"><div class="n">${EST[per].m.toLocaleString('pt-BR')}</div><div class="l">mensagens em ${EST[per].c} conversas</div></div>`;
+    } else { body=`<div class="stepno">PASSO 3 DE 3</div><h3 style="margin:0 0 4px">Confirmar</h3>
+      <div class="warn danger-banner">Você vai apagar <b>${EST[per].m.toLocaleString('pt-BR')} mensagens</b>. Ação irreversível.</div>
+      <label class="fl" style="margin-top:14px">Digite <b style="color:#f6a3ad">LIMPAR</b> para confirmar</label><input class="inp" id="m2cf" placeholder="LIMPAR"/>`; }
+    host.innerHTML=`<div class="card"><div class="bd"><div class="steps"><div class="s ${step>=1?'on':''}"></div><div class="s ${step>=2?'on':''}"></div><div class="s ${step>=3?'on':''}"></div></div>${body}</div>
+      <div class="ft"><button class="btn ghost" id="m2bk">${step===1?'Cancelar':'Voltar'}</button><button class="btn ${step===3?'danger':'primary'}" id="m2nx">${step===3?'Apagar definitivamente':'Continuar'}</button></div></div>`;
+    if(step===1){ host.querySelectorAll('.row').forEach(r=>r.onclick=()=>{escopo=r.dataset.e;paint();}); }
+    if(step===2){ host.querySelectorAll('#m2seg button').forEach(b=>{b.classList.toggle('on',b.dataset.p===per);b.onclick=()=>{per=b.dataset.p;paint();};}); }
+    host.querySelector('#m2bk').onclick=()=>{ if(step===1){toast('Cancelado');}else{step--;paint();} };
+    host.querySelector('#m2nx').onclick=()=>{ if(step===1&&!escopo){toast('Escolha um escopo');return;} if(step<3){step++;paint();}else{toast('✅ Conversas apagadas');} };
+  }
+  paint();
+}
+
+/* ════════ FORMATO 3 — Confirmação destrutiva ════════ */
+function m3(host){
+  host.innerHTML=`<div class="card">
+    <div class="hd"><div class="ic">⚠️</div><div><h3>Apagar todo o histórico</h3><p>Esta ação não pode ser desfeita</p></div></div>
+    <div class="bd">
+      <div class="warn danger-banner">Isto remove permanentemente <b>todas as conversas, mensagens, mídias e anotações</b> da conta <b>RaquelTesteRodrigo</b>.</div>
+      <hr class="d"/>
+      <p class="small">Antes de trocar de número, recomendamos limpar para que as conversas antigas não se misturem com as novas.</p>
+      <label class="fl" style="margin-top:8px">Digite o nome da conta para confirmar:</label>
+      <input class="inp" id="m3in" placeholder="RaquelTesteRodrigo" autocomplete="off"/>
+    </div>
+    <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m3go" disabled>Apagar esta conta</button></div>
+  </div>`;
+  const inp=host.querySelector('#m3in'), go=host.querySelector('#m3go');
+  inp.oninput=()=>{ go.disabled = inp.value.trim()!=='RaquelTesteRodrigo'; };
+  go.onclick=()=>toast('✅ Histórico apagado por completo');
+}
+
+/* ════════ FORMATO 4 — Drawer lateral ════════ */
+function m4(host){
+  let crit={msg:true,media:true,notes:false}, per='30';
+  function calc(){ let f=per==='all'?1:per==='90'?.62:per==='30'?.25:.05; return Math.round(3870*f); }
+  function paint(){
+    host.innerHTML=`<div style="display:flex;justify-content:flex-end"><div class="card" style="width:380px;border-radius:14px">
+      <div class="hd"><div class="ic">🧹</div><div><h3>Limpeza de dados</h3><p>RaquelTesteRodrigo</p></div></div>
+      <div class="bd">
+        <label class="fl">Período</label>
+        <div class="seg" id="m4seg"><button data-p="7">7d</button><button data-p="30">30d</button><button data-p="90">90d</button><button data-p="all">Tudo</button></div>
+        <label class="fl" style="margin-top:16px">O que apagar</label>
+        ${[['msg','Mensagens de texto'],['media','Mídias (áudio, imagem)'],['notes','Anotações e tags']].map(o=>`<div class="row ${crit[o[0]]?'on':''}" data-c="${o[0]}"><div class="cb">✓</div><div class="tx"><b>${o[1]}</b></div></div>`).join('')}
+        <div class="est"><div class="n">${calc().toLocaleString('pt-BR')}</div><div class="l">registros serão removidos</div></div>
+      </div>
+      <div class="ft"><button class="btn ghost">Fechar</button><button class="btn danger" id="m4go">Limpar agora</button></div>
+    </div></div>`;
+    host.querySelectorAll('#m4seg button').forEach(b=>{b.classList.toggle('on',b.dataset.p===per);b.onclick=()=>{per=b.dataset.p;paint();};});
+    host.querySelectorAll('.row').forEach(r=>r.onclick=()=>{crit[r.dataset.c]=!crit[r.dataset.c];paint();});
+    host.querySelector('#m4go').onclick=()=>toast('✅ '+calc().toLocaleString('pt-BR')+' registros removidos');
+  }
+  paint();
+}
+
+/* ════════ FORMATO 5 — Chips de atalho ════════ */
+function m5(host){
+  const opts=[['7','Últimos 7 dias'],['30','Últimos 30 dias'],['90','Últimos 90 dias'],['all','Tudo'],['unread','Só não lidas'],['custom','Período custom…']];
+  let sel='30';
+  function paint(){
+    host.innerHTML=`<div class="card"><div class="hd"><div class="ic">⚡</div><div><h3>Limpeza rápida</h3><p>Toque num atalho para definir o que apagar</p></div></div>
+    <div class="bd"><div class="chips" id="m5c">${opts.map(o=>`<div class="chip danger ${sel===o[0]?'on':''}" data-v="${o[0]}">${o[1]}</div>`).join('')}</div>
+    <div class="est"><div class="n">${(EST[sel]||EST.custom).m.toLocaleString('pt-BR')}</div><div class="l">mensagens · ${(EST[sel]||EST.custom).c} conversas afetadas</div></div></div>
+    <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m5go">Apagar selecionado</button></div></div>`;
+    host.querySelectorAll('#m5c .chip').forEach(c=>c.onclick=()=>{sel=c.dataset.v;paint();});
+    host.querySelector('#m5go').onclick=()=>toast('✅ Limpeza aplicada: '+opts.find(o=>o[0]===sel)[1]);
+  }
+  paint();
+}
+
+/* ════════ FORMATO 6 — Menu kebab ════════ */
+function m6(host){
+  host.innerHTML=`<div class="card"><div class="hd" style="justify-content:space-between">
+    <div style="display:flex;gap:12px;align-items:center"><div class="av" style="width:42px;height:42px">RT</div><div><h3 style="margin:0">RaquelTesteRodrigo</h3><p style="margin:2px 0 0">🟢 Conectado · 142 conversas</p></div></div>
+    <div class="menu" id="m6m"><button class="icbtn" id="m6btn">⋮</button>
+      <div class="pop">
+        <button>📌 Fixar conta</button><button>🔕 Silenciar notificações</button><div class="sep"></div>
+        <button class="danger" data-a="per">🧹 Limpar por período…</button>
+        <button class="danger" data-a="sel">☑️ Selecionar e apagar…</button>
+        <button class="danger" data-a="all">🗑️ Apagar todas as conversas</button>
+      </div></div>
+  </div>
+  <div class="bd"><p class="small">Clique no menu <b>⋮</b> no canto direito do cabeçalho da conta para ver as opções de limpeza. Padrão discreto, fica fora do caminho do uso diário.</p>
+  ${CHATS.slice(0,3).map(c=>`<div class="row"><div class="av" style="width:34px;height:34px;font-size:12px">${c.a}</div><div class="tx"><b>${c.n}</b><span>${c.p}</span></div></div>`).join('')}</div></div>`;
+  const menu=host.querySelector('#m6m');
+  host.querySelector('#m6btn').onclick=(e)=>{e.stopPropagation();menu.classList.toggle('open');};
+  host.querySelectorAll('.pop button[data-a]').forEach(b=>b.onclick=()=>{menu.classList.remove('open');toast('Abriria: '+b.textContent.trim());});
+  document.addEventListener('click',()=>menu.classList.remove('open'),{once:true});
+}
+
+/* ════════ FORMATO 7 — Seleção múltipla na lista ════════ */
+function m7(host){
+  let mode=false, on=new Set();
+  function paint(){
+    host.innerHTML=`<div class="card"><div class="wa ${mode?'select':''}">
+      <div class="top">${mode?`<button class="btn ghost sm" id="m7x">✕</button><b style="flex:1">${on.size} selecionada(s)</b><button class="btn ghost sm" id="m7all">Todas</button>`:`<b style="flex:1">RaquelTesteRodrigo · Conversas</b><button class="btn ghost sm" id="m7sel">Selecionar</button>`}</div>
+      ${CHATS.map((c,i)=>`<div class="chat ${on.has(i)?'on':''}" data-i="${i}"><div class="cb">✓</div><div class="av">${c.a}</div><div class="info"><b>${c.n}</b><p>${c.p}</p></div></div>`).join('')}
+      ${mode&&on.size?`<div class="actionbar"><span>${on.size} conversa(s)</span><button class="btn sm" style="background:#fff;color:var(--red-d)" id="m7del">🗑️ Apagar selecionadas</button></div>`:''}
+    </div></div>`;
+    if(mode){
+      host.querySelector('#m7x').onclick=()=>{mode=false;on.clear();paint();};
+      host.querySelector('#m7all').onclick=()=>{on=new Set(CHATS.map((_,i)=>i));paint();};
+      host.querySelectorAll('.chat').forEach(r=>r.onclick=()=>{const i=+r.dataset.i;on.has(i)?on.delete(i):on.add(i);paint();});
+      const d=host.querySelector('#m7del'); if(d)d.onclick=()=>{toast('✅ '+on.size+' conversa(s) apagada(s)');mode=false;on.clear();paint();};
+    } else { host.querySelector('#m7sel').onclick=()=>{mode=true;paint();}; }
+  }
+  paint();
+}
+
+/* ════════ FORMATO 8 — Período por presets + barra ════════ */
+function m8(host){
+  let per='30';
+  function paint(){
+    const pct=Math.round((EST[per].m/3870)*100);
+    host.innerHTML=`<div class="card"><div class="hd"><div class="ic">📅</div><div><h3>Apagar por período</h3><p>Remove mensagens mais antigas que o limite</p></div></div>
+    <div class="bd">
+      <div class="seg" id="m8seg"><button data-p="7">7 dias</button><button data-p="30">30 dias</button><button data-p="90">90 dias</button><button data-p="all">Tudo</button></div>
+      <div style="margin-top:18px"><div class="small" style="display:flex;justify-content:space-between"><span>Impacto no histórico</span><span>${pct}%</span></div>
+      <div class="bar"><i style="width:${pct}%;background:var(--red)"></i></div></div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="est" style="margin:0"><div class="n" style="font-size:20px">${EST[per].c}</div><div class="l">conversas</div></div>
+        <div class="est" style="margin:0"><div class="n" style="font-size:20px">${EST[per].m.toLocaleString('pt-BR')}</div><div class="l">mensagens</div></div>
+      </div>
+      <div class="warn">ℹ️ Conversas sem mensagens recentes ficarão vazias mas não desaparecem da lista (a não ser que escolha "Tudo").</div>
+    </div>
+    <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m8go">Apagar período</button></div></div>`;
+    host.querySelectorAll('#m8seg button').forEach(b=>{b.classList.toggle('on',b.dataset.p===per);b.onclick=()=>{per=b.dataset.p;paint();};});
+    host.querySelector('#m8go').onclick=()=>toast('✅ Mensagens do período apagadas');
+  }
+  paint();
+}
+
+/* ════════ FORMATO 9 — Calendário / intervalo ════════ */
+function m9(host){
+  host.innerHTML=`<div class="card"><div class="hd"><div class="ic">🗓️</div><div><h3>Intervalo personalizado</h3><p>Escolha início e fim do que apagar</p></div></div>
+  <div class="bd">
+    <div class="grid2"><div><label class="fl">De</label><input class="inp" value="01/03/2026"/></div><div><label class="fl">Até</label><input class="inp" value="20/03/2026"/></div></div>
+    <div style="margin-top:16px;background:var(--panel2);border-radius:12px;padding:14px">
+      <div class="small center" style="margin-bottom:8px">Março 2026</div>
+      <div class="cal">${['D','S','T','Q','Q','S','S'].map(d=>`<div class="dow">${d}</div>`).join('')}
+      ${Array.from({length:31},(_,i)=>{const d=i+1;let cls=d===1||d===20?'edge':(d>1&&d<20?'in':'');return `<div class="d ${cls}">${d}</div>`;}).join('')}</div>
+    </div>
+    <div class="est"><div class="n">640</div><div class="l">mensagens entre 01/03 e 20/03</div></div>
+  </div>
+  <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m9go">Apagar intervalo</button></div></div>`;
+  host.querySelectorAll('.cal .d').forEach(d=>d.onclick=()=>toast('Selecionaria '+d.textContent+'/03'));
+  host.querySelector('#m9go').onclick=()=>toast('✅ Intervalo apagado (640 msgs)');
+}
+
+/* ════════ FORMATO 10 — Critérios granulares ════════ */
+function m10(host){
+  let s={msg:true,media:true,notes:false,tags:false,logs:true};
+  const items=[['msg','Mensagens de texto','3.870 registros'],['media','Mídias (áudio/imagem/vídeo)','912 registros'],['notes','Anotações internas','37 notas'],['tags','Etiquetas dos chats','58 marcações'],['logs','Logs do webhook (rastros)','4.120 eventos']];
+  function paint(){
+    const total=Object.entries(s).filter(([k,v])=>v).length;
+    host.innerHTML=`<div class="card"><div class="hd"><div class="ic">🎛️</div><div><h3>Escolha o que apagar</h3><p>Controle fino por tipo de dado</p></div></div>
+    <div class="bd">${items.map(o=>`<div class="row ${s[o[0]]?'on':''}" data-c="${o[0]}" style="cursor:default"><div class="tx"><b>${o[1]}</b><span>${o[2]}</span></div><div class="switch ${s[o[0]]?'on':''}"><i></i></div></div>`).join('')}
+    <div class="warn ${s.logs?'danger-banner':''}">${s.logs?'⚠️ Incluir os <b>logs do webhook</b> garante que nenhum trecho de conversa fique salvo em lugar nenhum.':'ℹ️ Sem apagar os logs, trechos podem permanecer no rastro de auditoria.'}</div></div>
+    <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m10go">Apagar ${total} tipo(s)</button></div></div>`;
+    host.querySelectorAll('.row[data-c]').forEach(r=>r.onclick=()=>{s[r.dataset.c]=!s[r.dataset.c];paint();});
+    host.querySelector('#m10go').onclick=()=>toast('✅ Limpeza granular executada');
+  }
+  paint();
+}
+
+/* ════════ FORMATO 11 — Central de dados (página) ════════ */
+function m11(host){
+  host.innerHTML=`<div class="card" style="max-width:560px">
+    <div class="hd"><div class="ic" style="background:rgba(0,168,132,.12);color:var(--green)">🛡️</div><div><h3>Privacidade & Dados</h3><p>RaquelTesteRodrigo</p></div></div>
+    <div class="bd">
+      <div class="small" style="display:flex;justify-content:space-between"><span>Armazenamento de conversas</span><span>~18 MB</span></div>
+      <div class="bar"><i style="width:64%;background:var(--green)"></i></div>
+      <div style="display:flex;gap:10px;margin:6px 0 18px" class="small">
+        <span class="pill">142 conversas</span><span class="pill">3.870 mensagens</span><span class="pill">912 mídias</span>
+      </div>
+      <hr class="d"/>
+      <div class="row" style="cursor:pointer" id="m11a"><div class="tx"><b>🧹 Limpar por período</b><span>Apaga mensagens mais antigas que um limite</span></div><span class="small">›</span></div>
+      <div class="row" style="cursor:pointer" id="m11b"><div class="tx"><b>☑️ Apagar conversas específicas</b><span>Selecionar manualmente da lista</span></div><span class="small">›</span></div>
+      <div class="row" style="cursor:pointer" id="m11c"><div class="tx"><b>📦 Exportar antes de apagar</b><span>Baixar histórico em PDF/Excel</span></div><span class="small">›</span></div>
+      <div class="row on" style="cursor:pointer;border-color:var(--red-d);background:rgba(241,92,109,.07)" id="m11d"><div class="tx"><b style="color:#f6a3ad">🗑️ Apagar todo o histórico</b><span>Remove tudo desta conta · irreversível</span></div><span class="small">›</span></div>
+    </div></div>`;
+  ['a','b','c','d'].forEach(k=>host.querySelector('#m11'+k).onclick=()=>toast('Abriria sub-tela: '+host.querySelector('#m11'+k).querySelector('b').textContent));
+}
+
+/* ════════ FORMATO 12 — Tudo-em-um combinado ════════ */
+function m12(host){
+  let escopo='per', per='30', s={msg:true,media:true,logs:true}, conf='';
+  function paint(){
+    const ok = conf.trim()==='LIMPAR';
+    host.innerHTML=`<div class="card"><div class="hd"><div class="ic">🧨</div><div><h3>Limpar conversas</h3><p>Configure tudo numa tela só</p></div></div>
+    <div class="bd">
+      <label class="fl">1 · Escopo</label>
+      <div class="seg" id="m12sc"><button data-e="per">Por período</button><button data-e="all">Conta inteira</button></div>
+      ${escopo==='per'?`<label class="fl" style="margin-top:14px">2 · Período</label><div class="seg" id="m12pe"><button data-p="7">7d</button><button data-p="30">30d</button><button data-p="90">90d</button></div>`:''}
+      <label class="fl" style="margin-top:14px">${escopo==='per'?'3':'2'} · Incluir</label>
+      <div class="chips" id="m12cr">${[['msg','Mensagens'],['media','Mídias'],['logs','Logs/rastros']].map(o=>`<div class="chip ${s[o[0]]?'on':''}" data-c="${o[0]}">${o[1]}</div>`).join('')}</div>
+      <div class="est"><div class="n">${escopo==='all'?'3.870':EST[per].m.toLocaleString('pt-BR')}</div><div class="l">mensagens serão apagadas</div></div>
+      <label class="fl" style="margin-top:4px">Digite <b style="color:#f6a3ad">LIMPAR</b> para confirmar</label>
+      <input class="inp" id="m12cf" placeholder="LIMPAR" value="${conf}"/>
+    </div>
+    <div class="ft"><button class="btn ghost">Cancelar</button><button class="btn danger" id="m12go" ${ok?'':'disabled'}>Apagar definitivamente</button></div></div>`;
+    host.querySelectorAll('#m12sc button').forEach(b=>{b.classList.toggle('on',b.dataset.e===escopo);b.onclick=()=>{escopo=b.dataset.e;paint();};});
+    host.querySelectorAll('#m12pe button').forEach(b=>{b.classList.toggle('on',b.dataset.p===per);b.onclick=()=>{per=b.dataset.p;paint();};});
+    host.querySelectorAll('#m12cr .chip').forEach(c=>c.onclick=()=>{s[c.dataset.c]=!s[c.dataset.c];paint();});
+    const cf=host.querySelector('#m12cf'); cf.oninput=()=>{conf=cf.value; host.querySelector('#m12go').disabled=cf.value.trim()!=='LIMPAR';};
+    host.querySelector('#m12go').onclick=()=>toast('✅ Limpeza combinada executada');
+  }
+  paint();
+}
+
+select(0);
+</script>
+</body>
+</html>

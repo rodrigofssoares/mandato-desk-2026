@@ -35,10 +35,12 @@ export function useChatNotes(chatId: string | null | undefined) {
     queryKey: chatNoteKeys.byChatId(resolvedId),
     enabled: !!resolvedId,
     queryFn: async (): Promise<ChatNote[]> => {
+      // EM082: filtrar notas na lixeira (soft-delete)
       const { data, error } = await supabase
         .from('zapi_chat_notes')
         .select('*, autor:profiles!autor_id(nome)')
         .eq('chat_id', resolvedId!)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true });
 
       if (error) throw error;

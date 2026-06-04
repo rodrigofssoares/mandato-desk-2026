@@ -15,6 +15,10 @@ export type ZapiChat = Tables<'zapi_chats'> & {
   contact_data_nascimento?: string | null;
   /** T67 (Fase 6 Onda A): bairro do contato (para subtítulo no ChatListItem) */
   contact_bairro?: string | null;
+  /** EM082: timestamp do soft-delete (lixeira); NULL = conversa ativa e visível */
+  deleted_at?: string | null;
+  /** EM082: UUID do usuário que enviou o chat para a lixeira (auditoria) */
+  deleted_by?: string | null;
 };
 
 // ─── Key Factory ────────────────────────────────────────────────────────────
@@ -42,10 +46,12 @@ export function useZapiChats(accountId: string | null | undefined) {
     queryKey: zapiChatKeys.byAccount(accountId ?? null),
     enabled: !!accountId,
     queryFn: async (): Promise<ZapiChat[]> => {
+      // EM082: filtrar chats na lixeira (soft-delete)
       const { data, error } = await supabase
         .from('zapi_chats')
         .select('*, contacts:contact_id (nome, profissao, data_nascimento, bairro, contact_tags(tags(nome)))')
         .eq('account_id', accountId!)
+        .is('deleted_at', null)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false });
 
@@ -123,9 +129,11 @@ export function useAllZapiChats() {
   const query = useQuery({
     queryKey: ALL_KEY,
     queryFn: async (): Promise<ZapiChatWithAccount[]> => {
+      // EM082: filtrar chats na lixeira (soft-delete)
       const { data, error } = await supabase
         .from('zapi_chats')
         .select('*, zapi_accounts:account_id(name), contacts:contact_id(nome, profissao, data_nascimento, bairro, contact_tags(tags(nome)))')
+        .is('deleted_at', null)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false });
 

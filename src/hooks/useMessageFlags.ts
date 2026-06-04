@@ -89,6 +89,9 @@ export function useMessageFlags(chatId: string | null | undefined) {
         message_id: messageId,
         flagged_by: userId,
         created_at: new Date().toISOString(),
+        deleted_at: null,
+        deleted_by: null,
+        deleted_batch_id: null,
       };
       queryClient.setQueryData<MessageFlag[]>(key, [...previous, optimistic]);
       return { previous };
