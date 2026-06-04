@@ -1,4 +1,4 @@
--- Migration: 109_zapi_panel_grants
+-- Migration: 110_zapi_panel_grants
 --
 -- Feature: EM078 — Senha de acesso às conversas do WhatsApp (enforcement real no banco)
 --
@@ -153,6 +153,6 @@ BEGIN
     RAISE EXCEPTION 'FALHA: policy zapi_messages_select nao recriada';
   END IF;
 
-  RAISE NOTICE 'Migration 109_zapi_panel_grants aplicada com sucesso.';
+  RAISE NOTICE 'Migration 110_zapi_panel_grants aplicada com sucesso.';
 END;
 $$;
