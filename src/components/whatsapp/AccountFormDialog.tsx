@@ -285,8 +285,8 @@ export function AccountFormDialog({
             <p className="text-xs text-destructive">{errors.panel_password.message}</p>
           )}
           <p className="text-[11px] text-muted-foreground">
-            Senha armazenada em texto puro temporariamente. Bcrypt hash sera
-            aplicado via Edge Function em sessao futura. Use senha de TESTE.
+            Opcional. Se definida, sera exigida para acessar as conversas desta conta.
+            Hash PBKDF2-SHA256 gerado server-side — nunca armazenada em texto puro.
           </p>
         </div>
       )}

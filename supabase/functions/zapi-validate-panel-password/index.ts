@@ -5,24 +5,27 @@
 //
 // Fluxo:
 //   1. Valida JWT (qualquer usuário autenticado com perfil ATIVO).
-//   2. Valida { account_id, password } do body.
-//   3. Rate-limit: máx 5 tentativas / 15min por (user_id, account_id).
-//      Armazenado em memória por worker (resets com deploy, mas suficiente pra MVP).
+//   2. Guard de Content-Length (máx 4KB).
+//   3. Valida { account_id, password } do body.
+//   4. Rate-limit persistente no banco (tabela zapi_panel_rate_limits):
+//      máx 5 tentativas falhas / 15min por (user_id, account_id).
+//      Sobrevive a cold starts de workers Deno isolados.
 //      Após lockout → 429 com tempo restante.
-//   4. Busca hash em zapi_panel_passwords (service_role).
-//   5. Compare constant-time PBKDF2-SHA256.
-//   6. Sucesso → upsert grant em zapi_panel_grants com expires_at = now() + 8h.
-//      Limpa grants expirados do próprio usuário (housekeeping on-validate).
-//   7. Falha → incrementa contador. Nunca confirma se conta tem ou não senha.
+//   5. Busca hash em zapi_panel_passwords (service_role).
+//   6. Compare constant-time PBKDF2-SHA256.
+//   7. Sucesso → upsert grant em zapi_panel_grants com expires_at = now() + 8h.
+//      Zera linha de rate-limit. Limpa grants expirados do próprio usuário.
+//   8. Falha → incrementa failed_attempts no banco; se ≥ 5 dentro de 15min,
+//      seta locked_until = now() + 15min. Nunca confirma se conta tem ou não senha.
 //
 // Segurança:
-//   - Compare constant-time via timingSafeEqual (Web Crypto / Deno).
-//   - Rate-limit: 5/15min por (user_id, account_id) → previne força bruta.
+//   - Rate-limit no banco: persiste entre workers Deno (F1 Security-Fix).
+//   - Compare constant-time via implementação manual (Web Crypto / Deno).
 //   - Resposta de erro genérica ("credenciais inválidas") — não vaza detalhes.
 //   - Grant criado via service_role — usuário não pode criar/alterar diretamente.
 //   - TTL do grant: 8 horas. Após expirar, RLS bloqueia SELECT nas tabelas.
 //
-// Reference: RAQ-MAND-EM078 — T2 (EF validate-password)
+// Reference: RAQ-MAND-EM078 — T2 (EF validate-password) + Security-Fix F1/F6
 
 import { corsHeaders, jsonResponse } from '../_shared/admin-guard.ts';
 import { requireAuth } from '../_shared/auth-guard.ts';
@@ -32,48 +35,10 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 // TTL do grant: 8 horas
 const GRANT_TTL_MS = 8 * 60 * 60 * 1000;
 
-// ─── Rate-limit em memória ───────────────────────────────────────────────────
-// Chave: "{user_id}:{account_id}" → { count, firstAttempt }
-// Limite: 5 tentativas / 15 minutos
-
+// Rate-limit no banco
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutos
-
-interface RateEntry {
-  count: number;
-  firstAttempt: number; // timestamp ms
-}
-
-const rateMap = new Map<string, RateEntry>();
-
-function checkRateLimit(key: string): { allowed: boolean; retryAfterMs: number } {
-  const now = Date.now();
-  const entry = rateMap.get(key);
-
-  if (!entry) {
-    rateMap.set(key, { count: 1, firstAttempt: now });
-    return { allowed: true, retryAfterMs: 0 };
-  }
-
-  // Janela expirou → reseta
-  if (now - entry.firstAttempt >= RATE_LIMIT_WINDOW_MS) {
-    rateMap.set(key, { count: 1, firstAttempt: now });
-    return { allowed: true, retryAfterMs: 0 };
-  }
-
-  // Dentro da janela
-  if (entry.count >= RATE_LIMIT_MAX) {
-    const retryAfterMs = RATE_LIMIT_WINDOW_MS - (now - entry.firstAttempt);
-    return { allowed: false, retryAfterMs };
-  }
-
-  entry.count++;
-  return { allowed: true, retryAfterMs: 0 };
-}
-
-function resetRateLimit(key: string) {
-  rateMap.delete(key);
-}
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;  // 15 minutos de lockout
 
 // ─── PBKDF2 helpers ──────────────────────────────────────────────────────────
 
@@ -151,6 +116,11 @@ Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
     if (req.method !== 'POST') return jsonResponse(405, { error: 'Método não permitido' });
 
+    // ── F6: Guard de Content-Length (máx 4KB) ───────────────────────────────
+    if (parseInt(req.headers.get('content-length') ?? '0', 10) > 4096) {
+      return jsonResponse(413, { error: 'Payload muito grande' });
+    }
+
     // ── 1. Autenticação: qualquer usuário com perfil ATIVO ───────────────────
     const guard = await requireAuth(req);
     if (guard instanceof Response) return guard;
@@ -177,32 +147,45 @@ Deno.serve(async (req) => {
       return jsonResponse(400, { error: 'password é obrigatório' });
     }
 
-    // ── 3. Rate-limit ────────────────────────────────────────────────────────
-    const rateLimitKey = `${callerId}:${accountId}`;
-    const { allowed, retryAfterMs } = checkRateLimit(rateLimitKey);
+    // ── 3. Rate-limit persistente no banco (F1) ──────────────────────────────
+    // Lê o registro de rate-limit atual via service_role.
+    const { data: rlRow, error: rlReadErr } = await admin
+      .from('zapi_panel_rate_limits')
+      .select('failed_attempts, window_start, locked_until')
+      .eq('user_id', callerId)
+      .eq('account_id', accountId)
+      .maybeSingle();
 
-    if (!allowed) {
-      const retryAfterSec = Math.ceil(retryAfterMs / 1000);
-      console.warn('zapi-validate-panel-password: rate-limit atingido', {
-        callerId,
-        accountId,
-        retryAfterSec,
-      });
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          error: 'Muitas tentativas. Aguarde antes de tentar novamente.',
-          retry_after_seconds: retryAfterSec,
-        }),
-        {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Retry-After': String(retryAfterSec),
+    if (rlReadErr) {
+      console.error('zapi-validate-panel-password: erro ao ler rate_limits', { code: rlReadErr.code });
+      return jsonResponse(500, { error: 'Erro interno' });
+    }
+
+    const now = new Date();
+
+    if (rlRow) {
+      // Verifica lockout ativo
+      if (rlRow.locked_until && new Date(rlRow.locked_until) > now) {
+        const retryAfterSec = Math.ceil(
+          (new Date(rlRow.locked_until).getTime() - now.getTime()) / 1000,
+        );
+        console.warn('zapi-validate-panel-password: lockout ativo', { callerId, accountId, retryAfterSec });
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: 'Muitas tentativas. Aguarde antes de tentar novamente.',
+            retry_after_seconds: retryAfterSec,
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'Retry-After': String(retryAfterSec),
+            },
           },
-        },
-      );
+        );
+      }
     }
 
     // ── 4. Busca hash armazenado (service_role) ──────────────────────────────
@@ -230,13 +213,44 @@ Deno.serve(async (req) => {
 
     if (!valid) {
       console.warn('zapi-validate-panel-password: senha incorreta', { callerId, accountId });
+
+      // Atualiza rate-limit no banco
+      const windowStart = rlRow?.window_start
+        ? new Date(rlRow.window_start)
+        : now;
+      const windowExpired = now.getTime() - windowStart.getTime() >= RATE_LIMIT_WINDOW_MS;
+
+      const newWindowStart = windowExpired ? now.toISOString() : rlRow!.window_start ?? now.toISOString();
+      const newAttempts = windowExpired ? 1 : (rlRow?.failed_attempts ?? 0) + 1;
+      const newLockedUntil =
+        newAttempts >= RATE_LIMIT_MAX
+          ? new Date(now.getTime() + LOCKOUT_DURATION_MS).toISOString()
+          : null;
+
+      await admin
+        .from('zapi_panel_rate_limits')
+        .upsert(
+          {
+            user_id: callerId,
+            account_id: accountId,
+            failed_attempts: newAttempts,
+            window_start: newWindowStart,
+            locked_until: newLockedUntil,
+          },
+          { onConflict: 'user_id,account_id' },
+        );
+
       return jsonResponse(401, { ok: false, error: 'Credenciais inválidas' });
     }
 
-    // ── 6. Senha correta → emite grant ───────────────────────────────────────
+    // ── 6. Senha correta → zera rate-limit e emite grant ────────────────────
 
-    // Reseta rate-limit após sucesso
-    resetRateLimit(rateLimitKey);
+    // Zera o registro de rate-limit (sucesso cancela penalidade)
+    await admin
+      .from('zapi_panel_rate_limits')
+      .delete()
+      .eq('user_id', callerId)
+      .eq('account_id', accountId);
 
     const expiresAt = new Date(Date.now() + GRANT_TTL_MS).toISOString();
 
@@ -246,7 +260,7 @@ Deno.serve(async (req) => {
         .from('zapi_panel_grants')
         .delete()
         .eq('user_id', callerId)
-        .lt('expires_at', new Date().toISOString());
+        .lt('expires_at', now.toISOString());
     } catch (cleanErr) {
       // Não-fatal
       console.warn('zapi-validate-panel-password: falha ao limpar grants expirados', cleanErr);
@@ -259,7 +273,7 @@ Deno.serve(async (req) => {
         {
           user_id: callerId,
           account_id: accountId,
-          granted_at: new Date().toISOString(),
+          granted_at: now.toISOString(),
           expires_at: expiresAt,
         },
         { onConflict: 'user_id,account_id' },

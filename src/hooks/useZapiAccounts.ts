@@ -30,7 +30,7 @@ export interface CreateZapiAccountInput {
   instance_token: string;
   /** Texto puro — TEMPORÁRIO. */
   client_token: string;
-  /** Senha extra do painel (texto puro — TEMPORÁRIO, bcrypt hash via EF em sessão futura). */
+  /** Senha extra do painel. Enviada via EF zapi-set-panel-password para hash PBKDF2 server-side. */
   panel_password?: string;
 }
 
@@ -50,7 +50,7 @@ export interface UpdateZapiAccountInput {
 
 export interface ResetPanelPasswordInput {
   account_id: string;
-  /** Nova senha (texto puro — TEMPORÁRIO, bcrypt hash via EF em sessão futura). */
+  /** Nova senha em texto puro — hash PBKDF2-SHA256 gerado server-side pela EF zapi-set-panel-password. */
   new_password: string;
 }
 
@@ -180,6 +180,9 @@ export function useZapiWebhookConfigs(enabled: boolean) {
  * AVISO MVP: tokens inseridos em texto puro temporariamente.
  * Criptografia AES-256-GCM será aplicada via Edge Function `zapi-encrypt`
  * em sessão futura (T01/T02).
+ *
+ * Se panel_password for fornecida, chama a EF zapi-set-panel-password para
+ * gerar o hash PBKDF2-SHA256 server-side. Nunca grava a senha em texto puro.
  */
 export function useCreateZapiAccount() {
   const queryClient = useQueryClient();
@@ -201,15 +204,34 @@ export function useCreateZapiAccount() {
 
       if (error) throw error;
 
-      // Inserir senha extra, se fornecida
+      // F2 Security-Fix: senha via EF (hash PBKDF2 server-side), nunca texto puro direto no banco.
       if (input.panel_password && input.panel_password.trim()) {
-        const { error: passErr } = await supabase
-          .from('zapi_panel_passwords')
-          .insert({
-            account_id: data.id,
-            password_hash: input.panel_password,
-          });
-        if (passErr) throw passErr;
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        if (!accessToken) {
+          throw new Error('Sessão expirada. Faça login novamente.');
+        }
+
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/zapi-set-panel-password`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              account_id: data.id,
+              new_password: input.panel_password,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error((errData as { error?: string }).error ?? 'Erro ao definir senha do painel');
+        }
       }
 
       return toSafeAccount(data);
@@ -421,21 +443,45 @@ export function useResetZapiPanelPassword() {
 // ─── useRemoveZapiPanelPassword ──────────────────────────────────────────────
 
 /**
- * Remove a senha do painel de uma conta Z-API.
- * Apenas admin (via RLS admin-only em zapi_panel_passwords).
- * Sem senha → todas as contas acessam as conversas livremente (sem cadeado).
+ * Remove a senha do painel de uma conta Z-API via EF zapi-set-panel-password.
+ * Chama a EF com new_password: null — server-side deleta o hash E invalida todos
+ * os grants ativos da conta (F3 Security-Fix: estagiário perde acesso imediatamente).
+ * Apenas admin pode chamar (enforced pela EF).
  */
 export function useRemoveZapiPanelPassword() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (accountId: string) => {
-      const { error } = await supabase
-        .from('zapi_panel_passwords')
-        .delete()
-        .eq('account_id', accountId);
+      // F3 Security-Fix: usar EF para remover senha + invalidar grants ativos.
+      // Delete direto do client deixaria grants válidos por até 8h.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
 
-      if (error) throw error;
+      if (!accessToken) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/zapi-set-panel-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            account_id: accountId,
+            new_password: null,
+          }),
+        },
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error((data as { error?: string }).error ?? 'Erro ao remover senha');
+      }
     },
     onSuccess: (_data, accountId) => {
       queryClient.invalidateQueries({

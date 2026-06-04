@@ -2649,6 +2649,45 @@ export type Database = {
           },
         ]
       }
+      zapi_panel_rate_limits: {
+        Row: {
+          account_id: string
+          failed_attempts: number
+          locked_until: string | null
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          account_id: string
+          failed_attempts?: number
+          locked_until?: string | null
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          account_id?: string
+          failed_attempts?: number
+          locked_until?: string | null
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapi_panel_rate_limits_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "zapi_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zapi_panel_rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zapi_quick_replies: {
         Row: {
           account_id: string
