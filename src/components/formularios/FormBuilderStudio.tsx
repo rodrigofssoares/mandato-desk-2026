@@ -258,11 +258,9 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
   );
 
   async function handleAdicionarCampo(tipo: FieldType) {
-    const novo = await addCampoMutation.mutateAsync({
-      form_id: formulario.id,
-      tipo,
-      rotulo: '', // começa sem rótulo — o usuário preenche se quiser
-    });
+    // O hook aplica os defaults inteligentes por tipo (rótulo/ajuda/mapeamento).
+    // texto_curto/parágrafo continuam sem rótulo; e-mail/CPF/telefone já vêm prontos.
+    const novo = await addCampoMutation.mutateAsync({ form_id: formulario.id, tipo });
     setCampoSelecionadoId(novo.id);
   }
 

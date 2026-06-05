@@ -12,11 +12,13 @@ import { logActivity } from '@/lib/activityLog';
 import {
   sbForms,              // EM054: usar sbForms até types.ts regenerado
   slugify,
+  camposPadraoPorTipo,
   type Formulario,
   type FormularioCampo,
   type FormularioComMetricas,
   type FormularioInput,
   type FieldType,
+  type CampoTemplate,
 } from '@/types/formularios';
 
 // ── Constantes ─────────────────────────────────────────────────────────────
@@ -178,7 +180,32 @@ export function useCreateFormulario() {
         .single();
 
       if (error) throw error;
-      return data as Formulario;
+      const novo = data as Formulario;
+
+      // Modelo pronto: insere os campos pré-construídos em ordem.
+      const campos: CampoTemplate[] = input.campos ?? [];
+      if (campos.length > 0) {
+        const rows = campos.map((c, i) => ({
+          form_id: novo.id,
+          tipo: c.tipo,
+          rotulo: c.rotulo ?? '',
+          ajuda: c.ajuda ?? null,
+          obrigatorio: c.obrigatorio ?? false,
+          min_chars: null,
+          max_chars: null,
+          validar_formato: c.validar_formato ?? false,
+          opcoes: c.opcoes ?? [],
+          mapear_destino_1: c.mapear_destino_1 ?? null,
+          mapear_destino_2: null,
+          largura: '100',
+          config: {},
+          ordem: i + 1,
+        }));
+        const { error: errCampos } = await sbForms.from('formulario_campos').insert(rows);
+        if (errCampos) throw errCampos;
+      }
+
+      return novo;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: [FORMULARIOS_KEY] });
@@ -434,19 +461,30 @@ export function useBulkDeleteFormularios() {
 export interface AddCampoInput {
   form_id: string;
   tipo: FieldType;
+  /** Se omitido, usa o rótulo padrão do tipo (camposPadraoPorTipo). */
   rotulo?: string;
+  ajuda?: string | null;
   obrigatorio?: boolean;
   largura?: '100' | '50';
+  validar_formato?: boolean;
+  opcoes?: { label: string; value: string; ranking_pontos?: number }[];
+  mapear_destino_1?: string | null;
+  mapear_destino_2?: string | null;
 }
 
 /**
  * Adiciona um campo ao formulário com ordem = (max atual) + 1.
+ * Aplica "preenchimento inteligente": rótulo/ajuda/validação/mapeamento padrão
+ * por tipo (ex.: telefone → "WhatsApp (com DDD)" + dica). Tudo sobrescrevível.
  */
 export function useAddFormularioCampo() {
   const qc = useQueryClient();
 
   return useMutation<FormularioCampo, Error, AddCampoInput>({
-    mutationFn: async ({ form_id, tipo, rotulo, obrigatorio = false, largura = '100' }) => {
+    mutationFn: async (input) => {
+      const { form_id, tipo } = input;
+      const padrao = camposPadraoPorTipo(tipo);
+
       // EM054: usar sbForms até types.ts regenerado
       const { data: maxRow } = await sbForms
         .from('formulario_campos')
@@ -464,16 +502,16 @@ export function useAddFormularioCampo() {
         .insert({
           form_id,
           tipo,
-          rotulo: rotulo ?? '',
-          ajuda: null,
-          obrigatorio,
+          rotulo: input.rotulo ?? padrao.rotulo,
+          ajuda: input.ajuda ?? padrao.ajuda ?? null,
+          obrigatorio: input.obrigatorio ?? padrao.obrigatorio ?? false,
           min_chars: null,
           max_chars: null,
-          validar_formato: false,
-          opcoes: [],
-          mapear_destino_1: null,
-          mapear_destino_2: null,
-          largura,
+          validar_formato: input.validar_formato ?? padrao.validar_formato ?? false,
+          opcoes: input.opcoes ?? padrao.opcoes ?? [],
+          mapear_destino_1: input.mapear_destino_1 ?? padrao.mapear_destino_1 ?? null,
+          mapear_destino_2: input.mapear_destino_2 ?? null,
+          largura: input.largura ?? '100',
           config: {},
           ordem: proximaOrdem,
         })

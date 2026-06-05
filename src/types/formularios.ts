@@ -182,7 +182,120 @@ export interface FormularioInput {
   titulo: string;
   slug?: string;
   descricao?: string | null;
+  /** Campos pré-construídos (usado por modelos prontos). */
+  campos?: CampoTemplate[];
 }
+
+// ── Preenchimento inteligente: defaults por tipo de campo ────────────────────
+
+export interface CampoPadrao {
+  rotulo: string;
+  ajuda?: string | null;
+  validar_formato?: boolean;
+  mapear_destino_1?: string | null;
+  obrigatorio?: boolean;
+  opcoes?: OpcaoCampo[];
+}
+
+/** Rótulo/ajuda/mapeamento padrão sugeridos ao adicionar um campo (tudo editável). */
+export function camposPadraoPorTipo(tipo: FieldType): CampoPadrao {
+  switch (tipo) {
+    case 'email':
+      return { rotulo: 'E-mail', validar_formato: true, mapear_destino_1: 'email' };
+    case 'cpf':
+      return { rotulo: 'CPF', validar_formato: true, mapear_destino_1: 'cpf' };
+    case 'telefone':
+      return {
+        rotulo: 'WhatsApp (com DDD)',
+        ajuda: 'Por favor, digite o DDD, depois o número.',
+        validar_formato: true,
+        mapear_destino_1: 'whatsapp',
+      };
+    case 'data':
+      return { rotulo: 'Data' };
+    default:
+      // texto_curto, paragrafo, escolha_unica, checkboxes, lista, imagem, video, secao
+      return { rotulo: '' };
+  }
+}
+
+// ── Modelos prontos de formulário ("formulários padrão") ─────────────────────
+
+export interface CampoTemplate extends CampoPadrao {
+  tipo: FieldType;
+}
+
+export interface FormularioTemplate {
+  id: string;
+  nome: string;
+  descricao: string;
+  /** Nome de ícone lucide. */
+  icone: string;
+  campos: CampoTemplate[];
+}
+
+export const FORMULARIO_TEMPLATES: FormularioTemplate[] = [
+  {
+    id: 'branco',
+    nome: 'Em branco',
+    descricao: 'Comece do zero e monte do seu jeito.',
+    icone: 'FilePlus2',
+    campos: [],
+  },
+  {
+    id: 'captacao',
+    nome: 'Captação de contato',
+    descricao: 'Nome, WhatsApp, e-mail e bairro — já mapeados para o contato.',
+    icone: 'UserPlus',
+    campos: [
+      { tipo: 'texto_curto', rotulo: 'Nome completo', obrigatorio: true, mapear_destino_1: 'nome' },
+      { tipo: 'telefone', rotulo: 'WhatsApp (com DDD)', ajuda: 'Por favor, digite o DDD, depois o número.', obrigatorio: true, validar_formato: true, mapear_destino_1: 'whatsapp' },
+      { tipo: 'email', rotulo: 'E-mail', validar_formato: true, mapear_destino_1: 'email' },
+      { tipo: 'texto_curto', rotulo: 'Bairro', mapear_destino_1: 'bairro' },
+    ],
+  },
+  {
+    id: 'pesquisa',
+    nome: 'Pesquisa / votação',
+    descricao: 'Nome, WhatsApp e uma pergunta de escolha única.',
+    icone: 'ListChecks',
+    campos: [
+      { tipo: 'texto_curto', rotulo: 'Nome completo', obrigatorio: true, mapear_destino_1: 'nome' },
+      { tipo: 'telefone', rotulo: 'WhatsApp (com DDD)', ajuda: 'Por favor, digite o DDD, depois o número.', obrigatorio: true, validar_formato: true, mapear_destino_1: 'whatsapp' },
+      {
+        tipo: 'escolha_unica',
+        rotulo: 'Qual a sua prioridade?',
+        obrigatorio: true,
+        opcoes: [
+          { label: 'Opção 1', value: 'opcao_1' },
+          { label: 'Opção 2', value: 'opcao_2' },
+          { label: 'Opção 3', value: 'opcao_3' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'evento',
+    nome: 'Inscrição em evento',
+    descricao: 'Nome, WhatsApp, e-mail e confirmação de presença.',
+    icone: 'CalendarCheck',
+    campos: [
+      { tipo: 'texto_curto', rotulo: 'Nome completo', obrigatorio: true, mapear_destino_1: 'nome' },
+      { tipo: 'telefone', rotulo: 'WhatsApp (com DDD)', ajuda: 'Por favor, digite o DDD, depois o número.', obrigatorio: true, validar_formato: true, mapear_destino_1: 'whatsapp' },
+      { tipo: 'email', rotulo: 'E-mail', validar_formato: true, mapear_destino_1: 'email' },
+      {
+        tipo: 'escolha_unica',
+        rotulo: 'Você vai comparecer?',
+        obrigatorio: true,
+        opcoes: [
+          { label: 'Sim, confirmo presença', value: 'sim' },
+          { label: 'Talvez', value: 'talvez' },
+          { label: 'Não poderei ir', value: 'nao' },
+        ],
+      },
+    ],
+  },
+];
 
 // ── Shape público (retorno de formulario_obter_publico) ──────────
 export interface CampoPublico {

@@ -1,7 +1,10 @@
 // EM054 — Lista "Meus formulários" (rota /formularios)
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Plus, Trash2, X, CheckSquare, EyeOff, CalendarClock } from 'lucide-react';
+import {
+  FileText, Plus, Trash2, X, CheckSquare, EyeOff, CalendarClock,
+  FilePlus2, UserPlus, ListChecks, CalendarCheck,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +24,12 @@ import { PageHeader } from '@/components/ui-system';
 import { useFormularios, useCreateFormulario, useBulkDeleteFormularios } from '@/hooks/useFormularios';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FormCard } from '@/components/formularios/FormCard';
-import type { FormularioStatus } from '@/types/formularios';
+import { FORMULARIO_TEMPLATES, type FormularioStatus } from '@/types/formularios';
+
+// Ícones dos modelos (lucide) por id de ícone do template.
+const TEMPLATE_ICONS: Record<string, React.ElementType> = {
+  FilePlus2, UserPlus, ListChecks, CalendarCheck,
+};
 
 // ── Tipos de filtro ───────────────────────────────────────────────────────────
 
@@ -46,42 +54,87 @@ function CriarFormularioDialog({ open, onOpenChange }: CriarFormularioDialogProp
   const navigate = useNavigate();
   const createMutation = useCreateFormulario();
   const [titulo, setTitulo] = useState('');
+  const [templateId, setTemplateId] = useState('branco');
+
+  const template = FORMULARIO_TEMPLATES.find((t) => t.id === templateId) ?? FORMULARIO_TEMPLATES[0];
 
   async function handleCriar() {
     if (!titulo.trim()) return;
-    const novo = await createMutation.mutateAsync({ titulo: titulo.trim() });
+    const novo = await createMutation.mutateAsync({
+      titulo: titulo.trim(),
+      campos: template.campos.length > 0 ? template.campos : undefined,
+    });
     setTitulo('');
+    setTemplateId('branco');
     onOpenChange(false);
     navigate(`/formularios/${novo.id}`);
   }
 
   function handleOpenChange(v: boolean) {
-    if (!v) setTitulo('');
+    if (!v) { setTitulo(''); setTemplateId('branco'); }
     onOpenChange(v);
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Novo formulário</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2 py-2">
-          <Label htmlFor="novo-titulo">Título do formulário</Label>
-          <Input
-            id="novo-titulo"
-            autoFocus
-            placeholder="Ex: Cadastro Cultura Viva 2026"
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCriar()}
-            maxLength={120}
-            aria-label="Título do novo formulário"
-          />
-          <p className="text-xs text-muted-foreground">
-            O slug e o link público serão gerados automaticamente.
-          </p>
+
+        <div className="space-y-4 py-2">
+          {/* Título */}
+          <div className="space-y-2">
+            <Label htmlFor="novo-titulo">Título do formulário</Label>
+            <Input
+              id="novo-titulo"
+              autoFocus
+              placeholder="Ex: Cadastro Cultura Viva 2026"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCriar()}
+              maxLength={120}
+              aria-label="Título do novo formulário"
+            />
+          </div>
+
+          {/* Modelos prontos */}
+          <div className="space-y-2">
+            <Label>Começar com um modelo</Label>
+            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Modelo de formulário">
+              {FORMULARIO_TEMPLATES.map((t) => {
+                const Icone = TEMPLATE_ICONS[t.icone] ?? FilePlus2;
+                const ativo = t.id === templateId;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={ativo}
+                    onClick={() => setTemplateId(t.id)}
+                    className={`
+                      text-left rounded-lg border p-3 transition-all
+                      ${ativo ? 'border-primary bg-primary/5 ring-2 ring-primary/15' : 'hover:border-primary/40 hover:bg-muted/40'}
+                    `}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icone className={`h-4 w-4 ${ativo ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className="text-sm font-semibold">{t.nome}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug">{t.descricao}</p>
+                    {t.campos.length > 0 && (
+                      <p className="text-[10px] text-primary/70 mt-1">{t.campos.length} campos prontos</p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O slug e o link público serão gerados automaticamente. Você ajusta tudo depois no editor.
+            </p>
+          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancelar
