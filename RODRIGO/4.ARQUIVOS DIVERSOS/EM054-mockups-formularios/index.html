@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EM054 · Construtor de Formulários — 3 versões para aprovar</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{--primary:#7B1E2E;--primary-600:#681826;--accent:#D4A446;--accent-soft:#f5e9cf;--bg:#FAF6F0;--fg:#2C1518;--muted:#8b7d73;--border:#E5DAC8;--r:16px;--shadow:0 1px 3px rgba(44,21,24,.08),0 12px 30px -16px rgba(44,21,24,.22)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,sans-serif;background:var(--bg);color:var(--fg);line-height:1.55}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:40px 24px 60px}
+  .head{text-align:center;margin-bottom:14px}
+  .head .kicker{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  .head h1{font-size:32px;margin:6px 0}
+  .head p{color:var(--muted);max-width:620px;margin:0 auto;font-size:15px}
+  .note{background:#fff;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:12px;padding:14px 18px;margin:26px auto 30px;max-width:760px;display:flex;gap:12px;font-size:13.5px}
+  .note svg{width:20px;height:20px;color:var(--accent);flex:0 0 auto}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .15s}
+  .card:hover{transform:translateY(-5px)}
+  .card .top{height:130px;display:grid;place-items:center;position:relative;color:#fff}
+  .card.a .top{background:linear-gradient(135deg,var(--primary),#a23a4b)}
+  .card.b .top{background:linear-gradient(135deg,#1B3A6B,#2d5596)}
+  .card.c .top{background:linear-gradient(135deg,#b5862a,var(--accent))}
+  .card .top .letter{font-size:54px;font-weight:700;font-family:'Space Grotesk';opacity:.95}
+  .card .top .lab{position:absolute;bottom:10px;font-size:12px;font-weight:600;letter-spacing:.04em;opacity:.9}
+  .card .body{padding:20px;flex:1;display:flex;flex-direction:column}
+  .card h3{font-size:19px;margin-bottom:6px}
+  .card .desc{color:var(--muted);font-size:13.5px;margin-bottom:14px}
+  .card ul{list-style:none;margin-bottom:16px;flex:1}
+  .card li{display:flex;gap:9px;font-size:13px;margin-bottom:8px;align-items:flex-start}
+  .card li svg{width:15px;height:15px;color:var(--primary);flex:0 0 auto;margin-top:2px}
+  .card li.con svg{color:var(--muted)}
+  .card .meta{font-size:11.5px;color:var(--muted);margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .tagm{background:var(--bg);border:1px solid var(--border);padding:3px 9px;border-radius:20px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:11px;background:var(--primary);color:#fff;font-weight:600;font-size:14px;text-decoration:none;font-family:inherit}
+  .btn:hover{background:var(--primary-600)}
+  .btn svg{width:16px;height:16px}
+  .rec{position:absolute;top:10px;right:10px;background:var(--accent);color:#3a2e10;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:20px}
+  .common{margin-top:40px;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:26px;box-shadow:var(--shadow)}
+  .common h2{font-size:20px;margin-bottom:6px}
+  .common>p{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .fitem{display:flex;gap:11px;align-items:flex-start}
+  .fitem .ic{width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:grid;place-items:center;flex:0 0 auto}
+  .fitem .ic svg{width:18px;height:18px;color:#9a6f15}
+  .fitem b{font-size:13.5px;display:block}.fitem span{font-size:12px;color:var(--muted)}
+  @media(max-width:860px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="kicker">RAQ-MAND-EM054 · Mandato Desk 2026</div>
+    <h1>Construtor de Formulários Web</h1>
+    <p>Três direções de UX para o mesmo recurso. Abra cada uma, navegue pelas abas e me diga qual aprovar — só depois eu construo de verdade.</p>
+  </div>
+
+  <div class="note">
+    <i data-lucide="info"></i>
+    <div><b>Todas as 3 fazem exatamente as mesmas coisas.</b> O que muda é <b>como o usuário monta o formulário</b>. Os mockups são clicáveis: troque de aba, adicione campos, veja o mapeamento e a tela pública + agradecimento.</div>
+  </div>
+
+  <div class="cards">
+    <!-- A -->
+    <div class="card a">
+      <div class="top"><span class="letter">A</span><span class="lab">CLÁSSICO</span></div>
+      <div class="body">
+        <h3>Clássico</h3>
+        <p class="desc">A experiência do Google Forms: uma coluna de cards empilhados, com uma barrinha lateral para adicionar elementos.</p>
+        <div class="meta"><span class="tagm">Familiar</span><span class="tagm">Curva de aprendizado mínima</span></div>
+        <ul>
+          <li><i data-lucide="check"></i> Quem já usou Google Forms se vira na hora</li>
+          <li><i data-lucide="check"></i> Visual limpo, foco no conteúdo</li>
+          <li><i data-lucide="check"></i> Mais rápido de implementar</li>
+          <li class="con"><i data-lucide="minus"></i> Edição de detalhes é menos rica que a B</li>
+        </ul>
+        <a class="btn" href="versao-A-classico.html"><i data-lucide="external-link"></i> Abrir Versão A</a>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="card b">
+      <div class="top"><span class="rec">★ Recomendada</span><span class="letter">B</span><span class="lab">STUDIO PRO</span></div>
+      <div class="body">
+        <h3>Studio Pro</h3>
+        <p class="desc">Editor profissional de 3 painéis: paleta de campos à esquerda, prévia ao vivo no centro, inspetor de propriedades à direita.</p>
+        <div class="meta"><span class="tagm">Poderoso</span><span class="tagm">Controle total</span></div>
+        <ul>
+          <li><i data-lucide="check"></i> Cada campo tem ajustes finos (validação, limite, mapa, cor)</li>
+          <li><i data-lucide="check"></i> Métricas integradas como aba do próprio formulário</li>
+          <li><i data-lucide="check"></i> Escala bem quando o formulário fica grande</li>
+          <li class="con"><i data-lucide="minus"></i> Um pouco mais denso na primeira vez</li>
+        </ul>
+        <a class="btn" href="versao-B-studio-pro.html"><i data-lucide="external-link"></i> Abrir Versão B</a>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="card c">
+      <div class="top"><span class="letter">C</span><span class="lab">ASSISTENTE GUIADO</span></div>
+      <div class="body">
+        <h3>Assistente Guiado</h3>
+        <p class="desc">Passo a passo (Conteúdo → Campos → Mapeamento → Aparência → Publicação) com a prévia ao vivo num celular ao lado.</p>
+        <div class="meta"><span class="tagm">À prova de erro</span><span class="tagm">Ideal p/ equipe</span></div>
+        <ul>
+          <li><i data-lucide="check"></i> Impossível esquecer uma etapa (ex.: segurança/prazo)</li>
+          <li><i data-lucide="check"></i> Melhor para assessores não-técnicos</li>
+          <li><i data-lucide="check"></i> Prévia em celular dá confiança do resultado</li>
+          <li class="con"><i data-lucide="minus"></i> Mais "guiado" — usuário avançado pode achar lento</li>
+        </ul>
+        <a class="btn" href="versao-C-assistente.html"><i data-lucide="external-link"></i> Abrir Versão C</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- common -->
+  <div class="common">
+    <h2>O que está em TODAS as versões</h2>
+    <p>Independente da escolha, o recurso entregue contempla todo o briefing:</p>
+    <div class="feat">
+      <div class="fitem"><div class="ic"><i data-lucide="image"></i></div><div><b>Imagem, texto e headline</b><span>Capa, descrição e elementos visuais</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="list-checks"></i></div><div><b>Vários tipos de campo</b><span>Texto, telefone, listas, botões, caixas, data</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="git-merge"></i></div><div><b>Mapeamento p/ Contato</b><span>1 campo → 2 destinos (ex.: nome + whatsapp)</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="tag"></i></div><div><b>Etiquetas automáticas</b><span>Ex.: "Emendas X", "Cultura"</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="kanban-square"></i></div><div><b>Posição no Funil</b><span>Entra direto numa coluna do Kanban</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="trophy"></i></div><div><b>Pontuação / ranking</b><span>Soma pontos conforme a resposta</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="flag"></i></div><div><b>Marcar situação</b><span>Ex.: "declarou voto"</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="layers"></i></div><div><b>3.000–4.000 envios</b><span>Gravação em lotes, robusta</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="bar-chart-3"></i></div><div><b>Métricas por formulário</b><span>Preenchidos, visitas, conversão</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="link"></i></div><div><b>Link próprio + QR</b><span>Compartilhável na web</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="shield-check"></i></div><div><b>Página pública isolada</b><span>Zero acesso aos dados do CRM (RLS)</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="clock"></i></div><div><b>Prazo de atividade</b><span>Abre/encerra em data definida</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="hash"></i></div><div><b>Limite de caracteres</b><span>Por campo, validações</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="party-popper"></i></div><div><b>Tela de agradecimento</b><span>Mensagem final personalizável</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="copy-check"></i></div><div><b>Anti-duplicado</b><span>Mescla mesmo WhatsApp/CPF</span></div></div>
+      <div class="fitem"><div class="ic"><i data-lucide="palette"></i></div><div><b>Cores e estilo</b><span>Personalização visual</span></div></div>
+    </div>
+  </div>
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>
