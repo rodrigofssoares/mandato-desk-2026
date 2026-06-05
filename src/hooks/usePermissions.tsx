@@ -86,6 +86,13 @@ export function usePermissions() {
     // viewAgente: qualquer usuário com permissão de visualização na seção agente_ia
     viewAgente: () => canView('agente_ia'),
     editAgente: () => canEdit('agente_ia'),
+
+    // Formulários — construtor de formulários web (EM054)
+    viewFormularios: () => canView('formularios'),
+    createFormulario: () => canCreate('formularios'),
+    editFormulario: () => canEdit('formularios'),
+    deleteFormulario: () => canDelete('formularios'),
+    bulkDeleteFormularios: () => canBulkDelete('formularios'),
   }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
 
   return { can, isLoading };

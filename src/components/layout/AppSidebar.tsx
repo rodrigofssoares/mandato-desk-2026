@@ -16,6 +16,7 @@ import {
   User,
   MessageCircle,
   Bot,
+  FileText,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -63,6 +64,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Mapa', icon: MapPin, href: '/leads-map', secao: 'mapa' },
   { label: 'Importação', icon: Upload, href: '/bulk-import', secao: 'importacao' },
   { label: 'Campos de Campanha', icon: ClipboardCheck, href: '/campos-campanha', secao: 'campanha' },
+  { label: 'Formulários', icon: FileText, href: '/formularios', secao: 'formularios' },
   { label: 'WhatsApp', icon: MessageCircle, href: '/integracoes/whatsapp', secao: 'whatsapp', dividerBefore: true },
   { label: 'Agente', icon: Bot, href: '/agente', secao: 'agente_ia' },
   { label: 'Configurações', icon: Settings, href: '/settings', secao: 'configuracoes', dividerBefore: true },
@@ -94,6 +96,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   whatsapp: (can) => can.accessWhatsapp(),
   // agente_ia — exibe para usuários com permissão de visualização (Onda 4 RAQ-MAND-EM075)
   agente_ia: (can) => can.viewAgente(),
+  // formularios — construtor de formulários web (EM054)
+  formularios: (can) => can.viewFormularios(),
 };
 
 export function AppSidebar() {
