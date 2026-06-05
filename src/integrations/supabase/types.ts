@@ -1556,6 +1556,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["demand_priority"]
           protocolo: string | null
           responsible_id: string | null
+          stage_id: string | null
           status: Database["public"]["Enums"]["demand_status"]
           title: string
           updated_at: string
@@ -1570,6 +1571,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["demand_priority"]
           protocolo?: string | null
           responsible_id?: string | null
+          stage_id?: string | null
           status?: Database["public"]["Enums"]["demand_status"]
           title: string
           updated_at?: string
@@ -1584,6 +1586,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["demand_priority"]
           protocolo?: string | null
           responsible_id?: string | null
+          stage_id?: string | null
           status?: Database["public"]["Enums"]["demand_status"]
           title?: string
           updated_at?: string
@@ -1608,6 +1611,13 @@ export type Database = {
             columns: ["responsible_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demands_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -1638,6 +1648,215 @@ export type Database = {
           reason?: string | null
         }
         Relationships: []
+      }
+      formulario_campos: {
+        Row: {
+          ajuda: string | null
+          config: Json
+          created_at: string | null
+          form_id: string
+          id: string
+          largura: string
+          mapear_destino_1: string | null
+          mapear_destino_2: string | null
+          max_chars: number | null
+          min_chars: number | null
+          obrigatorio: boolean
+          opcoes: Json
+          ordem: number
+          rotulo: string
+          tipo: string
+          validar_formato: boolean
+        }
+        Insert: {
+          ajuda?: string | null
+          config?: Json
+          created_at?: string | null
+          form_id: string
+          id?: string
+          largura?: string
+          mapear_destino_1?: string | null
+          mapear_destino_2?: string | null
+          max_chars?: number | null
+          min_chars?: number | null
+          obrigatorio?: boolean
+          opcoes?: Json
+          ordem?: number
+          rotulo?: string
+          tipo: string
+          validar_formato?: boolean
+        }
+        Update: {
+          ajuda?: string | null
+          config?: Json
+          created_at?: string | null
+          form_id?: string
+          id?: string
+          largura?: string
+          mapear_destino_1?: string | null
+          mapear_destino_2?: string | null
+          max_chars?: number | null
+          min_chars?: number | null
+          obrigatorio?: boolean
+          opcoes?: Json
+          ordem?: number
+          rotulo?: string
+          tipo?: string
+          validar_formato?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formulario_campos_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formulario_respostas: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          dados: Json
+          erro: string | null
+          form_id: string
+          id: string
+          ip_hash: string | null
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          dados?: Json
+          erro?: string | null
+          form_id: string
+          id?: string
+          ip_hash?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          dados?: Json
+          erro?: string | null
+          form_id?: string
+          id?: string
+          ip_hash?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formulario_respostas_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formulario_respostas_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formularios: {
+        Row: {
+          abre_em: string | null
+          agradecimento: Json
+          aplicar_etiquetas: string[]
+          capa_url: string | null
+          created_at: string
+          created_by: string | null
+          dedup_acao: string
+          dedup_campo: string
+          descricao: string | null
+          encerra_em: string | null
+          id: string
+          marcar_situacao: Json
+          max_respostas: number | null
+          mover_stage_id: string | null
+          origem: string | null
+          publicado: boolean
+          ranking_pontos: number
+          slug: string
+          status: string
+          tema: Json
+          titulo: string
+          total_visitas: number
+          updated_at: string
+        }
+        Insert: {
+          abre_em?: string | null
+          agradecimento?: Json
+          aplicar_etiquetas?: string[]
+          capa_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          dedup_acao?: string
+          dedup_campo?: string
+          descricao?: string | null
+          encerra_em?: string | null
+          id?: string
+          marcar_situacao?: Json
+          max_respostas?: number | null
+          mover_stage_id?: string | null
+          origem?: string | null
+          publicado?: boolean
+          ranking_pontos?: number
+          slug: string
+          status?: string
+          tema?: Json
+          titulo: string
+          total_visitas?: number
+          updated_at?: string
+        }
+        Update: {
+          abre_em?: string | null
+          agradecimento?: Json
+          aplicar_etiquetas?: string[]
+          capa_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          dedup_acao?: string
+          dedup_campo?: string
+          descricao?: string | null
+          encerra_em?: string | null
+          id?: string
+          marcar_situacao?: Json
+          max_respostas?: number | null
+          mover_stage_id?: string | null
+          origem?: string | null
+          publicado?: boolean
+          ranking_pontos?: number
+          slug?: string
+          status?: string
+          tema?: Json
+          titulo?: string
+          total_visitas?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formularios_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formularios_mover_stage_id_fkey"
+            columns: ["mover_stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       google_oauth_tokens: {
         Row: {
@@ -4003,6 +4222,21 @@ export type Database = {
         Args: { p_event: string; p_payload: Json }
         Returns: undefined
       }
+      formulario_incrementar_visita: {
+        Args: { _slug: string }
+        Returns: undefined
+      }
+      formulario_obter_publico: { Args: { _slug: string }; Returns: Json }
+      formulario_processar_resposta: {
+        Args: {
+          _dados: Json
+          _ip_hash: string
+          _slug: string
+          _user_agent: string
+        }
+        Returns: Json
+      }
+      formularios_fechar_vencidos: { Args: never; Returns: undefined }
       generate_api_token: { Args: never; Returns: string }
       get_audit_log: {
         Args: {
