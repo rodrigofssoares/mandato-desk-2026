@@ -25,10 +25,14 @@ export interface Demand {
   neighborhood: string | null;
   /** T60 (Fase 6 Onda A): protocolo gerado automaticamente (MAND-XXXXXX) */
   protocolo: string | null;
+  /** RAQ-MAND-EM085: coluna do kanban (board_stages). null = "Sem coluna". */
+  stage_id: string | null;
   created_at: string;
   updated_at: string;
   contact: { nome: string; instagram: string | null } | null;
   responsible: { nome: string } | null;
+  /** RAQ-MAND-EM085: quem inseriu a demanda no sistema (created_by). */
+  creator: { nome: string } | null;
   demand_tags: DemandTag[];
 }
 
@@ -48,6 +52,8 @@ export interface DemandInsert {
   contact_id?: string | null;
   responsible_id?: string | null;
   neighborhood?: string;
+  /** RAQ-MAND-EM085: coluna do kanban (board_stages). */
+  stage_id?: string | null;
   tag_ids?: string[];
 }
 
@@ -65,6 +71,7 @@ export function useDemands(filters?: DemandFilters) {
           *,
           contact:contacts!contact_id(nome, instagram),
           responsible:profiles!responsible_id(nome),
+          creator:profiles!created_by(nome),
           demand_tags(tag_id, tags(id, nome, cor))
         `)
         .order('created_at', { ascending: false });
@@ -102,6 +109,10 @@ export function useCreateDemand() {
         .from('demands')
         .insert({
           ...demandData,
+          // RAQ-MAND-EM085: "responsável pela atividade" é escolha deliberada (assessor),
+          // pode ficar vazio. Quem criou a demanda é registrado em created_by
+          // (= "responsável pela criação"), sempre o usuário logado.
+          responsible_id: demandData.responsible_id ?? null,
           created_by: user?.id,
         })
         .select()
@@ -120,6 +131,8 @@ export function useCreateDemand() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
+      // EM085: mantém o contador de demandas por coluna em dia (DemandColumnsDialog).
+      queryClient.invalidateQueries({ queryKey: ['demand-stage-counts'] });
       toast.success('Demanda criada com sucesso');
       logActivity({ type: 'create', entity_type: 'demand', entity_name: data.title, entity_id: data.id, description: `Criou a demanda "${data.title}"` });
     },
@@ -162,6 +175,8 @@ export function useUpdateDemand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
+      // EM085: mantém o contador de demandas por coluna em dia (DemandColumnsDialog).
+      queryClient.invalidateQueries({ queryKey: ['demand-stage-counts'] });
       toast.success('Demanda atualizada com sucesso');
       logActivity({ type: 'update', entity_type: 'demand', description: 'Atualizou uma demanda' });
     },
@@ -181,6 +196,8 @@ export function useDeleteDemand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
+      // EM085: mantém o contador de demandas por coluna em dia (DemandColumnsDialog).
+      queryClient.invalidateQueries({ queryKey: ['demand-stage-counts'] });
       toast.success('Demanda excluída com sucesso');
       logActivity({ type: 'delete', entity_type: 'demand', description: 'Excluiu uma demanda' });
     },

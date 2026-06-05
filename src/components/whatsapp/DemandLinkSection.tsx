@@ -4,7 +4,7 @@
 // O protocolo gerado (MAND-XXXXXX) é exibido e copiável.
 
 import { useState } from 'react';
-import { Link2, Link2Off, Copy, Check, Loader2 } from 'lucide-react';
+import { Link2, Link2Off, Copy, Check, Loader2, Plus } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -25,6 +25,8 @@ import { useDemands } from '@/hooks/useDemands';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { zapiChatKeys } from '@/hooks/useZapiChats';
+import { usePermissions } from '@/hooks/usePermissions';
+import { DemandDialog } from '@/components/demands/DemandDialog';
 
 interface DemandLinkSectionProps {
   chatId: string;
@@ -54,7 +56,9 @@ export function DemandLinkSection({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [newDemandOpen, setNewDemandOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
 
   // Busca demandas do contato atual
   const { data: demands = [], isLoading: demandsLoading } = useDemands(
@@ -165,6 +169,20 @@ export function DemandLinkSection({
         </div>
       ) : (
         /* Estado: sem demanda vinculada */
+        <div className="space-y-1.5">
+        {can.createDemand() && (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            className="w-full h-8 text-xs gap-1.5"
+            disabled={loading || !contactId}
+            onClick={() => setNewDemandOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nova demanda
+          </Button>
+        )}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -237,12 +255,26 @@ export function DemandLinkSection({
             </Command>
           </PopoverContent>
         </Popover>
+        </div>
       )}
 
       {!contactId && (
         <p className="text-[11px] text-muted-foreground italic">
           Adicione o contato ao CRM para vincular demandas
         </p>
+      )}
+
+      {/* RAQ-MAND-EM085: criar nova demanda já vinculada a este contato.
+          Quando criada e ainda não houver demanda no chat, vincula automaticamente. */}
+      {contactId && (
+        <DemandDialog
+          open={newDemandOpen}
+          onOpenChange={setNewDemandOpen}
+          lockedContactId={contactId}
+          onCreated={(d) => {
+            if (!demandId) void updateDemandLink(d.id);
+          }}
+        />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -8,19 +8,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, MessageSquare } from 'lucide-react';
+import { Loader2, Plus, Search, MessageSquare, Columns3 } from 'lucide-react';
 import { PageHeader } from '@/components/ui-system';
 import { useDemands } from '@/hooks/useDemands';
 import { usePermissions } from '@/hooks/usePermissions';
 import { DemandKanban } from '@/components/demands/DemandKanban';
 import { DemandDialog } from '@/components/demands/DemandDialog';
 import { DemandsExportMenu } from '@/components/demands/DemandsExportMenu';
+import { DemandColumnsDialog } from '@/components/demands/DemandColumnsDialog';
 import type { Demand } from '@/hooks/useDemands';
 
 export default function Demands() {
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [columnsOpen, setColumnsOpen] = useState(false);
   const [editingDemand, setEditingDemand] = useState<Demand | null>(null);
   const { can } = usePermissions();
 
@@ -50,6 +52,12 @@ export default function Demands() {
         actions={
           <>
             {can.exportData() && <DemandsExportMenu />}
+            {can.manageDemandColumns() && (
+              <Button variant="outline" onClick={() => setColumnsOpen(true)}>
+                <Columns3 className="h-4 w-4 mr-2" />
+                Gerenciar colunas
+              </Button>
+            )}
             {can.createDemand() && (
               <Button onClick={handleNewDemand}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -103,6 +111,8 @@ export default function Demands() {
         onOpenChange={setDialogOpen}
         demand={editingDemand}
       />
+
+      <DemandColumnsDialog open={columnsOpen} onOpenChange={setColumnsOpen} />
     </div>
   );
 }

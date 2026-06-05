@@ -29,6 +29,16 @@ export function usePermissions() {
     deleteDemand: () => canDelete('demandas'),
     bulkDeleteDemands: () => canBulkDelete('demandas'),
 
+    // Colunas do kanban de Demandas (RAQ-MAND-EM085) — seção própria na matriz
+    viewDemandColumns: () => canView('demandas_colunas'),
+    createDemandColumn: () => canCreate('demandas_colunas'),
+    editDemandColumn: () => canEdit('demandas_colunas'),
+    deleteDemandColumn: () => canDelete('demandas_colunas'),
+    manageDemandColumns: () =>
+      canCreate('demandas_colunas') ||
+      canEdit('demandas_colunas') ||
+      canDelete('demandas_colunas'),
+
     // Etiquetas
     viewTags: () => canView('etiquetas'),
     createTag: () => canCreate('etiquetas'),
@@ -44,6 +54,9 @@ export function usePermissions() {
     exportData: () => canView('relatorios'),
     mergeContacts: () => canEdit('contatos') && canDelete('contatos'),
     accessUsers: () => canView('usuarios'),
+    // RAQ-MAND-EM085: excluir permanentemente um usuário (revoga acesso). Default
+    // só admin (matriz: usuarios.pode_deletar). A EF delete-user reforça server-side.
+    deleteUser: () => canDelete('usuarios'),
     accessApi: () => canView('api'),
     accessWebhooks: () => canView('webhooks'),
     accessBranding: () => canView('personalizacao'),

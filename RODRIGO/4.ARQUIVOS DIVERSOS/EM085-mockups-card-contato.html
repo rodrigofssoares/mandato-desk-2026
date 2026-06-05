@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EM085 — Mockups do seletor + card de contato (Demandas)</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --surface:#ffffff; --border:#e4e7ec; --muted:#667085;
+    --fg:#101828; --primary:#2563eb; --primary-soft:#eff4ff;
+    --wa:#25d366; --wa-dark:#128c4a; --radius:12px;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.1);
+    --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:24px;}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 24px}
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* ---- Picker (busca fixa + lista) ---- */
+  .picker{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:28px}
+  .picker-head{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 14px;z-index:5}
+  .search{position:relative}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .search input{width:100%;padding:11px 12px 11px 38px;border:1px solid var(--border);border-radius:10px;font-size:14px;outline:none;transition:.15s}
+  .search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  .search-hint{font-size:11px;color:var(--muted);margin-top:6px;padding-left:2px}
+  .list{max-height:230px;overflow-y:auto}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f2f4f7;transition:.12s}
+  .row:hover{background:var(--primary-soft)}
+  .row.active{background:var(--primary-soft)}
+  .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0}
+  .row .info{min-width:0;flex:1}
+  .row .nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .meta{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
+
+  /* ---- Layout das 3 variantes ---- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .variant{display:flex;flex-direction:column}
+  .variant .label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .placeholder{border:1.5px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;color:var(--muted);font-size:13px;background:#fafbfc}
+
+  /* botões compartilhados */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;border-radius:9px;padding:8px 12px;transition:.15s}
+  .btn:active{transform:scale(.97)}
+  .btn-wa{background:var(--wa);color:#fff}
+  .btn-wa:hover{background:var(--wa-dark)}
+  .btn-crm{background:var(--primary-soft);color:var(--primary)}
+  .btn-crm:hover{background:#dbe5ff}
+  .btn-ghost{background:#f2f4f7;color:var(--fg)}
+  .btn-ghost:hover{background:#e9ecf1}
+  .tag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;line-height:1.4}
+
+  /* === Variante A — Compacto horizontal === */
+  .cardA{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+  .cardA .top{display:flex;align-items:center;gap:12px}
+  .cardA .nm{font-weight:700;font-size:15px;line-height:1.2}
+  .cardA .ph{font-size:13px;color:var(--muted);margin-top:2px}
+  .cardA .acts{display:flex;gap:6px;margin-left:auto}
+  .cardA .icon-btn{width:34px;height:34px;border-radius:9px;padding:0}
+  .cardA .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+
+  /* === Variante B — Vertical destacado === */
+  .cardB{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .cardB .hd{background:linear-gradient(135deg,#eff4ff,#f5f3ff);padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+  .cardB .nm{font-weight:700;font-size:16px}
+  .cardB .ph{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-top:3px}
+  .cardB .body{padding:14px 16px}
+  .cardB .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .cardB .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cardB .acts .btn{width:100%}
+
+  /* === Variante C — Pill enxuto + dots === */
+  .cardC{background:var(--surface);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow);padding:8px 8px 8px 8px;display:flex;align-items:center;gap:10px}
+  .cardC .avatar{width:42px;height:42px}
+  .cardC .info{min-width:0;flex:1}
+  .cardC .nm{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cardC .ph{font-size:12px;color:var(--muted)}
+  .cardC .dots{display:flex;gap:4px;margin-top:4px;align-items:center}
+  .cardC .dot{width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.05);cursor:default}
+  .cardC .acts{display:flex;gap:6px}
+  .cardC .icon-btn{width:38px;height:38px;border-radius:50%;padding:0}
+  .cardC-note{font-size:11px;color:var(--muted);margin-top:8px;text-align:center}
+
+  .footer{margin-top:30px;padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius);font-size:13px;color:#92400e}
+  .footer b{color:#78350f}
+  .ico{width:16px;height:16px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EM085 — Seletor de contato + card (aba Demandas)</h1>
+  <p class="sub">Busque por <b>nome, CPF ou telefone</b> (barra fixa no topo) e clique num contato. As 3 variantes abaixo mostram o mesmo contato em layouts diferentes. Escolha qual card você prefere — ou peça ajustes.</p>
+
+  <!-- ============ PICKER ============ -->
+  <div class="picker">
+    <div class="picker-head">
+      <div class="search">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="Buscar contato por nome, CPF ou telefone…" autocomplete="off" />
+      </div>
+      <div class="search-hint">Ex.: "maria", "123.456", "67 99" — a busca é fixa e filtra em tempo real.</div>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- ============ 3 VARIANTES ============ -->
+  <div class="grid">
+    <div class="variant">
+      <div class="label">Variante A — Compacto horizontal</div>
+      <div id="slotA"><div class="placeholder">Selecione um contato acima<br>pra ver o card</div></div>
+    </div>
+    <div class="variant">
+      <div class="label">Variante B — Vertical destacado</div>
+      <div id="slotB"><div class="placeholder">Selecione um contato acima<br>pra ver o card</div></div>
+    </div>
+    <div class="variant">
+      <div class="label">Variante C — Pill enxuto</div>
+      <div id="slotC"><div class="placeholder">Selecione um contato acima<br>pra ver o card</div></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <b>Como funciona na prática:</b> ao abrir "Nova demanda" pela aba Demandas, você busca e seleciona o contato → o card escolhido aparece preenchido. Pela aba WhatsApp/Conversas, o contato já vem travado (sem busca) e o card aparece direto. Os botões <b>Falar no WhatsApp</b> e <b>Ver no CRM</b> abrem a conversa interna e a ficha do contato respectivamente.
+  </div>
+</div>
+
+<script>
+const ICON_WA = '<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zM6.597 20.13c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>';
+const ICON_CRM = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+const ICON_PHONE = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+
+const CONTACTS = [
+  { nome:'Maria Aparecida da Silva', tel:'(67) 99988-7766', cpf:'123.456.789-00', tags:[{n:'Apoiadora',c:'#16a34a'},{n:'Bairro Centro',c:'#2563eb'},{n:'VIP',c:'#d97706'}] },
+  { nome:'João Pedro Albuquerque', tel:'(67) 98123-4567', cpf:'987.654.321-11', tags:[{n:'Liderança',c:'#7c3aed'},{n:'Coronel Sapucaia',c:'#0891b2'}] },
+  { nome:'Ana Beatriz Nogueira', tel:'(67) 99711-2233', cpf:'456.789.123-22', tags:[{n:'Imprensa',c:'#db2777'}] },
+  { nome:'Carlos Eduardo Mendes', tel:'(67) 98444-9090', cpf:'321.654.987-33', tags:[{n:'Servidor',c:'#0d9488'},{n:'Saúde',c:'#dc2626'},{n:'Centro',c:'#2563eb'}] },
+  { nome:'Fernanda Lima Rocha', tel:'(67) 99655-1100', cpf:'159.753.486-44', tags:[] },
+  { nome:'Roberto Carlos Souza', tel:'(67) 98233-7788', cpf:'753.951.852-55', tags:[{n:'Empresário',c:'#ca8a04'},{n:'Doador',c:'#16a34a'}] },
+];
+
+const onlyDigits = s => (s||'').replace(/\D/g,'');
+const initials = n => n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+let selected = null;
+const listEl = document.getElementById('list');
+const qEl = document.getElementById('q');
+
+function render(){
+  const q = qEl.value.trim().toLowerCase();
+  const qd = onlyDigits(q);
+  const filtered = CONTACTS.filter(c=>{
+    if(!q) return true;
+    const byName = c.nome.toLowerCase().includes(q);
+    const byCpf = qd && onlyDigits(c.cpf).includes(qd);
+    const byTel = qd && onlyDigits(c.tel).includes(qd);
+    return byName || byCpf || byTel;
+  });
+  if(filtered.length===0){ listEl.innerHTML='<div class="empty">Nenhum contato encontrado.</div>'; return; }
+  listEl.innerHTML = filtered.map((c)=>{
+    const idx = CONTACTS.indexOf(c);
+    const act = selected && selected.nome===c.nome ? 'active':'';
+    return `<div class="row ${act}" data-i="${idx}">
+      <div class="avatar">${initials(c.nome)}</div>
+      <div class="info"><div class="nm">${c.nome}</div><div class="meta">${c.tel} · CPF ${c.cpf}</div></div>
+    </div>`;
+  }).join('');
+  listEl.querySelectorAll('.row').forEach(r=>r.onclick=()=>{ selected=CONTACTS[+r.dataset.i]; render(); paint(); });
+}
+
+function tagChips(tags){ return tags.map(t=>`<span class="tag" style="background:${t.c}1a;color:${t.c}">${t.n}</span>`).join(''); }
+function tagDots(tags){ return tags.length? tags.map(t=>`<span class="dot" style="background:${t.c}" title="${t.n}"></span>`).join('') : '<span style="font-size:11px;color:#98a2b3">sem etiquetas</span>'; }
+
+function paint(){
+  const c = selected; if(!c) return;
+  // A
+  document.getElementById('slotA').innerHTML = `
+    <div class="cardA">
+      <div class="top">
+        <div class="avatar">${initials(c.nome)}</div>
+        <div><div class="nm">${c.nome}</div><div class="ph">${c.tel}</div></div>
+        <div class="acts">
+          <button class="btn btn-wa icon-btn" title="Falar no WhatsApp">${ICON_WA}</button>
+          <button class="btn btn-crm icon-btn" title="Ver no CRM">${ICON_CRM}</button>
+        </div>
+      </div>
+      <div class="tags">${c.tags.length?tagChips(c.tags):'<span style="font-size:11px;color:#98a2b3">sem etiquetas</span>'}</div>
+    </div>`;
+  // B
+  document.getElementById('slotB').innerHTML = `
+    <div class="cardB">
+      <div class="hd">
+        <div class="avatar">${initials(c.nome)}</div>
+        <div><div class="nm">${c.nome}</div><div class="ph">${ICON_PHONE} ${c.tel}</div></div>
+      </div>
+      <div class="body">
+        <div class="tags">${c.tags.length?tagChips(c.tags):'<span style="font-size:11px;color:#98a2b3">sem etiquetas</span>'}</div>
+        <div class="acts">
+          <button class="btn btn-wa">${ICON_WA} WhatsApp</button>
+          <button class="btn btn-crm">${ICON_CRM} Ver no CRM</button>
+        </div>
+      </div>
+    </div>`;
+  // C
+  document.getElementById('slotC').innerHTML = `
+    <div class="cardC">
+      <div class="avatar">${initials(c.nome)}</div>
+      <div class="info">
+        <div class="nm">${c.nome}</div>
+        <div class="ph">${c.tel}</div>
+        <div class="dots">${tagDots(c.tags)}</div>
+      </div>
+      <div class="acts">
+        <button class="btn btn-wa icon-btn" title="Falar no WhatsApp">${ICON_WA}</button>
+        <button class="btn btn-crm icon-btn" title="Ver no CRM">${ICON_CRM}</button>
+      </div>
+    </div>
+    <div class="cardC-note">passe o mouse nos pontinhos coloridos pra ver a etiqueta</div>`;
+}
+
+qEl.addEventListener('input', render);
+render();
+</script>
+</body>
+</html>

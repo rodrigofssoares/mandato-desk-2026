@@ -27,6 +27,9 @@ import { Loader2 } from 'lucide-react';
 import { useCreateDemand, useUpdateDemand, useDeleteDemand } from '@/hooks/useDemands';
 import { useTags } from '@/hooks/useTags';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/context/AuthContext';
+import { useDemandBoardId, useDemandStages } from '@/hooks/useDemandColumns';
+import { ContactPickerField } from './ContactPickerField';
 import type { Demand } from '@/hooks/useDemands';
 
 const demandSchema = z.object({
@@ -45,33 +48,35 @@ interface DemandDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   demand?: Demand | null;
+  /** RAQ-MAND-EM085: quando informado, o contato vem travado (fluxo WhatsApp). */
+  lockedContactId?: string | null;
+  /** Callback chamado após criar uma nova demanda (usado para vincular ao chat). */
+  onCreated?: (demand: { id: string }) => void;
 }
 
-export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) {
+export function DemandDialog({
+  open,
+  onOpenChange,
+  demand,
+  lockedContactId = null,
+  onCreated,
+}: DemandDialogProps) {
   const createDemand = useCreateDemand();
   const updateDemand = useUpdateDemand();
   const deleteDemand = useDeleteDemand();
   const { can } = usePermissions();
+  const { profile } = useAuth();
   const { data: tags = [] } = useTags();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  const isEdit = !!demand;
+  // RAQ-MAND-EM085: coluna do kanban (board_stages). Quando há colunas
+  // configuradas, o campo "Status" dá lugar ao seletor de "Coluna".
+  const { data: demandBoardId } = useDemandBoardId();
+  const { data: demandStages = [] } = useDemandStages(demandBoardId);
+  const dynamicColumns = demandStages.length > 0;
+  const [stageId, setStageId] = useState<string | null>(null);
 
-  // Fetch contacts for the select
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['contacts-select'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('id, nome')
-        .is('merged_into', null)
-        .order('nome')
-        .limit(500);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: open,
-  });
+  const isEdit = !!demand;
 
   // Fetch profiles for responsible select
   const { data: profiles = [] } = useQuery({
@@ -120,19 +125,32 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
         neighborhood: demand.neighborhood ?? '',
       });
       setSelectedTagIds(demand.demand_tags?.map((dt) => dt.tag_id) ?? []);
+      setStageId(demand.stage_id ?? null);
     } else {
       reset({
         title: '',
         description: '',
         status: 'open',
         priority: 'medium',
-        contact_id: null,
+        // RAQ-MAND-EM085: contato travado no fluxo WhatsApp. Responsável pela
+        // atividade começa vazio (escolha deliberada); o criador vai em created_by.
+        contact_id: lockedContactId ?? null,
         responsible_id: null,
         neighborhood: '',
       });
       setSelectedTagIds([]);
+      setStageId(null);
     }
-  }, [demand, reset]);
+  }, [demand, reset, lockedContactId]);
+
+  // Default da coluna em nova demanda: primeira coluna assim que carregarem.
+  // Usa updater funcional pra não depender de `stageId` nas deps (evita o
+  // anti-padrão de efeito que reage à própria mudança de state).
+  useEffect(() => {
+    if (!demand && demandStages.length > 0) {
+      setStageId((prev) => (prev === null ? demandStages[0].id : prev));
+    }
+  }, [demand, demandStages]);
 
   const watchStatus = watch('status');
   const watchPriority = watch('priority');
@@ -146,16 +164,22 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
   };
 
   const onSubmit = async (data: DemandFormData) => {
+    // RAQ-MAND-EM085: quando há colunas configuradas, a posição vem do stageId.
+    const resolvedStageId = dynamicColumns
+      ? stageId ?? demandStages[0]?.id ?? null
+      : undefined;
+
     if (isEdit) {
       await updateDemand.mutateAsync({
         id: demand.id,
         ...data,
         contact_id: data.contact_id || null,
         responsible_id: data.responsible_id || null,
+        ...(resolvedStageId !== undefined ? { stage_id: resolvedStageId } : {}),
         tag_ids: selectedTagIds,
       });
     } else {
-      await createDemand.mutateAsync({
+      const created = await createDemand.mutateAsync({
         title: data.title,
         description: data.description,
         status: data.status,
@@ -163,8 +187,10 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
         contact_id: data.contact_id || null,
         responsible_id: data.responsible_id || null,
         neighborhood: data.neighborhood,
+        ...(resolvedStageId !== undefined ? { stage_id: resolvedStageId } : {}),
         tag_ids: selectedTagIds,
       });
+      if (created?.id) onCreated?.({ id: created.id });
     }
     onOpenChange(false);
   };
@@ -203,22 +229,54 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              {...register('neighborhood')}
+              placeholder="Bairro"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={watchStatus}
-                onValueChange={(v) => setValue('status', v as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Aberta</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="resolved">Resolvida</SelectItem>
-                </SelectContent>
-              </Select>
+              {dynamicColumns ? (
+                <>
+                  <Label>Coluna</Label>
+                  <Select
+                    value={stageId ?? undefined}
+                    onValueChange={(v) => setStageId(v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a coluna" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {demandStages.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              ) : (
+                <>
+                  <Label>Status</Label>
+                  <Select
+                    value={watchStatus}
+                    onValueChange={(v) => setValue('status', v as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Aberta</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="resolved">Resolvida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -241,32 +299,21 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
 
           <div className="space-y-2">
             <Label>Contato</Label>
-            <Select
-              value={watchContactId ?? '_none'}
-              onValueChange={(v) => setValue('contact_id', v === '_none' ? null : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um contato" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">Nenhum</SelectItem>
-                {contacts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ContactPickerField
+              value={watchContactId ?? null}
+              onChange={(id) => setValue('contact_id', id)}
+              locked={!!lockedContactId}
+            />
           </div>
 
           <div className="space-y-2">
-            <Label>Responsável</Label>
+            <Label>Responsável pela atividade</Label>
             <Select
               value={watchResponsibleId ?? '_none'}
               onValueChange={(v) => setValue('responsible_id', v === '_none' ? null : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o responsável" />
+                <SelectValue placeholder="Selecione quem vai acompanhar" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="_none">Nenhum</SelectItem>
@@ -279,12 +326,19 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
             </Select>
           </div>
 
+          {/* RAQ-MAND-EM085: quem inseriu a demanda no sistema (created_by) —
+              preenchido automaticamente, somente leitura. */}
           <div className="space-y-2">
-            <Label htmlFor="neighborhood">Bairro</Label>
+            <Label>Responsável pela criação</Label>
             <Input
-              id="neighborhood"
-              {...register('neighborhood')}
-              placeholder="Bairro"
+              value={
+                isEdit
+                  ? demand?.creator?.nome ?? '—'
+                  : profile?.nome ?? 'Você'
+              }
+              readOnly
+              disabled
+              className="bg-muted/40"
             />
           </div>
 

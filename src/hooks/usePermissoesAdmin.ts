@@ -111,7 +111,7 @@ function generateDefaultPermissions() {
     proprietario: {
       fullAccess: [
         'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
-        'mapa', 'importacao', 'relatorios', 'board', 'tarefas',
+        'mapa', 'importacao', 'relatorios', 'board', 'tarefas', 'demandas_colunas',
       ],
       viewOnly: [
         'usuarios', 'google', 'api', 'webhooks', 'personalizacao', 'permissoes',
@@ -122,19 +122,19 @@ function generateDefaultPermissions() {
     },
     assessor: {
       fullAccess: [],
-      viewOnly: ['dashboard', 'mapa', 'relatorios'],
+      viewOnly: ['dashboard', 'mapa', 'relatorios', 'demandas_colunas'],
       viewCreate: [],
       viewCreateEdit: ['contatos', 'liderancas', 'demandas', 'etiquetas', 'board', 'tarefas'],
     },
     assistente: {
       fullAccess: [],
-      viewOnly: ['dashboard', 'board'],
+      viewOnly: ['dashboard', 'board', 'demandas_colunas'],
       viewCreate: ['contatos', 'liderancas'],
       viewCreateEdit: ['tarefas'],
     },
     estagiario: {
       fullAccess: [],
-      viewOnly: ['dashboard', 'board', 'tarefas'],
+      viewOnly: ['dashboard', 'board', 'tarefas', 'demandas_colunas'],
       viewCreate: [],
       viewCreateEdit: [],
     },
