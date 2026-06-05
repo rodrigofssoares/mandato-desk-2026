@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { FormularioStatus } from '@/types/formularios';
 import { useFormulario, useUpdateFormulario } from '@/hooks/useFormularios';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FormBuilderStudio } from '@/components/formularios/FormBuilderStudio';
@@ -109,14 +109,19 @@ export default function FormularioEditor() {
 
   async function handlePublicar() {
     if (!id || !data) return;
-    const novoStatus = data.formulario.publicado ? 'rascunho' : 'ativo';
-    await updateMutation.mutateAsync({
-      id,
-      patch: {
-        publicado: !data.formulario.publicado,
-        status: novoStatus,
-      },
-    });
+    let patch: { publicado: boolean; status: FormularioStatus };
+    if (data.formulario.publicado) {
+      // Despublicando → volta para rascunho.
+      patch = { publicado: false, status: 'rascunho' };
+    } else {
+      // Publicando → status calculado pela janela: se abre no futuro, fica
+      // 'agendado' (o cron promove para 'ativo' na hora); senão já 'ativo'.
+      const now = Date.now();
+      const abre = data.formulario.abre_em ? new Date(data.formulario.abre_em).getTime() : null;
+      const status: FormularioStatus = abre && abre > now ? 'agendado' : 'ativo';
+      patch = { publicado: true, status };
+    }
+    await updateMutation.mutateAsync({ id, patch });
     setLastSaved(new Date());
   }
 

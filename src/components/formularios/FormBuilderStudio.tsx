@@ -1,8 +1,7 @@
 // EM054 — Studio 3 painéis: Paleta | Prévia ao vivo | Inspetor
 import { useState, useCallback, useRef } from 'react';
 import {
-  Type, AlignLeft, Phone, Mail, CreditCard, CircleDot,
-  CheckSquare, List, Calendar, Image as ImageIcon, Heading,
+  Image as ImageIcon,
   GripVertical, ChevronUp, ChevronDown, Trash2, Plus, Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,6 @@ import {
 import {
   FIELD_TYPES_COM_OPCOES,
   FIELD_TYPE_LABELS,
-  FIELD_TYPE_ICONS,
   type Formulario,
   type FormularioCampo,
   type FieldType,
@@ -274,12 +272,17 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
     await updateFormMutation.mutateAsync({ id: formulario.id, patch: { capa_url: result.url } });
   }
 
+  const corTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   function handleTemaCor(cor: string) {
-    const tema: TemaFormulario = {
-      ...(formulario.tema ?? { cantos: 'arredondado', fundo: 'branco', mostrar_logo: false }),
-      cor,
-    };
-    updateFormMutation.mutate({ id: formulario.id, patch: { tema } });
+    // Debounce: <input type="color"> dispara muitos onChange ao arrastar.
+    if (corTimerRef.current) clearTimeout(corTimerRef.current);
+    corTimerRef.current = setTimeout(() => {
+      const tema: TemaFormulario = {
+        ...(formulario.tema ?? { cantos: 'arredondado', fundo: 'branco', mostrar_logo: false }),
+        cor,
+      };
+      updateFormMutation.mutate({ id: formulario.id, patch: { tema } });
+    }, 500);
   }
 
   const cor = formulario.tema?.cor ?? 'hsl(var(--primary))';

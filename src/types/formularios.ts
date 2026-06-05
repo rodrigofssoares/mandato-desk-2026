@@ -81,13 +81,13 @@ export const DESTINOS_CONTATO = [
   { value: 'observacoes', label: 'Observações' },
 ] as const;
 
-/** Situações booleanas que o formulário pode marcar no contato (whitelist RPC). */
+/** Situações booleanas que o formulário pode marcar no contato (whitelist RPC).
+ *  NÃO inclui optin_whatsapp/aceita_whatsapp: têm proteção LGPD (trigger mig 076)
+ *  e semântica de ranking — não podem ser setados via UPDATE direto da RPC pública. */
 export const SITUACOES_CONTATO = [
   { value: 'declarou_voto', label: 'Declarou voto' },
   { value: 'is_favorite', label: 'Favorito' },
   { value: 'e_multiplicador', label: 'É multiplicador' },
-  { value: 'aceita_whatsapp', label: 'Aceita WhatsApp' },
-  { value: 'optin_whatsapp', label: 'Opt-in WhatsApp' },
 ] as const;
 
 // ── Status / dedup ───────────────────────────────────────────────

@@ -408,9 +408,21 @@ CREATE POLICY "formulario_respostas_delete" ON public.formulario_respostas
 -- 9. Storage bucket: formularios
 -- ============================================================
 
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('formularios', 'formularios', true)
-ON CONFLICT (id) DO NOTHING;
+-- Bucket público para imagens de capa e uploads de campo imagem.
+-- file_size_limit: 5 MB por arquivo (5 × 1024 × 1024 = 5242880 bytes).
+-- allowed_mime_types: apenas imagens rasterizadas — SVG e HTML excluídos
+--   intencionalmente para prevenir XSS no domínio storage (bucket é público).
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'formularios',
+  'formularios',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+ON CONFLICT (id) DO UPDATE
+  SET file_size_limit    = EXCLUDED.file_size_limit,
+      allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- Leitura pública (necessário para imagens de capa e uploads de campo imagem
 -- referenciados em formulários públicos — acessados sem autenticação)
@@ -525,6 +537,13 @@ GRANT EXECUTE ON FUNCTION public.formularios_fechar_vencidos() TO service_role;
 -- ============================================================
 -- 12. pg_cron: fechar formulários vencidos a cada 5 min
 -- ============================================================
+
+-- Idempotência: remove o job se já existir antes de recriar,
+-- evitando erro "job with same name already exists" em re-runs.
+SELECT cron.unschedule('formularios-fechar-vencidos')
+WHERE EXISTS (
+  SELECT 1 FROM cron.job WHERE jobname = 'formularios-fechar-vencidos'
+);
 
 SELECT cron.schedule(
   'formularios-fechar-vencidos',

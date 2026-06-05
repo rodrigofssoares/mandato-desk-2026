@@ -21,9 +21,9 @@ export interface TelaNaoIniciadoProps extends TelaBaseProps {
   abreEm?: string;
 }
 
-export interface TelaLimiteProps extends TelaBaseProps {}
+export type TelaLimiteProps = TelaBaseProps;
 
-export interface TelaNotFoundProps extends TelaBaseProps {}
+export type TelaNotFoundProps = TelaBaseProps;
 
 // ── Wrapper visual compartilhado ──────────────────────────────────────────
 

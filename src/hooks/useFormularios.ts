@@ -34,10 +34,12 @@ const BULK_CHUNK_SIZE = 100;
 /** Garante unicidade do slug tentando sufixos -2, -3... */
 async function resolveUniqueSlug(base: string): Promise<string> {
   // EM054: usar sbForms até types.ts regenerado
+  // Busca só o slug exato ou no formato "base-<n>" (evita falso-positivo de
+  // slugs que apenas começam com a base, ex: base="emenda" vs "emendas").
   const { data } = await sbForms
     .from('formularios')
     .select('slug')
-    .ilike('slug', `${base}%`);
+    .or(`slug.eq.${base},slug.like.${base}-%`);
 
   const existentes = new Set<string>((data ?? []).map((r: { slug: string }) => r.slug));
 
@@ -90,7 +92,7 @@ export function useFormularios() {
             ? Number((respostasRaw[0] as Record<string, unknown>)['count'] ?? 0)
             : 0;
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         const { formulario_respostas: _drop, ...rest } = row;
         void _drop;
 
@@ -200,6 +202,14 @@ export interface UpdateFormularioInput {
   patch: Partial<Omit<Formulario, 'id' | 'created_at' | 'created_by'>>;
 }
 
+/** Colunas que o frontend pode atualizar. Bloqueia mass-assignment de
+ *  total_visitas (contador interno) e slug (quebra links já compartilhados). */
+const CAMPOS_ATUALIZAVEIS: ReadonlyArray<keyof Formulario> = [
+  'titulo', 'descricao', 'capa_url', 'status', 'publicado', 'abre_em', 'encerra_em',
+  'tema', 'agradecimento', 'dedup_campo', 'dedup_acao', 'aplicar_etiquetas',
+  'mover_stage_id', 'ranking_pontos', 'marcar_situacao', 'origem', 'max_respostas',
+];
+
 /**
  * Atualiza qualquer campo do formulário (config, publicar, datas, tema,
  * mapeamento, automações).
@@ -209,10 +219,15 @@ export function useUpdateFormulario() {
 
   return useMutation<Formulario, Error, UpdateFormularioInput>({
     mutationFn: async ({ id, patch }) => {
+      // Filtra o patch para só colunas permitidas (anti mass-assignment).
+      const limpo: Record<string, unknown> = {};
+      for (const k of CAMPOS_ATUALIZAVEIS) {
+        if (k in patch) limpo[k] = (patch as Record<string, unknown>)[k];
+      }
       // EM054: usar sbForms até types.ts regenerado
       const { data, error } = await sbForms
         .from('formularios')
-        .update({ ...patch, updated_at: new Date().toISOString() })
+        .update({ ...limpo, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select('*')
         .single();

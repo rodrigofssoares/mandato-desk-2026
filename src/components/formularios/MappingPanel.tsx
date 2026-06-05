@@ -7,7 +7,6 @@ import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUpdateFormulario } from '@/hooks/useFormularios';
 import { useTags } from '@/hooks/useTags';
-import { useBoards } from '@/hooks/useBoards';
 import { useDefaultBoard } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
 import {

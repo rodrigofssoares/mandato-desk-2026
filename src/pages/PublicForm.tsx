@@ -271,7 +271,7 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
     setErros((prev) => ({ ...prev, [id]: null }));
   }, []);
 
-  const validarTudo = useCallback((): boolean => {
+  const validarTudo = useCallback((): ErrosMap | null => {
     const novosErros: ErrosMap = {};
     let valido = true;
     campos.forEach((campo) => {
@@ -281,15 +281,18 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
       if (err) valido = false;
     });
     setErros(novosErros);
-    return valido;
+    return valido ? null : novosErros;
   }, [campos, valores]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validarTudo()) {
+    // Usa o retorno direto (não o estado `erros`, que é atualizado de forma
+    // assíncrona pelo setErros e estaria defasado neste mesmo tick).
+    const errosNovos = validarTudo();
+    if (errosNovos) {
       const primeiro = campos.find(
-        (c) => c.tipo !== 'secao' && c.tipo !== 'imagem' && erros[c.id]
+        (c) => c.tipo !== 'secao' && c.tipo !== 'imagem' && errosNovos[c.id]
       );
       if (primeiro) {
         document.getElementById(`campo-${primeiro.id}`)?.focus();
@@ -314,10 +317,11 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
       const body: Record<string, unknown> = { slug, dados };
       if (captchaToken) body.captchaToken = captchaToken;
 
-      const { error, data } = await (supabase as ReturnType<typeof supabase.functions.invoke> extends never
-        ? never
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : any).functions.invoke('formularios-public-submit', { body });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error, data } = await (supabase as any).functions.invoke(
+        'formularios-public-submit',
+        { body },
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const status: number = (error as any)?.context?.status ?? (data as any)?.status ?? 0;

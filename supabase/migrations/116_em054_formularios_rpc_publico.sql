@@ -182,10 +182,14 @@ DECLARE
   ];
 
   -- Whitelist de chaves de marcar_situacao mapeadas para colunas booleanas.
-  -- Apenas booleanas simples cujo true é seguro de setar via formulário.
+  -- Apenas booleanas simples cujo true é seguro de setar via formulário público.
+  -- EXCLUÍDOS intencionalmente:
+  --   optin_whatsapp — gerenciado pelo trigger LGPD trg_contacts_bloquear_optin
+  --                    (migration 076); UPDATE direto é bloqueado por trigger.
+  --   aceita_whatsapp — campo de ranking/qualificação interna; não deve ser
+  --                     sobrescrito por respondente anônimo.
   v_situacao_whitelist text[] := ARRAY[
-    'declarou_voto', 'is_favorite', 'e_multiplicador',
-    'aceita_whatsapp', 'optin_whatsapp'
+    'declarou_voto', 'is_favorite', 'e_multiplicador'
   ];
 
   v_form          public.formularios%ROWTYPE;
@@ -257,6 +261,11 @@ BEGIN
   END IF;
 
   IF v_form.max_respostas IS NOT NULL THEN
+    -- Serializa submissões concorrentes quando há limite de respostas.
+    -- O FOR UPDATE na linha do formulário garante que duas submissões
+    -- simultâneas não ultrapassem max_respostas por race condition.
+    PERFORM 1 FROM public.formularios WHERE id = v_form.id FOR UPDATE;
+
     SELECT COUNT(*)
       INTO v_qtd_resp
       FROM public.formulario_respostas
@@ -320,10 +329,12 @@ BEGIN
     END IF;
 
     IF v_campo_dedup IS NOT NULL AND length(v_campo_dedup) > 0 THEN
+      -- AND merged_into IS NULL: não reanimar contatos mesclados/arquivados
       SELECT id
         INTO v_contact_id
         FROM public.contacts
        WHERE regexp_replace(COALESCE(whatsapp, telefone, ''), '\D', '', 'g') = v_campo_dedup
+         AND merged_into IS NULL
       LIMIT 1;
 
       IF FOUND THEN
@@ -338,10 +349,12 @@ BEGIN
     END IF;
 
     IF v_campo_dedup IS NOT NULL AND length(v_campo_dedup) > 0 THEN
+      -- AND merged_into IS NULL: não reanimar contatos mesclados/arquivados
       SELECT id
         INTO v_contact_id
         FROM public.contacts
        WHERE regexp_replace(COALESCE(cpf, ''), '\D', '', 'g') = v_campo_dedup
+         AND merged_into IS NULL
       LIMIT 1;
 
       IF FOUND THEN
@@ -357,16 +370,18 @@ BEGIN
   IF v_achou_existente THEN
 
     IF v_form.dedup_acao = 'mesclar' THEN
-      -- Atualiza contato existente com os valores não-nulos do patch.
-      -- Usa EXECUTE + format(%I) com nome de coluna validado pela whitelist.
+      -- Merge NÃO-DESTRUTIVO: só enriquece campos vazios/NULL do contato existente.
+      -- Nunca sobrescreve dado já preenchido (impede hijack de contato de terceiro
+      -- por respondente anônimo que souber o WhatsApp/CPF alheio).
+      -- Usa COALESCE(%I, $1): se o valor atual já existe, fica como está.
       FOR v_idx IN 1 .. array_length(v_patch_keys, 1)
       LOOP
         v_col := v_patch_keys[v_idx];
         -- Dupla verificação: só executa se o nome está na whitelist
         IF v_col = ANY(v_contact_col_whitelist) THEN
           EXECUTE format(
-            'UPDATE public.contacts SET %I = $1, updated_at = now() WHERE id = $2',
-            v_col
+            'UPDATE public.contacts SET %I = COALESCE(NULLIF(trim(%I::text), ''''), $1), updated_at = now() WHERE id = $2',
+            v_col, v_col
           ) USING v_patch_vals[v_idx], v_contact_id;
         END IF;
       END LOOP;
@@ -622,9 +637,13 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.formulario_processar_resposta(text, jsonb, text, text) IS
-  'RAQ-MAND-EM054. Processa envio de formulário público: revalida janela/limite, '
-  'monta patch de contato (whitelist 14 colunas), dedup (whatsapp|cpf|nenhum × '
-  'mesclar|criar|ignorar), automações (etiquetas, funil kanban, ranking, situação), '
+  'RAQ-MAND-EM054. Processa envio de formulário público: revalida janela/limite '
+  '(com FOR UPDATE quando max_respostas IS NOT NULL para serializar concorrência), '
+  'monta patch de contato (whitelist 14 colunas), dedup não-destrutivo '
+  '(whatsapp|cpf buscam apenas merged_into IS NULL; mesclar usa COALESCE para '
+  'só enriquecer campos vazios, nunca sobrescrever), automações (etiquetas, funil '
+  'kanban, ranking, situação — whitelist situacao: declarou_voto/is_favorite/'
+  'e_multiplicador; optin_whatsapp e aceita_whatsapp excluídos), '
   'registra formulario_respostas. Em exceção captura e registra status=erro. '
   'Chamada exclusivamente pela Edge Function (service_role); anon NÃO deve chamar direto.';
 

@@ -66,7 +66,11 @@ function extractIp(req: Request): string {
 async function hashIp(ip: string): Promise<string> {
   // FORM_RATE_SALT: rotacionar periodicamente invalida hashes antigos (privacy by design).
   // Fallback 'em054' usado apenas em dev/sem configuração.
-  const salt = Deno.env.get('FORM_RATE_SALT') ?? 'em054';
+  const envSalt = Deno.env.get('FORM_RATE_SALT');
+  if (!envSalt) {
+    console.warn('[formularios-public-submit] FORM_RATE_SALT não configurado — usando fallback inseguro. Configure em produção.');
+  }
+  const salt = envSalt ?? 'em054';
   const data = new TextEncoder().encode(salt + ip);
   const buf = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(buf))
@@ -103,14 +107,23 @@ async function verifyCaptcha(token: string | undefined, ip: string): Promise<boo
       remoteip: ip,
     });
 
-    const res = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: form.toString(),
-      },
-    );
+    // Timeout de 5s para não segurar o worker se o Turnstile ficar lento (anti-DoS indireto).
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    let res: Response;
+    try {
+      res = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: form.toString(),
+          signal: controller.signal,
+        },
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!res.ok) {
       console.error('[formularios-public-submit] turnstile HTTP error:', res.status);

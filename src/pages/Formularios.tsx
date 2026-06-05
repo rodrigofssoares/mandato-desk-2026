@@ -21,7 +21,7 @@ import { PageHeader } from '@/components/ui-system';
 import { useFormularios, useCreateFormulario, useBulkDeleteFormularios } from '@/hooks/useFormularios';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FormCard } from '@/components/formularios/FormCard';
-import type { FormularioComMetricas, FormularioStatus } from '@/types/formularios';
+import type { FormularioStatus } from '@/types/formularios';
 
 // ── Tipos de filtro ───────────────────────────────────────────────────────────
 
@@ -127,17 +127,7 @@ export default function Formularios() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmBulkOpen, setConfirmBulkOpen] = useState(false);
 
-  // ── Permissões ──────────────────────────────────────────────────────────────
-
-  if (!can.viewFormularios()) {
-    return (
-      <div className="p-6">
-        <SemAcesso />
-      </div>
-    );
-  }
-
-  // ── Filtro e contagens ──────────────────────────────────────────────────────
+  // ── Filtro e contagens (hooks SEMPRE antes de qualquer return — Rule of Hooks) ─
 
   const formulariosFiltrados = useMemo(() => {
     if (filtro === 'todos') return formularios;
@@ -154,12 +144,23 @@ export default function Formularios() {
     return c;
   }, [formularios]);
 
+  // ── Permissões (após todos os hooks) ─────────────────────────────────────────
+
+  if (!can.viewFormularios()) {
+    return (
+      <div className="p-6">
+        <SemAcesso />
+      </div>
+    );
+  }
+
   // ── Seleção ─────────────────────────────────────────────────────────────────
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
