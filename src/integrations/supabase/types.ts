@@ -1556,6 +1556,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["demand_priority"]
           protocolo: string | null
           responsible_id: string | null
+          stage_id: string | null
           status: Database["public"]["Enums"]["demand_status"]
           title: string
           updated_at: string
@@ -1570,6 +1571,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["demand_priority"]
           protocolo?: string | null
           responsible_id?: string | null
+          stage_id?: string | null
           status?: Database["public"]["Enums"]["demand_status"]
           title: string
           updated_at?: string
@@ -1584,6 +1586,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["demand_priority"]
           protocolo?: string | null
           responsible_id?: string | null
+          stage_id?: string | null
           status?: Database["public"]["Enums"]["demand_status"]
           title?: string
           updated_at?: string
@@ -1608,6 +1611,13 @@ export type Database = {
             columns: ["responsible_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demands_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "board_stages"
             referencedColumns: ["id"]
           },
         ]

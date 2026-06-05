@@ -7,19 +7,11 @@
 //   - useDemandBoardId(): id do board singleton de demandas
 //   - useDemandStageCounts(): nº de demandas por coluna (stage_id)
 //   - useDeleteDemandColumn(): exclusão "demand-aware" (bloqueia se houver demandas)
-//
-// Observação: até o types.ts ser regenerado após a migration 113, alguns acessos
-// à coluna demands.stage_id usam cast (`as ...`) — marcados com EM085.
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLog';
-
-// EM085: client sem tipagem para acessar demands.stage_id antes de regenerar
-// o types.ts pós-migration 113. Remover o cast quando os tipos forem atualizados.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sbUntyped = supabase as any;
 
 export {
   useBoardStages as useDemandStages,
@@ -57,7 +49,7 @@ export function useDemandStageCounts() {
   return useQuery<Record<string, number>>({
     queryKey: ['demand-stage-counts'],
     queryFn: async () => {
-      const { data, error } = await sbUntyped.from('demands').select('stage_id');
+      const { data, error } = await supabase.from('demands').select('stage_id');
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const row of (data ?? []) as Array<{ stage_id: string | null }>) {
@@ -79,7 +71,7 @@ export function useDeleteDemandColumn() {
     mutationFn: async (stageId: string) => {
       // Nota: count + delete não são atômicos. O FK ON DELETE SET NULL garante
       // que nenhuma demanda é perdida mesmo numa corrida; o check é só p/ UX.
-      const { count, error: countError } = await sbUntyped
+      const { count, error: countError } = await supabase
         .from('demands')
         .select('*', { count: 'exact', head: true })
         .eq('stage_id', stageId);

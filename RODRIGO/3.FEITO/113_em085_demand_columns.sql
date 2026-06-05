@@ -11,7 +11,11 @@
 -- Aplicar com:  npx supabase db query --linked --file "RODRIGO/1.FAZER/113_em085_demand_columns.sql"
 -- (NÃO usar db push — arrastaria migrations não registradas no schema_migrations)
 -- Idempotente: pode rodar mais de uma vez sem efeito colateral.
+-- Atômica: tudo dentro de BEGIN/COMMIT — falha no meio faz rollback total
+-- (protege a RLS compartilhada do Funil de ficar em estado inconsistente).
 -- ========================================================================
+
+BEGIN;
 
 -- ------------------------------------------------------------------------
 -- 1. Nova seção de permissão: controle de colunas do kanban de demandas
@@ -174,6 +178,8 @@ USING (
     )
   )
 );
+
+COMMIT;
 
 -- ========================================================================
 -- FIM 113_em085_demand_columns.sql

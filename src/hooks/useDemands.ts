@@ -104,7 +104,6 @@ export function useCreateDemand() {
 
       const { data, error } = await supabase
         .from('demands')
-        // `as never`: stage_id ainda não consta em types.ts até regenerar pós-mig 113.
         .insert({
           ...demandData,
           // RAQ-MAND-EM085: responsável padrão = usuário logado que está criando a
@@ -112,7 +111,7 @@ export function useCreateDemand() {
           // pelo formulário; só usa o usuário logado como fallback quando não veio.
           responsible_id: demandData.responsible_id ?? user?.id ?? null,
           created_by: user?.id,
-        } as never)
+        })
         .select()
         .single();
 
@@ -149,8 +148,7 @@ export function useUpdateDemand() {
 
       const { data, error } = await supabase
         .from('demands')
-        // `as never`: stage_id ainda não consta em types.ts até regenerar pós-mig 113.
-        .update(demandData as never)
+        .update(demandData)
         .eq('id', id)
         .select()
         .single();
