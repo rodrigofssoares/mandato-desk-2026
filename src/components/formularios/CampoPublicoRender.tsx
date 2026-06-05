@@ -94,8 +94,9 @@ export function CampoPublicoRender({
     );
   }
 
-  // ── Rótulo compartilhado (campos com input) ─────────────────────────────
-  const rotulo = (
+  // ── Rótulo compartilhado (campos com input) — só renderiza se houver texto ──
+  const temRotulo = !!campo.rotulo?.trim();
+  const rotulo = temRotulo ? (
     <Label
       htmlFor={`campo-${campo.id}`}
       className="text-sm font-semibold block mb-1.5"
@@ -105,7 +106,7 @@ export function CampoPublicoRender({
         <span className="text-red-500 ml-1" aria-hidden="true">*</span>
       )}
     </Label>
-  );
+  ) : null;
 
   const ajuda = campo.ajuda ? (
     <p id={`ajuda-${campo.id}`} className="text-xs text-muted-foreground mt-1">
@@ -149,12 +150,14 @@ export function CampoPublicoRender({
   if (campo.tipo === 'escolha_unica') {
     return (
       <fieldset aria-describedby={ariaDesc}>
-        <legend className="text-sm font-semibold mb-2">
-          {campo.rotulo}
-          {campo.obrigatorio && (
-            <span className="text-red-500 ml-1" aria-hidden="true">*</span>
-          )}
-        </legend>
+        {temRotulo && (
+          <legend className="text-sm font-semibold mb-2">
+            {campo.rotulo}
+            {campo.obrigatorio && (
+              <span className="text-red-500 ml-1" aria-hidden="true">*</span>
+            )}
+          </legend>
+        )}
         <div className="space-y-2">
           {campo.opcoes.map((op) => (
             <label
@@ -212,12 +215,14 @@ export function CampoPublicoRender({
     };
     return (
       <fieldset aria-describedby={ariaDesc}>
-        <legend className="text-sm font-semibold mb-2">
-          {campo.rotulo}
-          {campo.obrigatorio && (
-            <span className="text-red-500 ml-1" aria-hidden="true">*</span>
-          )}
-        </legend>
+        {temRotulo && (
+          <legend className="text-sm font-semibold mb-2">
+            {campo.rotulo}
+            {campo.obrigatorio && (
+              <span className="text-red-500 ml-1" aria-hidden="true">*</span>
+            )}
+          </legend>
+        )}
         <div className="space-y-2">
           {campo.opcoes.map((op) => {
             const checked = valorArr.includes(op.value);

@@ -141,10 +141,18 @@ function CampoPrevia({
 
       {/* Corpo por tipo */}
       {campo.tipo === 'secao' ? null : campo.tipo === 'imagem' ? (
-        <div className="border-2 border-dashed rounded-lg h-20 flex items-center justify-center bg-muted/40 text-xs text-muted-foreground gap-2">
-          <ImageIcon className="h-4 w-4" />
-          Campo de imagem
-        </div>
+        typeof campo.config?.url === 'string' && campo.config.url ? (
+          <img
+            src={campo.config.url as string}
+            alt={campo.rotulo || 'Imagem do campo'}
+            className="w-full max-h-40 object-contain rounded-lg border bg-muted/30"
+          />
+        ) : (
+          <div className="border-2 border-dashed rounded-lg h-20 flex items-center justify-center bg-muted/40 text-xs text-muted-foreground gap-2">
+            <ImageIcon className="h-4 w-4" />
+            Clique e use "Enviar imagem" no painel à direita
+          </div>
+        )
       ) : campo.tipo === 'data' ? (
         <div className="border rounded-lg px-3 py-2 text-sm text-muted-foreground bg-muted/30">
           DD/MM/AAAA
@@ -220,28 +228,29 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
   const uploadMutation = useUploadFormularioImagem();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleCampoUpdate = useCallback(
-    (patch: Partial<FormularioCampo>) => {
-      if (!campoSelecionado) return;
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = setTimeout(() => {
-        updateCampoMutation.mutate({
-          id: campoSelecionado.id,
-          form_id: formulario.id,
-          patch,
-        });
-      }, 600);
+  // Salva um patch de campo direto (o debounce/acúmulo vive dentro do inspetor).
+  const handleSaveCampo = useCallback(
+    (campoId: string, patch: Partial<FormularioCampo>) => {
+      updateCampoMutation.mutate({ id: campoId, form_id: formulario.id, patch });
     },
-    [campoSelecionado, updateCampoMutation, formulario.id]
+    [updateCampoMutation, formulario.id]
+  );
+
+  // Upload de imagem de um campo do tipo "imagem" → retorna a URL pública.
+  const handleUploadImagemCampo = useCallback(
+    async (file: File): Promise<string> => {
+      const result = await uploadMutation.mutateAsync({ formId: formulario.id, file });
+      return result.url;
+    },
+    [uploadMutation, formulario.id]
   );
 
   async function handleAdicionarCampo(tipo: FieldType) {
     const novo = await addCampoMutation.mutateAsync({
       form_id: formulario.id,
       tipo,
-      rotulo: FIELD_TYPE_LABELS[tipo],
+      rotulo: '', // começa sem rótulo — o usuário preenche se quiser
     });
     setCampoSelecionadoId(novo.id);
   }
@@ -372,7 +381,11 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
       </div>
 
       {/* Inspetor à direita */}
-      <CampoInspetor campo={campoSelecionado} onUpdate={handleCampoUpdate} />
+      <CampoInspetor
+        campo={campoSelecionado}
+        onSave={handleSaveCampo}
+        onUploadImagem={handleUploadImagemCampo}
+      />
     </div>
   );
 }

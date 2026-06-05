@@ -1,9 +1,9 @@
 // EM054 — Inspetor de propriedades do campo selecionado no studio
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Type, AlignLeft, Phone, Mail, CreditCard, CircleDot,
   CheckSquare, List, Calendar, Image as ImageIcon, Heading,
-  GitMerge, Palette, Plus, X,
+  GitMerge, Palette, Plus, X, Upload, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -108,14 +108,17 @@ function InspetorOpcoes({ opcoes, onChange }: InspetorOpcoesProps) {
   );
 }
 
-// ── Inspetor principal ────────────────────────────────────────────────────────
+// ── Inspetor principal (wrapper que escolhe vazio x formulário) ───────────────
 
 interface CampoInspetorProps {
   campo: FormularioCampo | null;
-  onUpdate: (patch: Partial<FormularioCampo>) => void;
+  /** Salva um patch do campo no servidor (mutate direto — o debounce vive aqui dentro). */
+  onSave: (campoId: string, patch: Partial<FormularioCampo>) => void;
+  /** Faz upload de uma imagem e retorna a URL pública. */
+  onUploadImagem: (file: File) => Promise<string>;
 }
 
-export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
+export function CampoInspetor({ campo, onSave, onUploadImagem }: CampoInspetorProps) {
   if (!campo) {
     return (
       <aside className="w-72 border-l bg-card overflow-y-auto shrink-0 p-4 flex items-center justify-center">
@@ -125,46 +128,139 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
       </aside>
     );
   }
+  // key por campo.id → remonta (e re-inicializa o estado local) ao trocar de campo.
+  return (
+    <CampoInspetorForm key={campo.id} campo={campo} onSave={onSave} onUploadImagem={onUploadImagem} />
+  );
+}
 
-  const temOpcoes = FIELD_TYPES_COM_OPCOES.includes(campo.tipo);
+// ── Form interno (sempre com campo não-nulo, estado local p/ digitação fluida) ─
+
+interface CampoInspetorFormProps {
+  campo: FormularioCampo;
+  onSave: (campoId: string, patch: Partial<FormularioCampo>) => void;
+  onUploadImagem: (file: File) => Promise<string>;
+}
+
+function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormProps) {
+  // Cópia de trabalho local — dá feedback instantâneo enquanto digita,
+  // sem esperar o round-trip ao servidor (que é debounced).
+  const [local, setLocal] = useState<FormularioCampo>(campo);
+  const pendingRef = useRef<Partial<FormularioCampo>>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const flush = useCallback(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    if (Object.keys(pendingRef.current).length > 0) {
+      onSave(campo.id, pendingRef.current);
+      pendingRef.current = {};
+    }
+  }, [campo.id, onSave]);
+
+  // Flush ao desmontar (= ao trocar de campo), pra não perder edições pendentes.
+  useEffect(() => flush, [flush]);
+
+  const apply = useCallback((patch: Partial<FormularioCampo>) => {
+    setLocal((prev) => ({ ...prev, ...patch }));
+    pendingRef.current = { ...pendingRef.current, ...patch };
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(flush, 500);
+  }, [flush]);
+
+  async function handleSelecionarImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await onUploadImagem(file);
+      apply({ config: { ...(local.config ?? {}), url } });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  const temOpcoes = FIELD_TYPES_COM_OPCOES.includes(local.tipo);
+  const imagemUrl = typeof local.config?.url === 'string' ? (local.config.url as string) : null;
 
   return (
     <aside className="w-72 border-l bg-card overflow-y-auto shrink-0 p-4 space-y-4">
       {/* Cabeçalho */}
       <div className="flex items-center gap-2.5 pb-3 border-b">
         <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
-          <FieldIcon tipo={campo.tipo} className="h-4 w-4 text-amber-700" />
+          <FieldIcon tipo={local.tipo} className="h-4 w-4 text-amber-700" />
         </div>
         <div>
-          <strong className="text-sm block">{campo.rotulo || '(sem rótulo)'}</strong>
-          <span className="text-[11px] text-muted-foreground">{FIELD_TYPE_LABELS[campo.tipo]}</span>
+          <strong className="text-sm block">{local.rotulo || '(sem rótulo)'}</strong>
+          <span className="text-[11px] text-muted-foreground">{FIELD_TYPE_LABELS[local.tipo]}</span>
         </div>
       </div>
 
-      {/* Rótulo */}
+      {/* Upload de imagem (só para o tipo imagem) */}
+      {local.tipo === 'imagem' && (
+        <div className="space-y-2">
+          <Label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+            Imagem
+          </Label>
+          {imagemUrl && (
+            <img
+              src={imagemUrl}
+              alt="Prévia"
+              className="w-full max-h-32 object-contain rounded border bg-muted/30"
+            />
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={handleSelecionarImagem}
+            aria-label="Selecionar imagem do campo"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+          >
+            {uploading ? (
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Enviando...</>
+            ) : (
+              <><Upload className="h-3.5 w-3.5 mr-1.5" /> {imagemUrl ? 'Trocar imagem' : 'Enviar imagem'}</>
+            )}
+          </Button>
+          <p className="text-[10px] text-muted-foreground">JPEG, PNG, WebP ou GIF até 5MB.</p>
+        </div>
+      )}
+
+      {/* Rótulo (opcional — deixe vazio para não exibir rótulo no formulário) */}
       <div className="space-y-1.5">
         <Label htmlFor="rotulo" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-          Rótulo da pergunta
+          {local.tipo === 'secao' ? 'Título da seção' : local.tipo === 'imagem' ? 'Legenda (opcional)' : 'Rótulo da pergunta (opcional)'}
         </Label>
         <Input
           id="rotulo"
-          value={campo.rotulo}
-          onChange={(e) => onUpdate({ rotulo: e.target.value })}
+          value={local.rotulo}
+          onChange={(e) => apply({ rotulo: e.target.value })}
+          placeholder={local.tipo === 'secao' ? 'Ex.: Seus dados' : 'Deixe vazio para não exibir rótulo'}
           className="h-8 text-xs"
           aria-label="Rótulo do campo"
         />
       </div>
 
       {/* Ajuda */}
-      {campo.tipo !== 'secao' && (
+      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
         <div className="space-y-1.5">
           <Label htmlFor="ajuda" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
             Texto de ajuda
           </Label>
           <Textarea
             id="ajuda"
-            value={campo.ajuda ?? ''}
-            onChange={(e) => onUpdate({ ajuda: e.target.value || null })}
+            value={local.ajuda ?? ''}
+            onChange={(e) => apply({ ajuda: e.target.value || null })}
             placeholder="Instrução opcional para quem preenche"
             className="text-xs min-h-[54px] resize-y"
             aria-label="Texto de ajuda do campo"
@@ -173,7 +269,7 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
       )}
 
       {/* Min / Max chars */}
-      {['texto_curto', 'paragrafo', 'email', 'cpf', 'telefone'].includes(campo.tipo) && (
+      {['texto_curto', 'paragrafo', 'email', 'cpf', 'telefone'].includes(local.tipo) && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
             <Label htmlFor="min_chars" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
@@ -183,10 +279,8 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
               id="min_chars"
               type="number"
               min={0}
-              value={campo.min_chars ?? ''}
-              onChange={(e) =>
-                onUpdate({ min_chars: e.target.value ? parseInt(e.target.value) : null })
-              }
+              value={local.min_chars ?? ''}
+              onChange={(e) => apply({ min_chars: e.target.value ? parseInt(e.target.value) : null })}
               className="h-8 text-xs"
               aria-label="Mínimo de caracteres"
             />
@@ -199,10 +293,8 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
               id="max_chars"
               type="number"
               min={0}
-              value={campo.max_chars ?? ''}
-              onChange={(e) =>
-                onUpdate({ max_chars: e.target.value ? parseInt(e.target.value) : null })
-              }
+              value={local.max_chars ?? ''}
+              onChange={(e) => apply({ max_chars: e.target.value ? parseInt(e.target.value) : null })}
               className="h-8 text-xs"
               aria-label="Máximo de caracteres"
             />
@@ -211,7 +303,7 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
       )}
 
       {/* Toggles: Obrigatório / Validar formato */}
-      {campo.tipo !== 'secao' && (
+      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
         <div className="divide-y">
           <div className="flex items-center justify-between py-2.5">
             <div>
@@ -219,20 +311,20 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
               <p className="text-[11px] text-muted-foreground">Não envia sem preencher</p>
             </div>
             <Switch
-              checked={campo.obrigatorio}
-              onCheckedChange={(v) => onUpdate({ obrigatorio: v })}
+              checked={local.obrigatorio}
+              onCheckedChange={(v) => apply({ obrigatorio: v })}
               aria-label="Campo obrigatório"
             />
           </div>
-          {['telefone', 'email', 'cpf'].includes(campo.tipo) && (
+          {['telefone', 'email', 'cpf'].includes(local.tipo) && (
             <div className="flex items-center justify-between py-2.5">
               <div>
                 <strong className="text-xs">Validar formato</strong>
                 <p className="text-[11px] text-muted-foreground">Telefone, e-mail, CPF</p>
               </div>
               <Switch
-                checked={campo.validar_formato}
-                onCheckedChange={(v) => onUpdate({ validar_formato: v })}
+                checked={local.validar_formato}
+                onCheckedChange={(v) => apply({ validar_formato: v })}
                 aria-label="Validar formato"
               />
             </div>
@@ -247,14 +339,14 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
             Opções
           </Label>
           <InspetorOpcoes
-            opcoes={campo.opcoes ?? []}
-            onChange={(novas) => onUpdate({ opcoes: novas })}
+            opcoes={local.opcoes ?? []}
+            onChange={(novas) => apply({ opcoes: novas })}
           />
         </div>
       )}
 
       {/* Mapeamento */}
-      {campo.tipo !== 'secao' && campo.tipo !== 'imagem' && (
+      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
         <>
           <p className="text-[10px] uppercase tracking-widest font-bold text-amber-600 flex items-center gap-1.5 pt-2">
             <GitMerge className="h-3 w-3" />
@@ -265,8 +357,8 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
               Salvar em (destino 1)
             </Label>
             <Select
-              value={campo.mapear_destino_1 ?? '__none__'}
-              onValueChange={(v) => onUpdate({ mapear_destino_1: v === '__none__' ? null : v })}
+              value={local.mapear_destino_1 ?? '__none__'}
+              onValueChange={(v) => apply({ mapear_destino_1: v === '__none__' ? null : v })}
             >
               <SelectTrigger id="destino1" className="h-8 text-xs" aria-label="Destino 1">
                 <SelectValue placeholder="— nenhum —" />
@@ -284,8 +376,8 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
               Também em (destino 2)
             </Label>
             <Select
-              value={campo.mapear_destino_2 ?? '__none__'}
-              onValueChange={(v) => onUpdate({ mapear_destino_2: v === '__none__' ? null : v })}
+              value={local.mapear_destino_2 ?? '__none__'}
+              onValueChange={(v) => apply({ mapear_destino_2: v === '__none__' ? null : v })}
             >
               <SelectTrigger id="destino2" className="h-8 text-xs" aria-label="Destino 2">
                 <SelectValue placeholder="— nenhum —" />
@@ -302,27 +394,31 @@ export function CampoInspetor({ campo, onUpdate }: CampoInspetorProps) {
       )}
 
       {/* Aparência */}
-      <p className="text-[10px] uppercase tracking-widest font-bold text-amber-600 flex items-center gap-1.5 pt-2">
-        <Palette className="h-3 w-3" />
-        Aparência do campo
-      </p>
-      <div className="space-y-1.5">
-        <Label htmlFor="largura" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-          Largura
-        </Label>
-        <Select
-          value={campo.largura ?? '100'}
-          onValueChange={(v) => onUpdate({ largura: v as '100' | '50' })}
-        >
-          <SelectTrigger id="largura" className="h-8 text-xs" aria-label="Largura do campo">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="100">100% — largura total</SelectItem>
-            <SelectItem value="50">50% — meia largura</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
+        <>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-amber-600 flex items-center gap-1.5 pt-2">
+            <Palette className="h-3 w-3" />
+            Aparência do campo
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="largura" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+              Largura
+            </Label>
+            <Select
+              value={local.largura ?? '100'}
+              onValueChange={(v) => apply({ largura: v as '100' | '50' })}
+            >
+              <SelectTrigger id="largura" className="h-8 text-xs" aria-label="Largura do campo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="100">100% — largura total</SelectItem>
+                <SelectItem value="50">50% — meia largura</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
     </aside>
   );
 }
