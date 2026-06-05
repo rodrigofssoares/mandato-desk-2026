@@ -142,3 +142,11 @@ verify_jwt = false
 # erros JSON legíveis (EM078).
 [functions.zapi-validate-panel-password]
 verify_jwt = false
+
+# formularios-public-submit: único ponto de entrada para envios públicos de
+# formulários (RAQ-MAND-EM054). Sem autenticação — formulários são compartilhados
+# por link e acessíveis por qualquer pessoa. verify_jwt=false é OBRIGATÓRIO.
+# A segurança é: rate-limit por IP hash, captcha opcional (Turnstile) e a RPC
+# formulario_processar_resposta que valida slug/período/dedup server-side.
+[functions.formularios-public-submit]
+verify_jwt = false
