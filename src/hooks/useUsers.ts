@@ -115,6 +115,52 @@ export function useDeleteUser() {
   });
 }
 
+export function useDeleteUserPermanent() {
+  const queryClient = useQueryClient();
+
+  // RAQ-MAND-EM085: exclui PERMANENTEMENTE via edge function `delete-user`
+  // (Admin API). Remove do auth.users → cascateia profiles → revoga login/senha.
+  // Irreversível. A EF valida permissão (matriz), hierarquia e protege o último admin.
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
+
+      if (error) {
+        let detail =
+          (data as { error?: string } | null)?.error ??
+          (error as { message?: string }).message ??
+          'Erro ao excluir usuário';
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.text === 'function') {
+          try {
+            const raw = await ctx.text();
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed?.error) detail = parsed.error;
+              else detail = `${ctx.status} — ${raw.slice(0, 500)}`;
+            } catch {
+              detail = `${ctx.status} — ${raw.slice(0, 500) || 'sem body'}`;
+            }
+          } catch {
+            /* sem body disponível */
+          }
+        }
+        throw new Error(detail);
+      }
+    },
+    onSuccess: (_data, userId) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuário excluído permanentemente. O acesso foi revogado.');
+      logActivity({ type: 'delete', entity_type: 'user', entity_id: userId, description: 'Excluiu permanentemente um usuário' });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao excluir usuário: ${error.message}`);
+    },
+  });
+}
+
 export function useCreateUser() {
   const queryClient = useQueryClient();
 

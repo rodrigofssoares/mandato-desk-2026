@@ -13,9 +13,20 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Shield, UserCheck, UserX, RefreshCw, KeyRound, Pencil, Phone, MessageCircle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { MoreVertical, Shield, UserCheck, UserX, RefreshCw, KeyRound, Pencil, Phone, MessageCircle, Trash2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useUpdateUserRole, useUpdateUserStatus, type UserProfile } from '@/hooks/useUsers';
+import { useUpdateUserRole, useUpdateUserStatus, useDeleteUserPermanent, type UserProfile } from '@/hooks/useUsers';
+import { usePermissions } from '@/hooks/usePermissions';
 import { ROLES, ROLE_LABELS, ROLE_LEVELS, type Role } from '@/types/permissions';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { EditUserDialog } from './EditUserDialog';
@@ -50,11 +61,14 @@ function getInitials(name: string): string {
 
 export function UserCard({ user }: UserCardProps) {
   const { profile: currentUser } = useAuth();
+  const { can } = usePermissions();
   const updateRole = useUpdateUserRole();
   const updateStatus = useUpdateUserStatus();
+  const deleteUserPermanent = useDeleteUserPermanent();
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [linkWhatsappOpen, setLinkWhatsappOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const isOwnCard = currentUser?.id === user.id;
   const currentUserLevel = ROLE_LEVELS[(currentUser?.role as Role) ?? 'estagiario'];
@@ -175,6 +189,22 @@ export function UserCard({ user }: UserCardProps) {
                       </DropdownMenuItem>
                     </>
                   )}
+
+                  {/* EM085: exclusão permanente — revoga acesso (login/senha).
+                      Gated por can.deleteUser() (matriz: usuarios.pode_deletar).
+                      A EF delete-user reforça a checagem no servidor. */}
+                  {can.deleteUser() && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setConfirmDeleteOpen(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir permanentemente
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -227,6 +257,45 @@ export function UserCard({ user }: UserCardProps) {
         userId={user.id}
         userName={user.nome?.trim() || user.email}
       />
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Excluir {user.nome?.trim() || user.email} permanentemente?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>irreversível</strong>. A conta será removida da base e a
+              pessoa não conseguirá mais acessar o sistema — nem com login, nem com senha.
+              Os contatos, demandas e tarefas que ela cadastrou são preservados (apenas
+              deixam de ficar vinculados a ela). Integrações pessoais que ela tenha criado
+              (webhooks/tokens de API) são removidas junto.
+              <br />
+              <br />
+              Se quiser apenas suspender o acesso temporariamente, use{' '}
+              <strong>"Desativar"</strong> em vez de excluir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUserPermanent.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                deleteUserPermanent.mutate(user.id, {
+                  onSuccess: () => setConfirmDeleteOpen(false),
+                });
+              }}
+              disabled={deleteUserPermanent.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUserPermanent.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
