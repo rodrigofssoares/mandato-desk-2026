@@ -310,6 +310,13 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
                 </SelectContent>
               </Select>
             )}
+            {formulario.dedup_campo && formulario.dedup_campo !== 'nenhum' && (
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {formulario.dedup_acao === 'mesclar' && 'Mesclar: atualiza o contato existente com os novos dados preenchidos (campos em branco não apagam o que já existe).'}
+                {formulario.dedup_acao === 'criar' && 'Criar: sempre cria um novo contato, mesmo que já exista um com o mesmo dado.'}
+                {formulario.dedup_acao === 'ignorar' && 'Ignorar: se já existe um contato, não altera nada — só registra a resposta.'}
+              </p>
+            )}
           </div>
 
           {/* Origem */}
