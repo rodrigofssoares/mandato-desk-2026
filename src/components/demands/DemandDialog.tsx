@@ -28,6 +28,7 @@ import { useCreateDemand, useUpdateDemand, useDeleteDemand } from '@/hooks/useDe
 import { useTags } from '@/hooks/useTags';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/AuthContext';
+import { useDemandBoardId, useDemandStages } from '@/hooks/useDemandColumns';
 import { ContactPickerField } from './ContactPickerField';
 import type { Demand } from '@/hooks/useDemands';
 
@@ -67,6 +68,13 @@ export function DemandDialog({
   const { user } = useAuth();
   const { data: tags = [] } = useTags();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  // RAQ-MAND-EM085: coluna do kanban (board_stages). Quando há colunas
+  // configuradas, o campo "Status" dá lugar ao seletor de "Coluna".
+  const { data: demandBoardId } = useDemandBoardId();
+  const { data: demandStages = [] } = useDemandStages(demandBoardId);
+  const dynamicColumns = demandStages.length > 0;
+  const [stageId, setStageId] = useState<string | null>(null);
 
   const isEdit = !!demand;
 
@@ -117,6 +125,7 @@ export function DemandDialog({
         neighborhood: demand.neighborhood ?? '',
       });
       setSelectedTagIds(demand.demand_tags?.map((dt) => dt.tag_id) ?? []);
+      setStageId(demand.stage_id ?? null);
     } else {
       reset({
         title: '',
@@ -129,8 +138,18 @@ export function DemandDialog({
         neighborhood: '',
       });
       setSelectedTagIds([]);
+      setStageId(null);
     }
   }, [demand, reset, lockedContactId, user?.id]);
+
+  // Default da coluna em nova demanda: primeira coluna assim que carregarem.
+  // Usa updater funcional pra não depender de `stageId` nas deps (evita o
+  // anti-padrão de efeito que reage à própria mudança de state).
+  useEffect(() => {
+    if (!demand && demandStages.length > 0) {
+      setStageId((prev) => (prev === null ? demandStages[0].id : prev));
+    }
+  }, [demand, demandStages]);
 
   const watchStatus = watch('status');
   const watchPriority = watch('priority');
@@ -144,12 +163,18 @@ export function DemandDialog({
   };
 
   const onSubmit = async (data: DemandFormData) => {
+    // RAQ-MAND-EM085: quando há colunas configuradas, a posição vem do stageId.
+    const resolvedStageId = dynamicColumns
+      ? stageId ?? demandStages[0]?.id ?? null
+      : undefined;
+
     if (isEdit) {
       await updateDemand.mutateAsync({
         id: demand.id,
         ...data,
         contact_id: data.contact_id || null,
         responsible_id: data.responsible_id || null,
+        ...(resolvedStageId !== undefined ? { stage_id: resolvedStageId } : {}),
         tag_ids: selectedTagIds,
       });
     } else {
@@ -161,6 +186,7 @@ export function DemandDialog({
         contact_id: data.contact_id || null,
         responsible_id: data.responsible_id || null,
         neighborhood: data.neighborhood,
+        ...(resolvedStageId !== undefined ? { stage_id: resolvedStageId } : {}),
         tag_ids: selectedTagIds,
       });
       if (created?.id) onCreated?.({ id: created.id });
@@ -204,20 +230,43 @@ export function DemandDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={watchStatus}
-                onValueChange={(v) => setValue('status', v as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Aberta</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="resolved">Resolvida</SelectItem>
-                </SelectContent>
-              </Select>
+              {dynamicColumns ? (
+                <>
+                  <Label>Coluna</Label>
+                  <Select
+                    value={stageId ?? undefined}
+                    onValueChange={(v) => setStageId(v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a coluna" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {demandStages.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              ) : (
+                <>
+                  <Label>Status</Label>
+                  <Select
+                    value={watchStatus}
+                    onValueChange={(v) => setValue('status', v as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Aberta</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="resolved">Resolvida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </div>
 
             <div className="space-y-2">

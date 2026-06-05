@@ -94,6 +94,8 @@ const SECAO_TO_PERMISSION: Record<Secao, (can: ReturnType<typeof usePermissions>
   whatsapp: (can) => can.accessWhatsapp(),
   // agente_ia — exibe para usuários com permissão de visualização (Onda 4 RAQ-MAND-EM075)
   agente_ia: (can) => can.viewAgente(),
+  // demandas_colunas — sem item próprio na sidebar; gerido dentro da aba Demandas (EM085).
+  demandas_colunas: () => false,
 };
 
 export function AppSidebar() {

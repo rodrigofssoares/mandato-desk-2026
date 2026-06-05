@@ -44,9 +44,10 @@ function toMiniCard(c: RawContact): MiniCardContact {
 const CONTACT_SELECT =
   'id, nome, telefone, whatsapp, cpf, contact_tags(tags(id, nome, cor))';
 
-// Remove caracteres que quebrariam a sintaxe do filtro .or() do PostgREST.
+// Remove caracteres que quebrariam a sintaxe do filtro .or() do PostgREST
+// e limita o comprimento (evita ILIKE com payload gigante).
 function sanitizeTerm(raw: string): string {
-  return raw.replace(/[,()]/g, ' ').trim();
+  return raw.replace(/[,()]/g, ' ').trim().slice(0, 100);
 }
 
 interface ContactPickerFieldProps {
@@ -85,7 +86,7 @@ export function ContactPickerField({ value, onChange, locked = false }: ContactP
 
       const { data, error } = await q.order('nome').limit(safe ? 40 : 25);
       if (error) throw error;
-      return (data ?? []) as RawContact[];
+      return (data ?? []) as unknown as RawContact[];
     },
     enabled: open,
   });
@@ -101,7 +102,7 @@ export function ContactPickerField({ value, onChange, locked = false }: ContactP
         .eq('id', value)
         .maybeSingle();
       if (error) throw error;
-      return (data as RawContact) ?? null;
+      return (data as unknown as RawContact) ?? null;
     },
     enabled: !!value,
   });

@@ -25,6 +25,8 @@ export interface Demand {
   neighborhood: string | null;
   /** T60 (Fase 6 Onda A): protocolo gerado automaticamente (MAND-XXXXXX) */
   protocolo: string | null;
+  /** RAQ-MAND-EM085: coluna do kanban (board_stages). null = "Sem coluna". */
+  stage_id: string | null;
   created_at: string;
   updated_at: string;
   contact: { nome: string; instagram: string | null } | null;
@@ -48,6 +50,8 @@ export interface DemandInsert {
   contact_id?: string | null;
   responsible_id?: string | null;
   neighborhood?: string;
+  /** RAQ-MAND-EM085: coluna do kanban (board_stages). */
+  stage_id?: string | null;
   tag_ids?: string[];
 }
 
@@ -100,6 +104,7 @@ export function useCreateDemand() {
 
       const { data, error } = await supabase
         .from('demands')
+        // `as never`: stage_id ainda não consta em types.ts até regenerar pós-mig 113.
         .insert({
           ...demandData,
           // RAQ-MAND-EM085: responsável padrão = usuário logado que está criando a
@@ -107,7 +112,7 @@ export function useCreateDemand() {
           // pelo formulário; só usa o usuário logado como fallback quando não veio.
           responsible_id: demandData.responsible_id ?? user?.id ?? null,
           created_by: user?.id,
-        })
+        } as never)
         .select()
         .single();
 
@@ -124,6 +129,8 @@ export function useCreateDemand() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
+      // EM085: mantém o contador de demandas por coluna em dia (DemandColumnsDialog).
+      queryClient.invalidateQueries({ queryKey: ['demand-stage-counts'] });
       toast.success('Demanda criada com sucesso');
       logActivity({ type: 'create', entity_type: 'demand', entity_name: data.title, entity_id: data.id, description: `Criou a demanda "${data.title}"` });
     },
@@ -142,7 +149,8 @@ export function useUpdateDemand() {
 
       const { data, error } = await supabase
         .from('demands')
-        .update(demandData)
+        // `as never`: stage_id ainda não consta em types.ts até regenerar pós-mig 113.
+        .update(demandData as never)
         .eq('id', id)
         .select()
         .single();
@@ -166,6 +174,8 @@ export function useUpdateDemand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
+      // EM085: mantém o contador de demandas por coluna em dia (DemandColumnsDialog).
+      queryClient.invalidateQueries({ queryKey: ['demand-stage-counts'] });
       toast.success('Demanda atualizada com sucesso');
       logActivity({ type: 'update', entity_type: 'demand', description: 'Atualizou uma demanda' });
     },
@@ -185,6 +195,8 @@ export function useDeleteDemand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
+      // EM085: mantém o contador de demandas por coluna em dia (DemandColumnsDialog).
+      queryClient.invalidateQueries({ queryKey: ['demand-stage-counts'] });
       toast.success('Demanda excluída com sucesso');
       logActivity({ type: 'delete', entity_type: 'demand', description: 'Excluiu uma demanda' });
     },
