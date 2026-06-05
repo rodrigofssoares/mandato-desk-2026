@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Type, AlignLeft, Phone, Mail, CreditCard, CircleDot,
-  CheckSquare, List, Calendar, Image as ImageIcon, Heading,
+  CheckSquare, List, Calendar, Image as ImageIcon, Video as VideoIcon, Heading,
   GitMerge, Palette, Plus, X, Upload, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ import {
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Type, AlignLeft, Phone, Mail, CreditCard, CircleDot, CheckSquare,
-  List, Calendar, Image: ImageIcon, Heading,
+  List, Calendar, Image: ImageIcon, Video: VideoIcon, Heading,
 };
 
 export function FieldIcon({ tipo, className = 'h-4 w-4' }: { tipo: FieldType; className?: string }) {
@@ -114,11 +114,11 @@ interface CampoInspetorProps {
   campo: FormularioCampo | null;
   /** Salva um patch do campo no servidor (mutate direto — o debounce vive aqui dentro). */
   onSave: (campoId: string, patch: Partial<FormularioCampo>) => void;
-  /** Faz upload de uma imagem e retorna a URL pública. */
-  onUploadImagem: (file: File) => Promise<string>;
+  /** Faz upload de uma mídia (imagem ou vídeo) e retorna a URL pública. */
+  onUploadMidia: (file: File) => Promise<string>;
 }
 
-export function CampoInspetor({ campo, onSave, onUploadImagem }: CampoInspetorProps) {
+export function CampoInspetor({ campo, onSave, onUploadMidia }: CampoInspetorProps) {
   if (!campo) {
     return (
       <aside className="w-72 border-l bg-card overflow-y-auto shrink-0 p-4 flex items-center justify-center">
@@ -130,7 +130,7 @@ export function CampoInspetor({ campo, onSave, onUploadImagem }: CampoInspetorPr
   }
   // key por campo.id → remonta (e re-inicializa o estado local) ao trocar de campo.
   return (
-    <CampoInspetorForm key={campo.id} campo={campo} onSave={onSave} onUploadImagem={onUploadImagem} />
+    <CampoInspetorForm key={campo.id} campo={campo} onSave={onSave} onUploadMidia={onUploadMidia} />
   );
 }
 
@@ -139,10 +139,10 @@ export function CampoInspetor({ campo, onSave, onUploadImagem }: CampoInspetorPr
 interface CampoInspetorFormProps {
   campo: FormularioCampo;
   onSave: (campoId: string, patch: Partial<FormularioCampo>) => void;
-  onUploadImagem: (file: File) => Promise<string>;
+  onUploadMidia: (file: File) => Promise<string>;
 }
 
-function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormProps) {
+function CampoInspetorForm({ campo, onSave, onUploadMidia }: CampoInspetorFormProps) {
   // Cópia de trabalho local — dá feedback instantâneo enquanto digita,
   // sem esperar o round-trip ao servidor (que é debounced).
   const [local, setLocal] = useState<FormularioCampo>(campo);
@@ -169,12 +169,12 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
     timerRef.current = setTimeout(flush, 500);
   }, [flush]);
 
-  async function handleSelecionarImagem(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleSelecionarMidia(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
-      const url = await onUploadImagem(file);
+      const url = await onUploadMidia(file);
       apply({ config: { ...(local.config ?? {}), url } });
     } finally {
       setUploading(false);
@@ -182,8 +182,11 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
     }
   }
 
+  const ehMidia = local.tipo === 'imagem' || local.tipo === 'video';
+  const ehDecorativo = local.tipo === 'secao' || ehMidia;
+  const ehVideo = local.tipo === 'video';
   const temOpcoes = FIELD_TYPES_COM_OPCOES.includes(local.tipo);
-  const imagemUrl = typeof local.config?.url === 'string' ? (local.config.url as string) : null;
+  const midiaUrl = typeof local.config?.url === 'string' ? (local.config.url as string) : null;
 
   return (
     <aside className="w-72 border-l bg-card overflow-y-auto shrink-0 p-4 space-y-4">
@@ -198,26 +201,34 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
         </div>
       </div>
 
-      {/* Upload de imagem (só para o tipo imagem) */}
-      {local.tipo === 'imagem' && (
+      {/* Upload de mídia (imagem ou vídeo) */}
+      {ehMidia && (
         <div className="space-y-2">
           <Label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-            Imagem
+            {ehVideo ? 'Vídeo' : 'Imagem'}
           </Label>
-          {imagemUrl && (
-            <img
-              src={imagemUrl}
-              alt="Prévia"
-              className="w-full max-h-32 object-contain rounded border bg-muted/30"
-            />
+          {midiaUrl && (
+            ehVideo ? (
+              <video
+                src={midiaUrl}
+                controls
+                className="w-full max-h-40 rounded border bg-muted/30"
+              />
+            ) : (
+              <img
+                src={midiaUrl}
+                alt="Prévia"
+                className="w-full max-h-32 object-contain rounded border bg-muted/30"
+              />
+            )
           )}
           <input
             ref={fileRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept={ehVideo ? 'video/mp4,video/webm,video/quicktime' : 'image/jpeg,image/png,image/webp,image/gif'}
             className="hidden"
-            onChange={handleSelecionarImagem}
-            aria-label="Selecionar imagem do campo"
+            onChange={handleSelecionarMidia}
+            aria-label={ehVideo ? 'Selecionar vídeo do campo' : 'Selecionar imagem do campo'}
           />
           <Button
             variant="outline"
@@ -229,17 +240,19 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
             {uploading ? (
               <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Enviando...</>
             ) : (
-              <><Upload className="h-3.5 w-3.5 mr-1.5" /> {imagemUrl ? 'Trocar imagem' : 'Enviar imagem'}</>
+              <><Upload className="h-3.5 w-3.5 mr-1.5" /> {midiaUrl ? `Trocar ${ehVideo ? 'vídeo' : 'imagem'}` : `Enviar ${ehVideo ? 'vídeo' : 'imagem'}`}</>
             )}
           </Button>
-          <p className="text-[10px] text-muted-foreground">JPEG, PNG, WebP ou GIF até 5MB.</p>
+          <p className="text-[10px] text-muted-foreground">
+            {ehVideo ? 'MP4, WebM ou MOV até 50MB.' : 'JPEG, PNG, WebP ou GIF até 5MB.'}
+          </p>
         </div>
       )}
 
       {/* Rótulo (opcional — deixe vazio para não exibir rótulo no formulário) */}
       <div className="space-y-1.5">
         <Label htmlFor="rotulo" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-          {local.tipo === 'secao' ? 'Título da seção' : local.tipo === 'imagem' ? 'Legenda (opcional)' : 'Rótulo da pergunta (opcional)'}
+          {local.tipo === 'secao' ? 'Título da seção' : ehMidia ? 'Legenda (opcional)' : 'Rótulo da pergunta (opcional)'}
         </Label>
         <Input
           id="rotulo"
@@ -252,7 +265,7 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
       </div>
 
       {/* Ajuda */}
-      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
+      {!ehDecorativo && (
         <div className="space-y-1.5">
           <Label htmlFor="ajuda" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
             Texto de ajuda
@@ -303,7 +316,7 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
       )}
 
       {/* Toggles: Obrigatório / Validar formato */}
-      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
+      {!ehDecorativo && (
         <div className="divide-y">
           <div className="flex items-center justify-between py-2.5">
             <div>
@@ -346,7 +359,7 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
       )}
 
       {/* Mapeamento */}
-      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
+      {!ehDecorativo && (
         <>
           <p className="text-[10px] uppercase tracking-widest font-bold text-amber-600 flex items-center gap-1.5 pt-2">
             <GitMerge className="h-3 w-3" />
@@ -394,7 +407,7 @@ function CampoInspetorForm({ campo, onSave, onUploadImagem }: CampoInspetorFormP
       )}
 
       {/* Aparência */}
-      {local.tipo !== 'secao' && local.tipo !== 'imagem' && (
+      {!ehDecorativo && (
         <>
           <p className="text-[10px] uppercase tracking-widest font-bold text-amber-600 flex items-center gap-1.5 pt-2">
             <Palette className="h-3 w-3" />

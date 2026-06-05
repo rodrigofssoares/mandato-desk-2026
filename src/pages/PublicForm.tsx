@@ -19,6 +19,7 @@ import {
   TelaNotFound,
 } from '@/components/formularios/TelaResultado';
 import {
+  FIELD_TYPES_DECORATIVOS,
   type RetornoPublico,
   type FormularioPublico,
   type TemaFormulario,
@@ -65,7 +66,7 @@ function fundoParaEstilo(fundo: TemaFormulario['fundo'], cor: string): React.CSS
 // ── Validação client-side ─────────────────────────────────────────────────
 
 function validarCampo(campo: CampoPublico, valor: string | string[]): string | null {
-  if (campo.tipo === 'secao' || campo.tipo === 'imagem') return null;
+  if (FIELD_TYPES_DECORATIVOS.includes(campo.tipo)) return null;
 
   const valorStr = typeof valor === 'string' ? valor.trim() : '';
   const valorArr = Array.isArray(valor) ? valor : [];
@@ -255,7 +256,7 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
     const v: ValoresMap = {};
     campos.forEach((c) => {
       if (c.tipo === 'checkboxes') v[c.id] = [];
-      else if (c.tipo !== 'secao' && c.tipo !== 'imagem') v[c.id] = '';
+      else if (!FIELD_TYPES_DECORATIVOS.includes(c.tipo)) v[c.id] = '';
     });
     return v;
   });
@@ -275,7 +276,7 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
     const novosErros: ErrosMap = {};
     let valido = true;
     campos.forEach((campo) => {
-      if (campo.tipo === 'secao' || campo.tipo === 'imagem') return;
+      if (FIELD_TYPES_DECORATIVOS.includes(campo.tipo)) return;
       const err = validarCampo(campo, valores[campo.id] ?? '');
       novosErros[campo.id] = err;
       if (err) valido = false;
@@ -292,7 +293,7 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
     const errosNovos = validarTudo();
     if (errosNovos) {
       const primeiro = campos.find(
-        (c) => c.tipo !== 'secao' && c.tipo !== 'imagem' && errosNovos[c.id]
+        (c) => !FIELD_TYPES_DECORATIVOS.includes(c.tipo) && errosNovos[c.id]
       );
       if (primeiro) {
         document.getElementById(`campo-${primeiro.id}`)?.focus();
@@ -308,7 +309,7 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
     // Monta payload excluindo campos decorativos
     const dados: Record<string, string | string[]> = {};
     campos.forEach((campo) => {
-      if (campo.tipo === 'secao' || campo.tipo === 'imagem') return;
+      if (FIELD_TYPES_DECORATIVOS.includes(campo.tipo)) return;
       dados[campo.id] = valores[campo.id] ?? '';
     });
 

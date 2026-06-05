@@ -1,7 +1,7 @@
 // EM054 — Studio 3 painéis: Paleta | Prévia ao vivo | Inspetor
 import { useState, useCallback, useRef } from 'react';
 import {
-  Image as ImageIcon,
+  Image as ImageIcon, Video as VideoIcon,
   GripVertical, ChevronUp, ChevronDown, Trash2, Plus, Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   useReorderFormularioCampos,
   useUpdateFormulario,
   useUploadFormularioImagem,
+  useUploadFormularioMidia,
 } from '@/hooks/useFormularios';
 import {
   FIELD_TYPES_COM_OPCOES,
@@ -28,7 +29,7 @@ import { CampoInspetor, FieldIcon } from './CampoInspetor';
 const GRUPOS_PALETA: { label: string; tipos: FieldType[] }[] = [
   { label: 'Texto', tipos: ['texto_curto', 'paragrafo', 'telefone', 'email', 'cpf'] },
   { label: 'Escolhas', tipos: ['escolha_unica', 'checkboxes', 'lista'] },
-  { label: 'Mídia & Layout', tipos: ['imagem', 'data', 'secao'] },
+  { label: 'Mídia & Layout', tipos: ['imagem', 'video', 'data', 'secao'] },
 ];
 
 // ── Paleta de tipos de campo ──────────────────────────────────────────────────
@@ -153,6 +154,15 @@ function CampoPrevia({
             Clique e use "Enviar imagem" no painel à direita
           </div>
         )
+      ) : campo.tipo === 'video' ? (
+        typeof campo.config?.url === 'string' && campo.config.url ? (
+          <video src={campo.config.url as string} controls className="w-full max-h-40 rounded-lg border bg-muted/30" />
+        ) : (
+          <div className="border-2 border-dashed rounded-lg h-20 flex items-center justify-center bg-muted/40 text-xs text-muted-foreground gap-2">
+            <VideoIcon className="h-4 w-4" />
+            Clique e use "Enviar vídeo" no painel à direita
+          </div>
+        )
       ) : campo.tipo === 'data' ? (
         <div className="border rounded-lg px-3 py-2 text-sm text-muted-foreground bg-muted/30">
           DD/MM/AAAA
@@ -226,6 +236,7 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
   const reorderMutation = useReorderFormularioCampos();
   const updateFormMutation = useUpdateFormulario();
   const uploadMutation = useUploadFormularioImagem();
+  const uploadMidiaMutation = useUploadFormularioMidia();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -237,13 +248,13 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
     [updateCampoMutation, formulario.id]
   );
 
-  // Upload de imagem de um campo do tipo "imagem" → retorna a URL pública.
-  const handleUploadImagemCampo = useCallback(
+  // Upload de mídia (imagem ou vídeo) de um campo → retorna a URL pública.
+  const handleUploadMidiaCampo = useCallback(
     async (file: File): Promise<string> => {
-      const result = await uploadMutation.mutateAsync({ formId: formulario.id, file });
+      const result = await uploadMidiaMutation.mutateAsync({ formId: formulario.id, file });
       return result.url;
     },
-    [uploadMutation, formulario.id]
+    [uploadMidiaMutation, formulario.id]
   );
 
   async function handleAdicionarCampo(tipo: FieldType) {
@@ -384,7 +395,7 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
       <CampoInspetor
         campo={campoSelecionado}
         onSave={handleSaveCampo}
-        onUploadImagem={handleUploadImagemCampo}
+        onUploadMidia={handleUploadMidiaCampo}
       />
     </div>
   );

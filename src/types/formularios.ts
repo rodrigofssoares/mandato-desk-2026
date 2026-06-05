@@ -26,9 +26,13 @@ export const FIELD_TYPES = [
   'lista',
   'data',
   'imagem',
+  'video',
   'secao',
 ] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
+
+/** Tipos decorativos (sem input / não entram no mapeamento nem na validação). */
+export const FIELD_TYPES_DECORATIVOS: FieldType[] = ['secao', 'imagem', 'video'];
 
 /** Tipos que possuem lista de opções editáveis. */
 export const FIELD_TYPES_COM_OPCOES: FieldType[] = ['escolha_unica', 'checkboxes', 'lista'];
@@ -44,6 +48,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   lista: 'Lista suspensa',
   data: 'Data',
   imagem: 'Imagem',
+  video: 'Vídeo',
   secao: 'Seção / título',
 };
 
@@ -59,6 +64,7 @@ export const FIELD_TYPE_ICONS: Record<FieldType, string> = {
   lista: 'List',
   data: 'Calendar',
   imagem: 'Image',
+  video: 'Video',
   secao: 'Heading',
 };
 

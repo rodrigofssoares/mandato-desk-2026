@@ -94,6 +94,25 @@ export function CampoPublicoRender({
     );
   }
 
+  // ── Vídeo decorativo ────────────────────────────────────────────────────
+  if (campo.tipo === 'video') {
+    const src = typeof campo.config?.url === 'string' ? campo.config.url : null;
+    if (!src) return null;
+    return (
+      <div className="my-3">
+        <video
+          src={src}
+          controls
+          className="w-full rounded"
+          style={{ maxHeight: 360, borderRadius: raio }}
+        />
+        {campo.rotulo && (
+          <p className="text-xs text-muted-foreground mt-1 text-center">{campo.rotulo}</p>
+        )}
+      </div>
+    );
+  }
+
   // ── Rótulo compartilhado (campos com input) — só renderiza se houver texto ──
   const temRotulo = !!campo.rotulo?.trim();
   const rotulo = temRotulo ? (

@@ -27,6 +27,8 @@ const FORMULARIO_METRICS_KEY = 'formulario-metrics' as const;
 
 const UPLOAD_ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const UPLOAD_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const VIDEO_ALLOWED_MIMES = ['video/mp4', 'video/webm', 'video/quicktime'];
+const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 const BULK_CHUNK_SIZE = 100;
 
 // ── Helpers internos ────────────────────────────────────────────────────────
@@ -719,6 +721,53 @@ export function useUploadFormularioImagem() {
       const { data: pub } = supabase.storage.from('formularios').getPublicUrl(path);
 
       return { path, url: pub.publicUrl };
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+}
+
+// ── 11. useUploadFormularioMidia (imagem OU vídeo) ──────────────────────────
+
+export type MidiaKind = 'imagem' | 'video';
+
+export interface UploadFormularioMidiaResult extends UploadFormularioImagemResult {
+  kind: MidiaKind;
+  mime: string;
+}
+
+/**
+ * Upload de mídia (imagem ou vídeo) para o bucket 'formularios'.
+ * Imagem: jpeg/png/webp/gif até 5 MB. Vídeo: mp4/webm/quicktime até 50 MB.
+ * (O bucket também valida server-side via allowed_mime_types — migration 117.)
+ */
+export function useUploadFormularioMidia() {
+  return useMutation<UploadFormularioMidiaResult, Error, UploadFormularioImagemInput>({
+    mutationFn: async ({ formId, file }) => {
+      const ehImagem = UPLOAD_ALLOWED_MIMES.includes(file.type);
+      const ehVideo = VIDEO_ALLOWED_MIMES.includes(file.type);
+      if (!ehImagem && !ehVideo) {
+        throw new Error('Formato não suportado. Imagem (JPEG/PNG/WebP/GIF) ou vídeo (MP4/WebM/MOV).');
+      }
+      if (ehImagem && file.size > UPLOAD_MAX_BYTES) {
+        throw new Error('Imagem muito grande. O limite é 5 MB.');
+      }
+      if (ehVideo && file.size > VIDEO_MAX_BYTES) {
+        throw new Error('Vídeo muito grande. O limite é 50 MB.');
+      }
+
+      const ext = fileExt(file);
+      const path = `${formId}/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from('formularios')
+        .upload(path, file, { contentType: file.type, upsert: false, cacheControl: '3600' });
+
+      if (uploadErr) throw new Error(`Falha no upload: ${uploadErr.message}`);
+
+      const { data: pub } = supabase.storage.from('formularios').getPublicUrl(path);
+      return { path, url: pub.publicUrl, kind: ehVideo ? 'video' : 'imagem', mime: file.type };
     },
     onError: (err) => {
       toast.error(err.message);
