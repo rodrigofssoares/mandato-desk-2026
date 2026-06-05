@@ -33,7 +33,9 @@ const RATE_LIMIT_WINDOW_MINUTES = 10;
 // intencionalmente aberto para qualquer origem compartilhar o formulário.
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'content-type',
+  // supabase.functions.invoke envia também authorization/apikey/x-client-info —
+  // todos precisam estar liberados no preflight, senão o browser bloqueia o POST.
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
