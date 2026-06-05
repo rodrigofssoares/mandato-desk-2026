@@ -65,7 +65,7 @@ export function DemandDialog({
   const updateDemand = useUpdateDemand();
   const deleteDemand = useDeleteDemand();
   const { can } = usePermissions();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { data: tags = [] } = useTags();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
@@ -132,15 +132,16 @@ export function DemandDialog({
         description: '',
         status: 'open',
         priority: 'medium',
-        // RAQ-MAND-EM085: contato travado (fluxo WhatsApp) e responsável = logado.
+        // RAQ-MAND-EM085: contato travado no fluxo WhatsApp. Responsável pela
+        // atividade começa vazio (escolha deliberada); o criador vai em created_by.
         contact_id: lockedContactId ?? null,
-        responsible_id: user?.id ?? null,
+        responsible_id: null,
         neighborhood: '',
       });
       setSelectedTagIds([]);
       setStageId(null);
     }
-  }, [demand, reset, lockedContactId, user?.id]);
+  }, [demand, reset, lockedContactId]);
 
   // Default da coluna em nova demanda: primeira coluna assim que carregarem.
   // Usa updater funcional pra não depender de `stageId` nas deps (evita o
@@ -228,6 +229,15 @@ export function DemandDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              {...register('neighborhood')}
+              placeholder="Bairro"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               {dynamicColumns ? (
@@ -297,13 +307,13 @@ export function DemandDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Responsável</Label>
+            <Label>Responsável pela atividade</Label>
             <Select
               value={watchResponsibleId ?? '_none'}
               onValueChange={(v) => setValue('responsible_id', v === '_none' ? null : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o responsável" />
+                <SelectValue placeholder="Selecione quem vai acompanhar" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="_none">Nenhum</SelectItem>
@@ -316,12 +326,19 @@ export function DemandDialog({
             </Select>
           </div>
 
+          {/* RAQ-MAND-EM085: quem inseriu a demanda no sistema (created_by) —
+              preenchido automaticamente, somente leitura. */}
           <div className="space-y-2">
-            <Label htmlFor="neighborhood">Bairro</Label>
+            <Label>Responsável pela criação</Label>
             <Input
-              id="neighborhood"
-              {...register('neighborhood')}
-              placeholder="Bairro"
+              value={
+                isEdit
+                  ? demand?.creator?.nome ?? '—'
+                  : profile?.nome ?? 'Você'
+              }
+              readOnly
+              disabled
+              className="bg-muted/40"
             />
           </div>
 

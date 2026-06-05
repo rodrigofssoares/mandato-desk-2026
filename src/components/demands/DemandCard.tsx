@@ -63,7 +63,13 @@ export function DemandCard({ demand, onClick }: DemandCardProps) {
 
           {demand.responsible && (
             <div className="text-xs text-muted-foreground">
-              Responsável: {demand.responsible.nome}
+              Responsável pela atividade: {demand.responsible.nome}
+            </div>
+          )}
+
+          {demand.creator && (
+            <div className="text-xs text-muted-foreground">
+              Criada por: {demand.creator.nome}
             </div>
           )}
 

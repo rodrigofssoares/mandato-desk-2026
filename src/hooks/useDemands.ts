@@ -31,6 +31,8 @@ export interface Demand {
   updated_at: string;
   contact: { nome: string; instagram: string | null } | null;
   responsible: { nome: string } | null;
+  /** RAQ-MAND-EM085: quem inseriu a demanda no sistema (created_by). */
+  creator: { nome: string } | null;
   demand_tags: DemandTag[];
 }
 
@@ -69,6 +71,7 @@ export function useDemands(filters?: DemandFilters) {
           *,
           contact:contacts!contact_id(nome, instagram),
           responsible:profiles!responsible_id(nome),
+          creator:profiles!created_by(nome),
           demand_tags(tag_id, tags(id, nome, cor))
         `)
         .order('created_at', { ascending: false });
@@ -106,10 +109,10 @@ export function useCreateDemand() {
         .from('demands')
         .insert({
           ...demandData,
-          // RAQ-MAND-EM085: responsável padrão = usuário logado que está criando a
-          // demanda (espelha o comportamento de useCreateTarefa). Continua editável
-          // pelo formulário; só usa o usuário logado como fallback quando não veio.
-          responsible_id: demandData.responsible_id ?? user?.id ?? null,
+          // RAQ-MAND-EM085: "responsável pela atividade" é escolha deliberada (assessor),
+          // pode ficar vazio. Quem criou a demanda é registrado em created_by
+          // (= "responsável pela criação"), sempre o usuário logado.
+          responsible_id: demandData.responsible_id ?? null,
           created_by: user?.id,
         })
         .select()

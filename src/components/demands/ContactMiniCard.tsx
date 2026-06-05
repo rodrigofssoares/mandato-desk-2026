@@ -5,7 +5,7 @@
 // quanto no fluxo de "Nova demanda" dentro do WhatsApp.
 
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, ExternalLink } from 'lucide-react';
+import { MessageCircle, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -80,7 +80,7 @@ export function ContactMiniCard({ contact, action, className }: ContactMiniCardP
             title="Ver no CRM"
           >
             <Link to={`/contacts?contact=${contact.id}`} onClick={(e) => e.stopPropagation()}>
-              <ExternalLink className="h-4 w-4" />
+              <Users className="h-4 w-4" />
             </Link>
           </Button>
           {action}
