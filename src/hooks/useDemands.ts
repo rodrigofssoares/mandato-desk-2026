@@ -102,6 +102,10 @@ export function useCreateDemand() {
         .from('demands')
         .insert({
           ...demandData,
+          // RAQ-MAND-EM085: responsável padrão = usuário logado que está criando a
+          // demanda (espelha o comportamento de useCreateTarefa). Continua editável
+          // pelo formulário; só usa o usuário logado como fallback quando não veio.
+          responsible_id: demandData.responsible_id ?? user?.id ?? null,
           created_by: user?.id,
         })
         .select()

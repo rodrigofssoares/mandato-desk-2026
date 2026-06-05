@@ -27,6 +27,8 @@ import { Loader2 } from 'lucide-react';
 import { useCreateDemand, useUpdateDemand, useDeleteDemand } from '@/hooks/useDemands';
 import { useTags } from '@/hooks/useTags';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/context/AuthContext';
+import { ContactPickerField } from './ContactPickerField';
 import type { Demand } from '@/hooks/useDemands';
 
 const demandSchema = z.object({
@@ -45,33 +47,28 @@ interface DemandDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   demand?: Demand | null;
+  /** RAQ-MAND-EM085: quando informado, o contato vem travado (fluxo WhatsApp). */
+  lockedContactId?: string | null;
+  /** Callback chamado após criar uma nova demanda (usado para vincular ao chat). */
+  onCreated?: (demand: { id: string }) => void;
 }
 
-export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) {
+export function DemandDialog({
+  open,
+  onOpenChange,
+  demand,
+  lockedContactId = null,
+  onCreated,
+}: DemandDialogProps) {
   const createDemand = useCreateDemand();
   const updateDemand = useUpdateDemand();
   const deleteDemand = useDeleteDemand();
   const { can } = usePermissions();
+  const { user } = useAuth();
   const { data: tags = [] } = useTags();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const isEdit = !!demand;
-
-  // Fetch contacts for the select
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['contacts-select'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('id, nome')
-        .is('merged_into', null)
-        .order('nome')
-        .limit(500);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: open,
-  });
 
   // Fetch profiles for responsible select
   const { data: profiles = [] } = useQuery({
@@ -126,13 +123,14 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
         description: '',
         status: 'open',
         priority: 'medium',
-        contact_id: null,
-        responsible_id: null,
+        // RAQ-MAND-EM085: contato travado (fluxo WhatsApp) e responsável = logado.
+        contact_id: lockedContactId ?? null,
+        responsible_id: user?.id ?? null,
         neighborhood: '',
       });
       setSelectedTagIds([]);
     }
-  }, [demand, reset]);
+  }, [demand, reset, lockedContactId, user?.id]);
 
   const watchStatus = watch('status');
   const watchPriority = watch('priority');
@@ -155,7 +153,7 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
         tag_ids: selectedTagIds,
       });
     } else {
-      await createDemand.mutateAsync({
+      const created = await createDemand.mutateAsync({
         title: data.title,
         description: data.description,
         status: data.status,
@@ -165,6 +163,7 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
         neighborhood: data.neighborhood,
         tag_ids: selectedTagIds,
       });
+      if (created?.id) onCreated?.({ id: created.id });
     }
     onOpenChange(false);
   };
@@ -241,22 +240,11 @@ export function DemandDialog({ open, onOpenChange, demand }: DemandDialogProps) 
 
           <div className="space-y-2">
             <Label>Contato</Label>
-            <Select
-              value={watchContactId ?? '_none'}
-              onValueChange={(v) => setValue('contact_id', v === '_none' ? null : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um contato" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">Nenhum</SelectItem>
-                {contacts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ContactPickerField
+              value={watchContactId ?? null}
+              onChange={(id) => setValue('contact_id', id)}
+              locked={!!lockedContactId}
+            />
           </div>
 
           <div className="space-y-2">
