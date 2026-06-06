@@ -31,6 +31,9 @@ import Tarefas from '@/pages/Tarefas';
 import DesignSystem from '@/pages/DesignSystem';
 import Whatsapp from '@/pages/Whatsapp';
 import Agente from '@/pages/Agente';
+import Formularios from '@/pages/Formularios';
+import FormularioEditor from '@/pages/FormularioEditor';
+import PublicForm from '@/pages/PublicForm';
 
 // Extrai mensagem legível de qualquer formato de erro — Error nativo, PostgrestError
 // do Supabase (objeto plano `{ code, message, details, hint }`), ou string. Sem essa
@@ -127,6 +130,7 @@ function AppRoutes() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/primeiro-acesso" element={<PrimeiroAcesso />} />
+        <Route path="/f/:slug" element={<PublicForm />} />
 
         {/* Rotas protegidas */}
         <Route
@@ -259,6 +263,24 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Agente />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* RAQ-MAND-EM054 — Formulários */}
+        <Route
+          path="/formularios"
+          element={
+            <ProtectedRoute>
+              <Formularios />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/formularios/:id"
+          element={
+            <ProtectedRoute>
+              <FormularioEditor />
             </ProtectedRoute>
           }
         />

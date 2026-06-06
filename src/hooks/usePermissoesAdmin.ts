@@ -111,7 +111,7 @@ function generateDefaultPermissions() {
     proprietario: {
       fullAccess: [
         'dashboard', 'contatos', 'liderancas', 'demandas', 'etiquetas',
-        'mapa', 'importacao', 'relatorios', 'board', 'tarefas',
+        'mapa', 'importacao', 'relatorios', 'board', 'tarefas', 'formularios',
       ],
       viewOnly: [
         'usuarios', 'google', 'api', 'webhooks', 'personalizacao', 'permissoes',
@@ -124,11 +124,11 @@ function generateDefaultPermissions() {
       fullAccess: [],
       viewOnly: ['dashboard', 'mapa', 'relatorios'],
       viewCreate: [],
-      viewCreateEdit: ['contatos', 'liderancas', 'demandas', 'etiquetas', 'board', 'tarefas'],
+      viewCreateEdit: ['contatos', 'liderancas', 'demandas', 'etiquetas', 'board', 'tarefas', 'formularios'],
     },
     assistente: {
       fullAccess: [],
-      viewOnly: ['dashboard', 'board'],
+      viewOnly: ['dashboard', 'board', 'formularios'],
       viewCreate: ['contatos', 'liderancas'],
       viewCreateEdit: ['tarefas'],
     },

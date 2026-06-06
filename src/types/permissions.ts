@@ -22,7 +22,7 @@ export const SECOES = [
   'mapa', 'importacao', 'usuarios', 'google', 'api',
   'webhooks', 'personalizacao', 'permissoes', 'relatorios', 'campanha',
   'board', 'tarefas', 'configuracoes', 'ordenacao_filtros', 'whatsapp',
-  'agente_ia',
+  'agente_ia', 'formularios',
 ] as const;
 export type Secao = typeof SECOES[number];
 
@@ -48,4 +48,5 @@ export const SECAO_LABELS: Record<Secao, string> = {
   ordenacao_filtros: 'Ordenação de Filtros',
   whatsapp: 'WhatsApp',
   agente_ia: 'Agente IA',
+  formularios: 'Formulários',
 };

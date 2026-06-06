@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EM054 · Versão B — Studio Pro (3 painéis)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --primary:#7B1E2E; --primary-600:#681826; --accent:#D4A446; --accent-soft:#f5e9cf;
+    --bg:#FAF6F0; --card:#fff; --fg:#2C1518; --muted:#8b7d73; --border:#E5DAC8;
+    --sidebar:#FCFAF5; --success:#22c55e; --warning:#f59e0b; --info:#0ea5e9; --danger:#dc2626;
+    --r:14px; --shadow:0 1px 3px rgba(44,21,24,.08),0 8px 24px -12px rgba(44,21,24,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
+  h1,h2,h3,h4,.display{font-family:'Space Grotesk',Inter,sans-serif}
+  .app{display:flex;height:100vh;overflow:hidden}
+  .side{width:228px;background:var(--sidebar);border-right:1px solid var(--border);padding:18px 12px;display:flex;flex-direction:column;gap:3px;flex-shrink:0}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 16px}
+  .brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-600));color:#fff;display:grid;place-items:center;font-weight:700;font-family:'Space Grotesk'}
+  .brand b{font-family:'Space Grotesk';font-size:15px}.brand small{color:var(--muted);font-size:11px;display:block}
+  .nav{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;color:#5a4a44;cursor:pointer;font-weight:500;font-size:13.5px}
+  .nav:hover{background:#f1e7da}.nav.active{background:var(--primary);color:#fff}.nav.active svg{color:#fff}
+  .nav svg{width:18px;height:18px;color:#9a8a80}.nav-sep{height:1px;background:var(--border);margin:8px 6px}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{height:58px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:14px;padding:0 22px;flex-shrink:0}
+  .topbar h1{font-size:16px;display:flex;align-items:center;gap:8px}
+  .topbar .pill{margin-left:auto;font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+  .steptabs{display:flex;gap:2px;align-items:center}
+  .step{padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12.5px;color:#6b5b54;display:flex;align-items:center;gap:7px}
+  .step svg{width:14px;height:14px}.step.active{background:var(--primary);color:#fff}.step.active svg{color:#fff}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{background:#f7f0e6}.btn svg{width:16px;height:16px}
+  .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}.btn-primary:hover{background:var(--primary-600)}
+  .btn-gold{background:var(--accent);color:#3a2e10;border-color:var(--accent)}
+  .btn-ghost{background:transparent;border-color:transparent}
+  .body-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  .view{display:none;flex:1;overflow:hidden}.view.active{display:flex;flex-direction:column}
+  .scroll{overflow:auto;padding:20px 24px}
+  /* ===== forms list ===== */
+  .list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  .list-head h2{font-size:20px}.list-head p{color:var(--muted);font-size:13px}
+  .filters{display:flex;gap:6px;background:#fff;border:1px solid var(--border);padding:4px;border-radius:10px}
+  .filters .f{padding:6px 13px;border-radius:7px;font-size:12.5px;font-weight:600;color:#6b5b54;cursor:pointer}
+  .filters .f.active{background:var(--primary);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .fcard{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer}
+  .fcard:hover{transform:translateY(-3px);box-shadow:0 12px 30px -14px rgba(44,21,24,.25)}
+  .fcard .cover{height:84px;background:linear-gradient(135deg,var(--primary),#a23a4b);position:relative}
+  .fcard .cover.gold{background:linear-gradient(135deg,#b5862a,var(--accent))}
+  .fcard .cover.navy{background:linear-gradient(135deg,#1B3A6B,#2d5596)}
+  .fcard .status{position:absolute;top:10px;right:10px;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.92);color:var(--success);display:flex;align-items:center;gap:5px}
+  .fcard .status .dotlive{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  .fcard .body{padding:14px 15px}
+  .fcard h3{font-size:15px;margin-bottom:3px}
+  .fcard .sub{color:var(--muted);font-size:12px;margin-bottom:11px}
+  .window{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:11px;font-size:11.5px}
+  .window svg{width:14px;height:14px;color:var(--accent);flex:0 0 auto}
+  .window .dates{flex:1;color:#5a4a44}.window .dates b{color:var(--fg)}
+  .window .countdown{font-weight:700;color:var(--warning);font-size:11px;white-space:nowrap}
+  .metrics{display:flex;gap:6px;margin-bottom:12px}
+  .metric{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px;text-align:center}
+  .metric b{font-size:17px;font-family:'Space Grotesk';display:block;color:var(--primary)}.metric span{font-size:10px;color:var(--muted)}
+  .fcard .acts{display:flex;gap:6px;border-top:1px solid var(--border);padding-top:11px}
+  .fcard .acts .btn{padding:7px 10px;font-size:12px;flex:1;justify-content:center}
+  .iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:#fff;display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+  .iconbtn svg{width:15px;height:15px;color:#6b5b54}.iconbtn:hover{background:#f7f0e6}
+  /* ===== 3-panel studio ===== */
+  .studio{display:grid;grid-template-columns:230px 1fr 290px;flex:1;overflow:hidden}
+  .palette{border-right:1px solid var(--border);background:#fff;overflow:auto;padding:16px 13px}
+  .palette h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 4px 9px}.palette h4:first-child{margin-top:0}
+  .pitem{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--border);border-radius:10px;margin-bottom:7px;cursor:grab;background:var(--bg);font-weight:600;font-size:12.5px;color:#5a4a44}
+  .pitem:hover{border-color:var(--primary);color:var(--primary);background:#fff;transform:translateX(3px);transition:.12s}
+  .pitem svg{width:16px;height:16px;color:var(--primary)}.pitem .grip{margin-left:auto}.pitem .grip svg{width:14px;height:14px;color:#cdbfae}
+  .stage{background:linear-gradient(180deg,#f3ebde,var(--bg));overflow:auto;padding:26px;display:flex;justify-content:center}
+  .device{max-width:560px;width:100%}
+  .dev-cover{height:130px;border-radius:14px 14px 0 0;background:linear-gradient(135deg,var(--primary),#a23a4b);display:flex;align-items:flex-end;padding:16px;color:#fff;position:relative;overflow:hidden}
+  .dev-cover::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% -10%,rgba(212,164,70,.55),transparent 55%)}
+  .dev-cover h2{font-size:21px;z-index:1;position:relative}
+  .dev-cover .badge{position:absolute;top:12px;left:16px;font-size:10.5px;background:rgba(255,255,255,.9);color:var(--primary);padding:3px 9px;border-radius:20px;font-weight:700;z-index:1}
+  .sheet{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:20px;box-shadow:var(--shadow)}
+  .qb{border:1.5px solid transparent;border-radius:11px;padding:14px;margin-bottom:11px;cursor:pointer;transition:.12s;position:relative}
+  .qb:hover{background:var(--bg)}.qb.sel{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(123,30,46,.08)}
+  .qb.sel::before{content:'editando';position:absolute;top:-9px;left:12px;background:var(--primary);color:#fff;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.03em}
+  .qb label{font-weight:600;font-size:13.5px;display:block;margin-bottom:7px}.qb .req{color:var(--danger)}
+  .inp{width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:13.5px;background:var(--bg);font-family:inherit;color:var(--muted)}
+  .opt{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;margin-top:7px;font-size:13px;color:#5a4a44}
+  .opt .o{width:16px;height:16px;border:2px solid var(--border);border-radius:50%}
+  .imgph{height:110px;border:2px dashed var(--border);border-radius:10px;display:grid;place-items:center;color:var(--muted);gap:6px;font-size:12.5px;margin-bottom:11px;background:var(--bg)}
+  .inspect{border-left:1px solid var(--border);background:#fff;overflow:auto;padding:16px 15px}
+  .insp-head{display:flex;align-items:center;gap:9px;padding-bottom:13px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  .insp-head .ic{width:32px;height:32px;border-radius:9px;background:var(--accent-soft);display:grid;place-items:center}.insp-head .ic svg{width:16px;height:16px;color:#9a6f15}
+  .insp-head b{font-size:14px;display:block}.insp-head span{font-size:11.5px;color:var(--muted)}
+  .field{margin-bottom:14px}
+  .field label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);display:block;margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;color:var(--fg);background:#fff}
+  .field textarea{resize:vertical;min-height:54px}
+  .row2{display:flex;gap:9px}.row2>*{flex:1}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)}
+  .toggle-row b{font-size:12.5px}.toggle-row span{font-size:11px;color:var(--muted);display:block}
+  .switch{position:relative;width:38px;height:21px;background:var(--border);border-radius:20px;cursor:pointer;transition:.2s;flex:0 0 auto}
+  .switch.on{background:var(--primary)}.switch::after{content:'';position:absolute;top:2px;left:2px;width:17px;height:17px;background:#fff;border-radius:50%;transition:.2s}.switch.on::after{left:19px}
+  .insp-section{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);font-weight:700;margin:16px 0 10px;display:flex;align-items:center;gap:7px}.insp-section svg{width:13px;height:13px}
+  .map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+  .panel-c{background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+  .panel-c h3{font-size:15px;display:flex;align-items:center;gap:9px;margin-bottom:4px}.panel-c h3 svg{width:18px;height:18px;color:var(--primary)}
+  .panel-c .hint{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+  .maprow{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:9px}
+  .maprow .from{font-weight:600;font-size:13px;flex:1}.maprow svg.arrow{width:16px;height:16px;color:var(--accent)}
+  .sel{flex:1;border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 9px;font-size:12.5px;color:var(--fg);font-family:inherit}
+  .tagchip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;margin:3px}
+  .label-s{font-weight:600;font-size:12.5px;margin:14px 0 7px;display:block}
+  .auto-item{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid var(--border);border-radius:10px;margin-bottom:9px}
+  .auto-item .ico{width:34px;height:34px;border-radius:9px;background:var(--accent-soft);display:grid;place-items:center;flex:0 0 auto}.auto-item .ico svg{width:17px;height:17px;color:#9a6f15}
+  .auto-item .tx{flex:1}.auto-item .tx b{font-size:13px}.auto-item .tx span{display:block;color:var(--muted);font-size:11.5px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+  .kpi{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+  .kpi .lbl{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px}.kpi .lbl svg{width:14px;height:14px;color:var(--primary)}
+  .kpi b{font-size:28px;font-family:'Space Grotesk';display:block;margin-top:7px}.kpi .delta{font-size:11px;color:var(--success);font-weight:600}
+  .chart{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+  .bars{display:flex;align-items:flex-end;gap:12px;height:170px;padding-top:10px}
+  .bar{flex:1;background:linear-gradient(180deg,var(--primary),#a23a4b);border-radius:7px 7px 0 0;position:relative}
+  .bar span{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+  .linkbar{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-bottom:18px;font-size:13px;color:#5a4a44}
+  .linkbar code{font-family:ui-monospace,monospace;color:var(--primary);flex:1}
+  .flag{font-size:11px;background:var(--accent-soft);color:#8a6410;padding:3px 9px;border-radius:6px;font-weight:600}
+  .sec-banner{background:#fff;border:1px solid var(--border);border-left:4px solid var(--success);border-radius:10px;padding:12px 15px;display:flex;align-items:center;gap:11px;margin-bottom:18px;font-size:12.5px}
+  .sec-banner svg{width:18px;height:18px;color:var(--success);flex:0 0 auto}
+  @media(max-width:1050px){.studio{grid-template-columns:1fr}.palette,.inspect{display:none}.side{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">MD</div><div><b>Mandato Desk</b><small>Raquel Rotha · 2026</small></div></div>
+    <div class="nav"><i data-lucide="layout-dashboard"></i> Dashboard</div>
+    <div class="nav"><i data-lucide="users"></i> Contatos</div>
+    <div class="nav"><i data-lucide="kanban-square"></i> Funil</div>
+    <div class="nav"><i data-lucide="tags"></i> Etiquetas</div>
+    <div class="nav active"><i data-lucide="file-text"></i> Formulários</div>
+    <div class="nav"><i data-lucide="upload"></i> Importação</div>
+    <div class="nav"><i data-lucide="message-circle"></i> WhatsApp</div>
+    <div class="nav-sep"></div>
+    <div class="nav"><i data-lucide="settings"></i> Configurações</div>
+  </aside>
+
+  <main class="main">
+    <!-- topbar (muda conforme modo) -->
+    <header class="topbar">
+      <!-- modo lista -->
+      <div id="bar-list" style="display:flex;align-items:center;gap:14px;width:100%">
+        <h1><i data-lucide="file-text" style="width:18px;color:var(--primary)"></i> Formulários</h1>
+        <span class="pill">Versão B · Studio Pro · v2.15</span>
+        <button class="btn btn-primary" onclick="enterForm('Novo formulário')"><i data-lucide="plus"></i> Novo formulário</button>
+      </div>
+      <!-- modo editor -->
+      <div id="bar-editor" style="display:none;align-items:center;gap:14px;width:100%">
+        <button class="btn btn-ghost" onclick="backToList()"><i data-lucide="arrow-left"></i></button>
+        <h1 id="form-name" style="font-size:15px"><i data-lucide="file-text" style="width:17px;color:var(--primary)"></i> Emendas Participativas 2026</h1>
+        <div class="steptabs" style="margin-left:14px">
+          <div class="step active" onclick="go('build',this)"><i data-lucide="pencil-ruler"></i> Construtor</div>
+          <div class="step" onclick="go('map',this)"><i data-lucide="git-merge"></i> Mapeamento</div>
+          <div class="step" onclick="go('metrics',this)"><i data-lucide="bar-chart-3"></i> Métricas</div>
+          <div class="step" onclick="go('public',this)"><i data-lucide="eye"></i> Pública</div>
+        </div>
+        <span class="pill">v2.15</span>
+        <button class="btn btn-gold"><i data-lucide="send"></i> Publicar</button>
+      </div>
+    </header>
+
+    <div class="body-area">
+      <!-- ===== LISTA DE FORMULÁRIOS (entrada) ===== -->
+      <section class="view active" id="v-list"><div class="scroll">
+        <div class="list-head">
+          <div><h2>Meus formulários</h2><p>3 formulários ativos. Clique num card para abrir o editor.</p></div>
+          <div class="filters">
+            <div class="f active">Ativos (3)</div><div class="f">Agendados (1)</div><div class="f">Encerrados (5)</div><div class="f">Todos</div>
+          </div>
+        </div>
+        <div class="grid">
+          <!-- form 1 -->
+          <div class="fcard" onclick="enterForm('Emendas Participativas 2026')">
+            <div class="cover"><span class="status"><span class="dotlive"></span> Ativo</span></div>
+            <div class="body">
+              <h3>Emendas Participativas 2026</h3>
+              <p class="sub">Votação popular · 49 projetos</p>
+              <div class="window"><i data-lucide="calendar-clock"></i><div class="dates">Abriu <b>02/jun 08:00</b> · encerra <b>14/jun 23:59</b></div><span class="countdown">faltam 9d</span></div>
+              <div class="metrics">
+                <div class="metric"><b>1.243</b><span>preenchidos</span></div>
+                <div class="metric"><b>3.890</b><span>visitas</span></div>
+                <div class="metric"><b>32%</b><span>conversão</span></div>
+              </div>
+              <div class="acts" onclick="event.stopPropagation()">
+                <button class="btn" onclick="enterForm('Emendas Participativas 2026')"><i data-lucide="pencil"></i> Editar</button>
+                <button class="btn"><i data-lucide="bar-chart-3"></i> Métricas</button>
+                <button class="iconbtn"><i data-lucide="copy"></i></button>
+              </div>
+            </div>
+          </div>
+          <!-- form 2 -->
+          <div class="fcard" onclick="enterForm('Cadastro Cultura Viva')">
+            <div class="cover gold"><span class="status"><span class="dotlive"></span> Ativo</span></div>
+            <div class="body">
+              <h3>Cadastro Cultura Viva</h3>
+              <p class="sub">Captação de artistas locais</p>
+              <div class="window"><i data-lucide="calendar-clock"></i><div class="dates">Abriu <b>28/mai 09:00</b> · encerra <b>20/jun 18:00</b></div><span class="countdown">faltam 15d</span></div>
+              <div class="metrics">
+                <div class="metric"><b>587</b><span>preenchidos</span></div>
+                <div class="metric"><b>1.402</b><span>visitas</span></div>
+                <div class="metric"><b>42%</b><span>conversão</span></div>
+              </div>
+              <div class="acts" onclick="event.stopPropagation()">
+                <button class="btn" onclick="enterForm('Cadastro Cultura Viva')"><i data-lucide="pencil"></i> Editar</button>
+                <button class="btn"><i data-lucide="bar-chart-3"></i> Métricas</button>
+                <button class="iconbtn"><i data-lucide="copy"></i></button>
+              </div>
+            </div>
+          </div>
+          <!-- form 3 -->
+          <div class="fcard" onclick="enterForm('Saúde no Bairro — Pesquisa')">
+            <div class="cover navy"><span class="status"><span class="dotlive"></span> Ativo</span></div>
+            <div class="body">
+              <h3>Saúde no Bairro — Pesquisa</h3>
+              <p class="sub">Diagnóstico comunitário</p>
+              <div class="window"><i data-lucide="calendar-clock"></i><div class="dates">Abriu <b>04/jun 07:00</b> · encerra <b>11/jun 23:59</b></div><span class="countdown" style="color:var(--danger)">faltam 6d</span></div>
+              <div class="metrics">
+                <div class="metric"><b>2.110</b><span>preenchidos</span></div>
+                <div class="metric"><b>4.602</b><span>visitas</span></div>
+                <div class="metric"><b>46%</b><span>conversão</span></div>
+              </div>
+              <div class="acts" onclick="event.stopPropagation()">
+                <button class="btn" onclick="enterForm('Saúde no Bairro — Pesquisa')"><i data-lucide="pencil"></i> Editar</button>
+                <button class="btn"><i data-lucide="bar-chart-3"></i> Métricas</button>
+                <button class="iconbtn"><i data-lucide="copy"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-banner" style="margin-top:22px;border-left-color:var(--accent)">
+          <i data-lucide="calendar-clock" style="color:var(--accent)"></i>
+          <div><b>Fechamento automático.</b> Cada formulário tem data/hora de abertura e de encerramento. Quando o prazo termina, o link público fecha sozinho e passa a exibir "formulário encerrado" — sem ninguém precisar desativar manualmente.</div>
+        </div>
+      </div></section>
+
+      <!-- ===== BUILD (studio 3 painéis) ===== -->
+      <section class="view" id="v-build">
+        <div class="studio">
+          <div class="palette">
+            <h4>Campos de texto</h4>
+            <div class="pitem" onclick="addQ('Texto curto','type')"><i data-lucide="type"></i> Texto curto <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('Parágrafo','align-left')"><i data-lucide="align-left"></i> Parágrafo <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('Telefone','phone')"><i data-lucide="phone"></i> Telefone <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('E-mail','mail')"><i data-lucide="mail"></i> E-mail <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('CPF','credit-card')"><i data-lucide="credit-card"></i> CPF <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <h4>Escolhas</h4>
+            <div class="pitem" onclick="addChoice('Múltipla escolha','circle-dot')"><i data-lucide="circle-dot"></i> Múltipla escolha <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addChoice('Caixas de seleção','check-square')"><i data-lucide="check-square"></i> Caixas <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('Lista suspensa','list')"><i data-lucide="list"></i> Lista suspensa <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <h4>Mídia &amp; Layout</h4>
+            <div class="pitem" onclick="addImg()"><i data-lucide="image"></i> Imagem <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('Data','calendar')"><i data-lucide="calendar"></i> Data <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+            <div class="pitem" onclick="addQ('Seção / título','heading')"><i data-lucide="heading"></i> Seção <span class="grip"><i data-lucide="grip-vertical"></i></span></div>
+          </div>
+          <div class="stage">
+            <div class="device">
+              <div class="dev-cover"><span class="badge">PRÉVIA AO VIVO</span><h2>Emendas Participativas 2026</h2></div>
+              <div class="sheet" id="sheet">
+                <div class="qb sel" onclick="selQ(this,'Nome completo','Texto curto','type')">
+                  <label>Nome completo <span class="req">*</span></label><div class="inp">Resposta de texto curto</div>
+                </div>
+                <div class="qb" onclick="selQ(this,'WhatsApp','Telefone','phone')">
+                  <label>WhatsApp <span class="req">*</span></label><div class="inp">(00) 0 0000-0000</div>
+                </div>
+                <div class="qb" onclick="selQ(this,'Qual projeto você prioriza?','Múltipla escolha','circle-dot')">
+                  <label>Qual projeto você prioriza? <span class="req">*</span></label>
+                  <div class="opt"><span class="o"></span> Reforma da praça central</div>
+                  <div class="opt"><span class="o"></span> Posto de saúde 24h</div>
+                  <div class="opt"><span class="o"></span> Creche no bairro</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="inspect" id="inspector">
+            <div class="insp-head">
+              <div class="ic"><i data-lucide="type" id="insp-ic"></i></div>
+              <div><b id="insp-title">Nome completo</b><span id="insp-type">Texto curto</span></div>
+            </div>
+            <div class="field"><label>Rótulo da pergunta</label><input id="insp-label" value="Nome completo" /></div>
+            <div class="field"><label>Texto de ajuda</label><textarea placeholder="Instrução opcional para quem preenche"></textarea></div>
+            <div class="row2">
+              <div class="field"><label>Mín. caracteres</label><input type="number" value="2" /></div>
+              <div class="field"><label>Máx. caracteres</label><input type="number" value="80" /></div>
+            </div>
+            <div class="toggle-row"><div><b>Obrigatório</b><span>Não envia sem preencher</span></div><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><b>Validar formato</b><span>Ex.: telefone, e-mail, CPF</span></div><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="insp-section"><i data-lucide="git-merge"></i> Mapeamento deste campo</div>
+            <div class="field"><label>Salvar em (destino 1)</label><select><option>nome</option><option>profissão</option><option>observações</option></select></div>
+            <div class="field"><label>Também salvar em (destino 2)</label><select><option>whatsapp</option><option>— nenhum —</option><option>telefone</option></select></div>
+            <div class="insp-section"><i data-lucide="palette"></i> Aparência do campo</div>
+            <div class="row2">
+              <div class="field"><label>Cor de destaque</label><input type="color" value="#7B1E2E" style="height:38px;padding:3px" /></div>
+              <div class="field"><label>Largura</label><select><option>100%</option><option>50%</option></select></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== MAP ===== -->
+      <section class="view" id="v-map"><div class="scroll">
+        <h2 style="font-size:19px;margin-bottom:4px">Mapeamento &amp; Automações</h2>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:18px">Visão consolidada de tudo que acontece quando um contato envia o formulário.</p>
+        <div class="map-grid">
+          <div class="panel-c">
+            <h3><i data-lucide="git-merge"></i> Campos → Contato</h3>
+            <p class="hint">Cada campo grava em até dois destinos do contato.</p>
+            <div class="maprow"><span class="from">Nome completo</span><i data-lucide="arrow-right" class="arrow"></i><select class="sel"><option>nome + whatsapp</option><option>nome</option></select></div>
+            <div class="maprow"><span class="from">WhatsApp</span><i data-lucide="arrow-right" class="arrow"></i><select class="sel"><option>whatsapp + telefone</option></select></div>
+            <div class="maprow"><span class="from">Bairro</span><i data-lucide="arrow-right" class="arrow"></i><select class="sel"><option>bairro</option></select></div>
+          </div>
+          <div class="panel-c">
+            <h3><i data-lucide="zap"></i> Automações no envio</h3>
+            <p class="hint">Disparadas para todo contato recebido.</p>
+            <div class="auto-item"><div class="ico"><i data-lucide="tag"></i></div><div class="tx"><b>Aplicar etiquetas</b><span>Emendas 2026, Cultura</span></div></div>
+            <div style="margin:-2px 0 12px"><span class="tagchip" style="background:#fde7ea;color:#9b1c2c">● Emendas 2026</span><span class="tagchip" style="background:#e9f6ee;color:#15803d">● Cultura</span></div>
+            <div class="auto-item"><div class="ico"><i data-lucide="kanban-square"></i></div><div class="tx"><b>Mover no Funil</b><span>Coluna de destino</span></div><select class="sel" style="max-width:120px"><option>Novo lead</option></select></div>
+            <div class="auto-item"><div class="ico"><i data-lucide="trophy"></i></div><div class="tx"><b>Ranking</b><span>Pontuação por resposta</span></div><select class="sel" style="max-width:100px"><option>+10 pts</option></select></div>
+            <div class="auto-item"><div class="ico"><i data-lucide="flag"></i></div><div class="tx"><b>Situação</b><span>declarou voto</span></div><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+          </div>
+          <div class="panel-c">
+            <h3><i data-lucide="settings-2"></i> Robustez &amp; prazo</h3>
+            <p class="hint">Escala para 3.000–4.000 envios e fechamento automático.</p>
+            <label class="label-s">Duplicados (mesmo WhatsApp/CPF)</label>
+            <select class="sel" style="width:100%"><option>Mesclar com existente</option><option>Criar novo</option><option>Ignorar</option></select>
+            <div class="auto-item" style="margin-top:12px"><div class="ico"><i data-lucide="layers"></i></div><div class="tx"><b>Gravação em lotes (500/bloco)</b><span>Fila assíncrona, sem travar</span></div><div class="switch on"></div></div>
+            <div class="auto-item"><div class="ico"><i data-lucide="shield-check"></i></div><div class="tx"><b>Rate limit + captcha</b><span>Antiflood no link público</span></div><div class="switch on"></div></div>
+            <div class="auto-item" style="border-color:var(--accent);background:#fdf8ee"><div class="ico"><i data-lucide="calendar-clock"></i></div><div class="tx"><b>Janela de atividade</b><span>Abre 02/jun 08:00 → fecha 14/jun 23:59</span></div><div class="switch on"></div></div>
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ===== METRICS ===== -->
+      <section class="view" id="v-metrics"><div class="scroll">
+        <h2 style="font-size:19px;margin-bottom:16px">Métricas — Emendas Participativas 2026</h2>
+        <div class="kpis">
+          <div class="kpi"><div class="lbl"><i data-lucide="users"></i> Preenchimentos</div><b>1.243</b><span class="delta">▲ 18% vs ontem</span></div>
+          <div class="kpi"><div class="lbl"><i data-lucide="mouse-pointer-click"></i> Visitas</div><b>3.890</b><span class="delta">▲ 9%</span></div>
+          <div class="kpi"><div class="lbl"><i data-lucide="percent"></i> Conversão</div><b>32%</b><span class="delta">▲ 4 p.p.</span></div>
+          <div class="kpi"><div class="lbl"><i data-lucide="calendar-clock"></i> Encerra em</div><b style="font-size:22px">9d 11h</b><span style="font-size:11px;color:var(--warning)">14/jun 23:59</span></div>
+        </div>
+        <div class="chart">
+          <h3 style="font-size:14px;margin-bottom:18px">Preenchimentos por dia</h3>
+          <div class="bars">
+            <div class="bar" style="height:45%"><span>02</span></div><div class="bar" style="height:62%"><span>03</span></div>
+            <div class="bar" style="height:38%"><span>04</span></div><div class="bar" style="height:80%"><span>05</span></div>
+            <div class="bar" style="height:95%"><span>06</span></div><div class="bar" style="height:70%"><span>07</span></div>
+            <div class="bar" style="height:55%"><span>08</span></div>
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ===== PUBLIC ===== -->
+      <section class="view" id="v-public"><div class="scroll">
+        <div class="sec-banner"><i data-lucide="shield-check"></i><div><b>Página pública isolada.</b> Sem sessão, sem leitura de contatos, sem acesso a outros formulários. Só grava o envio (RLS bloqueia qualquer SELECT).</div></div>
+        <div class="linkbar"><i data-lucide="link"></i><code>mandato-desk-2026.app/f/emendas-2026</code><span class="flag">Fecha automático 14/jun 23:59</span><button class="btn" style="padding:6px 12px"><i data-lucide="copy"></i> Copiar</button><button class="btn" style="padding:6px 12px"><i data-lucide="qr-code"></i> QR</button></div>
+        <div style="display:flex;gap:10px;margin-bottom:16px"><button class="btn btn-primary" onclick="pub('form')"><i data-lucide="file-text"></i> Formulário</button><button class="btn" onclick="pub('thanks')"><i data-lucide="party-popper"></i> Agradecimento</button><button class="btn" onclick="pub('closed')"><i data-lucide="lock"></i> Encerrado</button></div>
+        <div id="pub-form" style="display:flex;justify-content:center;background:linear-gradient(160deg,#f0e6d8,var(--bg));border:1px solid var(--border);border-radius:14px;padding:28px">
+          <div style="max-width:520px;width:100%">
+            <div class="dev-cover" style="border-radius:14px 14px 0 0"><h2>Emendas Participativas 2026</h2></div>
+            <div class="sheet">
+              <div style="margin-bottom:14px"><label style="font-weight:600;display:block;margin-bottom:7px">Nome completo <span style="color:var(--danger)">*</span></label><input class="inp" style="color:var(--fg)" placeholder="Seu nome" /></div>
+              <div style="margin-bottom:14px"><label style="font-weight:600;display:block;margin-bottom:7px">WhatsApp <span style="color:var(--danger)">*</span></label><input class="inp" style="color:var(--fg)" placeholder="(00) 0 0000-0000" /></div>
+              <div style="margin-bottom:14px"><label style="font-weight:600;display:block;margin-bottom:7px">Qual projeto você prioriza? <span style="color:var(--danger)">*</span></label>
+                <div class="opt"><span class="o"></span> Reforma da praça central</div><div class="opt"><span class="o"></span> Posto de saúde 24h</div><div class="opt"><span class="o"></span> Creche no bairro</div></div>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:15px" onclick="pub('thanks')"><i data-lucide="send"></i> Enviar resposta</button>
+              <p style="text-align:center;color:var(--muted);font-size:11.5px;margin-top:12px">Dados tratados conforme a LGPD.</p>
+            </div>
+          </div>
+        </div>
+        <div id="pub-thanks" style="display:none;background:linear-gradient(160deg,#f0e6d8,var(--bg));border:1px solid var(--border);border-radius:14px;padding:48px;text-align:center">
+          <div style="width:74px;height:74px;border-radius:50%;background:var(--success);display:grid;place-items:center;margin:0 auto 18px"><i data-lucide="check" style="width:38px;height:38px;color:#fff"></i></div>
+          <h2 style="font-size:24px;margin-bottom:8px">Obrigado pela sua participação! 🎉</h2>
+          <p style="color:var(--muted);max-width:360px;margin:0 auto">Sua resposta foi registrada. Em breve a equipe entrará em contato pelo WhatsApp.</p>
+        </div>
+        <div id="pub-closed" style="display:none;background:linear-gradient(160deg,#f0e6d8,var(--bg));border:1px solid var(--border);border-radius:14px;padding:48px;text-align:center">
+          <div style="width:74px;height:74px;border-radius:50%;background:var(--muted);display:grid;place-items:center;margin:0 auto 18px"><i data-lucide="lock" style="width:34px;height:34px;color:#fff"></i></div>
+          <h2 style="font-size:24px;margin-bottom:8px">Formulário encerrado</h2>
+          <p style="color:var(--muted);max-width:380px;margin:0 auto">O prazo para participação terminou em <b>14/jun 23:59</b>. Obrigado pelo interesse! Fique de olho nos próximos formulários do mandato.</p>
+        </div>
+      </div></section>
+    </div>
+  </main>
+</div>
+
+<script>
+  function enterForm(name){
+    document.getElementById('bar-list').style.display='none';
+    document.getElementById('bar-editor').style.display='flex';
+    document.getElementById('form-name').innerHTML='<i data-lucide="file-text" style="width:17px;color:var(--primary)"></i> '+name;
+    document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('active',i===0));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('v-build').classList.add('active');
+    setTimeout(()=>lucide.createIcons(),10);
+  }
+  function backToList(){
+    document.getElementById('bar-editor').style.display='none';
+    document.getElementById('bar-list').style.display='flex';
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('v-list').classList.add('active');
+    setTimeout(()=>lucide.createIcons(),10);
+  }
+  function go(v,el){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));if(el)el.classList.add('active');
+    document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');setTimeout(()=>lucide.createIcons(),10);}
+  function pub(w){['form','thanks','closed'].forEach(k=>document.getElementById('pub-'+k).style.display='none');
+    document.getElementById('pub-'+w).style.display=w==='form'?'flex':'block';setTimeout(()=>lucide.createIcons(),10);}
+  function selQ(el,title,type,icon){
+    document.querySelectorAll('.qb').forEach(q=>q.classList.remove('sel'));el.classList.add('sel');
+    document.getElementById('insp-title').textContent=title;document.getElementById('insp-type').textContent=type;
+    document.getElementById('insp-label').value=title;
+    const ic=document.getElementById('insp-ic');ic.setAttribute('data-lucide',icon);lucide.createIcons();
+  }
+  function addBlock(html,title,type,icon){
+    const d=document.createElement('div');d.className='qb';d.innerHTML=html;
+    d.onclick=()=>selQ(d,title,type,icon);document.getElementById('sheet').appendChild(d);
+    d.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{lucide.createIcons();selQ(d,title,type,icon);},10);
+  }
+  function addQ(name,icon){addBlock('<label>'+name+'</label><div class="inp">Resposta: '+name+'</div>',name,name,icon);}
+  function addChoice(name,icon){addBlock('<label>'+name+'</label><div class="opt"><span class="o"></span> Opção 1</div><div class="opt"><span class="o"></span> Opção 2</div>',name,name,icon);}
+  function addImg(){addBlock('<div class="imgph"><i data-lucide="image-plus"></i> Imagem do formulário</div>','Imagem','Mídia','image');}
+  lucide.createIcons();
+</script>
+</body>
+</html>
