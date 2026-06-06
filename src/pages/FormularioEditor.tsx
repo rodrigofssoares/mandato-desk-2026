@@ -1,9 +1,9 @@
-// EM054 — Editor de formulário (rota /formularios/:id)
+// EM054-v2 — Editor de formulário (rota /formularios/:id)
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, PencilRuler, GitMerge, BarChart3, Eye,
-  Send, EyeOff, CheckCircle2, Loader2,
+  Send, EyeOff, CheckCircle2, Loader2, ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,9 @@ import { FormBuilderStudio } from '@/components/formularios/FormBuilderStudio';
 import { MappingPanel } from '@/components/formularios/MappingPanel';
 import { MetricsPanel } from '@/components/formularios/MetricsPanel';
 import { PublishPanel } from '@/components/formularios/PublishPanel';
+import { ResultadosPanel } from '@/components/formularios/ResultadosPanel';
 
-type EditorTab = 'construtor' | 'mapeamento' | 'metricas' | 'publica';
+type EditorTab = 'construtor' | 'mapeamento' | 'resultados' | 'metricas' | 'publica';
 
 // ── Indicador de autosave ─────────────────────────────────────────────────────
 
@@ -238,6 +239,7 @@ export default function FormularioEditor() {
             [
               { id: 'construtor', label: 'Construtor', Icon: PencilRuler },
               { id: 'mapeamento', label: 'Mapeamento', Icon: GitMerge },
+              { id: 'resultados', label: 'Resultados', Icon: ListChecks },
               { id: 'metricas', label: 'Métricas', Icon: BarChart3 },
               { id: 'publica', label: 'Pública', Icon: Eye },
             ] as const
@@ -296,6 +298,11 @@ export default function FormularioEditor() {
         {abaAtiva === 'mapeamento' && (
           <div className="h-full overflow-y-auto">
             <MappingPanel formulario={formulario} campos={campos} />
+          </div>
+        )}
+        {abaAtiva === 'resultados' && (
+          <div className="h-full overflow-y-auto">
+            <ResultadosPanel formulario={formulario} campos={campos} />
           </div>
         )}
         {abaAtiva === 'metricas' && (

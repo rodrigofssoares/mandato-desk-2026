@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useUpdateFormulario } from '@/hooks/useFormularios';
 import { formatarDataLonga } from './formularioUtils';
+import { AgradecimentoPanel } from './AgradecimentoPanel';
 import type { Formulario } from '@/types/formularios';
 
 interface PublishPanelProps {
@@ -250,6 +251,13 @@ export function PublishPanel({ formulario }: PublishPanelProps) {
           <MiniPreview formulario={formulario} estado={previewEstado} />
         </div>
       </div>
+
+      <Separator />
+
+      {/* Tela de agradecimento */}
+      <AgradecimentoPanel formulario={formulario} />
+
+      <Separator />
 
       {/* Segurança */}
       <div className="space-y-2">

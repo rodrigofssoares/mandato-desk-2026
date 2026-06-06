@@ -17,6 +17,7 @@ import {
   type FormularioCampo,
   type FormularioComMetricas,
   type FormularioInput,
+  type FormularioResposta,
   type FieldType,
   type CampoTemplate,
 } from '@/types/formularios';
@@ -236,7 +237,8 @@ export interface UpdateFormularioInput {
 const CAMPOS_ATUALIZAVEIS: ReadonlyArray<keyof Formulario> = [
   'titulo', 'descricao', 'capa_url', 'status', 'publicado', 'abre_em', 'encerra_em',
   'tema', 'agradecimento', 'dedup_campo', 'dedup_acao', 'aplicar_etiquetas',
-  'mover_stage_id', 'ranking_pontos', 'marcar_situacao', 'origem', 'max_respostas',
+  'mover_board_id', 'mover_stage_id', 'ranking_pontos', 'marcar_situacao', 'origem',
+  'criar_demanda', 'demanda_priority', 'max_respostas',
 ];
 
 /**
@@ -710,6 +712,44 @@ export function useFormularioMetrics(id?: string) {
         taxa_conversao,
         serie_diaria,
       };
+    },
+    enabled: !!id,
+  });
+}
+
+// ── 9b. useFormularioRespostas (aba Resultados) ─────────────────────────────
+
+/**
+ * Lista as respostas de um formulário (mais recentes primeiro), com o nome do
+ * contato vinculado. RLS restringe a quem tem permissão 'formularios','ver'.
+ */
+export function useFormularioRespostas(id?: string) {
+  return useQuery<FormularioResposta[]>({
+    queryKey: ['formulario-respostas', id],
+    queryFn: async () => {
+      if (!id) return [];
+      // EM054: usar sbForms até types.ts regenerado
+      const { data, error } = await sbForms
+        .from('formulario_respostas')
+        .select('id, form_id, contact_id, dados, status, erro, created_at, contacts(nome)')
+        .eq('form_id', id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+        const contato = row['contacts'] as { nome?: string } | null;
+        return {
+          id: row['id'],
+          form_id: row['form_id'],
+          contact_id: row['contact_id'] ?? null,
+          dados: (row['dados'] ?? {}) as Record<string, string | string[]>,
+          status: row['status'],
+          erro: row['erro'] ?? null,
+          created_at: row['created_at'],
+          contato_nome: contato?.nome ?? null,
+        } as FormularioResposta;
+      });
     },
     enabled: !!id,
   });

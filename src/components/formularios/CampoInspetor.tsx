@@ -16,6 +16,7 @@ import {
   FIELD_TYPE_ICONS,
   FIELD_TYPES_COM_OPCOES,
   DESTINOS_CONTATO,
+  DESTINOS_DEMANDA,
   type FormularioCampo,
   type FieldType,
   type OpcaoCampo,
@@ -404,6 +405,29 @@ function CampoInspetorForm({ campo, onSave, onUploadMidia }: CampoInspetorFormPr
             </Select>
           </div>
         </>
+      )}
+
+      {/* Mapear na demanda (se ativada) */}
+      {!ehDecorativo && (
+        <div className="space-y-1.5">
+          <Label htmlFor="mapear_demanda" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+            Mapear na demanda (se ativada)
+          </Label>
+          <Select
+            value={local.mapear_demanda ?? '__none__'}
+            onValueChange={(v) => apply({ mapear_demanda: v === '__none__' ? null : v })}
+          >
+            <SelectTrigger id="mapear_demanda" className="h-8 text-xs" aria-label="Destino na demanda">
+              <SelectValue placeholder="— nenhum —" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— nenhum —</SelectItem>
+              {DESTINOS_DEMANDA.map((d) => (
+                <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {/* Aparência */}
