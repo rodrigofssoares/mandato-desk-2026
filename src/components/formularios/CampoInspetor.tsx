@@ -117,9 +117,11 @@ interface CampoInspetorProps {
   onSave: (campoId: string, patch: Partial<FormularioCampo>) => void;
   /** Faz upload de uma mídia (imagem ou vídeo) e retorna a URL pública. */
   onUploadMidia: (file: File) => Promise<string>;
+  /** Se o formulário cria demanda — controla a exibição do mapeamento de demanda. */
+  criarDemanda?: boolean;
 }
 
-export function CampoInspetor({ campo, onSave, onUploadMidia }: CampoInspetorProps) {
+export function CampoInspetor({ campo, onSave, onUploadMidia, criarDemanda }: CampoInspetorProps) {
   if (!campo) {
     return (
       <aside className="w-72 border-l bg-card overflow-y-auto shrink-0 p-4 flex items-center justify-center">
@@ -131,7 +133,7 @@ export function CampoInspetor({ campo, onSave, onUploadMidia }: CampoInspetorPro
   }
   // key por campo.id → remonta (e re-inicializa o estado local) ao trocar de campo.
   return (
-    <CampoInspetorForm key={campo.id} campo={campo} onSave={onSave} onUploadMidia={onUploadMidia} />
+    <CampoInspetorForm key={campo.id} campo={campo} onSave={onSave} onUploadMidia={onUploadMidia} criarDemanda={criarDemanda} />
   );
 }
 
@@ -141,9 +143,10 @@ interface CampoInspetorFormProps {
   campo: FormularioCampo;
   onSave: (campoId: string, patch: Partial<FormularioCampo>) => void;
   onUploadMidia: (file: File) => Promise<string>;
+  criarDemanda?: boolean;
 }
 
-function CampoInspetorForm({ campo, onSave, onUploadMidia }: CampoInspetorFormProps) {
+function CampoInspetorForm({ campo, onSave, onUploadMidia, criarDemanda }: CampoInspetorFormProps) {
   // Cópia de trabalho local — dá feedback instantâneo enquanto digita,
   // sem esperar o round-trip ao servidor (que é debounced).
   const [local, setLocal] = useState<FormularioCampo>(campo);
@@ -407,11 +410,11 @@ function CampoInspetorForm({ campo, onSave, onUploadMidia }: CampoInspetorFormPr
         </>
       )}
 
-      {/* Mapear na demanda (se ativada) */}
-      {!ehDecorativo && (
+      {/* Mapear na demanda — só quando o formulário cria demanda */}
+      {!ehDecorativo && criarDemanda && (
         <div className="space-y-1.5">
           <Label htmlFor="mapear_demanda" className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-            Mapear na demanda (se ativada)
+            Salvar também na demanda
           </Label>
           <Select
             value={local.mapear_demanda ?? '__none__'}

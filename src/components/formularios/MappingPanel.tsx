@@ -15,6 +15,7 @@ import {
   DESTINOS_DEMANDA,
   DEMANDA_PRIORITY_LABELS,
   SITUACOES_CONTATO,
+  FIELD_TYPES_DECORATIVOS,
   type Formulario,
   type FormularioCampo,
   type DedupCampo,
@@ -86,11 +87,11 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
   // Stages do board selecionado
   const { data: stages = [], isLoading: isLoadingStages } = useBoardStages(boardSelecionadoId);
 
-  // Frente 2: permissão para criar demanda
-  const podeCriarDemanda = !!(can.createDemand?.() ?? can.viewDemands?.());
+  // Frente 2: só quem PODE CRIAR demanda habilita a criação automática
+  const podeCriarDemanda = !!can.createDemand?.();
 
   const camposMapeaveis = campos.filter(
-    (c) => c.tipo !== 'secao' && c.tipo !== 'imagem'
+    (c) => !FIELD_TYPES_DECORATIVOS.includes(c.tipo)
   );
 
   function patchForm(patch: Partial<Formulario>) {

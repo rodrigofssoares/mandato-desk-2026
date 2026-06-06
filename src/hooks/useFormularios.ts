@@ -752,6 +752,10 @@ export function useFormularioRespostas(id?: string) {
       });
     },
     enabled: !!id,
+    // Respostas chegam pelo link público (fora desta sessão) → sempre buscar
+    // dados frescos ao abrir a aba e ao voltar o foco.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 

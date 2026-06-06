@@ -301,13 +301,14 @@ BEGIN
             v_demanda_val := v_demanda_raw #>> '{}';
           END IF;
 
-          -- Atribui ao slot correto (primeiro campo mapeado para cada slot ganha)
+          -- Atribui ao slot correto (primeiro campo mapeado para cada slot ganha).
+          -- left(...) trunca p/ evitar DoS de banco com payload gigante do respondente.
           IF v_campo.mapear_demanda = 'title' AND length(trim(COALESCE(v_demanda_title, ''))) = 0 THEN
-            v_demanda_title := trim(COALESCE(v_demanda_val, ''));
+            v_demanda_title := left(trim(COALESCE(v_demanda_val, '')), 500);
           ELSIF v_campo.mapear_demanda = 'description' AND length(trim(COALESCE(v_demanda_desc, ''))) = 0 THEN
-            v_demanda_desc := trim(COALESCE(v_demanda_val, ''));
+            v_demanda_desc := left(trim(COALESCE(v_demanda_val, '')), 5000);
           ELSIF v_campo.mapear_demanda = 'neighborhood' AND length(trim(COALESCE(v_demanda_bairro, ''))) = 0 THEN
-            v_demanda_bairro := trim(COALESCE(v_demanda_val, ''));
+            v_demanda_bairro := left(trim(COALESCE(v_demanda_val, '')), 200);
           END IF;
         END;
       END IF;
@@ -647,9 +648,10 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN
       -- Falha na demanda não aborta o processamento do formulário.
       -- O contato e a resposta já foram persistidos nos passos anteriores.
-      -- Silencia intencionalmente — evitar penalizar o respondente por
-      -- erro interno na criação da demanda.
-      NULL;
+      -- Não penaliza o respondente; loga via WARNING (observabilidade) sem abortar.
+      GET STACKED DIAGNOSTICS v_err_msg = MESSAGE_TEXT;
+      RAISE WARNING 'EM054-v2: falha ao criar demanda (form_id=%, contact_id=%): %',
+        v_form.id, v_contact_id, left(COALESCE(v_err_msg, ''), 200);
     END;
   END IF;
 

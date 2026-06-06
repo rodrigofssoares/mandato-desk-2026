@@ -78,24 +78,25 @@ export function AgradecimentoPanel({ formulario }: AgradecimentoPanelProps) {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sincroniza se o formulário recarregar de cima (ex.: invalidação de query)
+  // Sincroniza com o servidor ao trocar de formulário (id estável).
   useEffect(() => {
-    setLocal((prev) => {
-      const base: AgradecimentoFormulario = {
-        titulo: '',
-        mensagem: '',
-        midia_url: null,
-        midia_tipo: null,
-        botoes: [],
-        ...formulario.agradecimento,
-      };
-      // Preserva botões editados localmente se ainda não foram salvos
-      base.botoes = formulario.agradecimento?.botoes ?? prev.botoes;
-      return base;
+    setLocal({
+      titulo: '',
+      mensagem: '',
+      midia_url: null,
+      midia_tipo: null,
+      botoes: [],
+      ...formulario.agradecimento,
     });
-  // Só re-sync quando o formulário mudar vindo do servidor (id estável)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formulario.id]);
+
+  // Flush/cleanup do debounce ao desmontar (evita mutate sobre componente morto).
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const salvar = useCallback(
     (patch: AgradecimentoFormulario) => {
@@ -303,7 +304,7 @@ export function AgradecimentoPanel({ formulario }: AgradecimentoPanelProps) {
               const urlInvalida = botao.url.trim() !== '' && !urlSegura(botao.url.trim());
               return (
                 <div
-                  key={index}
+                  key={botao.rede}
                   role="listitem"
                   className="flex items-start gap-2 p-2.5 border rounded-lg bg-card"
                 >
@@ -336,6 +337,7 @@ export function AgradecimentoPanel({ formulario }: AgradecimentoPanelProps) {
                       onChange={(e) => editarBotao(index, { label: e.target.value })}
                       placeholder={preset?.label ?? 'Rótulo'}
                       className="h-7 text-xs"
+                      maxLength={80}
                       aria-label={`Rótulo do botão ${preset?.label}`}
                     />
                     <div className="space-y-0.5">
@@ -345,6 +347,7 @@ export function AgradecimentoPanel({ formulario }: AgradecimentoPanelProps) {
                         placeholder={preset?.placeholder ?? 'https://...'}
                         className={`h-7 text-xs ${urlInvalida ? 'border-destructive' : ''}`}
                         type="url"
+                        maxLength={500}
                         aria-label={`URL do botão ${preset?.label}`}
                         aria-invalid={urlInvalida}
                         aria-describedby={urlInvalida ? `url-erro-${index}` : undefined}

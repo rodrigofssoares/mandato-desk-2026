@@ -82,6 +82,13 @@ export default function FormularioEditor() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Cleanup do debounce do título ao desmontar (evita salvar sobre componente morto).
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   // Sincroniza aba com searchParam
   useEffect(() => {
     if (tabParam && tabParam !== abaAtiva) {
