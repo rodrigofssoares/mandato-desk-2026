@@ -1657,6 +1657,7 @@ export type Database = {
           form_id: string
           id: string
           largura: string
+          mapear_demanda: string | null
           mapear_destino_1: string | null
           mapear_destino_2: string | null
           max_chars: number | null
@@ -1675,6 +1676,7 @@ export type Database = {
           form_id: string
           id?: string
           largura?: string
+          mapear_demanda?: string | null
           mapear_destino_1?: string | null
           mapear_destino_2?: string | null
           max_chars?: number | null
@@ -1693,6 +1695,7 @@ export type Database = {
           form_id?: string
           id?: string
           largura?: string
+          mapear_demanda?: string | null
           mapear_destino_1?: string | null
           mapear_destino_2?: string | null
           max_chars?: number | null
@@ -1773,13 +1776,16 @@ export type Database = {
           capa_url: string | null
           created_at: string
           created_by: string | null
+          criar_demanda: boolean
           dedup_acao: string
           dedup_campo: string
+          demanda_priority: string
           descricao: string | null
           encerra_em: string | null
           id: string
           marcar_situacao: Json
           max_respostas: number | null
+          mover_board_id: string | null
           mover_stage_id: string | null
           origem: string | null
           publicado: boolean
@@ -1798,13 +1804,16 @@ export type Database = {
           capa_url?: string | null
           created_at?: string
           created_by?: string | null
+          criar_demanda?: boolean
           dedup_acao?: string
           dedup_campo?: string
+          demanda_priority?: string
           descricao?: string | null
           encerra_em?: string | null
           id?: string
           marcar_situacao?: Json
           max_respostas?: number | null
+          mover_board_id?: string | null
           mover_stage_id?: string | null
           origem?: string | null
           publicado?: boolean
@@ -1823,13 +1832,16 @@ export type Database = {
           capa_url?: string | null
           created_at?: string
           created_by?: string | null
+          criar_demanda?: boolean
           dedup_acao?: string
           dedup_campo?: string
+          demanda_priority?: string
           descricao?: string | null
           encerra_em?: string | null
           id?: string
           marcar_situacao?: Json
           max_respostas?: number | null
+          mover_board_id?: string | null
           mover_stage_id?: string | null
           origem?: string | null
           publicado?: boolean
@@ -1847,6 +1859,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formularios_mover_board_id_fkey"
+            columns: ["mover_board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
             referencedColumns: ["id"]
           },
           {

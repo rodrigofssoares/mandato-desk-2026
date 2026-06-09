@@ -1,5 +1,5 @@
-// EM054 — Aba Mapeamento do editor de formulários
-import { ArrowRight, Tag as TagIcon, Kanban, Trophy, Flag, Layers, Settings2 } from 'lucide-react';
+// EM054-v2 — Aba Mapeamento do editor de formulários
+import { ArrowRight, Tag as TagIcon, Kanban, Trophy, Flag, Layers, Settings2, ClipboardList } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,15 +7,20 @@ import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUpdateFormulario } from '@/hooks/useFormularios';
 import { useTags } from '@/hooks/useTags';
-import { useDefaultBoard } from '@/hooks/useBoards';
+import { useBoards } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   DESTINOS_CONTATO,
+  DESTINOS_DEMANDA,
+  DEMANDA_PRIORITY_LABELS,
   SITUACOES_CONTATO,
+  FIELD_TYPES_DECORATIVOS,
   type Formulario,
   type FormularioCampo,
   type DedupCampo,
   type DedupAcao,
+  type DemandaPriority,
 } from '@/types/formularios';
 
 interface MappingPanelProps {
@@ -71,15 +76,22 @@ function SectionCard({
 }
 
 export function MappingPanel({ formulario, campos }: MappingPanelProps) {
+  const { can } = usePermissions();
   const updateMutation = useUpdateFormulario();
   const { data: tags = [], isLoading: isLoadingTags } = useTags();
-  const defaultBoard = useDefaultBoard('contact');
-  const { data: stages = [], isLoading: isLoadingStages } = useBoardStages(
-    defaultBoard.data?.id ?? null
-  );
+
+  // Frente 3: funil específico — carrega todos os boards de contato
+  const { data: boards = [], isLoading: isLoadingBoards } = useBoards('contact');
+  const boardSelecionadoId = formulario.mover_board_id ?? null;
+
+  // Stages do board selecionado
+  const { data: stages = [], isLoading: isLoadingStages } = useBoardStages(boardSelecionadoId);
+
+  // Frente 2: só quem PODE CRIAR demanda habilita a criação automática
+  const podeCriarDemanda = !!can.createDemand?.();
 
   const camposMapeaveis = campos.filter(
-    (c) => c.tipo !== 'secao' && c.tipo !== 'imagem'
+    (c) => !FIELD_TYPES_DECORATIVOS.includes(c.tipo)
   );
 
   function patchForm(patch: Partial<Formulario>) {
@@ -134,7 +146,7 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
                     {campo.rotulo || '(sem rótulo)'}
                   </span>
                   <ArrowRight className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                  <div className="flex gap-1.5 shrink-0">
+                  <div className="flex gap-1.5 shrink-0 flex-wrap">
                     <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
                       {campo.mapear_destino_1
                         ? (DESTINOS_CONTATO.find((d) => d.value === campo.mapear_destino_1)?.label ??
@@ -145,6 +157,13 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
                       <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
                         {DESTINOS_CONTATO.find((d) => d.value === campo.mapear_destino_2)?.label ??
                           campo.mapear_destino_2}
+                      </span>
+                    )}
+                    {/* Indicador de mapeamento para demanda */}
+                    {campo.mapear_demanda && (
+                      <span className="px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium">
+                        {DESTINOS_DEMANDA.find((d) => d.value === campo.mapear_demanda)?.label ??
+                          campo.mapear_demanda}
                       </span>
                     )}
                   </div>
@@ -195,35 +214,75 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
             )}
           </div>
 
-          {/* Mover no funil */}
-          <AutoItem
-            icon={<Kanban className="h-4 w-4 text-amber-700" />}
-            label="Mover no Funil"
-            desc="Coluna de destino"
-          >
-            {isLoadingStages ? (
-              <Skeleton className="h-8 w-28" />
+          {/* Mover no funil — Frente 3: selects de funil + etapa */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground px-0.5">
+              <Kanban className="h-3.5 w-3.5 text-amber-700" />
+              Mover no Funil
+            </div>
+
+            {/* Select do board */}
+            {isLoadingBoards ? (
+              <Skeleton className="h-8 w-full" />
             ) : (
               <Select
-                value={formulario.mover_stage_id ?? '__none__'}
-                onValueChange={(v) =>
-                  patchForm({ mover_stage_id: v === '__none__' ? null : v })
-                }
+                value={boardSelecionadoId ?? '__none__'}
+                onValueChange={(v) => {
+                  // Ao trocar o board, reseta a etapa
+                  patchForm({
+                    mover_board_id: v === '__none__' ? null : v,
+                    mover_stage_id: null,
+                  });
+                }}
               >
-                <SelectTrigger className="w-28 h-8 text-xs" aria-label="Coluna do funil">
-                  <SelectValue placeholder="Nenhuma" />
+                <SelectTrigger className="h-8 text-xs" aria-label="Funil de destino">
+                  <SelectValue placeholder="— nenhum —" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Nenhuma</SelectItem>
-                  {stages.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.nome}
+                  <SelectItem value="__none__">— nenhum —</SelectItem>
+                  {boards.map((board) => (
+                    <SelectItem key={board.id} value={board.id}>
+                      {board.nome}
+                      {board.is_default ? ' (padrão)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
-          </AutoItem>
+
+            {/* Select da etapa — só quando um board está selecionado */}
+            {boardSelecionadoId && (
+              isLoadingStages ? (
+                <Skeleton className="h-8 w-full" />
+              ) : (
+                <Select
+                  value={formulario.mover_stage_id ?? '__none__'}
+                  onValueChange={(v) =>
+                    patchForm({ mover_stage_id: v === '__none__' ? null : v })
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs" aria-label="Coluna de destino no funil">
+                    <SelectValue placeholder="— nenhuma —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— nenhuma —</SelectItem>
+                    {stages.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )
+            )}
+
+            {/* Fallback para forms da v1: board_id null mas stage_id preenchido */}
+            {!boardSelecionadoId && formulario.mover_stage_id && (
+              <p className="text-[11px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-2 py-1.5 rounded">
+                Etapa configurada na versão anterior — selecione um funil acima para confirmá-la.
+              </p>
+            )}
+          </div>
 
           {/* Ranking */}
           <AutoItem
@@ -269,6 +328,58 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
                 </div>
               );
             })}
+          </div>
+
+          {/* Frente 2: Criar Demanda */}
+          <div className="border rounded-lg p-3 space-y-3 bg-card">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                <ClipboardList className="h-4 w-4 text-violet-700 dark:text-violet-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">Criar Demanda</p>
+                <p className="text-xs text-muted-foreground">Cada envio gera uma demanda</p>
+              </div>
+              <Switch
+                checked={!!formulario.criar_demanda}
+                onCheckedChange={(v) => patchForm({ criar_demanda: v })}
+                disabled={!podeCriarDemanda}
+                aria-label="Criar demanda ao receber formulário"
+              />
+            </div>
+
+            {!podeCriarDemanda && (
+              <p className="text-[11px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-2 py-1.5 rounded">
+                Sem permissão para criar demandas — contate o administrador.
+              </p>
+            )}
+
+            {formulario.criar_demanda && podeCriarDemanda && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="demanda-prioridade" className="text-xs">Prioridade da demanda</Label>
+                  <Select
+                    value={formulario.demanda_priority ?? 'medium'}
+                    onValueChange={(v) => patchForm({ demanda_priority: v as DemandaPriority })}
+                  >
+                    <SelectTrigger id="demanda-prioridade" className="h-8 text-xs" aria-label="Prioridade da demanda">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(DEMANDA_PRIORITY_LABELS) as [DemandaPriority, string][]).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Cada envio cria uma demanda vinculada ao contato. Mapeie abaixo quais campos
+                  preenchem o título/descrição/bairro da demanda (no painel de cada campo).
+                </p>
+              </>
+            )}
           </div>
         </SectionCard>
 

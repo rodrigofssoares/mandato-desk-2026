@@ -122,10 +122,46 @@ export interface TemaFormulario {
   mostrar_logo: boolean;
 }
 
+// ── Botões de rede social na tela de agradecimento (v2) ──────────────────────
+export type RedeSocial = 'instagram' | 'whatsapp' | 'tiktok' | 'youtube' | 'facebook' | 'site';
+
+export interface BotaoSocial {
+  rede: RedeSocial;
+  label: string;
+  url: string;
+}
+
+/** Presets dos botões padrão (ícone lucide + cor da marca). O usuário só cola a URL. */
+export const REDES_SOCIAIS: Record<RedeSocial, { label: string; icone: string; cor: string; placeholder: string }> = {
+  instagram: { label: 'Instagram', icone: 'Instagram', cor: '#E4405F', placeholder: 'https://instagram.com/...' },
+  whatsapp:  { label: 'WhatsApp',  icone: 'MessageCircle', cor: '#25D366', placeholder: 'https://wa.me/55...' },
+  tiktok:    { label: 'TikTok',    icone: 'Music2', cor: '#000000', placeholder: 'https://tiktok.com/@...' },
+  youtube:   { label: 'YouTube',   icone: 'Youtube', cor: '#FF0000', placeholder: 'https://youtube.com/@...' },
+  facebook:  { label: 'Facebook',  icone: 'Facebook', cor: '#1877F2', placeholder: 'https://facebook.com/...' },
+  site:      { label: 'Site',      icone: 'Globe', cor: '#7B1E2E', placeholder: 'https://...' },
+};
+
+export type MidiaTipo = 'imagem' | 'video';
+
 export interface AgradecimentoFormulario {
   titulo: string;
   mensagem: string;
+  midia_url?: string | null;
+  midia_tipo?: MidiaTipo | null;
+  botoes?: BotaoSocial[];
 }
+
+/** Destinos de mapeamento de campo para uma Demanda (whitelist espelha a RPC mig 120). */
+export const DESTINOS_DEMANDA = [
+  { value: 'title', label: 'Título da demanda' },
+  { value: 'description', label: 'Descrição' },
+  { value: 'neighborhood', label: 'Bairro' },
+] as const;
+
+export type DemandaPriority = 'low' | 'medium' | 'high';
+export const DEMANDA_PRIORITY_LABELS: Record<DemandaPriority, string> = {
+  low: 'Baixa', medium: 'Média', high: 'Alta',
+};
 
 // ── Entidades ────────────────────────────────────────────────────
 export interface FormularioCampo {
@@ -142,6 +178,8 @@ export interface FormularioCampo {
   opcoes: OpcaoCampo[];
   mapear_destino_1: string | null;
   mapear_destino_2: string | null;
+  /** Destino na Demanda quando o formulário cria demanda (title|description|neighborhood). */
+  mapear_demanda: string | null;
   largura: '100' | '50';
   config: Record<string, unknown>;
   created_at?: string;
@@ -162,10 +200,13 @@ export interface Formulario {
   dedup_campo: DedupCampo;
   dedup_acao: DedupAcao;
   aplicar_etiquetas: string[];
+  mover_board_id: string | null;
   mover_stage_id: string | null;
   ranking_pontos: number;
   marcar_situacao: Record<string, boolean>;
   origem: string | null;
+  criar_demanda: boolean;
+  demanda_priority: DemandaPriority;
   max_respostas: number | null;
   total_visitas: number;
   created_by: string | null;
@@ -176,6 +217,19 @@ export interface Formulario {
 /** Formulário com a contagem de respostas (para a lista/métricas). */
 export interface FormularioComMetricas extends Formulario {
   total_respostas: number;
+}
+
+/** Uma resposta enviada (aba Resultados). */
+export interface FormularioResposta {
+  id: string;
+  form_id: string;
+  contact_id: string | null;
+  dados: Record<string, string | string[]>;
+  status: 'processado' | 'erro';
+  erro: string | null;
+  created_at: string;
+  /** Nome do contato vinculado (join opcional). */
+  contato_nome?: string | null;
 }
 
 export interface FormularioInput {

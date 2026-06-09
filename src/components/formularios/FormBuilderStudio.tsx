@@ -394,6 +394,7 @@ export function FormBuilderStudio({ formulario, campos }: FormBuilderStudioProps
         campo={campoSelecionado}
         onSave={handleSaveCampo}
         onUploadMidia={handleUploadMidiaCampo}
+        criarDemanda={formulario.criar_demanda}
       />
     </div>
   );

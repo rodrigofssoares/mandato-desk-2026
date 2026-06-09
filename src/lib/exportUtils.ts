@@ -13,19 +13,23 @@ export function downloadFile(content: string, filename: string, mimeType: string
   URL.revokeObjectURL(url);
 }
 
-/** Gera CSV com delimitador ; e campos entre aspas duplas */
+/**
+ * Neutraliza CSV injection: valores que começam com = + - @ (ou tab/CR) podem
+ * ser interpretados como fórmula pelo Excel/LibreOffice. Prefixa com aspa simples.
+ */
+function escapeCSVFormula(val: string): string {
+  return /^[=+\-@\t\r]/.test(val) ? `'${val}` : val;
+}
+
+/** Gera CSV com delimitador ; e campos entre aspas duplas (anti-fórmula) */
 export function rowsToCSV(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return '';
   const headers = Object.keys(rows[0]);
+  const cell = (raw: string) => `"${escapeCSVFormula(raw).replace(/"/g, '""')}"`;
   const lines = [
-    headers.join(';'),
+    headers.map((h) => cell(String(h))).join(';'),
     ...rows.map((row) =>
-      headers
-        .map((h) => {
-          const val = String(row[h] ?? '').replace(/"/g, '""');
-          return `"${val}"`;
-        })
-        .join(';')
+      headers.map((h) => cell(String(row[h] ?? ''))).join(';')
     ),
   ];
   return lines.join('\n');
