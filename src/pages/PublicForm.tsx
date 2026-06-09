@@ -17,6 +17,7 @@ import {
   TelaNaoIniciado,
   TelaLimite,
   TelaNotFound,
+  TelaBloqueado,
 } from '@/components/formularios/TelaResultado';
 import {
   FIELD_TYPES_DECORATIVOS,
@@ -241,12 +242,33 @@ interface FormularioCorpoProps {
   formulario: FormularioPublico;
   slug: string;
   onSucesso: () => void;
+  /** EM087: chamado quando o envio é bloqueado por duplicidade (já respondeu). */
+  onBloqueado: (mensagem: string | null) => void;
+}
+
+/**
+ * Lê o corpo JSON de uma resposta de erro do functions.invoke.
+ * Em não-2xx, supabase-js entrega `data` null e o corpo fica em `error.context`
+ * (um Response). Tenta `data` primeiro, depois clona o Response e faz .json().
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function lerCorpoErro(error: any, data: any): Promise<Record<string, unknown> | null> {
+  if (data && typeof data === 'object') return data as Record<string, unknown>;
+  try {
+    const ctx = error?.context;
+    if (ctx && typeof ctx.clone === 'function' && typeof ctx.json === 'function') {
+      return (await ctx.clone().json()) as Record<string, unknown>;
+    }
+  } catch {
+    /* corpo não-JSON ou já consumido — ignora */
+  }
+  return null;
 }
 
 type ValoresMap = Record<string, string | string[]>;
 type ErrosMap = Record<string, string | null>;
 
-function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) {
+function FormularioCorpo({ formulario, slug, onSucesso, onBloqueado }: FormularioCorpoProps) {
   const { tema, campos } = formulario;
   const cor = tema.cor || '#7B1E2E';
   const raio = raioParaCss(tema.cantos);
@@ -339,6 +361,14 @@ function FormularioCorpo({ formulario, slug, onSucesso }: FormularioCorpoProps) 
           return;
         }
         if (status === 409) {
+          // EM087: 409 pode ser limite_atingido OU ja_respondeu (bloqueio por duplicidade).
+          // Distingue pelo campo `error` no corpo da resposta.
+          const corpo = await lerCorpoErro(error, data);
+          if (corpo?.error === 'ja_respondeu') {
+            const msg = typeof corpo.mensagem === 'string' ? corpo.mensagem : null;
+            onBloqueado(msg);
+            return;
+          }
           toast.error('O limite de respostas foi atingido.');
           return;
         }
@@ -503,6 +533,7 @@ type EstadoTela =
   | 'encerrado'
   | 'nao_iniciado'
   | 'limite_atingido'
+  | 'ja_respondeu'
   | 'nao_encontrado';
 
 // ── Página pública ─────────────────────────────────────────────────────────
@@ -515,6 +546,8 @@ export default function PublicForm() {
   const [agradecimento, setAgradecimento] = useState<AgradecimentoFormulario | null>(null);
   const [tituloEncerrado, setTituloEncerrado] = useState<string | undefined>();
   const [abreEm, setAbreEm] = useState<string | undefined>();
+  // EM087: mensagem mostrada na tela de bloqueio por duplicidade.
+  const [mensagemBloqueio, setMensagemBloqueio] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) {
@@ -613,6 +646,16 @@ export default function PublicForm() {
     );
   }
 
+  if (tela === 'ja_respondeu') {
+    return (
+      <PaginaShell fundoStyle={fundoStyle}>
+        <CardShell raio={raio}>
+          <TelaBloqueado mensagem={mensagemBloqueio} corPrimaria={cor} raio={raio} />
+        </CardShell>
+      </PaginaShell>
+    );
+  }
+
   if (tela === 'nao_encontrado') {
     return (
       <PaginaShell fundoStyle={{ backgroundColor: '#FAF6F0' }}>
@@ -669,6 +712,10 @@ export default function PublicForm() {
             formulario={formulario}
             slug={slug!}
             onSucesso={() => setTela('sucesso')}
+            onBloqueado={(msg) => {
+              setMensagemBloqueio(msg);
+              setTela('ja_respondeu');
+            }}
           />
         </div>
       </div>

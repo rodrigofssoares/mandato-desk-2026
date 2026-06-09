@@ -1,7 +1,8 @@
 // EM054-v2 — Aba Mapeamento do editor de formulários
-import { ArrowRight, Tag as TagIcon, Kanban, Trophy, Flag, Layers, Settings2, ClipboardList } from 'lucide-react';
+import { ArrowRight, Tag as TagIcon, Kanban, Trophy, Flag, Layers, Settings2, ClipboardList, ShieldCheck, Database } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,10 +17,15 @@ import {
   DEMANDA_PRIORITY_LABELS,
   SITUACOES_CONTATO,
   FIELD_TYPES_DECORATIVOS,
+  DEDUP_CRITERIOS,
+  DEDUP_ESCOPOS,
+  DEDUP_ACOES,
+  DEDUP_MENSAGEM_PADRAO,
   type Formulario,
   type FormularioCampo,
-  type DedupCampo,
   type DedupAcao,
+  type DedupCriterio,
+  type DedupEscopo,
   type DemandaPriority,
 } from '@/types/formularios';
 
@@ -113,6 +119,29 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
         [key]: valor,
       },
     });
+  }
+
+  // EM087 — deduplicação ampliada
+  const dedupCriterio: DedupCriterio = formulario.dedup_criterio ?? 'nenhum';
+  const dedupEscopo: DedupEscopo[] = formulario.dedup_escopo ?? [];
+  const dedupAcao: DedupAcao = formulario.dedup_acao ?? 'mesclar';
+  const dedupAtivo = dedupCriterio !== 'nenhum';
+
+  function toggleEscopo(value: DedupEscopo, on: boolean) {
+    const atual = formulario.dedup_escopo ?? [];
+    const novo = on ? [...new Set([...atual, value])] : atual.filter((e) => e !== value);
+    patchForm({ dedup_escopo: novo });
+  }
+
+  function mudarCriterio(value: DedupCriterio) {
+    const patch: Partial<Formulario> = { dedup_criterio: value };
+    // Ao sair de 'campo', limpa o campo de referência.
+    if (value !== 'campo') patch.dedup_campo_id = null;
+    // Ao ativar a dedup pela 1ª vez sem escopo definido, assume 'respostas' (caso votação).
+    if (value !== 'nenhum' && (formulario.dedup_escopo ?? []).length === 0) {
+      patch.dedup_escopo = ['respostas'];
+    }
+    patchForm(patch);
   }
 
   return (
@@ -389,45 +418,167 @@ export function MappingPanel({ formulario, campos }: MappingPanelProps) {
           icon={<Layers className="h-4 w-4 text-primary" />}
           hint="Escala para milhares de envios e fechamento automático."
         >
-          {/* Deduplicação */}
-          <div className="space-y-2">
-            <Label className="text-xs">Duplicados (mesmo WhatsApp/CPF)</Label>
-            <Select
-              value={formulario.dedup_campo ?? 'nenhum'}
-              onValueChange={(v) => patchForm({ dedup_campo: v as DedupCampo })}
-            >
-              <SelectTrigger className="h-8 text-xs" aria-label="Campo de deduplicação">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="nenhum">Sem deduplicação</SelectItem>
-                <SelectItem value="whatsapp">Por WhatsApp</SelectItem>
-                <SelectItem value="cpf">Por CPF</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Deduplicação (EM087) */}
+          <div className="space-y-2.5 border rounded-lg p-3 bg-muted/20">
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-700" />
+              Impedir respostas duplicadas
+            </div>
 
-            {formulario.dedup_campo && formulario.dedup_campo !== 'nenhum' && (
+            {/* Critério de unicidade */}
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Critério (o que conta como "a mesma pessoa")</Label>
               <Select
-                value={formulario.dedup_acao ?? 'mesclar'}
-                onValueChange={(v) => patchForm({ dedup_acao: v as DedupAcao })}
+                value={dedupCriterio}
+                onValueChange={(v) => mudarCriterio(v as DedupCriterio)}
               >
-                <SelectTrigger className="h-8 text-xs" aria-label="Ação ao duplicar">
+                <SelectTrigger className="h-8 text-xs" aria-label="Critério de unicidade">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mesclar">Mesclar com existente</SelectItem>
-                  <SelectItem value="criar">Criar novo contato</SelectItem>
-                  <SelectItem value="ignorar">Ignorar envio</SelectItem>
+                  {DEDUP_CRITERIOS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            )}
-            {formulario.dedup_campo && formulario.dedup_campo !== 'nenhum' && (
               <p className="text-[11px] text-muted-foreground leading-snug">
-                {formulario.dedup_acao === 'mesclar' && 'Mesclar: atualiza o contato existente com os novos dados preenchidos (campos em branco não apagam o que já existe).'}
-                {formulario.dedup_acao === 'criar' && 'Criar: sempre cria um novo contato, mesmo que já exista um com o mesmo dado.'}
-                {formulario.dedup_acao === 'ignorar' && 'Ignorar: se já existe um contato, não altera nada — só registra a resposta.'}
+                {DEDUP_CRITERIOS.find((c) => c.value === dedupCriterio)?.desc}
               </p>
+            </div>
+
+            {/* Campo específico (quando critério = campo) */}
+            {dedupCriterio === 'campo' && (
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">Qual campo não pode repetir?</Label>
+                <Select
+                  value={formulario.dedup_campo_id ?? '__none__'}
+                  onValueChange={(v) => patchForm({ dedup_campo_id: v === '__none__' ? null : v })}
+                >
+                  <SelectTrigger className="h-8 text-xs" aria-label="Campo de unicidade">
+                    <SelectValue placeholder="— escolha um campo —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— escolha um campo —</SelectItem>
+                    {camposMapeaveis.map((campo) => (
+                      <SelectItem key={campo.id} value={campo.id}>
+                        {campo.rotulo || '(sem rótulo)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!formulario.dedup_campo_id && (
+                  <p className="text-[11px] text-amber-600 leading-snug">
+                    Escolha o campo (ex: matrícula/ID) que identifica cada pessoa.
+                  </p>
+                )}
+              </div>
             )}
+
+            {dedupAtivo && (
+              <>
+                {/* Escopo: onde verificar */}
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-muted-foreground">Onde verificar</Label>
+                  {DEDUP_ESCOPOS.map((esc) => {
+                    // CRM não se aplica: critério 'campo' (sem coluna no CRM) nem
+                    // formulário anônimo (capturar_no_crm=false não consulta o CRM).
+                    const desabilitado =
+                      esc.value === 'crm' &&
+                      (dedupCriterio === 'campo' || formulario.capturar_no_crm === false);
+                    return (
+                      <div
+                        key={esc.value}
+                        className="flex items-center justify-between gap-2 py-1"
+                      >
+                        <div className="min-w-0">
+                          <p className={`text-xs font-medium ${desabilitado ? 'opacity-40' : ''}`}>{esc.label}</p>
+                          <p className="text-[11px] text-muted-foreground leading-snug">{esc.desc}</p>
+                        </div>
+                        <Switch
+                          checked={!desabilitado && dedupEscopo.includes(esc.value)}
+                          disabled={desabilitado}
+                          onCheckedChange={(on) => toggleEscopo(esc.value, on)}
+                          aria-label={`Verificar ${esc.label}`}
+                        />
+                      </div>
+                    );
+                  })}
+                  {dedupEscopo.length === 0 && (
+                    <p className="text-[11px] text-amber-600 leading-snug">
+                      Selecione ao menos um lugar para verificar.
+                    </p>
+                  )}
+                </div>
+
+                {/* Ação ao encontrar duplicado */}
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-muted-foreground">Ação ao encontrar duplicado</Label>
+                  <Select
+                    value={dedupAcao}
+                    onValueChange={(v) => patchForm({ dedup_acao: v as DedupAcao })}
+                  >
+                    <SelectTrigger className="h-8 text-xs" aria-label="Ação ao duplicar">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEDUP_ACOES.map((a) => (
+                        <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    {DEDUP_ACOES.find((a) => a.value === dedupAcao)?.desc}
+                  </p>
+                  {dedupAcao !== 'bloquear' && dedupEscopo.includes('respostas') && (
+                    <p className="text-[11px] text-amber-600 leading-snug">
+                      Para votação ("1 resposta por pessoa"), use a ação <strong>Bloquear envio</strong> —
+                      as outras ações ainda gravam a resposta.
+                    </p>
+                  )}
+                </div>
+
+                {/* Mensagem editável (só na ação bloquear) */}
+                {dedupAcao === 'bloquear' && (
+                  <div className="space-y-1">
+                    <Label htmlFor="dedup-msg" className="text-[11px] text-muted-foreground">
+                      Mensagem mostrada ao bloquear
+                    </Label>
+                    <Textarea
+                      id="dedup-msg"
+                      className="text-xs min-h-[64px]"
+                      placeholder={DEDUP_MENSAGEM_PADRAO}
+                      defaultValue={formulario.dedup_mensagem ?? ''}
+                      maxLength={500}
+                      onBlur={(e) => patchForm({ dedup_mensagem: e.target.value.trim() || null })}
+                      aria-label="Mensagem de bloqueio por duplicidade"
+                    />
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      Em branco usa: "{DEDUP_MENSAGEM_PADRAO}"
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Capturar no CRM (EM087) */}
+          <div className="flex items-center gap-3 p-2.5 border rounded-lg">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center shrink-0">
+              <Database className="h-3.5 w-3.5 text-amber-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold">Capturar respostas no CRM</p>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {formulario.capturar_no_crm === false
+                  ? 'Desligado: só registra a resposta (votação/pesquisa anônima — não cria contato nem demanda).'
+                  : 'Ligado: cada envio cria/atualiza um contato e dispara as automações.'}
+              </p>
+            </div>
+            <Switch
+              checked={formulario.capturar_no_crm !== false}
+              onCheckedChange={(v) => patchForm({ capturar_no_crm: v })}
+              aria-label="Capturar respostas no CRM"
+            />
           </div>
 
           {/* Origem */}

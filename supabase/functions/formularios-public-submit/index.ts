@@ -187,6 +187,7 @@ interface RpcResult {
   abre_em?: string;
   titulo?: string;
   agradecimento?: string;
+  mensagem?: string | null;
 }
 
 /**
@@ -218,8 +219,17 @@ function rpcResultToResponse(result: RpcResult): Response {
       });
 
     case 'limite_atingido':
-      // 409 Conflict — dedup detectou resposta duplicada deste IP/contato.
+      // 409 Conflict — limite máximo de respostas do formulário atingido.
       return jsonResponse(409, { error: 'limite_atingido' });
+
+    case 'ja_respondeu':
+      // 409 Conflict — EM087: dedup_acao=bloquear detectou duplicidade.
+      // Carrega a mensagem editável do formulário (ou null → front usa o padrão).
+      // O front distingue de 'limite_atingido' pelo campo `error` no corpo.
+      return jsonResponse(409, {
+        error: 'ja_respondeu',
+        mensagem: typeof result.mensagem === 'string' ? result.mensagem : null,
+      });
 
     case 'interno':
     default:

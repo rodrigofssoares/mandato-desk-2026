@@ -1,10 +1,11 @@
 // EM054-v2 — Telas de resultado da página pública (sucesso, encerrado, limite, etc.)
 import {
-  CheckCircle2, Lock, Clock, AlertCircle, FileX2,
+  CheckCircle2, Lock, Clock, AlertCircle, FileX2, ShieldAlert,
   Instagram, MessageCircle, Music2, Youtube, Facebook, Globe,
 } from 'lucide-react';
 import {
   REDES_SOCIAIS,
+  DEDUP_MENSAGEM_PADRAO,
   type AgradecimentoFormulario,
   type RedeSocial,
 } from '@/types/formularios';
@@ -58,6 +59,11 @@ export interface TelaNaoIniciadoProps extends TelaBaseProps {
 export type TelaLimiteProps = TelaBaseProps;
 
 export type TelaNotFoundProps = TelaBaseProps;
+
+export interface TelaBloqueadoProps extends TelaBaseProps {
+  /** Mensagem editável do formulário (null usa o texto padrão). */
+  mensagem?: string | null;
+}
 
 // ── Wrapper visual compartilhado ──────────────────────────────────────────
 
@@ -225,6 +231,25 @@ export function TelaLimite({ raio }: TelaLimiteProps) {
         <p className="text-sm text-muted-foreground leading-relaxed">
           Este formulário já recebeu o número máximo de respostas permitidas.
           Obrigado pelo interesse!
+        </p>
+      </div>
+    </TelaWrapper>
+  );
+}
+
+// ── Tela Bloqueado (EM087: duplicidade — já respondeu) ────────────────────
+
+export function TelaBloqueado({ mensagem, raio }: TelaBloqueadoProps) {
+  const texto = mensagem && mensagem.trim() !== '' ? mensagem.trim() : DEDUP_MENSAGEM_PADRAO;
+  return (
+    <TelaWrapper raio={raio}>
+      <div className="flex items-center justify-center w-20 h-20 rounded-full bg-amber-100">
+        <ShieldAlert className="w-9 h-9 text-amber-600" aria-hidden="true" />
+      </div>
+      <div className="space-y-2 max-w-sm">
+        <h2 className="text-2xl font-bold">Resposta não enviada</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+          {texto}
         </p>
       </div>
     </TelaWrapper>

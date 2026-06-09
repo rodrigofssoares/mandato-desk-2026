@@ -106,7 +106,40 @@ export const STATUS_LABELS: Record<FormularioStatus, string> = {
 };
 
 export type DedupCampo = 'whatsapp' | 'cpf' | 'nenhum';
-export type DedupAcao = 'mesclar' | 'criar' | 'ignorar';
+export type DedupAcao = 'mesclar' | 'criar' | 'ignorar' | 'bloquear';
+
+// ── EM087: deduplicação ampliada ─────────────────────────────────────────────
+
+/** Critério de unicidade do respondente (qual dado identifica "a mesma pessoa"). */
+export type DedupCriterio = 'nenhum' | 'whatsapp' | 'cpf' | 'nome' | 'nome_telefone' | 'campo';
+
+/** Onde verificar a duplicidade (combinável). */
+export type DedupEscopo = 'crm' | 'respostas';
+
+export const DEDUP_CRITERIOS: { value: DedupCriterio; label: string; desc: string }[] = [
+  { value: 'nenhum', label: 'Sem verificação', desc: 'Aceita todas as respostas.' },
+  { value: 'whatsapp', label: 'WhatsApp / Telefone', desc: 'Mesmo número não responde duas vezes.' },
+  { value: 'cpf', label: 'CPF', desc: 'Mesmo CPF não responde duas vezes.' },
+  { value: 'nome', label: 'Nome completo', desc: 'Mesmo nome (ignora acento/maiúscula) não responde duas vezes.' },
+  { value: 'nome_telefone', label: 'Nome + Telefone', desc: 'Bloqueia só quando o par nome e telefone é idêntico.' },
+  { value: 'campo', label: 'Campo específico', desc: 'Um campo do formulário (ex: matrícula/ID) não pode repetir.' },
+];
+
+export const DEDUP_ESCOPOS: { value: DedupEscopo; label: string; desc: string }[] = [
+  { value: 'respostas', label: 'Nas respostas deste formulário', desc: 'Bloqueia quem já respondeu este formulário (votação/pesquisa).' },
+  { value: 'crm', label: 'Nos contatos do CRM', desc: 'Bloqueia quem já existe na sua base de contatos.' },
+];
+
+export const DEDUP_ACOES: { value: DedupAcao; label: string; desc: string }[] = [
+  { value: 'mesclar', label: 'Mesclar com existente', desc: 'Atualiza o contato existente com os novos dados (campos em branco não apagam o que já existe).' },
+  { value: 'criar', label: 'Criar novo contato', desc: 'Sempre cria um novo contato, mesmo que já exista um com o mesmo dado.' },
+  { value: 'ignorar', label: 'Ignorar (só registrar)', desc: 'Não altera o contato existente — só registra a resposta.' },
+  { value: 'bloquear', label: '🚫 Bloquear envio', desc: 'Recusa o envio em duplicidade: não grava nada e mostra a mensagem ao respondente.' },
+];
+
+/** Mensagem padrão de bloqueio (usada quando dedup_mensagem está vazio). */
+export const DEDUP_MENSAGEM_PADRAO =
+  'Identificamos que você já participou. Cada pessoa pode responder este formulário apenas uma vez.';
 
 // ── Estruturas JSON ──────────────────────────────────────────────
 export interface OpcaoCampo {
@@ -199,6 +232,16 @@ export interface Formulario {
   agradecimento: AgradecimentoFormulario;
   dedup_campo: DedupCampo;
   dedup_acao: DedupAcao;
+  /** EM087: critério de unicidade do respondente. */
+  dedup_criterio: DedupCriterio;
+  /** EM087: onde verificar duplicidade (crm e/ou respostas). */
+  dedup_escopo: DedupEscopo[];
+  /** EM087: id do campo usado quando dedup_criterio = 'campo'. */
+  dedup_campo_id: string | null;
+  /** EM087: mensagem editável exibida ao bloquear o envio. */
+  dedup_mensagem: string | null;
+  /** EM087: quando false, registra a resposta sem criar/atualizar contato. */
+  capturar_no_crm: boolean;
   aplicar_etiquetas: string[];
   mover_board_id: string | null;
   mover_stage_id: string | null;

@@ -239,6 +239,8 @@ const CAMPOS_ATUALIZAVEIS: ReadonlyArray<keyof Formulario> = [
   'tema', 'agradecimento', 'dedup_campo', 'dedup_acao', 'aplicar_etiquetas',
   'mover_board_id', 'mover_stage_id', 'ranking_pontos', 'marcar_situacao', 'origem',
   'criar_demanda', 'demanda_priority', 'max_respostas',
+  // EM087 — deduplicação ampliada + bloqueio + captura opcional
+  'dedup_criterio', 'dedup_escopo', 'dedup_campo_id', 'dedup_mensagem', 'capturar_no_crm',
 ];
 
 /**
@@ -367,6 +369,9 @@ export function useDuplicateFormulario() {
           status: 'rascunho',
           publicado: false,
           total_visitas: 0,
+          // EM087: dedup_campo_id aponta para um campo do formulário ORIGINAL.
+          // Os campos da cópia recebem ids novos → zera para evitar referência cruzada.
+          dedup_campo_id: null,
           created_by: user.id,
         })
         .select('*')
