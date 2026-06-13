@@ -28,7 +28,7 @@ import { usePermissoesAll, useUpdatePermissao, useSeedPermissoes, type Permissao
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { ROLES, ROLE_LABELS, SECOES, SECAO_LABELS, type Role, type Secao } from '@/types/permissions';
 
-type PermField = 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'pode_deletar_em_massa' | 'so_proprio';
+type PermField = 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'pode_deletar_em_massa' | 'pode_duplicar' | 'so_proprio';
 
 const FIELD_LABELS: Record<PermField, string> = {
   pode_ver: 'Ver',
@@ -36,10 +36,19 @@ const FIELD_LABELS: Record<PermField, string> = {
   pode_editar: 'Editar',
   pode_deletar: 'Deletar',
   pode_deletar_em_massa: 'Excluir em massa',
+  pode_duplicar: 'Duplicar',
   so_proprio: 'Só próprio',
 };
 
 const PERM_FIELDS: PermField[] = ['pode_ver', 'pode_criar', 'pode_editar', 'pode_deletar', 'pode_deletar_em_massa', 'so_proprio'];
+
+// "Duplicar" só faz sentido para funis (seção board): aparece apenas nessa linha.
+function fieldsForSecao(secao: Secao): PermField[] {
+  if (secao === 'board') {
+    return ['pode_ver', 'pode_criar', 'pode_editar', 'pode_deletar', 'pode_deletar_em_massa', 'pode_duplicar', 'so_proprio'];
+  }
+  return PERM_FIELDS;
+}
 
 export default function Permissoes() {
   const [roleFilter, setRoleFilter] = useState<'todos' | Role>('todos');
@@ -180,7 +189,7 @@ export default function Permissoes() {
                       <TableCell key={`${role}:${secao}`} className="text-center">
                         {perm ? (
                           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                            {PERM_FIELDS.map((field) => (
+                            {fieldsForSecao(secao).map((field) => (
                               <label
                                 key={field}
                                 className="flex items-center gap-1 text-xs cursor-pointer select-none"

@@ -5,7 +5,7 @@ import type { Role } from '@/types/permissions';
 
 export function usePermissions() {
   const { activeRole } = useImpersonation();
-  const { canView, canCreate, canEdit, canDelete, canBulkDelete, isLoading } = usePermissoes(activeRole as Role);
+  const { canView, canCreate, canEdit, canDelete, canBulkDelete, canDuplicate, isLoading } = usePermissoes(activeRole as Role);
 
   const can = useMemo(() => ({
     // Contatos
@@ -61,6 +61,7 @@ export function usePermissions() {
     createBoardItem: () => canCreate('board'),
     editBoardItem: () => canEdit('board'),
     deleteBoardItem: () => canDelete('board'),
+    duplicateBoard: () => canDuplicate('board'),
 
     // Tarefas — merge-nossocrm issue 99
     viewTarefas: () => canView('tarefas'),
@@ -93,7 +94,7 @@ export function usePermissions() {
     editFormulario: () => canEdit('formularios'),
     deleteFormulario: () => canDelete('formularios'),
     bulkDeleteFormularios: () => canBulkDelete('formularios'),
-  }), [canView, canCreate, canEdit, canDelete, canBulkDelete]);
+  }), [canView, canCreate, canEdit, canDelete, canBulkDelete, canDuplicate]);
 
   return { can, isLoading };
 }

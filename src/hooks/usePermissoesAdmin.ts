@@ -13,6 +13,7 @@ export interface PermissaoPerfil {
   pode_editar: boolean;
   pode_deletar: boolean;
   pode_deletar_em_massa: boolean;
+  pode_duplicar: boolean;
   so_proprio: boolean;
 }
 
@@ -46,7 +47,7 @@ export function useUpdatePermissao() {
       value,
     }: {
       id: string;
-      field: 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'pode_deletar_em_massa' | 'so_proprio';
+      field: 'pode_ver' | 'pode_criar' | 'pode_editar' | 'pode_deletar' | 'pode_deletar_em_massa' | 'pode_duplicar' | 'so_proprio';
       value: boolean;
     }) => {
       const { error } = await supabase
@@ -93,6 +94,7 @@ function generateDefaultPermissions() {
     pode_editar: boolean;
     pode_deletar: boolean;
     pode_deletar_em_massa: boolean;
+    pode_duplicar: boolean;
     so_proprio: boolean;
   }> = [];
 
@@ -146,6 +148,12 @@ function generateDefaultPermissions() {
 
       // Bulk delete é liberado por padrão só para admin e proprietario
       const allowsBulkDelete = role === 'admin' || role === 'proprietario';
+      // Duplicar funil: por padrão quem pode CRIAR funis (seção board) pode duplicar
+      const allowsDuplicate =
+        secao === 'board' &&
+        (config.fullAccess.includes(secao) ||
+          config.viewCreateEdit.includes(secao) ||
+          config.viewCreate.includes(secao));
 
       if (config.fullAccess.includes(secao)) {
         defaults.push({
@@ -153,6 +161,7 @@ function generateDefaultPermissions() {
           pode_ver: true, pode_criar: true,
           pode_editar: true, pode_deletar: true,
           pode_deletar_em_massa: allowsBulkDelete,
+          pode_duplicar: allowsDuplicate,
           so_proprio: false,
         });
       } else if (config.viewCreateEdit.includes(secao)) {
@@ -161,6 +170,7 @@ function generateDefaultPermissions() {
           pode_ver: true, pode_criar: true,
           pode_editar: true, pode_deletar: false,
           pode_deletar_em_massa: false,
+          pode_duplicar: allowsDuplicate,
           so_proprio: role === 'assessor' ? false : true,
         });
       } else if (config.viewCreate.includes(secao)) {
@@ -169,6 +179,7 @@ function generateDefaultPermissions() {
           pode_ver: true, pode_criar: true,
           pode_editar: false, pode_deletar: false,
           pode_deletar_em_massa: false,
+          pode_duplicar: allowsDuplicate,
           so_proprio: true,
         });
       } else if (config.viewOnly.includes(secao)) {
@@ -177,6 +188,7 @@ function generateDefaultPermissions() {
           pode_ver: true, pode_criar: false,
           pode_editar: false, pode_deletar: false,
           pode_deletar_em_massa: false,
+          pode_duplicar: false,
           so_proprio: false,
         });
       } else {
@@ -185,6 +197,7 @@ function generateDefaultPermissions() {
           pode_ver: false, pode_criar: false,
           pode_editar: false, pode_deletar: false,
           pode_deletar_em_massa: false,
+          pode_duplicar: false,
           so_proprio: false,
         });
       }

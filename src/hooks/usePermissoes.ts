@@ -12,6 +12,7 @@ interface PermissaoPerfil {
   pode_editar: boolean;
   pode_deletar: boolean;
   pode_deletar_em_massa: boolean;
+  pode_duplicar: boolean;
   so_proprio: boolean;
 }
 
@@ -70,6 +71,11 @@ export function usePermissoes(roleOverride?: Role) {
     return findPermissao(secao)?.pode_deletar_em_massa ?? false;
   };
 
+  const canDuplicate = (secao: Secao): boolean => {
+    if (isAdminEffective) return true;
+    return findPermissao(secao)?.pode_duplicar ?? false;
+  };
+
   const isOwnOnly = (secao: Secao): boolean => {
     if (isAdminEffective) return false;
     return findPermissao(secao)?.so_proprio ?? false;
@@ -82,6 +88,7 @@ export function usePermissoes(roleOverride?: Role) {
     canEdit,
     canDelete,
     canBulkDelete,
+    canDuplicate,
     isOwnOnly,
     isLoading: isRoleLoading || isQueryLoading,
   };
