@@ -93,9 +93,9 @@ export function StageChecklistViewerDialog({ open, onOpenChange, stage }: Props)
         ) : isEmpty ? (
           <EmptyState />
         ) : (
-          <div className="flex-1 grid grid-cols-12 overflow-hidden">
+          <div className="flex-1 min-h-0 grid grid-cols-12 md:grid-rows-[minmax(0,1fr)] overflow-hidden">
             {/* Sidebar */}
-            <aside className="col-span-12 md:col-span-4 border-r border-border bg-muted/20">
+            <aside className="col-span-12 md:col-span-4 min-h-0 overflow-hidden border-r border-border bg-muted/20">
               <ScrollArea className="h-full">
                 <div className="p-3">
                   <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground px-1 pb-2">
@@ -155,7 +155,7 @@ export function StageChecklistViewerDialog({ open, onOpenChange, stage }: Props)
             </aside>
 
             {/* Right Panel */}
-            <main className="col-span-12 md:col-span-8 overflow-hidden">
+            <main className="col-span-12 md:col-span-8 min-h-0 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="p-6">
                   {view.kind === 'task' && currentItem ? (
