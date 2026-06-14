@@ -191,6 +191,44 @@ export function useUpdateBoard() {
   });
 }
 
+export function useDuplicateBoard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sourceBoardId,
+      copyContacts,
+    }: {
+      sourceBoardId: string;
+      copyContacts: boolean;
+    }) => {
+      const { data, error } = await supabase.rpc('duplicate_board', {
+        p_source_board_id: sourceBoardId,
+        p_copy_contacts: copyContacts,
+      });
+
+      if (error) throw error;
+      return data as unknown as Board;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['board_stages'] });
+      queryClient.invalidateQueries({ queryKey: ['board_items'] });
+      toast.success(`Funil duplicado como "${data.nome}"`);
+      logActivity({
+        type: 'create',
+        entity_type: 'board',
+        entity_id: data.id,
+        entity_name: data.nome,
+        description: `Duplicou o funil${variables.copyContacts ? ' (com contatos)' : ''} criando "${data.nome}"`,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao duplicar funil: ${error.message}`);
+    },
+  });
+}
+
 export function useDeleteBoard() {
   const queryClient = useQueryClient();
 

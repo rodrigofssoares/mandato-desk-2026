@@ -1722,6 +1722,7 @@ export type Database = {
           contact_id: string | null
           created_at: string
           dados: Json
+          dedup_chave: string | null
           erro: string | null
           form_id: string
           id: string
@@ -1733,6 +1734,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           dados?: Json
+          dedup_chave?: string | null
           erro?: string | null
           form_id: string
           id?: string
@@ -1744,6 +1746,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           dados?: Json
+          dedup_chave?: string | null
           erro?: string | null
           form_id?: string
           id?: string
@@ -1774,11 +1777,16 @@ export type Database = {
           agradecimento: Json
           aplicar_etiquetas: string[]
           capa_url: string | null
+          capturar_no_crm: boolean
           created_at: string
           created_by: string | null
           criar_demanda: boolean
           dedup_acao: string
           dedup_campo: string
+          dedup_campo_id: string | null
+          dedup_criterio: string
+          dedup_escopo: string[]
+          dedup_mensagem: string | null
           demanda_priority: string
           descricao: string | null
           encerra_em: string | null
@@ -1802,11 +1810,16 @@ export type Database = {
           agradecimento?: Json
           aplicar_etiquetas?: string[]
           capa_url?: string | null
+          capturar_no_crm?: boolean
           created_at?: string
           created_by?: string | null
           criar_demanda?: boolean
           dedup_acao?: string
           dedup_campo?: string
+          dedup_campo_id?: string | null
+          dedup_criterio?: string
+          dedup_escopo?: string[]
+          dedup_mensagem?: string | null
           demanda_priority?: string
           descricao?: string | null
           encerra_em?: string | null
@@ -1830,11 +1843,16 @@ export type Database = {
           agradecimento?: Json
           aplicar_etiquetas?: string[]
           capa_url?: string | null
+          capturar_no_crm?: boolean
           created_at?: string
           created_by?: string | null
           criar_demanda?: boolean
           dedup_acao?: string
           dedup_campo?: string
+          dedup_campo_id?: string | null
+          dedup_criterio?: string
+          dedup_escopo?: string[]
+          dedup_mensagem?: string | null
           demanda_priority?: string
           descricao?: string | null
           encerra_em?: string | null
@@ -1859,6 +1877,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formularios_dedup_campo_id_fkey"
+            columns: ["dedup_campo_id"]
+            isOneToOne: false
+            referencedRelation: "formulario_campos"
             referencedColumns: ["id"]
           },
           {
@@ -2218,6 +2243,7 @@ export type Database = {
           pode_criar: boolean
           pode_deletar: boolean
           pode_deletar_em_massa: boolean
+          pode_duplicar: boolean
           pode_editar: boolean
           pode_ver: boolean
           role: string
@@ -2230,6 +2256,7 @@ export type Database = {
           pode_criar?: boolean
           pode_deletar?: boolean
           pode_deletar_em_massa?: boolean
+          pode_duplicar?: boolean
           pode_editar?: boolean
           pode_ver?: boolean
           role: string
@@ -2242,6 +2269,7 @@ export type Database = {
           pode_criar?: boolean
           pode_deletar?: boolean
           pode_deletar_em_massa?: boolean
+          pode_duplicar?: boolean
           pode_editar?: boolean
           pode_ver?: boolean
           role?: string
@@ -4241,10 +4269,30 @@ export type Database = {
         Args: { p_event: string; p_payload: Json }
         Returns: undefined
       }
+      duplicate_board: {
+        Args: { p_copy_contacts?: boolean; p_source_board_id: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          is_default: boolean
+          nome: string
+          tipo_entidade: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "boards"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       formulario_incrementar_visita: {
         Args: { _slug: string }
         Returns: undefined
       }
+      formulario_normalizar_texto: { Args: { _t: string }; Returns: string }
       formulario_obter_publico: { Args: { _slug: string }; Returns: Json }
       formulario_processar_resposta: {
         Args: {

@@ -20,6 +20,7 @@ import {
 import {
   ChevronDown,
   ChevronRight,
+  Copy,
   Flag,
   Loader2,
   Pencil,
@@ -35,17 +36,22 @@ import {
 } from '@/hooks/useBoards';
 import { useBoardStages } from '@/hooks/useBoardStages';
 import { useBoardItemCounts } from '@/hooks/useBoardItems';
+import { usePermissions } from '@/hooks/usePermissions';
 import { BoardFormDialog } from './BoardFormDialog';
+import { BoardDuplicateDialog } from './BoardDuplicateDialog';
 import { BoardStagesManager } from './BoardStagesManager';
 
 export function BoardsListPanel() {
   const { data: boards = [], isLoading } = useBoards('contact');
   const updateBoard = useUpdateBoard();
   const deleteBoard = useDeleteBoard();
+  const { can } = usePermissions();
+  const canDuplicate = can.duplicateBoard();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [deleting, setDeleting] = useState<Board | null>(null);
+  const [duplicating, setDuplicating] = useState<Board | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleNew = () => {
@@ -118,6 +124,7 @@ export function BoardsListPanel() {
               }
               onEdit={() => handleEdit(board)}
               onDelete={() => setDeleting(board)}
+              onDuplicate={canDuplicate ? () => setDuplicating(board) : undefined}
               onToggleDefault={() => handleToggleDefault(board)}
             />
           ))}
@@ -125,6 +132,12 @@ export function BoardsListPanel() {
       )}
 
       <BoardFormDialog open={formOpen} onOpenChange={setFormOpen} board={editingBoard} />
+
+      <BoardDuplicateDialog
+        open={!!duplicating}
+        onOpenChange={(open) => !open && setDuplicating(null)}
+        board={duplicating}
+      />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
@@ -158,6 +171,7 @@ function BoardCard({
   onToggleExpand,
   onEdit,
   onDelete,
+  onDuplicate,
   onToggleDefault,
 }: {
   board: Board;
@@ -165,6 +179,7 @@ function BoardCard({
   onToggleExpand: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
   onToggleDefault: () => void;
 }) {
   const { data: stages = [] } = useBoardStages(board.id);
@@ -227,6 +242,16 @@ function BoardCard({
               <Button variant="ghost" size="icon" onClick={onEdit} title="Editar funil">
                 <Pencil className="h-4 w-4" />
               </Button>
+              {onDuplicate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onDuplicate}
+                  title="Duplicar funil"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={onDelete} title="Excluir funil">
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
