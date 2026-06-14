@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
   closestCenter,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { BoardColumn } from './BoardColumn';
+import { BoardCardOverlay } from './BoardCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useMoveBoardItem, type BoardItemWithContact } from '@/hooks/useBoardItems';
 import type { BoardStage } from '@/hooks/useBoardStages';
@@ -41,6 +44,8 @@ export function BoardKanban({
 }: BoardKanbanProps) {
   const moveItem = useMoveBoardItem();
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
+  // Item sendo arrastado — renderizado no <DragOverlay> (fantasma flutuante).
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // Refs pra sincronizar scroll horizontal entre a scrollbar do topo e a de baixo
   const topScrollAreaRef = useRef<HTMLDivElement>(null);
@@ -103,21 +108,16 @@ export function BoardKanban({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // delay + tolerance (em vez de distance) deixa o drag iniciar somente apos segurar ~150ms.
-      // Swipes rapidos passam como scroll horizontal nativo sem serem sequestrados pelo DnD.
-      activationConstraint: { delay: 150, tolerance: 8 },
+      // Como SÓ a alça (GripVertical) inicia o drag, não há mais conflito com o scroll
+      // horizontal/vertical no resto do card. Ativação por distância curta = arraste
+      // instantâneo (sem o antigo delay de 150ms que deixava o movimento "preso").
+      activationConstraint: { distance: 4 },
     }),
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    // Em modo selecao, ignora qualquer drag (tambem ja estao disabled nos cards)
+  // Move um item para outra etapa — compartilhado pelo drag-and-drop e pelo menu "Mover para".
+  const moveTo = (itemId: string, newStageId: string) => {
     if (selectionMode) return;
-    const { active, over } = event;
-    if (!over) return;
-
-    const itemId = active.id as string;
-    const newStageId = over.id as string;
-
     // Drop só faz sentido se for em uma coluna conhecida
     if (!stages.some((s) => s.id === newStageId)) return;
 
@@ -151,11 +151,32 @@ export function BoardKanban({
     );
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    // Em modo selecao, ignora qualquer drag (tambem ja estao disabled nos cards)
+    if (selectionMode) return;
+    const { active, over } = event;
+    if (!over) return;
+    moveTo(active.id as string, over.id as string);
+  };
+
+  const activeItem = activeId ? items.find((i) => i.id === activeId) ?? null : null;
+
   const itemsForStage = (stageId: string): BoardItemWithContact[] =>
     items.filter((item) => (optimistic[item.id] ?? item.stage_id) === stageId);
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       {/* Scrollbar horizontal espelhada no TOPO — type="always" deixa a barra sempre visivel (sem hover) */}
       <ScrollArea ref={topScrollAreaRef} type="always" className="w-full h-3 mb-2">
         <div style={{ width: contentWidth || '100%', height: 1 }} />
@@ -175,11 +196,18 @@ export function BoardKanban({
               selectedIds={selectedIds}
               onToggleSelect={onToggleSelect}
               isProtected={protectedStageIds?.has(stage.id) ?? false}
+              stages={stages}
+              onMoveItem={(item, newStageId) => moveTo(item.id, newStageId)}
             />
           ))}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+
+      {/* Fantasma flutuante: segue o cursor renderizado em portal — não é cortado pelas colunas. */}
+      <DragOverlay dropAnimation={null}>
+        {activeItem ? <BoardCardOverlay item={activeItem} /> : null}
+      </DragOverlay>
     </DndContext>
   );
 }
