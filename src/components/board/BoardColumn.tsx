@@ -20,6 +20,10 @@ interface BoardColumnProps {
   onToggleSelect?: (item: BoardItemWithContact) => void;
   /** Quando true, a etapa está protegida pelo filtro — exibe badge amarelo no header */
   isProtected?: boolean;
+  /** Todas as etapas do funil — alimenta o submenu "Mover para" dos cards. */
+  stages?: BoardStage[];
+  /** Move um item para outra etapa via menu (caminho rápido, sem arrastar). */
+  onMoveItem?: (item: BoardItemWithContact, stageId: string) => void;
 }
 
 export function BoardColumn({
@@ -32,6 +36,8 @@ export function BoardColumn({
   selectedIds,
   onToggleSelect,
   isProtected = false,
+  stages,
+  onMoveItem,
 }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
@@ -94,6 +100,9 @@ export function BoardColumn({
                 selectionMode={selectionMode}
                 selected={selectedIds?.has(item.id)}
                 onToggleSelect={onToggleSelect ? () => onToggleSelect(item) : undefined}
+                stages={stages}
+                currentStageId={stage.id}
+                onMoveToStage={onMoveItem ? (stageId) => onMoveItem(item, stageId) : undefined}
               />
             ))
           )}
